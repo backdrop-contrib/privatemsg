@@ -411,7 +411,7 @@ function _privatemsg_delete($id) {
     if ($message->author == $user->uid) {
       db_query("UPDATE {privatemsg} SET author_del = 1 WHERE id = '%d'", $id);
     }
-    else if ($message->recipient == $user->uid) {
+    if ($message->recipient == $user->uid) {
       db_query("UPDATE {privatemsg} SET recipient_del = 1 WHERE id = '%d'", $id);
     }
 
