@@ -1,0 +1,19 @@
+TODO:
+- sort messages per author/date/ecc
+- help and info
+
+doubts:
+- is author to index?
+- preview message before sending(?)
+- watchdog(?)
+- change links (write new, reply, delete, etc) to form buttons?
+- admin with message search?
+- "outbox" as sent folder? is "outbox" english?
+
+other ideas:
+- some sort of folder, received, sent, move messages between folders
+- message from user pages
+- option to forward a message to your email (and be able to answer by mail too?)
+- integration with jabber(?)
+- filters, ignore user
+- what about users on other servers? distribute messages between servers? (seems jabber work though)

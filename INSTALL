@@ -1,0 +1,40 @@
+Readme
+------
+
+This is my first Drupal module: a very basic private messaging module. It allows your site's visitors to send private messages to each other. It does not use Jabber at all (but could be fun to use it). Features:
+
+ - Read/write/delete messages
+ - Reply to message with quoting
+ - New messages support (block and page)
+
+Send comments to marco@porciletto.org.
+
+
+Requirements
+------------
+
+This module requires Drupal version 3.0.x.
+
+
+Installation
+------------
+
+1. Create the SQL tables.
+     mysql -u username -ppassword drupal < privatemsg.sql
+
+2. Copy the privatemsg.module to the Drupal modules/ directory. Drupal should automatically detect it.
+
+3. Check "access private messages" in "roles and permissions" in the administration; anonymous users should not have permission. You can also change something in "settings and filters".
+
+4. If you make a theme, you can add support for private messaging in your theme calling privatemsg_get_link(); for example:
+   if (function_exists("privatemsg_get_link")) echo "<A HREF=\"".privatemsg_get_link($comment->name)."\">private message</A>";
+   Of course you can use a fancy small icon instead of text link. A good place could be comments, near the name.
+   
+5. Enjoy!
+
+
+Author
+------
+
+Marco Molinari <marco@porciletto.org>
+

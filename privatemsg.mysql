@@ -1,0 +1,13 @@
+DROP TABLE IF EXISTS privatemsg;
+CREATE TABLE privatemsg (
+  id          int(10) unsigned not null auto_increment primary key,
+  author      int(10) unsigned not null,
+  recipient   int(10) unsigned not null,
+  subject     varchar(64) not null,
+  message     text,
+  timestamp   int(11) unsigned not null,
+  new         tinyint unsigned not null,
+  hostname    varchar(128) not null,
+  key (recipient)
+);
+

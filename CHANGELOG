@@ -1,0 +1,19 @@
+19 December 2001 "giuro che mi trattengo"
+--------------------------
+- sent messages; sender can delete unread messages (optional, see settings)
+- messages splitted in pages, setting for "how many messages per page"
+
+
+15 December 2001 "nice evening"
+--------------------------
+- privatemsg_get_link() to add theme support; see INSTALL 
+- throttle to limit abuse; setting in admin for max send rate
+- checked sql indexing and added index to recipient (should we index author?)
+- save sender ip address
+- code cleanup (less global variables, use drupal form functions, better date format in list, comply to coding standards)
+- minor cosmetic changes
+
+
+12 December 2001
+--------------------------
+- initial release.
