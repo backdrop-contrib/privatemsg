@@ -1,16 +1,23 @@
 <?php
 // $Id$
 
-function privatemsg_system($field){
-  $system["description"] = t("Allows private messages between users.");
-  return $system[$field];
+function privatemsg_help($section = "admin/help#privatemsg") {
+  $output = "";
+
+  switch ($section) {
+    case "admin/system/modules#description":
+      $output = t("Allows private messages between users.");
+      break;
+  }
+
+  return $output;
 }
 
 function privatemsg_link($type) {
   global $user;
-  
-  if ($type == "menu.view" && user_access("access private messages")) {
-    $links[] = l(t("view inbox"), "privatemsg") . " (". (int)_privatemsg_get_new_messages($user->uid) .")";
+
+  if ($type == "system" && user_access("access private messages")) {
+    menu("privatemsg/" . $user->uid, t("view inbox") . " (". (int)_privatemsg_get_new_messages($user->uid) .")", "privatemsg_page", 1);
   }
 
   return $links ? $links : array();
@@ -476,7 +483,7 @@ function _privatemsg_new_folder($edit) {
   
   $form .= form_textfield(t("Name"), "name", "", 50, 64);
   $form .= form_submit(t("Add folder"));
-  
+
   theme("header");
   theme("box", t("New folder"), form($form));
   theme("footer");
