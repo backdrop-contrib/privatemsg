@@ -3,22 +3,18 @@ function privatemsg_link($type) {
   if ($type == "menu.view" && user_access("access private messages")) {
     $links[] = "<a href=\"module.php?mod=privatemsg\">". t("view inbox") ."</a> (". _privatemsg_get_new_messages() .")";
   }
-  
-  if ($type == "menu.settings" && user_access("access private messages")) {
-    $links[] = "<a href=\"module.php?mod=privatemsg\">". t("private messages") ."</a>";
-  }
 
   return $links ? $links : array();
 }
 
 function privatemsg_user($type, $ahem, &$user) {
   if (user_access("access private messages")) {
-	  if ($type == "view_public") {
+    if ($type == "view_public") {
       $output .= form_item("Private message", "<a href=\"module.php?mod=privatemsg&page=formnew&uid=$user->uid\">send private message</a>");
-	  }
-	  
-	  return $output;
-	}
+    }
+    
+    return $output;
+  }
 }
 
 function privatemsg_block() {
