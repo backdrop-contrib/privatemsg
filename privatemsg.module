@@ -123,12 +123,25 @@ function _privatemsg_prune() {
 }
 
 function _privatemsg_mailalert() {
+  global $locale;
+  $initial_locale = $locale;
+  if (function_exists('locale')) {
+    $languages = locale_supported_languages();
+    $languages = $languages['name'];
+  }
+
   $from = variable_get('site_mail', ini_get('sendmail_from'));
-  $result = db_query("SELECT COUNT(*) AS c, recipient FROM {privatemsg} WHERE new = 1 AND recipient_del = 0 GROUP BY recipient");
+  $result = db_query('SELECT COUNT(*) AS c, recipient FROM {privatemsg} WHERE new = 1 AND recipient_del = 0 GROUP BY recipient');
 
   while ($alert = db_fetch_object($result)) {
-    $user = user_load(array("uid" => $alert->recipient));
+    $user = user_load(array('uid' => $alert->recipient));
+
     if ($user->privatemsg_mailalert) {
+      // use each user's individual locale
+      if (function_exists('locale') && $languages[$user->language]) {
+        $locale = $user->language;
+      }
+
       $subject = t('New private messages at %site.', array('%site' => variable_get('site_name', 'drupal')));
       $message = t('Hi %name,
 This is an automatic reminder from the site %site. You have %new unread private messages.
@@ -138,7 +151,11 @@ To read your messages, follow this link:
 
 If you don\'t want to receive these email again, change your preferences here:
 %link2', array('%name' => $user->name, '%site' => variable_get('site_name', 'drupal'), '%new' => $alert->c, '%link1' => url('privatemsg', NULL, NULL, 1), '%link2' => url('user/'. $user->uid .'/edit', NULL, NULL, 1)));
+
       user_mail($user->mail, $subject, $message, "From: $from\nReply-to: $from\nX-Mailer: Drupal\nReturn-path: $from\nErrors-to: $from");
+
+      // revert to previous (site default) locale
+      $locale = $initial_locale;
     }
   }
 }
