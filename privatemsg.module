@@ -15,8 +15,9 @@ function privatemsg_help($section) {
  * Implementation of hook_link().
  */
 function privatemsg_link($type, $arg) {
-  if (user_access('access private messages') && ($type == 'node' || $type == 'comment') && variable_get("privatemsg_link_$type", 0)) {
-    if (user_access('access private messages', $arg) && isset($arg->privatemsg_allow) ? $arg->privatemsg_allow : 1) {
+  if (user_access('access private messages') && ($type == 'node' || $type == 'comment') && variable_get("privatemsg_link_$type", 0) && (isset($GLOBALS['user']->privatemsg_allow) ? $GLOBALS['user']->privatemsg_allow : 1)) {
+    if (user_access('access private messages', $arg)) {
+      // TODO: We really should check privatemsg_allow here for the recipient, but we'd have to do a user_load.
       return array(l(t('write to author'), "privatemsg/msgto/$arg->uid"));
     }
   }
@@ -29,7 +30,7 @@ function privatemsg_menu($may_cache) {
   $items = array();
   global $user;
 
-  if (!$may_cache && isset($user->privatemsg_allow) ? $user->privatemsg_allow : 1) {
+  if (!$may_cache && (isset($user->privatemsg_allow) ? $user->privatemsg_allow : 1)) {
     $items[] = array('path' => 'privatemsg',
                      'title' => t('view inbox') . ' ('. (int)_privatemsg_get_new_messages() .')',
                      'callback' => 'privatemsg_page',
@@ -45,7 +46,7 @@ function privatemsg_menu($may_cache) {
 function privatemsg_user($type, $edit, &$user, $category) {
   switch ($type) {
     case 'view':
-      if (user_access('access private messages') && isset($user->privatemsg_allow) ? $user->privatemsg_allow : 1) {
+      if (user_access('access private messages') && (isset($user->privatemsg_allow) ? $user->privatemsg_allow : 1)) {
         return array(t('History') => form_item(t('Private messages'), l(t('send private message'), "privatemsg/msgto/$user->uid")));
       }
       else if ($GLOBALS['user']->uid) {
