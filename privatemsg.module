@@ -42,20 +42,33 @@ function privatemsg_menu($may_cache) {
  * Implementation of hook_user().
  */
 function privatemsg_user($type, $edit, &$user, $category) {
-  if (user_access('access private messages')) {
-    switch ($type) {
-      case 'view':
-        return array(t('Private messages') => form_item('', l(t('send private message'), "privatemsg/msgto/$user->uid")));
-      case 'validate':
+  switch ($type) {
+    case 'view':
+      if (user_access('access private messages')) {
+        return array(t('History') => form_item(t('Private messages'), l(t('send private message'), "privatemsg/msgto/$user->uid")));
+      }
+      else if ($GLOBALS['user']->uid) {
+        return;
+      }
+      else {
+        if (variable_get('user_register', 1)) {
+          return array(t('History') => form_item(t('Private messages'), t('<a href="%login">login</a> or <a href="%register">register</a> to send private messages', array('%login' => url('user/login'), '%register' => url('user/register')))));
+        }
+        else {
+          return array(t('History') => form_item(t('Private messages'), t('<a href="%login">login</a> to send private messages', array('%login' => url('user/login')))));
+        }
+      }
+    case 'validate':
+      if (user_access('access private messages')) {
         if (!$edit['privatemsg_mailalert']) {
           $edit['privatemsg_mailalert'] = 0;
         }
         return $edit;
-      case 'form':
-        if ($category == 'account') {
-          return array(array('title' => t('Private message settings'), 'data' => form_checkbox(t('Receive daily e-mail for unread messages'), 'privatemsg_mailalert', 1, $user->privatemsg_mailalert, t('Check this box to receive e-mail notification for unread messages. Only one e-mail will be sent per day.'))));
-        }
-    }
+      }
+    case 'form':
+      if (user_access('access private messages') && $category == 'account') {
+        return array(array('title' => t('Private message settings'), 'data' => form_checkbox(t('Receive daily e-mail for unread messages'), 'privatemsg_mailalert', 1, $user->privatemsg_mailalert, t('Check this box to receive e-mail notification for unread messages. Only one e-mail will be sent per day.'))));
+      }
   }
 }
 
@@ -110,16 +123,22 @@ function _privatemsg_prune() {
 }
 
 function _privatemsg_mailalert() {
+  $from = variable_get('site_mail', ini_get('sendmail_from'));
   $result = db_query("SELECT COUNT(*) AS c, recipient FROM {privatemsg} WHERE new = 1 AND recipient_del = 0 GROUP BY recipient");
 
   while ($alert = db_fetch_object($result)) {
     $user = user_load(array("uid" => $alert->recipient));
     if ($user->privatemsg_mailalert) {
-      user_mail($user->mail,
-                t('You have unread messages'),
-                t("Hi %name,\nthis is an automatic reminder from the site %site. You have %new unread private messages.\n\nTo read your messages, follow this link:\n%link1\n\nIf you don't want to receive these email again, change your preferences here:\n%link2\n\n",
-                  array('%name' => $user->name, '%site' => variable_get('site_name', 'drupal'), '%new' => $alert->c, '%link1' => url('privatemsg', NULL, NULL, 1), '%link2' => url('user/'. $user->uid .'/edit'))),
-                t('New private messages at %site.', array('%site' => variable_get('site_name', 'drupal'))));
+      $subject = t('New private messages at %site.', array('%site' => variable_get('site_name', 'drupal')));
+      $message = t('Hi %name,
+This is an automatic reminder from the site %site. You have %new unread private messages.
+
+To read your messages, follow this link:
+%link1
+
+If you don\'t want to receive these email again, change your preferences here:
+%link2', array('%name' => $user->name, '%site' => variable_get('site_name', 'drupal'), '%new' => $alert->c, '%link1' => url('privatemsg', NULL, NULL, 1), '%link2' => url('user/'. $user->uid .'/edit', NULL, NULL, 1)));
+      user_mail($user->mail, $subject, $message, "From: $from\nReply-to: $from\nX-Mailer: Drupal\nReturn-path: $from\nErrors-to: $from");
     }
   }
 }
@@ -436,7 +455,7 @@ function theme_privatemsg_view($message) {
     }
 
     $links[] = l(t('List messages'), 'privatemsg');
-    $body .= theme('links', $links);
+    $body .= '<div class="links">'. theme('links', $links) .'</div>';
   } else {
     drupal_set_message(t('Error: you can\'t read this message'), 'error');
     $body = '';
