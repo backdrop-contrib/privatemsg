@@ -16,8 +16,7 @@ function privatemsg_help($section) {
  */
 function privatemsg_link($type, $arg) {
   if (user_access('access private messages') && ($type == 'node' || $type == 'comment') && variable_get("privatemsg_link_$type", 0) && (isset($GLOBALS['user']->privatemsg_allow) ? $GLOBALS['user']->privatemsg_allow : 1)) {
-    if (user_access('access private messages', $arg)) {
-      // TODO: We really should check privatemsg_allow here for the recipient, but we'd have to do a user_load.
+    if (user_access('access private messages', $arg) && $arg->privatemsg_allow) {
       return array(l(t('write to author'), "privatemsg/msgto/$arg->uid"));
     }
   }
@@ -30,12 +29,12 @@ function privatemsg_menu($may_cache) {
   $items = array();
   global $user;
 
-  if (!$may_cache && (isset($user->privatemsg_allow) ? $user->privatemsg_allow : 1)) {
+  if (!$may_cache) {
     $items[] = array('path' => 'privatemsg',
                      'title' => t('view inbox') . ' ('. (int)_privatemsg_get_new_messages() .')',
                      'callback' => 'privatemsg_page',
                      'access' => user_access('access private messages'),
-                     'type' => MENU_DYNAMIC_ITEM);
+                     'type' => (isset($user->privatemsg_allow) ? $user->privatemsg_allow : 1) ? MENU_DYNAMIC_ITEM : MENU_CALLBACK);
   }
   return $items;
 }
@@ -65,8 +64,8 @@ function privatemsg_user($type, $edit, &$user, $category) {
       }
     case 'form':
       if (user_access('access private messages') && $category == 'account') {
-        $output = form_checkbox(t('Allow private messages'), 'privatemsg_allow', 1, isset($user->privatemsg_allow) ? $user->privatemsg_allow : 1, t('Check this box to allow users to send you private messages.'));
-        $output .= form_checkbox(t('Receive daily e-mail for unread messages'), 'privatemsg_mailalert', 1, isset($user->privatemsg_mailalert) ? $user->privatemsg_mailalert : 1, t('Check this box to receive e-mail notification for unread messages. Only one e-mail will be sent per day.'));
+        $output = form_checkbox(t('Allow private messages'), 'privatemsg_allow', 1, isset($edit->privatemsg_allow) ? $edit->privatemsg_allow : (isset($user->privatemsg_allow) ? $user->privatemsg_allow : 1), t('Check this box to allow users to send you private messages.'));
+        $output .= form_checkbox(t('Receive daily e-mail for unread messages'), 'privatemsg_mailalert', 1, isset($edit->privatemsg_mailalert) ? $edit->privatemsg_mailalert : (isset($user->privatemsg_mailalert) ? $user->privatemsg_mailalert : 1), t('Check this box to receive e-mail notification for unread messages. Only one e-mail will be sent per day.'));
         return array(array('title' => t('Private message settings'), 'data' => $output));
       }
   }
