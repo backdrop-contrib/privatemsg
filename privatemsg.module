@@ -296,7 +296,7 @@ function _privatemsg_messages_inbox($offset=0, $rows=10) {
   
   if ($user->uid) {
     $result = db_query("
-      SELECT privatemsg.id, name, privatemsg.timestamp, subject, new
+      SELECT privatemsg.id, users.uid, name, privatemsg.timestamp, subject, new
       FROM privatemsg, users
       WHERE recipient = ".$user->uid." 
       AND author = users.uid
@@ -314,7 +314,7 @@ function _privatemsg_messages_inbox($offset=0, $rows=10) {
           <td width='2%'><input type='checkbox' name='msg_to_del[]' value='$message->id'></td>
           <td width='3%'>$new</td>
           <td width='20%'>".format_date($message->timestamp, "small")."</td>
-          <td width='30%'>".format_name($message->name)."</a></td>
+          <td width='30%'>".format_name($message)."</a></td>
           <td width='55%'><a href='module.php?mod=privatemsg&page=view&message_id=$message->id'>".check_output($message->subject)."</a></td>
         </tr>
       ";
@@ -342,7 +342,7 @@ function _privatemsg_messages_sent($offset=0, $rows=10) {
   
   if ($user->uid) {
     $result = db_query("
-      SELECT privatemsg.id, name, privatemsg.timestamp, subject, new
+      SELECT privatemsg.id, users.uid, name, privatemsg.timestamp, subject, new
       FROM privatemsg, users
       WHERE author = ".$user->uid." 
       AND recipient = users.uid
@@ -367,7 +367,7 @@ function _privatemsg_messages_sent($offset=0, $rows=10) {
           <td width='2%'>$checkbox</td>
           <td width='3%'>$new</td>
           <td width='20%'>".format_date($message->timestamp, "small")."</td>
-          <td width='30%'>".format_name($message->name)."</a></td>
+          <td width='30%'>".format_name($message)."</a></td>
           <td width='55%'><a href='module.php?mod=privatemsg&page=view&message_id=$message->id'>".check_output($message->subject)."</a></td>
         </tr>
       ";
