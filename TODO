@@ -1,5 +1,12 @@
 TODO:
+- messages should be nodes
+- use theme_invoke to make everything customizeable
+- get rid of javascript
 - sort messages per author/date/ecc
+- mix with mail (receive a mail in your mailbox, get a mail when you have a new message, answer by email)
+- option to have every message sent in a central box even from other sites
+- integrate with (coming) buddy api: show list of recipient near to: field, ignore list
+- some sort of folder, received, sent, move messages between folders; use taxonomy for these? personal taxonomy would be perfect
 - help and info
 
 doubts:
@@ -11,9 +18,5 @@ doubts:
 - "outbox" as sent folder? is "outbox" english?
 
 other ideas:
-- some sort of folder, received, sent, move messages between folders
-- message from user pages
-- option to forward a message to your email (and be able to answer by mail too?)
 - integration with jabber(?)
-- filters, ignore user
-- what about users on other servers? distribute messages between servers? (seems jabber work though)
+- filters

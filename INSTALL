@@ -13,7 +13,8 @@ Send comments to marco@porciletto.org.
 Requirements
 ------------
 
-This module requires Drupal version 3.0.x.
+This module requires Drupal version 4.0.x.
+If you need a 3.0 version you should be able to take it from the cvs. But really, use 4.0 :)
 
 
 Installation
@@ -22,7 +23,7 @@ Installation
 1. Create the SQL tables.
      mysql -u username -ppassword drupal < privatemsg.sql
 
-2. Copy the privatemsg.module to the Drupal modules/ directory. Drupal should automatically detect it.
+2. Copy the privatemsg.module to the Drupal modules/ directory. Drupal should automatically detect it. Enable in administration/site configuration/modules.
 
 3. Check "access private messages" in "roles and permissions" in the administration; anonymous users should not have permission. You can also change something in "settings and filters".
 
