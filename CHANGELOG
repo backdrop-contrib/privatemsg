@@ -1,3 +1,15 @@
+22 May 2003, "day of the Matrix"
+--------------------------------
+- major rewrite
+- updated to latest cvs, should work in Drupal 4.2
+- added folders, you can move messages in folders, empty folders
+- mail once per day if you have unread messages (user option)
+- message pruning (move old messages to another table)
+- list of contacts: it's built automatically looking at users you write to
+- theme()ized
+- if you are updating run you just need to run privatemsg.sql
+
+
 20 August 2002
 --------------
 - major cleanup, used t() and l() everywhere
