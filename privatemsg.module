@@ -5,7 +5,7 @@ function privatemsg_help($section = "admin/help#privatemsg") {
   $output = "";
 
   switch ($section) {
-    case "admin/system/modules#description":
+    case "admin/modules#description":
       $output = t("Allows private messages between users.");
       break;
   }
@@ -17,9 +17,6 @@ function privatemsg_link($type, $arg) {
   global $user;
   if (user_access("access private messages")) {
     switch ($type) {
-      case "system":
-        menu("privatemsg", t("view inbox") . " (". (int)_privatemsg_get_new_messages($user->uid) .")", "privatemsg_page", 1);
-        break;
       case "node":
         if (variable_get("privatemsg_link_node", 0)) return array(l(t("write to author"), "privatemsg/msgto/$arg->uid"));
         break;
@@ -28,6 +25,17 @@ function privatemsg_link($type, $arg) {
         break;
     }
   }
+}
+
+function privatemsg_menu() {
+  global $user;
+  
+  $items = array();
+  $items[] = array('path' => 'privatemsg',
+                   'title' => t("view inbox") . ' ('. (int)_privatemsg_get_new_messages($user->uid) .")",
+                   'callback' => 'privatemsg_page',
+                   'access' => user_access("access private messages"));
+  return $items;
 }
 
 function privatemsg_user($type, $edit, &$user) {
