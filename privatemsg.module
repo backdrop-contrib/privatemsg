@@ -276,8 +276,9 @@ function privatemsg_page() {
       $title = t('Private messages');
       break;
   }
-
-  print theme('page', $output, $title, $breadcrumb);
+  drupal_set_title($title);
+  drupal_set_breadcrumb($breadcrumb);
+  print theme('page', $output);
 
 }
 
