@@ -1,62 +1,71 @@
 <?php
 // $Id$
 
-function privatemsg_help($section = "admin/help#privatemsg") {
-  $output = "";
-
+/**
+ * Implementation of hook_help().
+ */
+function privatemsg_help($section) {
   switch ($section) {
-    case "admin/modules#description":
-      $output = t("Allows private messages between users.");
-      break;
+    case 'admin/modules#description':
+      return t('Allows private messages between users.');
   }
-
-  return $output;
 }
 
+/**
+ * Implementation of hook_link().
+ */
 function privatemsg_link($type, $arg) {
   global $user;
-  if (user_access("access private messages")) {
+  if (user_access('access private messages')) {
     switch ($type) {
-      case "node":
-        if (variable_get("privatemsg_link_node", 0)) return array(l(t("write to author"), "privatemsg/msgto/$arg->uid"));
+      case 'node':
+        if (variable_get('privatemsg_link_node', 0)) return array(l(t('write to author'), "privatemsg/msgto/$arg->uid"));
         break;
-      case "comment":
-        if (variable_get("privatemsg_link_comment", 0)) return array(l(t("write to author"), "privatemsg/msgto/$arg->uid"));
+      case 'comment':
+        if (variable_get('privatemsg_link_comment', 0)) return array(l(t('write to author'), "privatemsg/msgto/$arg->uid"));
         break;
     }
   }
 }
 
+/**
+ * Implementation of hook_menu().
+ */
 function privatemsg_menu() {
   global $user;
 
   $items = array();
   $items[] = array('path' => 'privatemsg',
-                   'title' => t("view inbox") . ' ('. (int)_privatemsg_get_new_messages($user->uid) .")",
+                   'title' => t('view inbox') . ' ('. (int)_privatemsg_get_new_messages($user->uid) .")",
                    'callback' => 'privatemsg_page',
-                   'access' => user_access("access private messages"));
+                   'access' => user_access('access private messages'));
   return $items;
 }
 
-function privatemsg_user($type, $edit, &$user) {
-  if (user_access("access private messages")) {
+/**
+ * Implementation of hook_user().
+ */
+function privatemsg_user($type, $edit, &$user, $category) {
+  if (user_access('access private messages')) {
     switch ($type) {
-      case "view":
-        return array(t("Private messages") => form_item("", l(t("send private message"), "privatemsg/msgto/$user->uid")));
-        break;
-      case "edit":
-        return array(t("Private messages") => form_item(t("E-mail notification"), form_checkbox(t("Receive daily e-mail for unread messages"), "privatemsg_mailalert", 1, $user->privatemsg_mailalert, t("Check this box to receive e-mail notification for unread messages. Only one e-mail will be sent per day."))));
-        break;
-      case "validate":
-        if (!$edit["privatemsg_mailalert"]) {
-          $edit["privatemsg_mailalert"] = 0;
+      case 'view':
+        return array(t('Private messages') => form_item('', l(t('send private message'), "privatemsg/msgto/$user->uid")));
+      case 'validate':
+        if (!$edit['privatemsg_mailalert']) {
+          $edit['privatemsg_mailalert'] = 0;
         }
         return $edit;
-        break;
+      case 'form':
+        if ($category == 'account') {
+          return array(array('title' => t('Private message settings'), 'data' => form_checkbox(t('Receive daily e-mail for unread messages'), 'privatemsg_mailalert', 1, $user->privatemsg_mailalert, t('Check this box to receive e-mail notification for unread messages. Only one e-mail will be sent per day.'))));
+        }
     }
   }
 }
 
+/**
+ * Implementation of hook_settings().
+ */
 function privatemsg_settings() {
   $rate = drupal_map_assoc(array(5, 10, 15, 20, 30, 60), "format_interval");
   $output .= form_select(t("Private messaging max rate"), "privatemsg_max_rate", variable_get("privatemsg_max_rate", 15), $rate, t("Max submit rate for private messaging. To prevent abuse."));
@@ -71,10 +80,16 @@ function privatemsg_settings() {
   return $output;
 }
 
+/**
+ * Implementation of hook_perm().
+ */
 function privatemsg_perm() {
   return array("access private messages");
 }
 
+/**
+ * Implementation of hook_cron().
+ */
 function privatemsg_cron() {
   // perform these actions just once per day
   if (variable_get("privatemsg_last_cron", 0) < (time() - 3600*24)) {
