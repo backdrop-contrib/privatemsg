@@ -173,7 +173,7 @@ function privatemsg_page() {
   }
   $arg = arg(2);
 
-  switch($op) {
+  switch ($op) {
     case 'list':
       $output = _privatemsg_list($arg);
       $title = t('Private messages');
@@ -286,10 +286,10 @@ function _privatemsg_list($current_folder = 0) {
   global $user;
 
   if ($current_folder != 1) {
-    $result = pager_query("SELECT id, subject, p.timestamp, u.uid, u.name, new FROM {privatemsg} p, {users} u WHERE p.author = u.uid AND p.recipient = $user->uid AND folder = '".addslashes($current_folder)."' AND p.recipient_del = 0 ORDER BY p.timestamp DESC", variable_get("privatemsg_per_page", 10));
+    $result = pager_query("SELECT id, subject, p.timestamp, u.uid, u.name, new FROM {privatemsg} p, {users} u WHERE p.author = u.uid AND p.recipient = %d AND folder = '%s' AND p.recipient_del = 0 ORDER BY p.timestamp DESC", variable_get("privatemsg_per_page", 10), 0, NULL, $user->uid, $current_folder);
 
     if ($current_folder > 0) {
-      $folder_name = db_result(db_query("SELECT name FROM {privatemsg_folder} WHERE fid = '%d' AND uid = '$user->uid'", $current_folder));
+      $folder_name = db_result(db_query("SELECT name FROM {privatemsg_folder} WHERE fid = %d AND uid = %d", $current_folder, $user->uid));
     }
     else {
       $folder_name = t("Inbox");
@@ -297,7 +297,7 @@ function _privatemsg_list($current_folder = 0) {
   }
   else {
     // sent messages
-    $result = pager_query("SELECT id, subject, p.timestamp, u.uid, u.name, new FROM {privatemsg} p, {users} u WHERE p.recipient = u.uid AND p.author = $user->uid AND p.author_del = 0 ORDER BY p.timestamp DESC", variable_get("privatemsg_per_page", 10));
+    $result = pager_query("SELECT id, subject, p.timestamp, u.uid, u.name, new FROM {privatemsg} p, {users} u WHERE p.recipient = u.uid AND p.author = %d AND p.author_del = 0 ORDER BY p.timestamp DESC", variable_get("privatemsg_per_page", 10), 0, NULL, $user->uid);
 
     $folder_name = t("Sent messages");
   }
@@ -308,7 +308,7 @@ function _privatemsg_list($current_folder = 0) {
   }
 
   $folders[] = array(0, t("Inbox"));
-  $result = db_query("SELECT fid, name FROM {privatemsg_folder} WHERE uid = '$user->uid'");
+  $result = db_query("SELECT fid, name FROM {privatemsg_folder} WHERE uid = %d", $user->uid);
   while ($folder = db_fetch_object($result)) {
     $folders[] = array($folder->fid, $folder->name);
   }
@@ -338,7 +338,7 @@ function _privatemsg_form($message = 0) {
       }
 
       // quoting
-      $message->message = "\n".str_replace ("\n", "\n> ", "\n".$message->message);
+      $message->message = "\n".str_replace("\n", "\n> ", "\n".$message->message);
     }
   }
 
@@ -396,7 +396,7 @@ function _privatemsg_view($message_id) {
 
   $message = db_fetch_object($result);
   if (($message->new) && ($user->uid != $message->author)) {
-    $result = db_query("UPDATE {privatemsg} SET new = 0 WHERE recipient = '$user->uid' AND id = '%d'", $message_id);
+    $result = db_query("UPDATE {privatemsg} SET new = 0 WHERE recipient = %d AND id = %d", $user->uid, $message_id);
   }
 
   return theme("privatemsg_view", $message);
@@ -405,7 +405,7 @@ function _privatemsg_view($message_id) {
 function _privatemsg_delete($id) {
   global $user;
 
-  $result = db_query("SELECT author, recipient FROM {privatemsg} WHERE (recipient = '$user->uid' OR author = '$user->uid') AND id = '%d'", $id);
+  $result = db_query("SELECT author, recipient FROM {privatemsg} WHERE (recipient = %d OR author = %d) AND id = %d", $user->uid, $user->uid, $id);
 
   if ($message = db_fetch_object($result)) {
     if ($message->author == $user->uid) {
@@ -474,7 +474,8 @@ function theme_privatemsg_view($message) {
 
     $links[] = l(t('List messages'), 'privatemsg');
     $body .= '<div class="links">'. theme('links', $links) .'</div>';
-  } else {
+  } 
+  else {
     drupal_set_message(t('Error: you can\'t read this message'), 'error');
     $body = '';
   }
