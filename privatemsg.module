@@ -32,13 +32,13 @@ function privatemsg_link($type, $arg) {
 function privatemsg_user($type, $edit, &$user) {
   if (user_access("access private messages")) {
     switch ($type) {
-      case "view_public":
-        return form_item(t("Private message"), l(t("send private message"), "privatemsg/msgto/$user->uid"));
+      case "view":
+        return array(t("Private messages") => form_item("", l(t("send private message"), "privatemsg/msgto/$user->uid")));
         break;
-      case "edit_form":
+      case "edit":
         return array(t("Private messages") => form_item(t("E-mail notification"), form_checkbox(t("Receive daily e-mail for unread messages"), "privatemsg_mailalert", 1, $user->privatemsg_mailalert, t("Check this box to receive e-mail notification for unread messages. Only one e-mail will be sent per day."))));
         break;
-      case "edit_validate":
+      case "validate":
         if (!$edit["privatemsg_mailalert"]) {
           $edit["privatemsg_mailalert"] = 0;
         }

@@ -3,6 +3,7 @@
 - Removed custom _form_submit in favor of "attributes" argument in core form_submit (jik)
 - Added optional "write to author" links under nodes/comments (modified patch by jik)
 - Minor code updates/cleanup
+- Update to work with new CVS _user hook changes
 
 9 December 2003
 ---------------
