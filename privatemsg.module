@@ -388,15 +388,19 @@ function _privatemsg_messages_sent($offset=0, $rows=10) {
 
 function _privatemsg_get_new_messages() {
   global $user;
+  static $num;
   
   if ($user->uid) {
-    $result = db_query("
-        SELECT count(*)
-        FROM privatemsg
-        WHERE recipient = ".$user->uid."
-        AND new = 1
-      ");
-    return db_result($result);
+    if (!isset($num)) {
+      $result = db_query("
+          SELECT count(*)
+          FROM privatemsg
+          WHERE recipient = ".$user->uid."
+          AND new = 1
+        ");
+      $num = db_result($result);
+    }
+    return $num;
   } else {
     return 0;
   }

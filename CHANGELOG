@@ -1,3 +1,7 @@
+19 June 2002
+------------
+- cached _privatemsg_get_new_messages(), saves 2-3 queries per page
+
 21 Feburary 2002
 ----------------
 - moved link to private messages to the user block.
