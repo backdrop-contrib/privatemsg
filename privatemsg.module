@@ -37,7 +37,8 @@ function privatemsg_menu($may_cache) {
     $items[] = array('path' => 'privatemsg',
                      'title' => t('view inbox') . ' ('. (int)_privatemsg_get_new_messages() .')',
                      'callback' => 'privatemsg_page',
-                     'access' => user_access('access private messages'));
+                     'access' => user_access('access private messages'),
+                     'type' => MENU_DYNAMIC_ITEM);
   }
   return $items;
 }
