@@ -1,6 +1,7 @@
 23 May 2003, "qui, nell'ascensore?"
 ----------------------------------
 - used $_POST instead of global vars
+- used theme() instead of $theme
 
 
 22 May 2003, "day of the Matrix"
