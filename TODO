@@ -1,6 +1,6 @@
 TODO:
 - messages should be nodes
-- use theme_invoke to make everything customizeable
+- use theme to make everything customizeable
 - get rid of javascript
 - sort messages per author/date/ecc
 - mix with mail (receive a mail in your mailbox, get a mail when you have a new message, answer by email)

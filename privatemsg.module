@@ -47,7 +47,7 @@ function privatemsg_block() {
 }
 
 
-function privatemsg_conf_options() {
+function privatemsg_settings() {
   $rate = array(5 => format_interval(5), 10 => format_interval(10), 15 => format_interval(15), 20 => format_interval(20), 30 => format_interval(30), 60 => format_interval(60)); 
   $output .= form_select("Private messaging max rate", "privatemsg_max_rate", variable_get("privatemsg_max_rate", 15), $rate, "Max submit rate for private messaging. To prevent abuse.");
   $output .= form_select("Sent message status", "privatemsg_sent_status", variable_get("privatemsg_sent_status", 1), array("Disabled", "Enabled"), "If enabled users can see whether a message has been read or not.");
