@@ -327,7 +327,7 @@ function _privatemsg_form($message = 0) {
 
   $form .= form_textfield(t("Subject"), "subject", $message->subject, 50, 64);
   $form .= form_textarea(t("Message"), "message", $message->message, 80, 5);
-  $form .= form_submit(t("Send private message"));  
+  $form .= form_submit(t("Send private message"));
 
   return form($form);
 }
@@ -345,11 +345,11 @@ function _privatemsg_edit($edit) {
     return _privatemsg_form(array2object($edit));
   }
   else {
-    if ($recipient) {            
+    if ($recipient) {
       $result = db_query("INSERT INTO {privatemsg} (author, recipient, subject, message, timestamp, new, hostname) VALUES ('%d', '%d', '%s', '%s', '%d', '%d', '%s')", $user->uid, $recipient, strip_tags($edit['subject']), strip_tags($edit['message']), time(), 1, getenv("REMOTE_ADDR"));
       drupal_set_message(t('Message sent.'));
       return _privatemsg_list();
-    } 
+    }
     else {
       drupal_set_message(t('Warning: user does not exist'), 'error');
       return _privatemsg_form(array2object($edit));
@@ -374,7 +374,7 @@ function _privatemsg_delete($id) {
   global $user;
 
   $result = db_query("SELECT author, recipient FROM {privatemsg} WHERE (recipient = '$user->uid' OR author = '$user->uid') AND id = '%d'", $id);
-    
+
   if ($message = db_fetch_object($result)) {
     if ($message->author == $user->uid) {
       db_query("UPDATE {privatemsg} SET author_del = 1 WHERE id = '%d'", $id);
@@ -428,6 +428,7 @@ function theme_privatemsg_view($message) {
   if ($message) {
     $body = "
       <p><b>".t("From").":</b> ".format_name($message)."<br />
+      <b>".t("To").":</b> ".format_name(user_load(array('uid' => $message->recipient)))."<br />
       <b>".t("Subject").":</b> ".strip_tags($message->subject)."<br />
       <b>".t("Date").":</b> ".format_date($message->timestamp)."</p>
       ".check_output($message->message, 1)."
@@ -438,7 +439,7 @@ function theme_privatemsg_view($message) {
     if (($message->recipient == $user->uid) || (variable_get("privatemsg_sent_status", 1))) {
       $body .= l(t("Delete this message"), "privatemsg/delete/$message->id", array("onClick" => "return confirm('".t("Are you sure to delete this message?")."')"))." - ";
     }
-      
+
     $body .= l(t("List messages"), "privatemsg")."</p>";
   } else {
     $body = t("Error: you can't read this message");
@@ -463,7 +464,7 @@ function theme_privatemsg_list($current_folder, $messages, $folders) {
     }
   }
 
-  $out = implode(" &middot; ", $folder_list);
+  $out = theme('links', $folder_list);
 
   $rows = array();
   foreach ($messages as $message) {
@@ -483,10 +484,10 @@ function theme_privatemsg_list($current_folder, $messages, $folders) {
     $row[] = array('data' => format_date($message->timestamp, 'small'));
     $row[] = array('data' => format_name($message));
     $row[] = array('data' => l(strip_tags($message->subject), 'privatemsg/view/'. $message->id) . ($new ? (' '. theme('mark')) : ''));
-    
+
     $rows[] = $row;
   }
-  
+
   if (count($messages) < 1) {
     $out .= t('<p>No messages</p>');
   }
