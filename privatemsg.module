@@ -84,9 +84,14 @@ function _privatemsg_mailalert() {
 }
 
 function privatemsg_page() {
-  global $op, $folder, $id, $theme, $edit, $msg, $recipient, $user;
+  global $theme, $user;
+
+  $op = $_POST["op"];
+  $edit = $_POST["edit"];
+  $recipient = $_POST["recipient"];
+  $msg = $_POST["msg"];
   
-  if (!$op) {
+  if (empty($op)) {
     $op = arg(1);
   }
   $arg = arg(2);
@@ -107,7 +112,6 @@ function privatemsg_page() {
         break;
       case "msgto";
         $msg->name = db_result(db_query("SELECT name FROM users WHERE uid = '%d'", $arg));
-        #$msg = user_load(array("uid" => $uid));
         _privatemsg_form($msg);
         break;
       case "send";
@@ -364,7 +368,7 @@ function _privatemsg_form($message = 0, $error = "") {
 }
 
 function _privatemsg_edit($edit) {
-  global $user, $edit;
+  global $user;
   $recipient = db_result(db_query("SELECT uid FROM users WHERE name = '%s'", $edit["recipient"]));
   
   throttle("private message", variable_get(privatemsg_max_rate, 15));

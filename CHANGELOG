@@ -1,3 +1,8 @@
+23 May 2003, "qui, nell'ascensore?"
+----------------------------------
+- used $_POST instead of global vars
+
+
 22 May 2003, "day of the Matrix"
 --------------------------------
 - major rewrite
