@@ -193,7 +193,7 @@ function privatemsg_page() {
     }
   }
   else {
-    theme("header");
+    print theme("header");
     
     if ($user->uid) {
       $theme->box(t("Private messages"), t("You don't have access to private messages."));
@@ -202,7 +202,7 @@ function privatemsg_page() {
       $theme->box(t("Private messages"), t("You must login below or <a href=\"%url\">create a new account</a> before accessing private messages.", array ("%url" => drupal_url(array ("mod" => "user", "op" => "register"), "module"))));
     }
     
-    theme("footer");
+    print theme("footer");
   }
   
 }
@@ -210,7 +210,7 @@ function privatemsg_page() {
 function _privatemsg_list($current_folder = 0, $status_message = "") {
   global $user, $theme;
   
-  theme("header");
+  print theme("header");
   
   if ($current_folder != 1) {
     $result = pager_query("SELECT id, subject, p.timestamp, u.uid, u.name, new FROM privatemsg p, users u WHERE p.author = u.uid AND p.recipient = $user->uid AND folder = '".addslashes($current_folder)."' AND p.recipient_del = 0 ORDER BY p.timestamp DESC", variable_get("privatemsg_per_page", 10));
@@ -241,8 +241,8 @@ function _privatemsg_list($current_folder = 0, $status_message = "") {
   }
   $folders[] = array(1, t("Sent messages"));
   
-  theme("privatemsg_list", $current_folder, $status_message, $messages, $folders);
-  theme("footer");
+  print theme("privatemsg_list", $current_folder, $status_message, $messages, $folders);
+  print theme("footer");
 }
 
 function privatemsg_list($current_folder, $status_message, $messages, $folders) {
@@ -325,7 +325,7 @@ function privatemsg_list($current_folder, $status_message, $messages, $folders) 
   
   $out .= "</table>";
   
-  theme("box", t("Private messages"), form($out));
+  print theme("box", t("Private messages"), form($out));
 }
 
 function _privatemsg_format_folder($current, $fid, $name) {
@@ -371,9 +371,9 @@ function _privatemsg_form($message = 0, $error = "") {
   $form .= form_textarea(t("Message"), "message", $message->message, 80, 5);
   $form .= form_submit(t("Send private message"));  
   
-  theme("header");
-  theme("box", t("Write a new message"), "<br /><p align=\"center\"><b><i>$error</i></b></p>".form($form));
-  theme("footer");
+  print theme("header");
+  print theme("box", t("Write a new message"), "<br /><p align=\"center\"><b><i>$error</i></b></p>".form($form));
+  print theme("footer");
 }
 
 function _privatemsg_edit($edit) {
@@ -417,9 +417,9 @@ function _privatemsg_view($message_id) {
       AND id = '%d'", $message_id);
   }
   
-  theme("header");
-  theme("privatemsg_view", $message);
-  theme("footer");
+  print theme("header");
+  print theme("privatemsg_view", $message);
+  print theme("footer");
 }
 
 function privatemsg_view($message) {
@@ -444,7 +444,7 @@ function privatemsg_view($message) {
     $body = t("Error: you can't read this message");
   }
 
-  theme("box", t("Read message"), $body);
+  print theme("box", t("Read message"), $body);
 }
 
 function _privatemsg_delete($id) {
@@ -484,9 +484,9 @@ function _privatemsg_new_folder($edit) {
   $form .= form_textfield(t("Name"), "name", "", 50, 64);
   $form .= form_submit(t("Add folder"));
 
-  theme("header");
-  theme("box", t("New folder"), form($form));
-  theme("footer");
+  print theme("header");
+  print theme("box", t("New folder"), form($form));
+  print theme("footer");
 }
 
 function _privatemsg_move($mid, $fid) {
