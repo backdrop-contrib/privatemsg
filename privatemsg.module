@@ -15,14 +15,9 @@ function privatemsg_help($section) {
  * Implementation of hook_link().
  */
 function privatemsg_link($type, $arg) {
-  if (user_access('access private messages')) {
-    switch ($type) {
-      case 'node':
-        if (variable_get('privatemsg_link_node', 0)) return array(l(t('write to author'), "privatemsg/msgto/$arg->uid"));
-        break;
-      case 'comment':
-        if (variable_get('privatemsg_link_comment', 0)) return array(l(t('write to author'), "privatemsg/msgto/$arg->uid"));
-        break;
+  if (user_access('access private messages') && ($type == 'node' || $type == 'comment') && variable_get("privatemsg_link_$type", 0)) {
+    if (user_access('access private messages', $arg)) {
+      return array(l(t('write to author'), "privatemsg/msgto/$arg->uid"));
     }
   }
 }
