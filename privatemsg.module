@@ -14,6 +14,7 @@ function privatemsg_help($section = "admin/help#privatemsg") {
 }
 
 function privatemsg_link($type, $arg) {
+  global $user;
   if (user_access("access private messages")) {
     switch ($type) {
       case "system":
