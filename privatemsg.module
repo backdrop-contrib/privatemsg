@@ -431,18 +431,20 @@ function theme_privatemsg_view($message) {
       <b>".t("To").":</b> ".format_name(user_load(array('uid' => $message->recipient)))."<br />
       <b>".t("Subject").":</b> ".strip_tags($message->subject)."<br />
       <b>".t("Date").":</b> ".format_date($message->timestamp)."</p>
-      ".check_output($message->message, 1)."
-      <p align='center'>";
+      ".check_output($message->message, 1);
+    $links = array();
     if ($message->recipient == $user->uid) {
-      $body .= l(t("Reply to this message"), "privatemsg/reply/$message->id")." - ";
+      $links[] = l(t('Reply to this message'), "privatemsg/reply/$message->id");
     }
     if (($message->recipient == $user->uid) || (variable_get("privatemsg_sent_status", 1))) {
-      $body .= l(t("Delete this message"), "privatemsg/delete/$message->id", array("onClick" => "return confirm('".t("Are you sure to delete this message?")."')"))." - ";
+      $links[] = l(t('Delete this message'), "privatemsg/delete/$message->id", array('onClick' => "return confirm('".t('Are you sure to delete this message?')."')"));
     }
 
-    $body .= l(t("List messages"), "privatemsg")."</p>";
+    $links[] = l(t('List messages'), 'privatemsg');
+    $body .= theme('links', $links);
   } else {
-    $body = t("Error: you can't read this message");
+    drupal_set_message(t('Error: you can\'t read this message'), 'error');
+    $body = '';
   }
 
   return $body;
