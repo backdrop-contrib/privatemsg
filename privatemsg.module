@@ -23,7 +23,7 @@ function privatemsg_user($type, $edit, &$user) {
         return form_item(t("Private message"), l(t("send private message"), "privatemsg/msgto/$user->uid"));
         break;
       case "edit_form":
-        return form_checkbox(t("Private messages: get daily mail if you have new messages."), "privatemsg_mailalert", 1, $user->privatemsg_mailalert, t("If you check this box you'll get a mail (no more than once per day) if you any unread messages."));
+        return form_item(t("Private message"), form_checkbox(t("Get daily mail if you have new messages."), "privatemsg_mailalert", 1, $user->privatemsg_mailalert, t("If you check this box you'll get a mail (no more than once per day) if you any unread messages.")));
         break;
       case "edit_validate":
         if (!$edit["privatemsg_mailalert"]) {
@@ -78,7 +78,11 @@ function _privatemsg_mailalert() {
   while ($alert = db_fetch_object($result)) {
     $user = user_load(array("uid" => $alert->recipient));
     if ($user->privatemsg_mailalert) {
-      user_mail($user->mail, t("You have unread messages"), t("Hi %name,\nthis is an automatic reminder from the site %site. You have %new unread private messages.\n\nTo read your messages, follow this link:\n%link1\n\nIf you don't want to receive these email again, change your preferences here:\n%link2\n\n", array("%name" => $user->name, "%site" => $base_url, "%link1" => "$base_url/privatemsg", "%link2" => "$base_url/user/edit")));
+      user_mail($user->mail,
+                t("You have unread messages"),
+                t("Hi %name,\nthis is an automatic reminder from the site %site. You have %new unread private messages.\n\nTo read your messages, follow this link:\n%link1\n\nIf you don't want to receive these email again, change your preferences here:\n%link2\n\n",
+                  array("%name" => $user->name, "%site" => variable_get("site_name", $base_url), "%link1" => "$base_url/privatemsg", "%link2" => "$base_url/user/edit")),
+                t("New private messages at %site.", array("%site" => variable_get("site_name", $base_url))));
     }
   }
 }
