@@ -144,38 +144,38 @@ function privatemsg_page() {
   $arg = arg(2);
 
   switch($op) {
-    case "list";
+    case 'list':
       $output = _privatemsg_list($arg);
       $title = t('Private messages');
       break;
-    case "view";
+    case 'view':
       $output = _privatemsg_view($arg);
       $title = t("Read message");
       $breadcrumb = array(l(t('Home'), ''), l('Private messages', 'privatemsg'));
       break;
-    case t("Write a new message"):
+    case t('Write a new message'):
       $arg = "";
-    case "form";
-    case "reply";
+    case 'form':
+    case 'reply':
       $output = _privatemsg_form($arg);
       $title = t("Write a new message");
       $breadcrumb = array(l(t('Home'), ''), l('Private messages', 'privatemsg'));
       break;
-    case "msgto";
+    case 'msgto':
       $msg->name = db_result(db_query("SELECT name FROM {users} WHERE uid = '%d'", $arg));
       $output = _privatemsg_form($msg);
       $title = t("Write a new message");
       $breadcrumb = array(l(t('Home'), ''), l('Private messages', 'privatemsg'));
       break;
-    case "send";
-    case t("Send private message"):
+    case 'send':
+    case t('Send private message'):
       if (!$edit["recipient"]) {
         $edit["recipient"] = $recipient;
       }
       $breadcrumb = array(l(t('Home'), ''), l('Private messages', 'privatemsg'));
       $output = _privatemsg_edit($edit);
       break;
-    case t("Move to folder"):
+    case t('Move to folder'):
       if ($edit["folder"] == 0 || db_result(db_query("SELECT fid FROM {privatemsg_folder} WHERE fid = '%d' AND uid = '%d'", $edit["folder"], $user->uid))) {
         // this folder belongs to him
         if ($msg) {
@@ -189,7 +189,7 @@ function privatemsg_page() {
 
       $output = _privatemsg_list();
       break;
-    case t("Delete messages"):
+    case t('Delete messages'):
       if ($msg) {
         foreach ($msg as $id) {
           _privatemsg_delete($id);
@@ -198,13 +198,13 @@ function privatemsg_page() {
       $output = _privatemsg_list();
       break;
 
-    case "delete";
+    case 'delete':
       _privatemsg_delete($arg);
       $output = _privatemsg_list();
       break;
 
-    case t("New folder"):
-    case t("Add folder"):
+    case t('New folder'):
+    case t('Add folder'):
       if ($edit["name"]) {
         // check for uniqueness
         if (!db_result(db_query("SELECT name FROM {privatemsg_folder} WHERE name = '%s' AND uid = '%d'", $edit["name"], $user->uid))) {
@@ -219,7 +219,7 @@ function privatemsg_page() {
       }
       break;
 
-    case t("Delete folder");
+    case t('Delete folder'):
       // check ownership
       if (db_result(db_query("SELECT fid FROM {privatemsg_folder} WHERE fid = '%d' AND uid = '%d'", $edit["current_folder"], $user->uid))) {
         db_query("DELETE FROM {privatemsg_folder} WHERE fid = '%d'", $edit["current_folder"]);
@@ -228,7 +228,7 @@ function privatemsg_page() {
 
       $output = _privatemsg_list();
       break;
-    case t("Empty folder");
+    case t('Empty folder'):
       $fid = $edit["current_folder"];
 
       if ($fid == 1) {
