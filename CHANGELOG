@@ -1,3 +1,9 @@
+26 March 2004
+-------------
+- Removed custom _form_submit in favor of "attributes" argument in core form_submit (jik)
+- Added optional "write to author" links under nodes/comments (modified patch by jik)
+- Minor code updates/cleanup
+
 9 December 2003
 ---------------
 - updated to function with latest menu system changes
