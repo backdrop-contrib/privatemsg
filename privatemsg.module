@@ -181,7 +181,7 @@ function privatemsg_page() {
     case 'view':
       $output = _privatemsg_view($arg);
       $title = t("Read message");
-      $breadcrumb = array(l(t('Home'), ''), l('Private messages', 'privatemsg'));
+      $breadcrumb = array(l(t('Home'), ''), l(t('private messages'), 'privatemsg'));
       break;
     case t('Write a new message'):
       $arg = "";
@@ -189,20 +189,20 @@ function privatemsg_page() {
     case 'reply':
       $output = _privatemsg_form($arg);
       $title = t("Write a new message");
-      $breadcrumb = array(l(t('Home'), ''), l('Private messages', 'privatemsg'));
+      $breadcrumb = array(l(t('Home'), ''), l(t('private messages'), 'privatemsg'));
       break;
     case 'msgto':
       $msg->name = db_result(db_query("SELECT name FROM {users} WHERE uid = '%d'", $arg));
       $output = _privatemsg_form($msg);
       $title = t("Write a new message");
-      $breadcrumb = array(l(t('Home'), ''), l('Private messages', 'privatemsg'));
+      $breadcrumb = array(l(t('Home'), ''), l(t('private messages'), 'privatemsg'));
       break;
     case 'send':
     case t('Send private message'):
       if (!$edit["recipient"]) {
         $edit["recipient"] = $recipient;
       }
-      $breadcrumb = array(l(t('Home'), ''), l('Private messages', 'privatemsg'));
+      $breadcrumb = array(l(t('Home'), ''), l(t('private messages'), 'privatemsg'));
       $output = _privatemsg_edit($edit);
       break;
     case t('Move to folder'):
