@@ -1,3 +1,10 @@
+21 Feburary 2002
+----------------
+- moved link to private messages to the user block.
+- added link to send messages to user info pages.
+- some XHTML changes.
+- user system has changed from $user->id to $user->uid.
+
 19 December 2001 "giuro che mi trattengo"
 --------------------------
 - sent messages; sender can delete unread messages (optional, see settings)

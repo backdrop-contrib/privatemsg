@@ -1,24 +1,38 @@
 <?php
 function privatemsg_link($type) {
-  if ($type == "page" && user_access("access private messages")) {
-    $links[] = "<A HREF=\"module.php?mod=privatemsg\">". t("private messages") ."</A>";
+  if ($type == "menu.view" && user_access("access private messages")) {
+    $links[] = "<a href=\"module.php?mod=privatemsg\">". t("view inbox") ."</a> (". _privatemsg_get_new_messages() .")";
   }
+  
+  if ($type == "menu.settings" && user_access("access private messages")) {
+    $links[] = "<a href=\"module.php?mod=privatemsg\">". t("private messages") ."</a>";
+  }
+
   return $links ? $links : array();
 }
 
+function privatemsg_user($type, $ahem, &$user) {
+  if (user_access("access private messages")) {
+	  if ($type == "view_public") {
+      $output .= form_item("Private message", "<a href=\"module.php?mod=privatemsg&page=formnew&uid=$user->uid\">send private message</a>");
+	  }
+	  
+	  return $output;
+	}
+}
 
 function privatemsg_block() {
   if (user_access("access private messages")) {
     if ($new_msg = _privatemsg_get_new_messages()) {
       if ($new_msg == 1) {
-        $content = '<B>'.t("You have 1 new message").'</B>';
+        $content = '<b>'.t("You have 1 new message").'</b>';
       } else {
-        $content = '<B>'.strtr(t("You have %a new messages"), array("%a" => $new_msg)).'</B>';
+        $content = '<b>'.strtr(t("You have %a new messages"), array("%a" => $new_msg)).'</b>';
       }
     } else {
       $content = t("Read your private messages");
     }
-    $content = "<DIV ALIGN=\"center\"><A HREF=\"module.php?mod=privatemsg\">$content</A><BR /><BR /><A HREF='module.php?mod=privatemsg&page=formnew'>".t("Write a new message")."</A></DIV>";
+    $content = "<div align=\"center\"><a href=\"module.php?mod=privatemsg\">$content</a><br /><br /><a href='module.php?mod=privatemsg&page=formnew'>".t("Write a new message")."</a></div>";
   } else {
     $content = t("Login to read your private messages");
   }
@@ -88,39 +102,39 @@ function _privatemsg_page_list($premessage='') {
     $premessage = "Messages deleted";
   }
   
-  $output = "<BR /><P ALIGN='center'><B><I>$premessage</I></B></P>";
-  $output .= "<FORM METHOD=\"POST\" NAME=\"messages\" ACTION=\"module.php?mod=privatemsg\">
-                <TABLE WIDTH=\"100%\" BORDER=\"0\">";
+  $output = "<br /><p align='center'><b><i>$premessage</i></b></p>";
+  $output .= "<form method=\"post\" name=\"messages\" action=\"module.php?mod=privatemsg\">
+                <table width=\"100%\" border=\"0\">";
   $output .= _privatemsg_folder_label(t("inbox"));
   $result = _privatemsg_messages_inbox($in_offset, $rows);
   $output .= $result["output"];
   
-  $output .= "<TR><TD COLSPAN=\"3\" ALIGN=\"left\">";
+  $output .= "<tr><td colspan=\"3\" align=\"left\">";
   if ($in_offset > 0) {
-    $output .= "<A HREF=\"module.php?mod=privatemsg&in_offset=".($in_offset-$rows)."&out_offset=$out_offset\">".t("Previous inbox messages")."</A> ";
+    $output .= "<a href=\"module.php?mod=privatemsg&in_offset=".($in_offset-$rows)."&out_offset=$out_offset\">".t("Previous inbox messages")."</a> ";
   }
-  $output .= "</TD><TD COLSPAN=\"2\" ALIGN=\"right\">";
+  $output .= "</td><td colspan=\"2\" align=\"right\">";
   if ($result["num_rows"] >= $rows) {
-    $output .= "<A HREF=\"module.php?mod=privatemsg&in_offset=".($in_offset+$rows)."&out_offset=$out_offset\">".t("Next inbox messages")."</A>";
+    $output .= "<a href=\"module.php?mod=privatemsg&in_offset=".($in_offset+$rows)."&out_offset=$out_offset\">".t("Next inbox messages")."</a>";
   }
-  $output .= "</TD></TR>";
+  $output .= "</td></tr>";
   
   $output .= _privatemsg_folder_label(t("outbox"));
   $result = _privatemsg_messages_sent($out_offset, $rows);
   $output .= $result["output"];
   
-  $output .= "<TR><TD COLSPAN=\"3\" ALIGN=\"left\">";
+  $output .= "<tr><td colspan=\"3\" align=\"left\">";
   if ($out_offset > 0) {
-    $output .= "<A HREF=\"module.php?mod=privatemsg&in_offset=$in_offset&out_offset=".($out_offset-$rows)."\">".t("Previous sent messages")."</A> ";
+    $output .= "<a href=\"module.php?mod=privatemsg&in_offset=$in_offset&out_offset=".($out_offset-$rows)."\">".t("Previous sent messages")."</a> ";
   }
-  $output .= "</TD><TD COLSPAN=\"2\" ALIGN=\"right\">";
+  $output .= "</td><td colspan=\"2\" align=\"right\">";
   if ($result["num_rows"] >= $rows) {
-    $output .= "<A HREF=\"module.php?mod=privatemsg&in_offset$=in_offset&out_offset=".($out_offset+$rows)."\">".t("Next sent messages")."</A>";
+    $output .= "<a href=\"module.php?mod=privatemsg&in_offset$=in_offset&out_offset=".($out_offset+$rows)."\">".t("Next sent messages")."</a>";
   }
-  $output .= "</TD></TR>";  
+  $output .= "</td></tr>";  
   
-  $output .= "</TABLE></FORM>";
-  $output .= "<P ALIGN='center'><A HREF='module.php?mod=privatemsg&page=formnew'>".t("Write a new message")."</A> - <A HREF='javascript:messages.submit()'  onClick='return confirm(\"".t("Are you sure to delete these messages?")."\")'>".t("Delete messages")."</A></P>";
+  $output .= "</table></form>";
+  $output .= "<p align='center'><a href='module.php?mod=privatemsg&page=formnew'>".t("Write a new message")."</a> - <a href='javascript:messages.submit()'  onClick='return confirm(\"".t("Are you sure to delete these messages?")."\")'>".t("Delete messages")."</a></p>";
 
   $theme->header();
   $theme->box(t("Private Messages"), $output);
@@ -129,7 +143,12 @@ function _privatemsg_page_list($premessage='') {
 
 
 function _privatemsg_page_formnew($premessage='', $edit='') {
-  global $theme;
+  global $theme, $uid;
+  
+  if (!$edit["recipient"] && $uid) {
+    $account = user_load(array("uid" => $uid));
+    $edit["recipient"] = $account->name;
+  }
   
   $form .= form_textfield("To", "recipient", $edit[recipient], 50, 64);
   $form .= form_textfield("Subject", "subject", $edit[subject], 50, 64);
@@ -137,7 +156,7 @@ function _privatemsg_page_formnew($premessage='', $edit='') {
   $form .= form_submit(t("Send private message"));  
   
   $theme->header();
-  $theme->box(t("Write a new message"), "<BR /><P ALIGN='center'><B><I>$premessage</I></B></P>".form("module.php?mod=privatemsg&page=send", $form));
+  $theme->box(t("Write a new message"), "<br /><p align='center'><b><i>$premessage</i></b></p>".form($form, "post", "module.php?mod=privatemsg&page=send"));
   $theme->footer();
 }
 
@@ -155,7 +174,7 @@ function _privatemsg_page_send() {
   
   if (!$edit["recipient"] || !$edit["subject"] || !$edit["message"]) {
     _privatemsg_page_formnew(t("Warning: every field required"), $edit);
-  } elseif ($recipient == $user->id) {
+  } elseif ($recipient == $user->uid) {
     _privatemsg_page_formnew(t("A message to yourself?"), $edit);
   } else {
     if ($recipient) {
@@ -165,7 +184,7 @@ function _privatemsg_page_send() {
       $sql = "
         INSERT INTO privatemsg
         (author, recipient, subject, message, timestamp, new, hostname)
-        VALUES (".$user->id.", ".$recipient.", '".check_input($edit['subject'])."', '".check_input($edit['message'])."', ".time().", 1, '". getenv("REMOTE_ADDR") ."')
+        VALUES (".$user->uid.", ".$recipient.", '".check_input($edit['subject'])."', '".check_input($edit['message'])."', ".time().", 1, '". getenv("REMOTE_ADDR") ."')
       ";
       $result = db_query($sql);
       _privatemsg_page_list(t("Message sent"));
@@ -182,36 +201,36 @@ function _privatemsg_page_view() {
   $sql = "
     SELECT privatemsg.id, name, author, privatemsg.timestamp, subject, message, new, recipient
     FROM privatemsg, users
-    WHERE ( recipient = ".$user->id." OR author = ".$user->id." )
-    AND author = users.id
+    WHERE ( recipient = ".$user->uid." OR author = ".$user->uid." )
+    AND author = users.uid
     AND privatemsg.id = ".check_input($message_id);
     
   $result = db_query($sql);
   $message = db_fetch_object($result);
   if ($message) {
-    if (($message->new) && ($user->id != $message->author)) {
+    if (($message->new) && ($user->uid != $message->author)) {
       $sql = "
         UPDATE privatemsg
         SET new = 0
-        WHERE recipient = ".$user->id."
+        WHERE recipient = ".$user->uid."
         AND id = ".check_input($message_id);
       $result = db_query($sql);
     }
     
     $body = "
-      <P><B>".t("From").":</B> ".check_output($message->name)."<BR />
-      <B>".t("Subject").":</B> ".check_output($message->subject)."<BR />
-      <B>".t("Date").":</B> ".format_date($message->timestamp)."</P>
+      <p><b>".t("From").":</b> ".check_output($message->name)."<br />
+      <b>".t("Subject").":</b> ".check_output($message->subject)."<br />
+      <b>".t("Date").":</b> ".format_date($message->timestamp)."</p>
       ".check_output($message->message, 1)."
-      <P ALIGN='center'>";
-    if ($message->recipient == $user->id) {
-      $body .= "<A HREF='module.php?mod=privatemsg&page=reply&message_id=$message->id'>".t("Reply to this message")."</A> - ";
+      <p align='center'>";
+    if ($message->recipient == $user->uid) {
+      $body .= "<a href='module.php?mod=privatemsg&page=reply&message_id=$message->id'>".t("Reply to this message")."</a> - ";
     }
-    if (($message->recipient == $user->id) || ((variable_get("privatemsg_sent_status", 1) && variable_get("privatemsg_del_unread", 1)) && ($message->new == 1))) {
-      $body .= "<A HREF='module.php?mod=privatemsg&page=delete&message_id=$message->id' onClick='return confirm(\"".t("Are you sure to delete this message?")."\")'>".t("Delete this message")."</A> - ";
+    if (($message->recipient == $user->uid) || ((variable_get("privatemsg_sent_status", 1) && variable_get("privatemsg_del_unread", 1)) && ($message->new == 1))) {
+      $body .= "<a href='module.php?mod=privatemsg&page=delete&message_id=$message->id' onClick='return confirm(\"".t("Are you sure to delete this message?")."\")'>".t("Delete this message")."</a> - ";
     }
       
-    $body .= "<A HREF='module.php?mod=privatemsg'>".t("List messages")."</A></P>";
+    $body .= "<a href='module.php?mod=privatemsg'>".t("List messages")."</a></p>";
   } else {
     $body = t("Error: you can't read this message");
   }
@@ -227,8 +246,8 @@ function _privatemsg_page_reply() {
   
   $sql = "
     SELECT name, subject, message  FROM privatemsg, users
-    WHERE recipient = ".$user->id." 
-    AND author = users.id
+    WHERE recipient = ".$user->uid." 
+    AND author = users.uid
     AND privatemsg.id = ".check_input($message_id);
     
   $result = db_query($sql);
@@ -267,7 +286,7 @@ function _privatemsg_page_delete() {
 */
 
 function _privatemsg_get_uid($recipient) {
-  $result = db_query("SELECT id FROM users WHERE name = '".check_input($recipient)."'");
+  $result = db_query("SELECT uid FROM users WHERE name = '".check_input($recipient)."'");
   return db_result($result);
 }
 
@@ -275,43 +294,43 @@ function _privatemsg_get_uid($recipient) {
 function _privatemsg_messages_inbox($offset=0, $rows=10) {
   global $user;
   
-  if ($user->id) {
+  if ($user->uid) {
     $result = db_query("
       SELECT privatemsg.id, name, privatemsg.timestamp, subject, new
       FROM privatemsg, users
-      WHERE recipient = ".$user->id." 
-      AND author = users.id
+      WHERE recipient = ".$user->uid." 
+      AND author = users.uid
       ORDER BY timestamp DESC
       LIMIT $offset, $rows
     ");
     
     while ($message = db_fetch_object($result)) {
       if ($message->new)
-        $new = '<B>'.t("new").'</B>';
+        $new = '<b>'.t("new").'</b>';
       else
         $new = '';
       $output .= "
-        <TR>
-          <TD WIDTH='2%'><INPUT TYPE='checkbox' NAME='msg_to_del[]' VALUE='$message->id'></TD>
-          <TD WIDTH='3%'>$new</TD>
-          <TD WIDTH='20%'>".format_date($message->timestamp, "small")."</TD>
-          <TD WIDTH='30%'>".format_name($message->name)."</A></TD>
-          <TD WIDTH='55%'><A HREF='module.php?mod=privatemsg&page=view&message_id=$message->id'>".check_output($message->subject)."</a></TD>
-        </TR>
+        <tr>
+          <td width='2%'><input type='checkbox' name='msg_to_del[]' value='$message->id'></td>
+          <td width='3%'>$new</td>
+          <td width='20%'>".format_date($message->timestamp, "small")."</td>
+          <td width='30%'>".format_name($message->name)."</a></td>
+          <td width='55%'><a href='module.php?mod=privatemsg&page=view&message_id=$message->id'>".check_output($message->subject)."</a></td>
+        </tr>
       ";
     }
     
     if (!$output)
-      $output = "<TR><TD COLSPAN=\"5\" ALIGN=\"center\">".t("No private messages")."</TD></TR>";
+      $output = "<tr><td colspan=\"5\" align=\"center\">".t("No private messages")."</td></tr>";
     else
       $output = '
-            <TR>
-              <TD WIDTH="2%"><B>'.t("del").'</B></TD>
-              <TD WIDTH="3%">&nbsp;</TD>
-              <TD WIDTH="20%"><B>'.t("date").'</B></TD>
-              <TD WIDTH="30%"><B>'.t("from").'</B></TD>
-              <TD WIDTH="55%"><B>'.t("subject").'</B></TD>
-            </TR>
+            <tr>
+              <td width="2%"><b>'.t("del").'</b></td>
+              <td width="3%">&nbsp;</td>
+              <td width="20%"><b>'.t("date").'</b></td>
+              <td width="30%"><b>'.t("from").'</b></td>
+              <td width="55%"><b>'.t("subject").'</b></td>
+            </tr>
             '.$output;
     return array("output" => $output, "num_rows" => db_num_rows($result));
   }
@@ -321,21 +340,21 @@ function _privatemsg_messages_inbox($offset=0, $rows=10) {
 function _privatemsg_messages_sent($offset=0, $rows=10) {
   global $user;
   
-  if ($user->id) {
+  if ($user->uid) {
     $result = db_query("
       SELECT privatemsg.id, name, privatemsg.timestamp, subject, new
       FROM privatemsg, users
-      WHERE author = ".$user->id." 
-      AND recipient = users.id
+      WHERE author = ".$user->uid." 
+      AND recipient = users.uid
       ORDER BY timestamp DESC
       LIMIT $offset, $rows
     ");
     
     while ($message = db_fetch_object($result)) {
         if (($message->new) && (variable_get("privatemsg_sent_status", 1))) {
-          $new = '<B>'.t("unread").'</B>';
+          $new = '<b>'.t("unread").'</b>';
           if (variable_get("privatemsg_del_unread", 1)) {
-            $checkbox = "<INPUT TYPE='checkbox' NAME='msg_to_del[]' VALUE='$message->id'>";
+            $checkbox = "<input type='checkbox' name='msg_to_del[]' value='$message->id'>";
           } else {
             $checkbox = "&nbsp;";
           }
@@ -344,27 +363,27 @@ function _privatemsg_messages_sent($offset=0, $rows=10) {
           $checkbox = "&nbsp;";
         }
       $output .= "
-        <TR>
-          <TD WIDTH='2%'>$checkbox</TD>
-          <TD WIDTH='3%'>$new</TD>
-          <TD WIDTH='20%'>".format_date($message->timestamp, "small")."</TD>
-          <TD WIDTH='30%'>".format_name($message->name)."</A></TD>
-          <TD WIDTH='55%'><A HREF='module.php?mod=privatemsg&page=view&message_id=$message->id'>".check_output($message->subject)."</a></TD>
-        </TR>
+        <tr>
+          <td width='2%'>$checkbox</td>
+          <td width='3%'>$new</td>
+          <td width='20%'>".format_date($message->timestamp, "small")."</td>
+          <td width='30%'>".format_name($message->name)."</a></td>
+          <td width='55%'><a href='module.php?mod=privatemsg&page=view&message_id=$message->id'>".check_output($message->subject)."</a></td>
+        </tr>
       ";
     }
     
     if (!$output)
-      $output = "<TR><TD COLSPAN=\"5\" ALIGN=\"center\">".t("No private messages sent")."</TD></TR>";
+      $output = "<tr><td colspan=\"5\" align=\"center\">".t("No private messages sent")."</td></tr>";
     else
       $output = '
-            <TR>
-              <TD WIDTH="2%"><B>'.((variable_get("privatemsg_del_unread", 1) && variable_get("privatemsg_sent_status", 1)) ? t("del") : "&nbsp;").'</B></TD>
-              <TD WIDTH="3%">&nbsp;</TD>
-              <TD WIDTH="20%"><B>'.t("date").'</B></TD>
-              <TD WIDTH="30%"><B>'.t("to").'</B></TD>
-              <TD WIDTH="55%"><B>'.t("subject").'</B></TD>
-            </TR>
+            <tr>
+              <td width="2%"><b>'.((variable_get("privatemsg_del_unread", 1) && variable_get("privatemsg_sent_status", 1)) ? t("del") : "&nbsp;").'</B></td>
+              <td width="3%">&nbsp;</td>
+              <td width="20%"><b>'.t("date").'</b></td>
+              <td width="30%"><b>'.t("to").'</b></td>
+              <td width="55%"><b>'.t("subject").'</b></td>
+            </tr>
             '.$output;
     return array("output" => $output, "num_rows" => db_num_rows($result));
   }
@@ -374,11 +393,11 @@ function _privatemsg_messages_sent($offset=0, $rows=10) {
 function _privatemsg_get_new_messages() {
   global $user;
   
-  if ($user->id) {
+  if ($user->uid) {
     $result = db_query("
         SELECT count(*)
         FROM privatemsg
-        WHERE recipient = ".$user->id."
+        WHERE recipient = ".$user->uid."
         AND new = 1
       ");
     return db_result($result);
@@ -392,7 +411,7 @@ function _privatemsg_message_delete($message_id) {
   global $user;
   $sql = "
     SELECT id FROM privatemsg
-    WHERE (recipient = ".$user->id." OR (author = ".$user->id." AND new = 1) )
+    WHERE (recipient = ".$user->uid." OR (author = ".$user->uid." AND new = 1) )
     AND privatemsg.id = ".check_input($message_id);
     
   $result = db_query($sql);
@@ -411,12 +430,12 @@ function _privatemsg_message_delete($message_id) {
 
 
 function _privatemsg_folder_label($label) {
-  return "<TR><TD COLSPAN=\"5\" ALIGN=\"center\"><B><I>$label</I></B></TD></TR>";
+  return "<tr><td colspan=\"5\" align=\"center\"><b><i>$label</i></b></td></tr>";
 }
 
 
 function _privatemsg_msg_navigator($in_offset, $out_offset, $rows) {
-  return "<TR><TD><A HREF=\"module.php?mod=privatemsg&in_offset=$in_offset&out_offset=$out_offset\">".t("Previous messages")."</A></TD><TD>&nbsp;</TD><TD>&nbsp;</TD><TD>&nbsp;</TD><TD><A HREF=\"module.php?mod=privatemsg&in_offset=$in_offset&out_offset=$out_offset\">".t("Next messages")."</A></TD></TR>";
+  return "<tr><td><a href=\"module.php?mod=privatemsg&in_offset=$in_offset&out_offset=$out_offset\">".t("Previous messages")."</a></td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td><a href=\"module.php?mod=privatemsg&in_offset=$in_offset&out_offset=$out_offset\">".t("Next messages")."</a></td></tr>";
 }
 
 ?>
