@@ -71,14 +71,14 @@ function _privatemsg_prune() {
 }
 
 function _privatemsg_mailalert() {
+  global $base_url;
+  
   $result = db_query("SELECT COUNT(*) AS c, recipient FROM privatemsg WHERE new = 1 AND recipient_del = 0 GROUP BY recipient");
-  
-  $uri = path_uri();
-  
+    
   while ($alert = db_fetch_object($result)) {
     $user = user_load(array("uid" => $alert->recipient));
     if ($user->privatemsg_mailalert) {
-      user_mail($user->mail, t("You have unread messages"), t("Hi %name,\nthis is an automatic reminder from the site %site. You have %new unread private messages.\n\nTo read your messages, follow this link:\n%link1\n\nIf you don't want to receive these email again, change your preferences here:\n%link2\n\n", array("%name" => $user->name, "%site" => $uri, "%link1" => $uri.drupal_url(array("mod" => "privatemsg")), "%link2" => $uri.drupal_url(array("mod" => "user", "op" => "edit")))));
+      user_mail($user->mail, t("You have unread messages"), t("Hi %name,\nthis is an automatic reminder from the site %site. You have %new unread private messages.\n\nTo read your messages, follow this link:\n%link1\n\nIf you don't want to receive these email again, change your preferences here:\n%link2\n\n", array("%name" => $user->name, "%site" => $base_url, "%link1" => "$base_url/privatemsg", "%link2" => "$base_url/user/edit")));
     }
   }
 }
