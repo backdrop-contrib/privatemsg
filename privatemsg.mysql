@@ -38,3 +38,11 @@ CREATE TABLE privatemsg_archive (
   folder        INT UNSIGNED NOT NULL,
   key (recipient)
 );
+
+-- from here if you are upgrading (20050429)
+
+ALTER TABLE privatemsg CHANGE new newmsg tinyint UNSIGNED NOT NULL;
+ALTER TABLE privatemsg ADD format int(4) NOT NULL DEFAULT '0';
+ALTER TABLE privatemsg_archive ADD format int(4) NOT NULL DEFAULT '0';
+UPDATE privatemsg SET format=1;
+UPDATE privatemsg_archive SET format=1;

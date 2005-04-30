@@ -1,3 +1,9 @@
+30 April 2005
+-------------
+- Added pager to message lists
+- Added PostgreSQL support
+- Use input formats for private messages (allow HTML in messages)
+
 26 March 2004
 -------------
 - Removed custom _form_submit in favor of "attributes" argument in core form_submit (jik)
