@@ -278,7 +278,7 @@ function privatemsg_page() {
   }
   drupal_set_title($title);
   drupal_set_breadcrumb($breadcrumb);
-  print theme('page', $output);
+  return $output;
 
 }
 
