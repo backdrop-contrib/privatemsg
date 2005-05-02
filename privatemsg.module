@@ -331,7 +331,7 @@ function _privatemsg_form($message = 0) {
 
   if ($message) {
     if (!is_object($message)) {
-      $message = db_fetch_object(db_query("SELECT subject, message, u.name FROM {privatemsg} p, {users} u WHERE u.uid = p.author AND id = '%d' AND recipient = '%d'", $message, $user->uid));
+      $message = db_fetch_object(db_query("SELECT subject, message, u.name AS recipient FROM {privatemsg} p, {users} u WHERE u.uid = p.author AND id = '%d' AND recipient = '%d'", $message, $user->uid));
 
       if (!stristr($message->subject, t("Re:"))) {
         $message->subject = t("Re:").' '.$message->subject;
