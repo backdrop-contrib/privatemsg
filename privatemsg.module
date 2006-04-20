@@ -463,7 +463,7 @@ function _privatemsg_edit($edit) {
 
   if ($edit['recipient'] == '') {
     form_set_error('recipient', t('The <em>Recipient</em> field is required.'));
-    return _privatemsg_form(array2object($edit));
+    return _privatemsg_form((object)($edit));
   }
   else {
     $recipient = user_load(array('name' => $edit['recipient']));
@@ -471,23 +471,23 @@ function _privatemsg_edit($edit) {
   
   if (!$recipient->uid) {
     form_set_error('recipient', t('The <em>Recipient</em> does not exist.'));
-    return _privatemsg_form(array2object($edit));
+    return _privatemsg_form((object)($edit));
   }
   else if (!(isset($recipient->privatemsg_allow) ? $recipient->privatemsg_allow : 1)) {
     form_set_error('recipient', t('%name does not accept private messages.', array('%name' => $recipient->name)));
-    return _privatemsg_form(array2object($edit));
+    return _privatemsg_form((object)($edit));
   }
   else if ($edit['subject'] == '') {
     form_set_error('subject', t('The <em>Subject</em> field is required.'));
-    return _privatemsg_form(array2object($edit));
+    return _privatemsg_form((object)($edit));
   }
   if ($edit['message'] == '') {
     form_set_error('message', t('The <em>Message</em> field is required.'));
-    return _privatemsg_form(array2object($edit));
+    return _privatemsg_form((object)($edit));
   }
   else if (array_key_exists('format', $edit) && !filter_access($edit['format'])) {
     form_set_error('format', t('The supplied input format is invalid.'));
-    return _privatemsg_form(array2object($edit));
+    return _privatemsg_form((object)($edit));
   }
   else {
     $result = db_query("INSERT INTO {privatemsg} (author, recipient, subject, message, timestamp, newmsg, hostname, format) VALUES ('%d', '%d', '%s', '%s', '%d', '%d', '%s', '%d')", $user->uid, $recipient->uid, $edit['subject'], $edit['message'], time(), 1, getenv("REMOTE_ADDR"), $edit['format']);
