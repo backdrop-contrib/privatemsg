@@ -583,12 +583,14 @@ function theme_privatemsg_view($message) {
   global $user;
 
   if ($message) {
-    $body = "
-      <p><strong>".t("From").":</strong> ". theme('username', $message) ."<br />
-      <strong>".t("To").":</strong> ". theme('username', user_load(array('uid' => $message->recipient))) ."<br />
-      <strong>".t("Subject").":</strong> ".check_plain($message->subject) ."<br />
-      <strong>".t("Date").":</strong> ". format_date($message->timestamp) ."</p>
-      ". check_markup($message->message, $message->format, FALSE);
+    $body = '
+      <p><strong>'.t('From').':</strong> '. theme('username', $message) .'<br />
+      <strong>'.t('To').':</strong> '. theme('username', user_load(array('uid' => $message->recipient))) .'<br />
+      <strong>'.t('Subject').':</strong> '.check_plain($message->subject) .'<br />
+      <strong>'.t('Date').':</strong> '. format_date($message->timestamp) .'</p>
+       <div class="privatemsgbody">
+      '. check_markup($message->message, $message->format, FALSE).
+      '</div>';
     $links = array();
     if ($message->recipient == $user->uid) {
       $links[] = l(t('Reply to this message'), "privatemsg/reply/$message->id");
