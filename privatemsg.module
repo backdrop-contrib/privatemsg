@@ -42,7 +42,7 @@ function privatemsg_menu($may_cache) {
   }
   else {
     $items[] = array('path' => 'privatemsg',
-                     'title' => t('view inbox') . ' ('. (int)_privatemsg_get_new_messages() .')',
+                     'title' => t('my inbox') . ' ('. (int)_privatemsg_get_new_messages() .')',
                      'callback' => 'privatemsg_page',
                      'access' => user_access('access private messages'),
                      'type' => (isset($user->privatemsg_allow) ? $user->privatemsg_allow : 1) ? MENU_DYNAMIC_ITEM : MENU_CALLBACK);
