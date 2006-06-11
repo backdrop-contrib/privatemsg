@@ -1,0 +1,289 @@
+# LANGUAGE translation of Drupal (privatemsg.module)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from file: privatemsg.module,v 1.46.2.2 2005/05/02 17:27:16 tdobes
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2005-11-13 23:26+0800\n"
+"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
+"Last-Translator: NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: privatemsg.module:10
+msgid "Allows private messages between users."
+msgstr "允许用户间发送私人消息"
+
+#: privatemsg.module:20
+msgid "write to author"
+msgstr ""
+
+#: privatemsg.module:34
+msgid "view inbox"
+msgstr "查看收件箱"
+
+#: privatemsg.module:49;56;59
+msgid "History"
+msgstr ""
+
+#: privatemsg.module:49;56;59;179;276
+msgid "Private messages"
+msgstr "私人消息"
+
+#: privatemsg.module:49
+msgid "send private message"
+msgstr "发送私人消息"
+
+#: privatemsg.module:56
+msgid "<a href=\"%login\">login</a> or <a href=\"%register\">register</a> to send private messages to this user"
+msgstr ""
+
+#: privatemsg.module:59
+msgid "<a href=\"%login\">login</a> to send private messages to this user"
+msgstr ""
+
+#: privatemsg.module:67
+msgid "Allow private messages"
+msgstr ""
+
+#: privatemsg.module:67
+msgid "Check this box to allow users to send you private messages."
+msgstr ""
+
+#: privatemsg.module:68
+msgid "Receive daily e-mail for unread messages"
+msgstr ""
+
+#: privatemsg.module:68
+msgid "Check this box to receive e-mail notification for unread messages. Only one e-mail will be sent per day."
+msgstr ""
+
+#: privatemsg.module:69
+msgid "Private message settings"
+msgstr "私人消息设置"
+
+#: privatemsg.module:79
+msgid "Private messaging max rate"
+msgstr "消息发送频率"
+
+#: privatemsg.module:79
+msgid "Max submit rate for private messaging. To prevent abuse."
+msgstr "消息发送的最大频率。避免该功能被滥用。"
+
+#: privatemsg.module:80
+msgid "Sent message status"
+msgstr ""
+
+#: privatemsg.module:80
+msgid "Disabled"
+msgstr "禁止"
+
+#: privatemsg.module:80
+msgid "Enabled"
+msgstr "允许"
+
+#: privatemsg.module:80
+msgid "If enabled users can see whether a message has been read or not."
+msgstr "如果允许该功能，用户能看到消息是否被阅读"
+
+#: privatemsg.module:82
+msgid "Messages per page"
+msgstr "每页消息数"
+
+#: privatemsg.module:82
+msgid "The maximum number of messages displayed per page; links to browse messages automatically appear."
+msgstr "每页显示的最大消息数。"
+
+#: privatemsg.module:84
+msgid "Display link with posts"
+msgstr ""
+
+#: privatemsg.module:84
+msgid "Provide a link to send private messages to users with posts they start."
+msgstr ""
+
+#: privatemsg.module:85
+msgid "Display link with comments"
+msgstr ""
+
+#: privatemsg.module:85
+msgid "Provide a link to send private messages to users with their comments."
+msgstr ""
+
+#: privatemsg.module:86
+msgid "\"Write to author\" links"
+msgstr ""
+
+#: privatemsg.module:144
+msgid "New private messages at %site."
+msgstr ""
+
+#: privatemsg.module:145
+msgid "Hi %name,\nThis is an automatic reminder from the site %site. You have %new unread private messages.\n\nTo read your messages, follow this link:\n%link1\n\nIf you don't want to receive these email again, change your preferences here:\n%link2"
+msgstr ""
+
+#: privatemsg.module:183
+msgid "Read message"
+msgstr "阅读消息"
+
+#: privatemsg.module:184;192;198;205;247
+msgid "Home"
+msgstr ""
+
+#: privatemsg.module:184;192;198;205
+msgid "private messages"
+msgstr "私人消息"
+
+#: privatemsg.module:186;191;197;563
+msgid "Write a new message"
+msgstr "撰写新消息"
+
+#: privatemsg.module:201;368
+msgid "Send private message"
+msgstr "发送私人消息"
+
+#: privatemsg.module:208;576
+msgid "Move to folder"
+msgstr ""
+
+#: privatemsg.module:222;565
+msgid "Delete messages"
+msgstr "删除消息"
+
+#: privatemsg.module:236;588
+msgid "New folder"
+msgstr "增加新的文件夹"
+
+#: privatemsg.module:237;454
+msgid "Add folder"
+msgstr "增加文件夹"
+
+#: privatemsg.module:246
+msgid "Create new folder"
+msgstr "创建新的文件夹"
+
+#: privatemsg.module:252;582
+msgid "Delete folder"
+msgstr "删除文件夹"
+
+#: privatemsg.module:261;585
+msgid "Empty folder"
+msgstr "清空文件夹"
+
+#: privatemsg.module:295;310
+msgid "Inbox"
+msgstr "收件箱"
+
+#: privatemsg.module:302;315
+msgid "Sent messages"
+msgstr "发送消息"
+
+#: privatemsg.module:336;337
+msgid "Re:"
+msgstr "回复："
+
+#: privatemsg.module:356;482;552
+msgid "To"
+msgstr "收件人"
+
+#: privatemsg.module:357
+msgid "contacts"
+msgstr ""
+
+#: privatemsg.module:365;483;553
+msgid "Subject"
+msgstr "主题"
+
+#: privatemsg.module:366
+msgid "Message"
+msgstr "消息"
+
+#: privatemsg.module:377
+msgid "The <em>Recipient</em> field is required."
+msgstr ""
+
+#: privatemsg.module:385
+msgid "The <em>Recipient</em> does not exist."
+msgstr "<em>收件人</em>不存在。"
+
+#: privatemsg.module:389
+msgid "%name does not accept private messages."
+msgstr "%name 不接受私人消息"
+
+#: privatemsg.module:393
+msgid "The <em>Subject</em> field is required."
+msgstr ""
+
+#: privatemsg.module:397
+msgid "The <em>Message</em> field is required."
+msgstr ""
+
+#: privatemsg.module:401
+msgid "The supplied input format is invalid."
+msgstr ""
+
+#: privatemsg.module:406
+msgid "Message sent."
+msgstr ""
+
+#: privatemsg.module:453
+msgid "Name"
+msgstr "名称"
+
+#: privatemsg.module:481;552
+msgid "From"
+msgstr "发件人"
+
+#: privatemsg.module:484;551
+msgid "Date"
+msgstr "日期"
+
+#: privatemsg.module:488
+msgid "Reply to this message"
+msgstr "回复该消息"
+
+#: privatemsg.module:491
+msgid "Delete this message"
+msgstr "删除该消息"
+
+#: privatemsg.module:491
+msgid "Are you sure to delete this message?"
+msgstr "你真的要删除该消息吗？"
+
+#: privatemsg.module:494
+msgid "List messages"
+msgstr "消息列表"
+
+#: privatemsg.module:498
+msgid "Error: you can't read this message"
+msgstr "错误：不能阅读该消息"
+
+#: privatemsg.module:546
+msgid "<p>No messages</p>"
+msgstr "无消息"
+
+#: privatemsg.module:565
+msgid "Are you sure you want to delete these messages?"
+msgstr "你确认删除该消息吗？"
+
+#: privatemsg.module:582
+msgid "Are you sure you want to delete this folder and all its messages?"
+msgstr "你确认删除该文件夹及其所有消息吗？"
+
+#: privatemsg.module:585
+msgid "Are you sure you want to delete every message in this folder?"
+msgstr "你确认删除该文件夹的所有消息吗？"
+
+#: privatemsg.module:95
+msgid "access private messages"
+msgstr "访问私人消息"
+
+#: privatemsg.module:0
+msgid "privatemsg"
+msgstr "私人消息"
+
