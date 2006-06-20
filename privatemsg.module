@@ -505,7 +505,7 @@ function _privatemsg_edit($edit) {
   else {
     $result = db_query("INSERT INTO {privatemsg} (author, recipient, subject, message, timestamp, newmsg, hostname, format) VALUES ('%d', '%d', '%s', '%s', '%d', '%d', '%s', '%d')", $user->uid, $recipient->uid, $edit['subject'], $edit['privatemsgbody'], time(), 1, getenv("REMOTE_ADDR"), $edit['format']);
     drupal_set_message(t('Message sent.'));
-    return _privatemsg_list();
+    drupal_goto('privatemsg');
   }
 }
 
