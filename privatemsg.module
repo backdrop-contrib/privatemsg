@@ -603,7 +603,13 @@ function theme_privatemsg_view($message) {
       '</div>';
     $links = array();
     if ($message->recipient == $user->uid) {
-      $links[] = l(t('Reply to this message'), "privatemsg/reply/$message->id");
+      $author = user_load(array('uid' => $message->uid));
+      if (isset($author->privatemsg_allow) ? $author->privatemsg_allow : 1) {
+        $links[] = l(t('Reply to this message'), "privatemsg/reply/$message->id");
+      }
+      else {
+        $links[] = t('Sender does not accept replies');
+      }
     }
     if (($message->recipient == $user->uid) || (variable_get("privatemsg_sent_status", 1))) {
       $links[] = l(t('Delete this message'), "privatemsg/delete/$message->id", array('onClick' => "return confirm('".t('Are you sure to delete this message?')."')"));
