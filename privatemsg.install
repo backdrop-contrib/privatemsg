@@ -14,7 +14,7 @@ function privatemsg_install() {
           timestamp     int(11) unsigned NOT NULL,
           newmsg        tinyint unsigned NOT NULL,
           hostname      varchar(255) NOT NULL,
-          folder        int(10) unsigned NOT NULL,
+          folder        int(10) unsigned NOT NULL DEFAULT '0',
           author_del    tinyint unsigned NOT NULL,
           recipient_del tinyint unsigned NOT NULL,
           format        int(4) NOT NULL DEFAULT '0',
