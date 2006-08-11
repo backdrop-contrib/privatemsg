@@ -30,7 +30,7 @@ function privatemsg_link($type, $node = 0, $main = 0) {
   if (user_access('access private messages') && ($type == 'node' || $type == 'comment') && variable_get("privatemsg_link_$type", 0) && (isset($user->privatemsg_allow) ? $user->privatemsg_allow : 1)) {
     if (!isset($access[$node->uid])) {
       $author = user_load(array('uid' => $node->uid));
-      $access[$node->uid] = user_access('access private messages', $author) && (isset($author->privatemsg_allow) ? $author->privatemsg_allow : 1);
+      $access[$node->uid] = user_access('access private messages', $author) && $author->uid && (isset($author->privatemsg_allow) ? $author->privatemsg_allow : 1);
     }
     if ($access[$node->uid]) {
       return array(l(t('write to author'), "privatemsg/msgto/$node->uid"));
@@ -55,7 +55,7 @@ function privatemsg_menu($may_cache) {
                      'title' => t('my inbox') . ' ('. (int)_privatemsg_get_new_messages() .')',
                      'callback' => 'privatemsg_page',
                      'access' => user_access('access private messages'),
-                     'type' => (isset($user->privatemsg_allow) ? $user->privatemsg_allow : 1) ? MENU_DYNAMIC_ITEM : MENU_CALLBACK);
+                     'type' => $user->uid && (isset($user->privatemsg_allow) ? $user->privatemsg_allow : 1) ? MENU_DYNAMIC_ITEM : MENU_CALLBACK);
   }
   return $items;
 }
@@ -253,6 +253,11 @@ function privatemsg_page() {
   }
   $arg = arg(2);
 
+  if (!$user->uid && !in_array($op, array('form', 'msgto', 'send', t('Send private message')))) {
+    // If guest is given access to privatemsg, only allow sending messages
+    return drupal_access_denied();
+  }
+
   switch ($op) {
     case 'list':
       $output = _privatemsg_list($arg);
@@ -360,7 +365,6 @@ function privatemsg_page() {
   drupal_set_title($title);
   drupal_set_breadcrumb($breadcrumb);
   return $output;
-
 }
 
 function _privatemsg_list($current_folder = 0) {
@@ -505,7 +509,7 @@ function _privatemsg_edit($edit) {
   else {
     $result = db_query("INSERT INTO {privatemsg} (author, recipient, subject, message, timestamp, newmsg, hostname, format) VALUES ('%d', '%d', '%s', '%s', '%d', '%d', '%s', '%d')", $user->uid, $recipient->uid, $edit['subject'], $edit['privatemsgbody'], time(), 1, getenv("REMOTE_ADDR"), $edit['format']);
     drupal_set_message(t('Message sent.'));
-    drupal_goto('privatemsg');
+    drupal_goto($user->uid ? 'privatemsg' : '');
   }
 }
 
@@ -604,7 +608,7 @@ function theme_privatemsg_view($message) {
     $links = array();
     if ($message->recipient == $user->uid) {
       $author = user_load(array('uid' => $message->uid));
-      if (isset($author->privatemsg_allow) ? $author->privatemsg_allow : 1) {
+      if ($author->uid && (isset($author->privatemsg_allow) ? $author->privatemsg_allow : 1)) {
         $links[] = l(t('Reply to this message'), "privatemsg/reply/$message->id");
       }
       else {
