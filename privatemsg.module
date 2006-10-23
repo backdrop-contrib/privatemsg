@@ -51,11 +51,16 @@ function privatemsg_menu($may_cache) {
         'callback' => 'privatemsg_configure');
   }
   else {
+    $new = (int)_privatemsg_get_new_messages();
     $items[] = array('path' => 'privatemsg',
-                     'title' => t('my inbox') . ' ('. (int)_privatemsg_get_new_messages() .')',
+                     'title' => t('my inbox') . ($new ? ' ('. $new .')' : ''),
                      'callback' => 'privatemsg_page',
                      'access' => user_access('access private messages'),
                      'type' => $user->uid && (isset($user->privatemsg_allow) ? $user->privatemsg_allow : 1) ? MENU_DYNAMIC_ITEM : MENU_CALLBACK);
+
+    if ($new && (isset($user->privatemsg_setmessage_notify) ? $user->privatemsg_setmessage_notify : 1)) {
+      drupal_set_message(strtr(format_plural($new, 'You have one new <a href="%url">private message</a>', 'You have %count new <a href="%url">private messages</a>'), array('%url' => url('privatemsg'))));
+    }
   }
   return $items;
 }
@@ -102,6 +107,12 @@ function privatemsg_user($type, &$edit, &$user, $category = NULL) {
             '#title' => t('Allow private messages'),
             '#default_value' => isset($edit['privatemsg_allow']) ? $edit['privatemsg_allow'] : 1,
             '#description' => t('Check this box to allow users to send you private messages.')
+            );
+        $form['privatemsg_settings']['privatemsg_setmessage_notify'] = array(
+            '#type' => 'checkbox',
+            '#title' => t('Aggressive notification of new messages'),
+            '#default_value' => isset($edit['privatemsg_setmessage_notify']) ? $edit['privatemsg_setmessage_notify'] : 1,
+            '#description' => t('Show status message on every page until new messages are read.')
             );
         $form['privatemsg_settings']['privatemsg_mailalert'] = array(
             '#type' => 'checkbox',
