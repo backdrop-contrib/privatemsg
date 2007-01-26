@@ -60,6 +60,11 @@ function privatemsg_menu($may_cache) {
                      'callback' => 'privatemsg_page',
                      'access' => user_access('access private messages'),
                      'type' => $user->uid && (isset($user->privatemsg_allow) ? $user->privatemsg_allow : 1) ? MENU_DYNAMIC_ITEM : MENU_CALLBACK);
+    $items[] = array('path' => 'privatemsg/autocomplete',
+                     'title' => t('privatemsg autocomplete'),
+                     'callback' => 'privatemsg_autocomplete',
+                     'access' => user_access('access private messages'),
+                     'type' => MENU_CALLBACK);
 
     if ($new && (isset($user->privatemsg_setmessage_notify) ? $user->privatemsg_setmessage_notify : 1)) {
       $m = drupal_set_message();
@@ -267,6 +272,16 @@ If you don\'t want to receive these emails again, change your preferences here:
   $locale = $save_locale;
 }
 
+function privatemsg_autocomplete($string) {
+  $matches = array();
+  $result = db_query_range("SELECT name FROM {users} u WHERE LOWER(name) LIKE LOWER('%s%%') AND data NOT LIKE '%\"privatemsg_allow\";s:0%'", $string, 0, 10);
+  while ($user = db_fetch_object($result)) {
+    $matches[$user->name] = check_plain($user->name);
+  }
+  print drupal_to_js($matches);
+  exit();
+}
+
 function privatemsg_page() {
   global $user;
 
@@ -467,8 +482,9 @@ function _privatemsg_form($message = 0) {
   $form['recipient'] = array(
       '#prefix' => '<div class="container-inline">',
       '#type' => 'textfield',
-      '#title' => t("To"),
+      '#title' => t('To'),
       '#default_value' => $message->recipient,
+      '#autocomplete_path' => 'privatemsg/autocomplete',
       '#size' => 50,
       '#maxlength' => 64
       );
