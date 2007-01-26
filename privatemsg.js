@@ -7,6 +7,7 @@ function privatemsgContactFill() {
     $('edit-quick').style.display = '';
     $('edit-quick').onchange = function() {
       $('edit-recipient').value = $('edit-quick').value;
+      $('edit-quick').selectedIndex = 0;
     };
   }
 }
