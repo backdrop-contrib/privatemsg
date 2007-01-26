@@ -1,5 +1,8 @@
 <?php
 // $Id$
+define('PRIVATEMSG_MAIL_NONE', 0);
+define('PRIVATEMSG_MAIL_DIGEST', 1);
+define('PRIVATEMSG_MAIL_INDIVIDUAL', 2);
 
 /**
  * Implementation of hook_help().
@@ -118,10 +121,11 @@ function privatemsg_user($type, &$edit, &$user, $category = NULL) {
             '#description' => t('Show status message on every page until new messages are read.')
             );
         $form['privatemsg_settings']['privatemsg_mailalert'] = array(
-            '#type' => 'checkbox',
-            '#title' => t('Receive daily e-mail for unread messages'),
-            '#default_value' => isset($edit['privatemsg_mailalert']) ? $edit['privatemsg_mailalert'] : 0,
-            '#description' => t('Check this box to receive e-mail notification for unread messages. Only one e-mail will be sent per day.')
+            '#type' => 'radios',
+            '#title' => t('Receive e-mail for unread messages'),
+            '#options' => array(PRIVATEMSG_MAIL_NONE => t('Never'), PRIVATEMSG_MAIL_DIGEST => t('Daily'), PRIVATEMSG_MAIL_INDIVIDUAL => t('Every message')),
+            '#default_value' => isset($edit['privatemsg_mailalert']) ? $edit['privatemsg_mailalert'] : PRIVATEMSG_MAIL_NONE,
+            '#description' => t('Select when to receive e-mail notification for unread messages.')
             );
 
         return $form;
@@ -211,41 +215,56 @@ function _privatemsg_prune() {
 }
 
 function _privatemsg_mailalert() {
-  global $locale;
-  $initial_locale = $locale;
-  if (function_exists('locale')) {
-    $languages = locale_supported_languages();
-    $languages = $languages['name'];
-  }
-
-  $from = variable_get('site_mail', ini_get('sendmail_from'));
   $result = db_query('SELECT COUNT(*) AS c, recipient FROM {privatemsg} WHERE newmsg = 1 AND recipient_del = 0 GROUP BY recipient');
 
   while ($alert = db_fetch_object($result)) {
     $user = user_load(array('uid' => $alert->recipient));
 
-    if ((isset($user->privatemsg_allow) ? $user->privatemsg_allow : 1) && (isset($user->privatemsg_mailalert) ? $user->privatemsg_mailalert : 0) && $user->status != 0) {
-      // use each user's individual locale
-      if (function_exists('locale') && $languages[$user->language]) {
-        $locale = $user->language;
-      }
+    if ((isset($user->privatemsg_allow) ? $user->privatemsg_allow : 1) && isset($user->privatemsg_mailalert) && $user->privatemsg_mailalert == PRIVATEMSG_MAIL_DIGEST && $user->status != 0) {
+      _privatemsg_sendmail($user, $alert->c);
+    }
+  }
+}
 
-      $subject = t('New private messages at %site.', array('%site' => variable_get('site_name', 'drupal')));
-      $message = t('Hi %name,
-This is an automatic reminder from the site %site. You have %new unread private messages.
+function _privatemsg_sendmail($user, $new_count) {
+  global $locale;
+  static $from, $languages;
+  if (!isset($from)) {
+    $from = variable_get('site_mail', ini_get('sendmail_from'));
+    $languages = array();
+    if (function_exists('locale')) {
+      $languages = locale_supported_languages();
+      $languages = $languages['name'];
+    }
+  }
+  $save_locale = $locale;
+
+  // use each user's individual locale
+  if (isset($languages[$user->language])) {
+    $locale = $user->language;
+  }
+
+  $subject = t('New private messages at %site.', array('%site' => variable_get('site_name', 'drupal')));
+  $message = strtr(format_plural($new_count, 'Hi %name,
+This is an automatic reminder from the site %site. You have received a new private message.
+
+To read your message, follow this link:
+%link1
+
+If you don\'t want to receive these emails again, change your preferences here:
+%link2', 'Hi %name,
+This is an automatic reminder from the site %site. You have %count unread private messages.
 
 To read your messages, follow this link:
 %link1
 
 If you don\'t want to receive these emails again, change your preferences here:
-%link2', array('%name' => $user->name, '%site' => variable_get('site_name', 'drupal'), '%new' => $alert->c, '%link1' => url('user/login', 'destination=privatemsg', NULL, 1), '%link2' => url('user/'. $user->uid .'/edit', NULL, NULL, 1)));
+%link2'), array('%name' => $user->name, '%site' => variable_get('site_name', 'drupal'), '%link1' => url('user/login', 'destination=privatemsg', NULL, 1), '%link2' => url('user/'. $user->uid .'/edit', NULL, NULL, 1)));
 
-      user_mail($user->mail, $subject, $message, "From: $from\nReply-to: $from\nX-Mailer: Drupal\nReturn-path: $from\nErrors-to: $from");
+  user_mail($user->mail, $subject, $message, "From: $from\nReply-to: $from\nX-Mailer: Drupal\nReturn-path: $from\nErrors-to: $from");
 
-      // revert to previous (site default) locale
-      $locale = $initial_locale;
-    }
-  }
+  // revert to previous (site default) locale
+  $locale = $save_locale;
 }
 
 function privatemsg_page() {
@@ -531,20 +550,24 @@ function _privatemsg_edit($edit) {
     return _privatemsg_form((object)$edit);
   }
   else {
-    $result = _privatemsg_send($user->uid, $recipient->uid, $edit['subject'], $edit['privatemsgbody'], $edit['format']);
+    $result = _privatemsg_send($user, $recipient, $edit['subject'], $edit['privatemsgbody'], $edit['format']);
     drupal_set_message(t('Message sent.'));
     drupal_goto($user->uid ? 'privatemsg' : '');
   }
 }
 
 // API callable from other modules:
-function privatemsg_send($recipient_uid, $subject, $body, $format = FILTER_FORMAT_DEFAULT) {
+function privatemsg_send($recipient, $subject, $body, $format = FILTER_FORMAT_DEFAULT) {
   global $user;
-  return _privatemsg_send($user->uid, $recipient_uid, $subject, $body, $format);
+  return _privatemsg_send($user, $recipient, $subject, $body, $format);
 }
 
-function _privatemsg_send($sender_uid, $recipient_uid, $subject, $body, $format) {
-  return db_query("INSERT INTO {privatemsg} (author, recipient, subject, message, timestamp, newmsg, hostname, format) VALUES ('%d', '%d', '%s', '%s', '%d', '%d', '%s', '%d')", $sender_uid, $recipient_uid, $subject, $body, time(), 1, getenv('REMOTE_ADDR'), $format);
+function _privatemsg_send($sender, $recipient, $subject, $body, $format) {
+  $result = db_query("INSERT INTO {privatemsg} (author, recipient, subject, message, timestamp, newmsg, hostname, format) VALUES ('%d', '%d', '%s', '%s', '%d', '%d', '%s', '%d')", $sender->uid, $recipient->uid, $subject, $body, time(), 1, getenv('REMOTE_ADDR'), $format);
+  if ($result !== false && isset($recipient->privatemsg_mailalert) && $recipient->privatemsg_mailalert == PRIVATEMSG_MAIL_INDIVIDUAL) {
+    _privatemsg_sendmail($recipient, 1);
+  }
+  return $result;
 }
 
 function _privatemsg_view($message_id) {
