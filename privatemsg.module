@@ -237,7 +237,7 @@ This is an automatic reminder from the site %site. You have %new unread private 
 To read your messages, follow this link:
 %link1
 
-If you don\'t want to receive these email again, change your preferences here:
+If you don\'t want to receive these emails again, change your preferences here:
 %link2', array('%name' => $user->name, '%site' => variable_get('site_name', 'drupal'), '%new' => $alert->c, '%link1' => url('user/login', 'destination=privatemsg', NULL, 1), '%link2' => url('user/'. $user->uid .'/edit', NULL, NULL, 1)));
 
       user_mail($user->mail, $subject, $message, "From: $from\nReply-to: $from\nX-Mailer: Drupal\nReturn-path: $from\nErrors-to: $from");
