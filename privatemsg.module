@@ -458,6 +458,16 @@ function _privatemsg_form($message = 0) {
   while ($name = db_fetch_object($result)) {
     $contacts[] = check_plain($name->name);
   }
+  if (module_exist('buddylist')) {
+    $result = db_query("SELECT u.name FROM {buddylist} b, {users} u WHERE b.buddy = u.uid AND b.uid = '%d'", $user->uid);
+    while ($name = db_fetch_object($result)) {
+      $buddyname = check_plain($name->name);
+      if (!in_array($buddyname, $contacts)) {
+        $contacts[] = $buddyname;
+      }
+    }
+    sort($contacts);
+  }
   $form['quick'] = array(
       '#type' => 'select',
       '#options' => drupal_map_assoc($contacts),
