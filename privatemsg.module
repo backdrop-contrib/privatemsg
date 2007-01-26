@@ -531,10 +531,20 @@ function _privatemsg_edit($edit) {
     return _privatemsg_form((object)$edit);
   }
   else {
-    $result = db_query("INSERT INTO {privatemsg} (author, recipient, subject, message, timestamp, newmsg, hostname, format) VALUES ('%d', '%d', '%s', '%s', '%d', '%d', '%s', '%d')", $user->uid, $recipient->uid, $edit['subject'], $edit['privatemsgbody'], time(), 1, getenv("REMOTE_ADDR"), $edit['format']);
+    $result = _privatemsg_send($user->uid, $recipient->uid, $edit['subject'], $edit['privatemsgbody'], $edit['format']);
     drupal_set_message(t('Message sent.'));
     drupal_goto($user->uid ? 'privatemsg' : '');
   }
+}
+
+// API callable from other modules:
+function privatemsg_send($recipient_uid, $subject, $body, $format = FILTER_FORMAT_DEFAULT) {
+  global $user;
+  return _privatemsg_send($user->uid, $recipient_uid, $subject, $body, $format);
+}
+
+function _privatemsg_send($sender_uid, $recipient_uid, $subject, $body, $format) {
+  return db_query("INSERT INTO {privatemsg} (author, recipient, subject, message, timestamp, newmsg, hostname, format) VALUES ('%d', '%d', '%s', '%s', '%d', '%d', '%s', '%d')", $sender_uid, $recipient_uid, $subject, $body, time(), 1, getenv('REMOTE_ADDR'), $format);
 }
 
 function _privatemsg_view($message_id) {
