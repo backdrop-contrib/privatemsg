@@ -19,8 +19,6 @@ function privatemsg_help($section) {
 ', array('%admin-settings-privatemsg' => url('admin/settings/privatemsg'), '%privatemsg' => url('privatemsg'))) .'</ul>';
       $output .= '<p>'. t('For more information please read the configuration and customization handbook <a href="%privatemsg">Privatemsg page</a>.', array('%privatemsg' => 'http://www.drupal.org/handbook/modules/privatemsg/')) .'</p>';
       return $output;
-    case 'admin/modules#description':
-      return t('Allows private messages between users.');
   }
 }
 
@@ -30,38 +28,45 @@ function privatemsg_help($section) {
 function privatemsg_link($type, $node = 0, $main = 0) {
   global $user;
   static $access = array();
+  $links = array();
   if (user_access('access private messages') && ($type == 'node' || $type == 'comment') && variable_get("privatemsg_link_$type", 0) && (isset($user->privatemsg_allow) ? $user->privatemsg_allow : 1)) {
     if (!isset($access[$node->uid])) {
       $author = user_load(array('uid' => $node->uid));
       $access[$node->uid] = user_access('access private messages', $author) && $author->uid && (isset($author->privatemsg_allow) ? $author->privatemsg_allow : 1);
     }
     if ($access[$node->uid]) {
-      return array(l(t('write to author'), "privatemsg/msgto/$node->uid"));
+      $links['privatemsg_write_to_author'] = array(
+        'title' => t('Write to author'),
+        'href' => "privatemsg/msgto/$node->uid")
+      );
     }
   }
+  return $links;
 }
 
 /**
  * Implementation of hook_menu().
  */
 function privatemsg_menu($may_cache) {
-  $items = array();
   global $user;
+  $items = array();
 
   if ($may_cache) {
     $items[] = array('path' => 'admin/settings/privatemsg',
-        'title' => 'privatemsg',
-        'callback' => 'privatemsg_configure');
+        'title' => t('Privatemsg settings'),
+        'description' => t('Configure Privatemsg settings.'),
+        'callback' => 'drupal_get_form',
+        'callback_arguments' => array('privatemsg_configure'));
   }
   else {
     $new = (int)_privatemsg_get_new_messages();
     $items[] = array('path' => 'privatemsg',
-                     'title' => t('my inbox') . ($new ? ' ('. $new .')' : ''),
+                     'title' => t('My inbox') . ($new ? ' ('. $new .')' : ''),
                      'callback' => 'privatemsg_page',
                      'access' => user_access('access private messages'),
                      'type' => $user->uid && (isset($user->privatemsg_allow) ? $user->privatemsg_allow : 1) ? MENU_DYNAMIC_ITEM : MENU_CALLBACK);
     $items[] = array('path' => 'privatemsg/autocomplete',
-                     'title' => t('privatemsg autocomplete'),
+                     'title' => t('Privatemsg autocomplete'),
                      'callback' => 'privatemsg_autocomplete',
                      'access' => user_access('access private messages'),
                      'type' => MENU_CALLBACK);
@@ -69,7 +74,7 @@ function privatemsg_menu($may_cache) {
     if ($new && (isset($user->privatemsg_setmessage_notify) ? $user->privatemsg_setmessage_notify : 1)) {
       $m = drupal_set_message();
       if (empty($m)) {
-        drupal_set_message(strtr(format_plural($new, 'You have one new <a href="%url">private message</a>', 'You have %count new <a href="%url">private messages</a>'), array('%url' => url('privatemsg'))));
+        drupal_set_message(strtr(format_plural($new, 'You have one new <a href="%url">private message</a>', 'You have @count new <a href="%url">private messages</a>'), array('%url' => url('privatemsg'))));
       }
     }
   }
@@ -183,7 +188,7 @@ function privatemsg_configure() {
       '#description' => t('Provide a link to send private messages to users with their comments.')
       );
 
-  return system_settings_form('privatemsg_settings', $form);
+  return system_settings_form($form);
 }
 
 /**
@@ -258,7 +263,7 @@ To read your message, follow this link:
 
 If you don\'t want to receive these emails again, change your preferences here:
 %link2', 'Hi %name,
-This is an automatic reminder from the site %site. You have %count unread private messages.
+This is an automatic reminder from the site %site. You have @count unread private messages.
 
 To read your messages, follow this link:
 %link1
@@ -266,7 +271,7 @@ To read your messages, follow this link:
 If you don\'t want to receive these emails again, change your preferences here:
 %link2'), array('%name' => $user->name, '%site' => variable_get('site_name', 'drupal'), '%link1' => url('user/login', 'destination=privatemsg', NULL, 1), '%link2' => url('user/'. $user->uid .'/edit', NULL, NULL, 1)));
 
-  user_mail($user->mail, $subject, $message, "From: $from\nReply-to: $from\nX-Mailer: Drupal\nReturn-path: $from\nErrors-to: $from");
+  drupal_mail('privatemsg_mailalert', $user->mail, $subject, $message, $from, "X-Mailer: Drupal\n");
 
   // revert to previous (site default) locale
   $locale = $save_locale;
@@ -493,7 +498,7 @@ function _privatemsg_form($message = 0) {
   while ($name = db_fetch_object($result)) {
     $contacts[] = check_plain($name->name);
   }
-  if (module_exist('buddylist')) {
+  if (module_exists('buddylist')) {
     $result = db_query("SELECT u.name FROM {buddylist} b, {users} u WHERE b.buddy = u.uid AND b.uid = '%d'", $user->uid);
     while ($name = db_fetch_object($result)) {
       $buddyname = check_plain($name->name);

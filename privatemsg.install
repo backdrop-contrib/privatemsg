@@ -114,6 +114,14 @@ function privatemsg_install() {
   }
 }
 
+function privatemsg_uninstall() {
+  db_query("DROP TABLE {privatemsg}");
+  db_query("DROP TABLE {privatemsg_folder}");
+  db_query("DROP TABLE {privatemsg_archive}");
+  db_query("DELETE FROM {variable} WHERE name LIKE 'privatemsg_%'");
+  cache_clear_all('variables', 'cache');
+}
+
 /* Upgrade on mysql from versions before 22-May-2003:
    Create privatemsg_archive/privatemsg_folder tables and insert one row, shown above^
    ALTER TABLE privatemsg ADD folder int(10) unsigned NOT NULL;

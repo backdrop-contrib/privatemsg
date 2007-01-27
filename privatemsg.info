@@ -1,0 +1,5 @@
+; $Id$
+name = Privatemsg
+description = Allow private messages between users
+package = Mail
+version = "$Name$"
