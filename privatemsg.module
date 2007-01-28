@@ -37,7 +37,7 @@ function privatemsg_link($type, $node = 0, $main = 0) {
     if ($access[$node->uid]) {
       $links['privatemsg_write_to_author'] = array(
         'title' => t('Write to author'),
-        'href' => "privatemsg/msgto/$node->uid")
+        'href' => "privatemsg/msgto/$node->uid"
       );
     }
   }
@@ -53,10 +53,10 @@ function privatemsg_menu($may_cache) {
 
   if ($may_cache) {
     $items[] = array('path' => 'admin/settings/privatemsg',
-        'title' => t('Privatemsg settings'),
+        'title' => t('Privatemsg'),
         'description' => t('Configure Privatemsg settings.'),
         'callback' => 'drupal_get_form',
-        'callback_arguments' => array('privatemsg_configure'));
+        'callback arguments' => array('privatemsg_configure'));
   }
   else {
     $new = (int)_privatemsg_get_new_messages();
@@ -291,11 +291,10 @@ function privatemsg_page() {
   global $user;
 
   $breadcrumb = NULL;
-  $op = $_POST["op"];
-  $edit = $_POST["edit"];
-  $recipient = $_POST["recipient"];
-  if (isset($edit['messages'])) {
-    $msg = array_keys($edit['messages']);
+  $op = $_POST['op'];
+  $edit = $_POST['edit'];
+  if (isset($_POST['messages'])) {
+    $msg = array_keys($_POST['messages']);
   }
   else {
     $msg = array();
@@ -338,9 +337,10 @@ function privatemsg_page() {
       break;
     case 'send':
     case t('Send private message'):
-      if (!$edit["recipient"]) {
-        $edit["recipient"] = $recipient;
-      }
+      $edit['recipient'] = $_POST['recipient'];
+      $edit['subject'] = $_POST['subject'];
+      $edit['privatemsgbody'] = $_POST['privatemsgbody'];
+      $edit['format'] = $_POST['format'];
       $breadcrumb = array(l(t('Home'), ''), l(t('private messages'), 'privatemsg'));
       $output = _privatemsg_edit($edit);
       break;
@@ -374,25 +374,18 @@ function privatemsg_page() {
 
     case t('New folder'):
     case t('Add folder'):
-      if ($edit["name"]) {
-        // check for uniqueness
-        if (!db_result(db_query("SELECT name FROM {privatemsg_folder} WHERE name = '%s' AND uid = '%d'", $edit["name"], $user->uid))) {
-          db_query("INSERT INTO {privatemsg_folder} (uid, name) VALUES ('%d', '%s')", $user->uid, $edit["name"]);
-        }
-        $output = _privatemsg_list();
-      }
-      else {
+      if (!$edit['name']) {
         $title = t('Create new folder');
         $breadcrumb = array(l(t('Home'), ''), l('Private messages', 'privatemsg'));
-        $output = _privatemsg_new_folder($edit);
+        $output = drupal_get_form('privatemsg_new_folder');
       }
       break;
 
     case t('Delete folder'):
       // check ownership
-      if (db_result(db_query("SELECT fid FROM {privatemsg_folder} WHERE fid = '%d' AND uid = '%d'", $edit["current_folder"], $user->uid))) {
-        db_query("DELETE FROM {privatemsg_folder} WHERE fid = '%d'", $edit["current_folder"]);
-        db_query("UPDATE {privatemsg} SET recipient_del = 1 WHERE folder = '%d'", $edit["current_folder"]);
+      if (db_result(db_query("SELECT fid FROM {privatemsg_folder} WHERE fid = '%d' AND uid = '%d'", $arg, $user->uid))) {
+        db_query("DELETE FROM {privatemsg_folder} WHERE fid = '%d'", $arg);
+        db_query("UPDATE {privatemsg} SET recipient_del = 1 WHERE folder = '%d'", $arg);
       }
 
       $output = _privatemsg_list();
@@ -457,14 +450,16 @@ function _privatemsg_list($current_folder = 0) {
 
 function _privatemsg_format_folder($current, $fid, $name) {
   if ($current == $fid) {
-    return "<strong>$name</strong>";
+    return array('title' => "<strong>$name</strong>", 'html' => true);
   }
-  else {
-    return l($name, "privatemsg/list/$fid");
-  }
+  return array('title' => $name, 'href' => "privatemsg/list/$fid");
 }
 
 function _privatemsg_form($message = 0) {
+  return drupal_get_form('_privatemsg_form_form', $message);
+}
+
+function _privatemsg_form_form($message) {
   global $user;
   $form = array();
 
@@ -536,7 +531,7 @@ function _privatemsg_form($message = 0) {
       '#name' => 'op'
       );
 
-  return drupal_get_form('privatemsg_message_form', $form);
+  return $form;
 }
 
 function _privatemsg_edit($edit) {
@@ -636,7 +631,7 @@ function _privatemsg_get_new_messages($uid = 0) {
   return $cache[$uid];
 }
 
-function _privatemsg_new_folder($edit) {
+function privatemsg_new_folder() {
   $form = array();
 
   $form['name'] = array(
@@ -651,7 +646,20 @@ function _privatemsg_new_folder($edit) {
       '#name' => 'op'
       );
 
-  return drupal_get_form('privatemsg_new_folder', $form);
+  return $form;
+}
+
+function privatemsg_new_folder_submit($form_id, $form_values) {
+  global $user;
+  // check for uniqueness
+  if (!db_result(db_query("SELECT name FROM {privatemsg_folder} WHERE name = '%s' AND uid = '%d'", $form_values['name'], $user->uid))) {
+    db_query("INSERT INTO {privatemsg_folder} (uid, name) VALUES ('%d', '%s')", $user->uid, $form_values['name']);
+    drupal_set_message(t('Folder created successfully.'));
+  }
+  else {
+    drupal_set_message(t('A folder with this name already exists.'));
+  }
+  drupal_goto('privatemsg');
 }
 
 function _privatemsg_move($mid, $fid) {
@@ -687,17 +695,17 @@ function theme_privatemsg_view($message) {
     if ($message->recipient == $user->uid) {
       $author = user_load(array('uid' => $message->uid));
       if ($author->uid && (isset($author->privatemsg_allow) ? $author->privatemsg_allow : 1)) {
-        $links[] = l(t('Reply to this message'), "privatemsg/reply/$message->id");
+        $links['privatemsg_reply'] = array('title' => t('Reply to this message'), 'href' => "privatemsg/reply/$message->id");
       }
       else {
-        $links[] = t('Sender does not accept replies');
+        $links['privatemsg_noreply'] = array('title' => t('Sender does not accept replies'), 'href' => NULL);
       }
     }
     if (($message->recipient == $user->uid) || (variable_get("privatemsg_sent_status", 1))) {
-      $links[] = l(t('Delete this message'), "privatemsg/delete/$message->id", array('onClick' => "return confirm('".t('Are you sure to delete this message?')."')"));
+      $links['privatemsg_delete'] = array('title' => t('Delete this message'), 'href' => "privatemsg/delete/$message->id", 'attributes' => array('onClick' => "return confirm('". t('Are you sure to delete this message?') ."')"));
     }
 
-    $links[] = l(t('List messages'), 'privatemsg');
+    $links['privatemsg_list'] = array('title' => t('List messages'), 'href' => 'privatemsg');
     $body .= '<div class="links">'. theme('links', $links) .'</div>';
   } 
   else {
@@ -716,8 +724,6 @@ function theme_privatemsg_view($message) {
  @param folders
 **/
 function theme_privatemsg_list($current_folder, $messages, $folders) {
-  $form = array();
-
   $extra_folders = array();
   foreach ($folders as $folder) {
     $folder_list[] = _privatemsg_format_folder($current_folder, $folder[0], $folder[1]);
@@ -725,7 +731,12 @@ function theme_privatemsg_list($current_folder, $messages, $folders) {
       $extra_folders[$folder[0]] = $folder[1];
     }
   }
-  $out = theme('links', $folder_list);
+
+  return theme('links', $folder_list) . drupal_get_form('privatemsg_list_form', $current_folder, $messages, $folders);
+}
+
+function privatemsg_list_form($current_folder, $messages, $folders) {
+  $form = array();
 
   $form['messages'] = array(
       '#theme' => 'privatemsg_message_table',
@@ -740,12 +751,7 @@ function theme_privatemsg_list($current_folder, $messages, $folders) {
       $new = $message->newmsg;
     }
     else {
-      if (variable_get("privatemsg_sent_status", 1)) {
-        $new = $message->newmsg;
-      }
-      else {
-        $new = 0;
-      }
+      $new = variable_get('privatemsg_sent_status', 1) ? $message->newmsg : 0;
     }
 
     $form['messages'][$message->id] = array();
@@ -802,7 +808,7 @@ function theme_privatemsg_list($current_folder, $messages, $folders) {
 
   if ($current_folder > 1) {
     // you can't delete Inbox
-    $form['delete_folder'] = array(
+    $form['privatemsg_delete_folder'] = array(
         '#type' => 'submit',
         '#value' => t('Delete folder'),
         '#name' => 'op',
@@ -827,7 +833,7 @@ function theme_privatemsg_list($current_folder, $messages, $folders) {
       '#name' => 'op'
       );
 
-  return $out . drupal_get_form('privatemsg_list_form', $form);
+  return $form;
 }
 
 function theme_privatemsg_message_table($form) {
@@ -836,7 +842,7 @@ function theme_privatemsg_message_table($form) {
   foreach (element_children($form) as $key) {
     if ($key != 'current_folder') {
       $row = array();
-      $row[] = form_render($form[$key]['selected']);
+      $row[] = drupal_render($form[$key]['selected']);
       $row[] = $form[$key]['date']['#value'];
       $row[] = $form[$key]['user']['#value'];
       $row[] = $form[$key]['subject']['#value'];

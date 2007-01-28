@@ -1,13 +1,11 @@
-if (isJsEnabled()) {
-  addLoadEvent(privatemsgContactFill);
+function privatemsgContactFill() {
+  $('edit-quick').css('display', 'block');
+  $('edit-quick').change( function() {
+    $('edit-recipient').val(this.options[this.selectedIndex].value);
+    this.selectedIndex = 0;
+  });
 }
 
-function privatemsgContactFill() {
-  if ($('edit-quick')) {
-    $('edit-quick').style.display = '';
-    $('edit-quick').onchange = function() {
-      $('edit-recipient').value = $('edit-quick').value;
-      $('edit-quick').selectedIndex = 0;
-    };
-  }
+if (Drupal.jsEnabled) {
+  $(document).ready(privatemsgContactFill);
 }
