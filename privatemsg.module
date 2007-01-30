@@ -536,7 +536,7 @@ function _privatemsg_send($sender, $recipient, $subject, $body, $format) {
 
 function privatemsg_view($message_id) {
   global $user;
-  $result = db_query('SELECT p.id, u.uid, u.name, p.author, p.timestamp, p.subject, p.message, p.newmsg, p.recipient, p.format FROM {privatemsg} p, {users} u WHERE (recipient = %d OR author = %d) AND author = u.uid AND id = %d', $user->uid, $user->uid, $message_id);
+  $result = db_query('SELECT p.id, u.uid, u.name, p.author, p.timestamp, p.subject, p.message, p.newmsg, p.recipient, p.folder, p.format FROM {privatemsg} p, {users} u WHERE (recipient = %d OR author = %d) AND author = u.uid AND id = %d', $user->uid, $user->uid, $message_id);
 
   $message = db_fetch_object($result);
   if ($message->newmsg && $user->uid == $message->recipient) {
@@ -650,7 +650,7 @@ function theme_privatemsg_view($message) {
       $links['privatemsg_delete'] = array('title' => t('Delete this message'), 'href' => 'privatemsg/delete/'. $message->id, 'attributes' => array('onclick' => "return confirm('". t('Are you sure to delete this message?') ."')"));
     }
 
-    $links['privatemsg_list'] = array('title' => t('List messages'), 'href' => $message->folder ? 'privatemsg/list/'. $message->folder : 'privatemsg');
+    $links['privatemsg_list'] = array('title' => t('List messages'), 'href' => ($message->recipient == $user->uid && $message->folder) ? 'privatemsg/list/'. $message->folder : 'privatemsg');
     $body .= '<div class="links">'. theme('links', $links) .'</div>';
   }
   else {
@@ -676,10 +676,10 @@ function theme_privatemsg_list($current_folder, $messages, $folders) {
       $extra_folders[$folder[0]] = $folder[1];
     }
   }
-  return theme('links', $folder_list) . drupal_get_form('privatemsg_list_form', $current_folder, $messages, $folders);
+  return theme('links', $folder_list) . drupal_get_form('privatemsg_list_form', $current_folder, $messages, $folders, $extra_folders);
 }
 
-function privatemsg_list_form($current_folder, $messages, $folders) {
+function privatemsg_list_form($current_folder, $messages, $folders, $extra_folders) {
   $form = array();
 
   $form['messages'] = array(
