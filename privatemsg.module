@@ -495,7 +495,7 @@ function privatemsg_new() {
   return $form;
 }
 
-function privatemsg_message_form_validate($form_id, $form_values) {
+function privatemsg_new_validate($form_id, $form_values) {
   if (!empty($form_values['recipient'])) {
     $recipient = user_load(array('name' => $form_values['recipient']));
     if (!$recipient->uid) {
@@ -510,7 +510,7 @@ function privatemsg_message_form_validate($form_id, $form_values) {
   }
 }
 
-function privatemsg_message_form_submit($form_id, $form_values) {
+function privatemsg_new_submit($form_id, $form_values) {
   global $user;
   $recipient = user_load(array('name' => $form_values['recipient']));
 
