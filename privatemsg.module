@@ -402,7 +402,8 @@ function privatemsg_list_form_submit($form_id, $form_values) {
       }
       db_query('DELETE FROM {privatemsg_folder} WHERE fid = %d', $fid);
       db_query('UPDATE {privatemsg} SET recipient_del = 1 WHERE folder = %d', $fid);
-      break;
+      drupal_set_message(t('Folder deleted.'));
+      return 'privatemsg';
   }
 }
 
