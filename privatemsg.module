@@ -521,7 +521,7 @@ function privatemsg_new_submit($form_id, $form_values) {
 }
 
 // API callable from other modules:
-function privatemsg_send($recipient, $subject, $body, $format = FILTER_FORMAT_DEFAULT) {
+function privatemsg_send_privatemsg($recipient, $subject, $body, $format = FILTER_FORMAT_DEFAULT) {
   global $user;
   return _privatemsg_send($user, $recipient, $subject, $body, $format);
 }
