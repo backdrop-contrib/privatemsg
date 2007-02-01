@@ -17,7 +17,7 @@ function privatemsg_help($section) {
 <li>administer privatemsg at <a href="%admin-settings-privatemsg">administer &gt;&gt; settings &gt;&gt; private message</a>.</li>
 <li>view your private messages at <a href="%privatemsg">view inbox</a>.</li>
 ', array('%admin-settings-privatemsg' => url('admin/settings/privatemsg'), '%privatemsg' => url('privatemsg'))) .'</ul>';
-      $output .= '<p>'. t('For more information please read the configuration and customization handbook <a href="%privatemsg">Privatemsg page</a>.', array('%privatemsg' => 'http://drupal.org/handbook/modules/privatemsg/')) .'</p>';
+      $output .= '<p>'. t('For more information please read the configuration and customization handbook <a href="!privatemsg">Privatemsg page</a>.', array('!privatemsg' => 'http://drupal.org/handbook/modules/privatemsg/')) .'</p>';
       return $output;
   }
 }
@@ -127,12 +127,12 @@ function privatemsg_user($type, &$edit, &$user, $category = NULL) {
       else if (isset($user->privatemsg_allow) ? $user->privatemsg_allow : 1) {
         if (variable_get('user_register', 1)) {
           return array(t('Private messages') => array(array(
-            'value' => t('<a href="%login">login</a> or <a href="%register">register</a> to send private messages to this user', array('%login' => url('user/login'), '%register' => url('user/register'))),
+            'value' => t('<a href="!login">login</a> or <a href="!register">register</a> to send private messages to this user', array('!login' => url('user/login'), '!register' => url('user/register'))),
             'class' => 'need-login')));
         }
         else {
           return array(t('Private messages') => array(array(
-            'value' => t('<a href="%login">login</a> to send private messages to this user', array('%login' => url('user/login'))),
+            'value' => t('<a href="!login">login</a> to send private messages to this user', array('!login' => url('user/login'))),
             'class' => 'need-login')));
         }
       }
@@ -283,22 +283,23 @@ function _privatemsg_sendmail($user, $new_count) {
     $locale = $user->language;
   }
 
-  $subject = t('New private messages at %site.', array('%site' => variable_get('site_name', 'drupal')));
-  $message = strtr(format_plural($new_count, 'Hi %name,
-This is an automatic reminder from the site %site. You have received a new private message.
+  $subject = t('New private messages at @site.', array('@site' => variable_get('site_name', 'drupal')));
+  // Can't pass tokens directly to format_plural, so strtr+check_plain here
+  $message = strtr(format_plural($new_count, 'Hi @name,
+This is an automatic reminder from the site @site. You have received a new private message.
 
 To read your message, follow this link:
-%link1
+!link1
 
 If you don\'t want to receive these emails again, change your preferences here:
-%link2', 'Hi %name,
-This is an automatic reminder from the site %site. You have @count unread private messages.
+!link2', 'Hi @name,
+This is an automatic reminder from the site @site. You have @count unread private messages.
 
 To read your messages, follow this link:
-%link1
+!link1
 
 If you don\'t want to receive these emails again, change your preferences here:
-%link2'), array('%name' => $user->name, '%site' => variable_get('site_name', 'drupal'), '%link1' => url('user/login', 'destination=privatemsg', NULL, 1), '%link2' => url('user/'. $user->uid .'/edit', NULL, NULL, 1)));
+!link2'), array('@name' => check_plain($user->name), '@site' => check_plain(variable_get('site_name', 'drupal')), '!link1' => url('user/login', 'destination=privatemsg', NULL, 1), '!link2' => url('user/'. $user->uid .'/edit', NULL, NULL, 1)));
 
   drupal_mail('privatemsg_mailalert', $user->mail, $subject, $message, $from, "X-Mailer: Drupal\n");
 
@@ -503,7 +504,7 @@ function privatemsg_new_validate($form_id, $form_values) {
       form_set_error('recipient', t('The <em>Recipient</em> does not exist.'));
     }
     else if (!(isset($recipient->privatemsg_allow) ? $recipient->privatemsg_allow : 1)) {
-      form_set_error('recipient', t('%name does not accept private messages.', array('%name' => $recipient->name)));
+      form_set_error('recipient', t('@name does not accept private messages.', array('@name' => $recipient->name)));
     }
   }
   if (!isset($form_values['format']) || !filter_access($form_values['format'])) {
