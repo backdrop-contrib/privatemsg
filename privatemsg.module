@@ -29,7 +29,7 @@ function privatemsg_link($type, $node = 0, $main = 0) {
   global $user;
   static $access = array();
   $links = array();
-  if (user_access('access private messages') && ($type == 'node' || $type == 'comment') && variable_get("privatemsg_link_$type", 0) && (isset($user->privatemsg_allow) ? $user->privatemsg_allow : 1)) {
+  if (user_access('access private messages') && ($type == 'node' || $type == 'comment') && variable_get("privatemsg_link_$type", 0) && $node->uid != $user->uid && (isset($user->privatemsg_allow) ? $user->privatemsg_allow : 1)) {
     if (!isset($access[$node->uid])) {
       $author = user_load(array('uid' => $node->uid));
       $access[$node->uid] = user_access('access private messages', $author) && $author->uid && (isset($author->privatemsg_allow) ? $author->privatemsg_allow : 1);
