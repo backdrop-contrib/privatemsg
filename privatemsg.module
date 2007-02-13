@@ -433,8 +433,19 @@ function privatemsg_new() {
       $message->subject = t('Re:') .' '. $message->subject;
     }
 
-    // quoting
-    $message->message = "\n". str_replace("\n", "\n> ", "\n". $message->message);
+    // quoting; [quote] if default input format uses bbcode, else > quoting
+    foreach (filter_list_format(filter_resolve_format(FILTER_FORMAT_DEFAULT)) as $filter) {
+      if ($filter->module == 'bbcode') {
+        $bbcode = TRUE;
+        break;
+      }
+    }
+    if (isset($bbcode)) {
+      $message->message = "\n\n[quote=". $message->recipient .']'. $message->message .'[/quote]';
+    }
+    else {
+      $message->message = "\n". str_replace("\n", "\n> ", "\n". $message->message);
+    }
   }
 
   drupal_add_js(drupal_get_path('module', 'privatemsg') .'/privatemsg.js');
