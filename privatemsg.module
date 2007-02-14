@@ -52,6 +52,7 @@ function privatemsg_menu($may_cache) {
   $items = array();
 
   if ($may_cache) {
+    $access = user_access('access private messages');
     $items[] = array('path' => 'admin/settings/privatemsg',
                      'title' => t('Privatemsg'),
                      'description' => t('Configure Privatemsg settings.'),
@@ -61,35 +62,39 @@ function privatemsg_menu($may_cache) {
                      'title' => t('Write a new message'),
                      'callback' => 'drupal_get_form',
                      'callback arguments' => array('privatemsg_new'),
+                     'access' => $access,
                      'type' => MENU_CALLBACK);
     $items[] = array('path' => 'privatemsg/reply',
                      'title' => t('Write a new message'),
                      'callback' => 'drupal_get_form',
                      'callback arguments' => array('privatemsg_new'),
+                     'access' => $access,
                      'type' => MENU_CALLBACK);
     $items[] = array('path' => 'privatemsg/msgto',
                      'title' => t('Write a new message'),
                      'callback' => 'drupal_get_form',
                      'callback arguments' => array('privatemsg_new'),
+                     'access' => $access,
                      'type' => MENU_CALLBACK);
     $items[] = array('path' => 'privatemsg/autocomplete',
                      'title' => t('Privatemsg autocomplete'),
                      'callback' => 'privatemsg_autocomplete',
+                     'access' => $access,
                      'type' => MENU_CALLBACK);
     $items[] = array('path' => 'privatemsg/view',
                      'title' => t('Read message'),
                      'callback' => 'privatemsg_view',
-                     'access' => $user->uid, // No guest access
+                     'access' => $access && $user->uid, // No guest access
                      'type' => MENU_CALLBACK);
     $items[] = array('path' => 'privatemsg/newfolder',
                      'title' => t('Create new folder'),
                      'callback' => 'drupal_get_form',
                      'callback arguments' => array('privatemsg_new_folder'),
-                     'access' => $user->uid, // No guest access
+                     'access' => $access && $user->uid, // No guest access
                      'type' => MENU_CALLBACK);
     $items[] = array('path' => 'privatemsg/delete',
                      'callback' => 'privatemsg_delete',
-                     'access' => $user->uid, // No guest access
+                     'access' => $access && $user->uid, // No guest access
                      'type' => MENU_CALLBACK);
   }
   else {
@@ -97,7 +102,7 @@ function privatemsg_menu($may_cache) {
     $items[] = array('path' => 'privatemsg',
                      'title' => t('My inbox') . ($new ? ' ('. $new .')' : ''),
                      'callback' => 'privatemsg_list',
-                     'access' => user_access('access private messages'),
+                     'access' => TRUE, // Check access/redirect in callback
                      'type' => $user->uid && (isset($user->privatemsg_allow) ? $user->privatemsg_allow : 1) ? MENU_DYNAMIC_ITEM : MENU_CALLBACK);
 
     if ($new && strncmp($_GET['q'], 'privatemsg', 10) && (isset($user->privatemsg_setmessage_notify) ? $user->privatemsg_setmessage_notify : 1) && user_access('access private messages')) {
@@ -299,7 +304,7 @@ To read your messages, follow this link:
 !link1
 
 If you don\'t want to receive these emails again, change your preferences here:
-!link2'), array('@name' => check_plain($user->name), '@site' => check_plain(variable_get('site_name', 'drupal')), '!link1' => url('user/login', 'destination=privatemsg', NULL, 1), '!link2' => url('user/'. $user->uid .'/edit', NULL, NULL, 1)));
+!link2'), array('@name' => check_plain($user->name), '@site' => check_plain(variable_get('site_name', 'drupal')), '!link1' => url('privatemsg', NULL, NULL, 1), '!link2' => url('user/'. $user->uid .'/edit', NULL, NULL, 1)));
 
   drupal_mail('privatemsg_mailalert', $user->mail, $subject, $message, $from, "X-Mailer: Drupal\n");
 
@@ -319,8 +324,11 @@ function privatemsg_autocomplete($string) {
 
 function privatemsg_list() {
   global $user;
-  if (!$user->uid || !(isset($user->privatemsg_allow) ? $user->privatemsg_allow : 1)) {
-    // If guests have privatemsg access they can only send messages
+  // Notification emails link here but we may not be logged in yet
+  if (!$user->uid) {
+    drupal_goto('user/login', 'destination=privatemsg');
+  }
+  if (!user_access('access private messages') || !(isset($user->privatemsg_allow) ? $user->privatemsg_allow : 1)) {
     return drupal_access_denied();
   }
   drupal_set_title(t('Private messages'));
