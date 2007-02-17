@@ -306,7 +306,7 @@ To read your messages, follow this link:
 If you don\'t want to receive these emails again, change your preferences here:
 !link2'), array('@name' => check_plain($user->name), '@site' => check_plain(variable_get('site_name', 'drupal')), '!link1' => url('privatemsg', NULL, NULL, 1), '!link2' => url('user/'. $user->uid .'/edit', NULL, NULL, 1)));
 
-  drupal_mail('privatemsg_mailalert', $user->mail, $subject, $message, $from, "X-Mailer: Drupal\n");
+  drupal_mail('privatemsg_mailalert', $user->mail, $subject, $message, $from);
 
   // revert to previous (site default) locale
   $locale = $save_locale;
