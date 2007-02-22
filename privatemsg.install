@@ -152,7 +152,7 @@ function privatemsg_update_2() {
     case 'mysql':
     case 'mysqli':
       $sql = 'ALTER TABLE {%s} MODIFY %s int(10) unsigned NOT NULL';
-      $seq = 'INSERT INTO {sequences} (name, id) VALUES ('%s', %d)';
+      $seq = "INSERT INTO {sequences} (name, id) VALUES ('%s', %d)";
       break;
     case 'pgsql':
       $sql = 'ALTER TABLE {%s} ALTER COLUMN %s SET DEFAULT NULL';
