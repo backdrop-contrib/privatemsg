@@ -458,7 +458,7 @@ function privatemsg_new() {
 
   drupal_add_js(drupal_get_path('module', 'privatemsg') .'/privatemsg.js');
 
-  $form = array();
+  $form = array('preview' => array());
   $form['recipient'] = array(
       '#prefix' => '<div class="container-inline">',
       '#type' => 'textfield',
@@ -508,11 +508,40 @@ function privatemsg_new() {
       '#required' => TRUE
       );
   $form[] = filter_form($message->format);
-  $form['op'] = array(
+  $form[] = array(
+      '#type' => 'submit',
+      '#value' => t('Preview')
+      );
+  $form[] = array(
       '#type' => 'submit',
       '#value' => t('Send private message')
       );
+  $form['#after_build'] = array('_privatemsg_new_preview');
 
+  return $form;
+}
+
+function _privatemsg_new_preview($form, $form_values) {
+  if ($form_values['op'] == t('Preview')) {
+    $recipient = user_load(array('name' => $form_values['recipient']));
+    if ($recipient->uid) {
+      global $user;
+      $message->subject = $form_values['subject'];
+      $message->message = $form_values['privatemsgbody'];
+      $message->format = $form_values['format'];
+      $message->timestamp = time();
+      $message->newmsg = TRUE;
+      $message->folder = 1;
+      $message->uid = $message->author = $user->uid;
+      $message->name = $user->name;
+      $message->recipient = $recipient->uid;
+      $form['preview'] = array(
+        '#prefix' => '<div class="preview">',
+        '#value' => theme('privatemsg_view', $message),
+        '#suffix' => '</div>');
+      drupal_set_title(t('Preview message'));
+    }
+  }
   return $form;
 }
 
@@ -533,6 +562,9 @@ function privatemsg_new_validate($form_id, $form_values) {
 
 function privatemsg_new_submit($form_id, $form_values) {
   global $user;
+  if ($form_values['op'] != t('Send private message')) {
+    return false;
+  }
   $recipient = user_load(array('name' => $form_values['recipient']));
 
   $result = _privatemsg_send($user, $recipient, $form_values['subject'], $form_values['privatemsgbody'], $form_values['format']);
@@ -685,7 +717,9 @@ function theme_privatemsg_view($message) {
     }
 
     $links['privatemsg_list'] = array('title' => t('List messages'), 'href' => ($message->recipient == $user->uid && $message->folder) ? 'privatemsg/list/'. $message->folder : 'privatemsg');
-    $body .= '<div class="links">'. theme('links', $links) .'</div>';
+    if ($message->id) {
+      $body .= '<div class="links">'. theme('links', $links) .'</div>';
+    }
   }
   else {
     drupal_set_message(t('Error: you can\'t read this message'), 'error');
