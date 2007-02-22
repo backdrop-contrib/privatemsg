@@ -547,7 +547,7 @@ function privatemsg_send_privatemsg($recipient, $subject, $body, $format = FILTE
 }
 
 function _privatemsg_send($sender, $recipient, $subject, $body, $format) {
-  $result = db_query("INSERT INTO {privatemsg} (author, recipient, subject, message, timestamp, newmsg, hostname, format) VALUES (%d, %d, '%s', '%s', %d, %d, '%s', %d)", $sender->uid, $recipient->uid, $subject, $body, time(), 1, getenv('REMOTE_ADDR'), $format);
+  $result = db_query("INSERT INTO {privatemsg} (id, author, recipient, subject, message, timestamp, newmsg, hostname, format) VALUES (%d, %d, %d, '%s', '%s', %d, %d, '%s', %d)", db_next_id('{privatemsg}_id'), $sender->uid, $recipient->uid, $subject, $body, time(), 1, getenv('REMOTE_ADDR'), $format);
   if ($result !== false && isset($recipient->privatemsg_mailalert) && $recipient->privatemsg_mailalert == PRIVATEMSG_MAIL_INDIVIDUAL) {
     _privatemsg_sendmail($recipient, 1);
   }
@@ -631,7 +631,7 @@ function privatemsg_new_folder_validate($form_id, $form_values) {
 
 function privatemsg_new_folder_submit($form_id, $form_values) {
   global $user;
-  db_query("INSERT INTO {privatemsg_folder} (uid, name) VALUES (%d, '%s')", $user->uid, $form_values['name']);
+  db_query("INSERT INTO {privatemsg_folder} (fid, uid, name) VALUES (%d, %d, '%s')", db_next_id('{privatemsg_folder}_fid'), $user->uid, $form_values['name']);
   drupal_set_message(t('Folder created successfully.'));
   drupal_goto('privatemsg');
 }

@@ -6,7 +6,7 @@ function privatemsg_install() {
     case 'mysql':
     case 'mysqli':
       db_query("CREATE TABLE {privatemsg} (
-          id            int(10) unsigned NOT NULL auto_increment primary key,
+          id            int(10) unsigned NOT NULL primary key,
           author        int(10) unsigned NOT NULL,
           recipient     int(10) unsigned NOT NULL,
           subject       varchar(64) NOT NULL,
@@ -22,14 +22,12 @@ function privatemsg_install() {
           key (folder)
         ) /*!40100 DEFAULT CHARACTER SET utf8 */;");
       db_query("CREATE TABLE {privatemsg_folder} (
-          fid           int(10) unsigned NOT NULL auto_increment primary key,
+          fid           int(10) unsigned NOT NULL primary key,
           uid           int(10) unsigned NOT NULL,
           name          varchar(255) NOT NULL
         ) /*!40100 DEFAULT CHARACTER SET utf8 */;");
-      // Sent messages
-      db_query("INSERT INTO {privatemsg_folder} VALUES (1, 0, 'Sent')");
       db_query("CREATE TABLE {privatemsg_archive} (
-          id            int(10) unsigned NOT NULL auto_increment primary key,
+          id            int(10) unsigned NOT NULL primary key,
           author        int(10) unsigned NOT NULL,
           recipient     int(10) unsigned NOT NULL,
           subject       VARCHAR(64) NOT NULL,
@@ -43,7 +41,7 @@ function privatemsg_install() {
       break;
     case 'pgsql':
       db_query("CREATE TABLE {privatemsg} (
-          id            SERIAL,
+          id            integer NOT NULL,
           author        integer NOT NULL,
           recipient     integer NOT NULL,
           subject       varchar(64) NOT NULL,
@@ -59,14 +57,13 @@ function privatemsg_install() {
         )");
       db_query("CREATE INDEX {privatemsg_folder_index} ON {privatemsg}(folder)");
       db_query("CREATE TABLE {privatemsg_folder} (
-          fid           SERIAL,
+          fid           integer NOT NULL,
           uid           integer NOT NULL,
           name          varchar(255) not null,
           PRIMARY KEY (fid)
         )");
-      db_query("INSERT INTO {privatemsg_folder} (uid, name) VALUES (0, 'Sent')");
       db_query("CREATE TABLE {privatemsg_archive} (
-          id            SERIAL,
+          id            integer NOT NULL,
           author        integer NOT NULL,
           recipient     integer NOT NULL,
           subject       varchar(64) NOT NULL,
@@ -112,6 +109,12 @@ function privatemsg_install() {
         ' language 'plpgsql'");
       break;
   }
+  // Sent messages folder
+  db_query("INSERT INTO {privatemsg_folder} (fid, uid, name) VALUES (1, 0, 'Sent')");
+  do {
+    $i = db_next_id('{privatemsg_folder}_fid');
+  }
+  while ($i < 1);  // In case this api ever changes to start at zero..
 }
 
 function privatemsg_uninstall() {
@@ -141,5 +144,32 @@ function privatemsg_uninstall() {
 
 function privatemsg_update_1() {
   return _system_update_utf8(array('privatemsg', 'privatemsg_archive', 'privatemsg_folder'));
+}
+
+function privatemsg_update_2() {
+  $ret = array();
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      $sql = 'ALTER TABLE {%s} MODIFY %s int(10) unsigned NOT NULL';
+      $seq = 'INSERT INTO {sequences} (name, id) VALUES ('%s', %d)';
+      break;
+    case 'pgsql':
+      $sql = 'ALTER TABLE {%s} ALTER COLUMN %s SET DEFAULT NULL';
+      $seq = 'CREATE SEQUENCE %s_seq INCREMENT 1 START %d';
+      break;
+    default:
+      return $ret;
+  }
+  foreach (array('privatemsg' => 'id', 'privatemsg_folder' => 'fid') as $table => $id) {
+    $ret[] = update_sql(sprintf($sql, $table, $id));
+    $max = db_result(db_query("SELECT max($id) FROM {$table}"));
+    if ($table == 'privatemsg') {
+      $max = max($max, db_result(db_query('SELECT max(id) FROM {privatemsg_archive}')));
+    }
+    $ret[] = update_sql(sprintf($seq, "{$table}_$id", $max));
+  }
+  $ret[] = update_sql(sprintf($sql, 'privatemsg_archive', 'id'));
+  return $ret;
 }
 ?>
