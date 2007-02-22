@@ -551,6 +551,9 @@ function _privatemsg_send($sender, $recipient, $subject, $body, $format) {
   if ($result !== false && isset($recipient->privatemsg_mailalert) && $recipient->privatemsg_mailalert == PRIVATEMSG_MAIL_INDIVIDUAL) {
     _privatemsg_sendmail($recipient, 1);
   }
+  if ($points = variable_get('privatemsg_userpoints', 0)) {
+    module_invoke('userpoints', 'userpointsapi', 'points', $points, $sender->uid, 'privatemsg');
+  }
   return $result;
 }
 
@@ -631,6 +634,17 @@ function privatemsg_new_folder_submit($form_id, $form_values) {
   db_query("INSERT INTO {privatemsg_folder} (uid, name) VALUES (%d, '%s')", $user->uid, $form_values['name']);
   drupal_set_message(t('Folder created successfully.'));
   drupal_goto('privatemsg');
+}
+
+function privatemsg_userpoints($op, $new_points = 0, $uid = 0, $event = '') {
+  switch ($op) {
+    case 'setting':
+      $form['privatemsg_userpoints'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Points for sending a private message'),
+        '#default_value' => variable_get('privatemsg_userpoints', 0));
+      return $form;
+  }
 }
 
 /**
