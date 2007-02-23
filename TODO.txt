@@ -9,7 +9,6 @@ TODO:
 
 doubts:
 - is author to index?
-- preview message before sending(?)
 - change links (write new, reply, delete, etc) to form buttons?
 - admin with message search?
 - admin to probe messages (?)
