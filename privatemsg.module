@@ -362,7 +362,7 @@ function privatemsg_list() {
   }
   $folders[] = array(1, t('Sent messages'));
 
-  return theme('privatemsg_list', $current_folder, $messages, $folders);
+  return drupal_get_form('privatemsg_list_form', $current_folder, $messages, $folders);
 }
 
 function privatemsg_list_form_submit($form_id, $form_values) {
@@ -729,27 +729,18 @@ function theme_privatemsg_view($message) {
   return $body;
 }
 
-/**
- Returns content to view a list of private messages
-
- @param current_folder
- @param messages
- @param folders
-**/
-function theme_privatemsg_list($current_folder, $messages, $folders) {
-  $extra_folders = array();
+function privatemsg_list_form($current_folder, $messages, $folders) {
+  $form = $extra_folders = array();
   foreach ($folders as $folder) {
     $folder_list[] = _privatemsg_format_folder($current_folder, $folder[0], $folder[1]);
     if ($folder[0] != 1 && $folder[0] != $current_folder) {
       $extra_folders[$folder[0]] = $folder[1];
     }
   }
-  return theme('links', $folder_list) . drupal_get_form('privatemsg_list_form', $current_folder, $messages, $folders, $extra_folders);
-}
 
-function privatemsg_list_form($current_folder, $messages, $folders, $extra_folders) {
-  $form = array();
-
+  $form['folders'] = array(
+      '#value' => theme('links', $folder_list)
+      );
   $form['messages'] = array(
       '#theme' => 'privatemsg_message_table',
       '#tree' => TRUE
