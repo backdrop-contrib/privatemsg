@@ -163,11 +163,11 @@ function privatemsg_update_2() {
   }
   foreach (array('privatemsg' => 'id', 'privatemsg_folder' => 'fid') as $table => $id) {
     $ret[] = update_sql(sprintf($sql, $table, $id));
-    $max = db_result(db_query("SELECT max($id) FROM {$table}"));
+    $max = db_result(db_query('SELECT max('. $id .') FROM {'. $table .'}'));
     if ($table == 'privatemsg') {
       $max = max($max, db_result(db_query('SELECT max(id) FROM {privatemsg_archive}')));
     }
-    $ret[] = update_sql(sprintf($seq, "{$table}_$id", $max));
+    $ret[] = update_sql(sprintf($seq, '{'. $table .'}_'. $id, $max));
   }
   $ret[] = update_sql(sprintf($sql, 'privatemsg_archive', 'id'));
   return $ret;
