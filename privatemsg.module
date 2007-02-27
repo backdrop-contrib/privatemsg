@@ -175,6 +175,17 @@ function privatemsg_user($type, &$edit, &$user, $category = NULL) {
         return $form;
       }
       break;
+
+    case 'insert':
+      if ($welcome_message = trim(variable_get('privatemsg_welcome_message', ''))) {
+        $subject = variable_get('privatemsg_welcome_subject', t('Welcome'));
+        $format = variable_get('privatemsg_welcome_format', FILTER_FORMAT_DEFAULT);
+        $sender = user_load(array('uid' => variable_get('privatemsg_welcome_sender', 1)));
+        if ($sender->uid) {
+          _privatemsg_send($sender, $user, $subject, $welcome_message, $format);
+        }
+      }
+      break;
   }
 }
 
@@ -222,7 +233,51 @@ function privatemsg_configure() {
       '#description' => t('Provide a link to send private messages to users with their comments.')
       );
 
+
+  $form['welcome'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Welcome message for new users')
+      );
+  $form['welcome']['subject'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Subject'),
+      '#default_value' => variable_get('privatemsg_welcome_subject', t('Welcome')),
+      '#size' => 50,
+      '#maxlength' => 64
+      );
+  $form['welcome']['privatemsg_welcome_message'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Message'),
+      '#default_value' => variable_get('privatemsg_welcome_message', ''),
+      '#cols' => 80,
+      '#rows' => 5,
+      '#description' => t('Leave blank to disable this feature.')
+      );
+  $form['welcome'][] = filter_form(variable_get('privatemsg_welcome_format', FILTER_FORMAT_DEFAULT));
+  $sender = user_load(array('uid' => variable_get('privatemsg_welcome_sender', 1)));
+  $form['welcome']['privatemsg_welcome_sender'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Sender'),
+      '#default_value' => $sender->name,
+      '#autocomplete_path' => 'privatemsg/autocomplete',
+      '#size' => 50,
+      '#maxlength' => 64,
+      '#required' => TRUE
+      );
+
   return system_settings_form($form);
+}
+
+function privatemsg_configure_validate($form_id, $form_values, $form) {
+  if (!empty($form_values['privatemsg_welcome_sender'])) {
+    $sender = user_load(array('name' => $form_values['privatemsg_welcome_sender']));
+    if ($sender->uid) {
+      form_set_value($form['welcome']['privatemsg_welcome_sender'], $sender->uid);
+    }
+    else {
+      form_set_error('privatemsg_welcome_sender', t('The <em>Sender</em> does not exist.'));
+    }
+  }
 }
 
 /**
