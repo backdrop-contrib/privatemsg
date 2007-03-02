@@ -123,7 +123,8 @@ function privatemsg_user($type, &$edit, &$user, $category = NULL) {
     case 'view':
       if (user_access('access private messages') && (isset($user->privatemsg_allow) ? $user->privatemsg_allow : 1)) {
         return array(t('Private messages') => array(array(
-          'value' => l(t('send private message'), 'privatemsg/msgto/'. $user->uid),
+          'value' => l(t('send private message'), 'privatemsg/msgto/'. $user->uid, array(
+            'title' => t('send private message to @name', array('@name' => $user->name)))),
           'class' => 'send-message')));
       }
       else if ($GLOBALS['user']->uid) {
