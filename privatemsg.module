@@ -497,9 +497,9 @@ function privatemsg_new() {
       $message->subject = t('Re:') .' '. $message->subject;
     }
 
-    // quoting; [quote] if default input format uses bbcode, else > quoting
+    // quoting; [quote] if default input format uses bbcode or quote, else > quoting
     foreach (filter_list_format(filter_resolve_format(FILTER_FORMAT_DEFAULT)) as $filter) {
-      if ($filter->module == 'bbcode') {
+      if ($filter->module == 'bbcode' || $filter->module == 'quote') {
         $bbcode = TRUE;
         break;
       }
