@@ -18,11 +18,11 @@ msgstr ""
 
 #: privatemsg.module:13
 msgid "The private messaging module allows users to send messages to each other without having to share email addresses. An inbox link will appear in the navigation menu. The \"write to author\" links are included in posts, allowing users to write a private message instead of commenting openly.  Allowing users to communicate directly is an important  part of building the strength of the community."
-msgstr "Das Private Messaging Modul erlaubt es Benutzern, sich gegenseitig Privatnachrichten verschicken zu können, ohne E-Mail-Adressen austauschen zu müssen. Ein Link auf den Posteingang erscheint im Navigations-Menü. „Nachricht an Verfasser“-Links werden allen Beiträgen angefügt, damit Benutzer auch dem Verfasser direkt schreiben können, statt den Beitrag öffentlich zu kommentieren. Die Möglichkeit, direkt kommunizieren zu können, stellt einen wichtigen Aspekt zum Aufbau einer starken Community dar."
+msgstr "Das Private Messaging Modul erlaubt es Benutzern, sich gegenseitig Privatnachrichten verschicken zu kÃ¶nnen, ohne E-Mail-Adressen austauschen zu mÃ¼ssen. Ein Link auf den Posteingang erscheint im Navigations-MenÃ¼. Â„Nachricht an VerfasserÂ“-Links werden allen BeitrÃ¤gen angefÃ¼gt, damit Benutzer auch dem Verfasser direkt schreiben kÃ¶nnen, statt den Beitrag Ã¶ffentlich zu kommentieren. Die MÃ¶glichkeit, direkt kommunizieren zu kÃ¶nnen, stellt einen wichtigen Aspekt zum Aufbau einer starken Community dar."
 
 #: privatemsg.module:14
 msgid "Users can also select whether to receive email notices of new messages by editing their user profile.  The contacts list contains only users that you have previously messaged. To contact users not in your list, you need to know their local user name.  Administrators can set messaging options such as frequency of emails, message status display, and number of messages to display per page.   They can also configure 'Write to Author' options."
-msgstr "Benutzer können auch entscheiden, ob sie E-Mail-Benachrichtigungen bekommen möchten, indem sie diese Option in ihrem Profil setzen. Die Kontaktliste enthält nur Benutzer, die man bereits angeschrieben hatte. Für andere muss deren Benutzername bekannt sein. Administratoren können weitere Einstellungen machen wie Häufigkeit von E-Mail-Benachrichtigungen, Anzeige des Nachrichtenstatus, die Anzahl dargestellter Nachrichten pro Seite und „Nachricht an Verfasser“-Optionen.."
+msgstr "Benutzer kÃ¶nnen auch entscheiden, ob sie E-Mail-Benachrichtigungen bekommen mÃ¶chten, indem sie diese Option in ihrem Profil setzen. Die Kontaktliste enthÃ¤lt nur Benutzer, die man bereits angeschrieben hatte. FÃ¼r andere muss deren Benutzername bekannt sein. Administratoren kÃ¶nnen weitere Einstellungen machen wie HÃ¤ufigkeit von E-Mail-Benachrichtigungen, Anzeige des Nachrichtenstatus, die Anzahl dargestellter Nachrichten pro Seite und Â„Nachricht an VerfasserÂ“-Optionen.."
 
 #: privatemsg.module:15
 msgid "<p>You can</p>\n<ul>\n<li>administer privatemsg at <a href=\"%admin-settings-privatemsg\">administer &gt;&gt; settings &gt;&gt; private message</a>.</li>\n<li>view your private messages at <a href=\"%privatemsg\">view inbox</a>.</li>\n"
@@ -78,11 +78,11 @@ msgstr "<a href=\"!login\"> anmelden</a> oder <a href=\"!register\"> registriere
 
 #: privatemsg.module:135
 msgid "<a href=\"!login\">login</a> to send private messages to this user"
-msgstr "<a href=\"!login\">Anmelden</a> für Nachricht an diesen Benutzer."
+msgstr "<a href=\"!login\">Anmelden</a> fÃ¼r Nachricht an diesen Benutzer."
 
 #: privatemsg.module:146
 msgid "Private message settings"
-msgstr "Einstellungen für Privatnachrichten"
+msgstr "Einstellungen fÃ¼r Privatnachrichten"
 
 #: privatemsg.module:152
 msgid "Allow private messages"
@@ -90,7 +90,7 @@ msgstr "Privatnachrichten erlauben"
 
 #: privatemsg.module:154
 msgid "Check this box to allow users to send you private messages."
-msgstr "Diese Box markieren, um Benutzern das Versenden von Privatnachrichten zu ermöglichen."
+msgstr "Diese Box markieren, um Benutzern das Versenden von Privatnachrichten zu ermÃ¶glichen."
 
 #: privatemsg.module:158
 msgid "Aggressive notification of new messages"
@@ -102,7 +102,7 @@ msgstr ""
 
 #: privatemsg.module:164
 msgid "Receive e-mail for unread messages"
-msgstr "E-Mail-Benachrichtigung über neue Nachrichten"
+msgstr "E-Mail-Benachrichtigung Ã¼ber neue Nachrichten"
 
 #: privatemsg.module:165
 msgid "Never"
@@ -110,7 +110,7 @@ msgstr "Nie"
 
 #: privatemsg.module:165
 msgid "Daily"
-msgstr "Tägliche Zusammenfassung"
+msgstr "TÃ¤gliche Zusammenfassung"
 
 #: privatemsg.module:165
 msgid "Every message"
@@ -118,7 +118,7 @@ msgstr "Jede einzelne Nachricht"
 
 #: privatemsg.module:167
 msgid "Select when to receive e-mail notification for unread messages."
-msgstr "Wie oft eine E-Mail-Benachrichtigung über neue Nachrichten erfolgen soll."
+msgstr "Wie oft eine E-Mail-Benachrichtigung Ã¼ber neue Nachrichten erfolgen soll."
 
 #: privatemsg.module:181
 msgid "Private messaging max rate"
@@ -142,7 +142,7 @@ msgstr "Aktiviert"
 
 #: privatemsg.module:191
 msgid "If enabled users can see whether a message has been read or not."
-msgstr "Wenn aktiviert können Benutzer sehen, ob eine Nachricht bereits gelesen wurde oder nicht."
+msgstr "Wenn aktiviert kÃ¶nnen Benutzer sehen, ob eine Nachricht bereits gelesen wurde oder nicht."
 
 #: privatemsg.module:195
 msgid "Messages per page"
@@ -150,11 +150,11 @@ msgstr "Nachrichten pro Seite"
 
 #: privatemsg.module:198
 msgid "The maximum number of messages displayed per page; links to browse messages automatically appear."
-msgstr "Die maximale Anzahl von Nachrichten, die auf einer Seite angezeigt werden sollen. Links zum Blättern erscheinen automatisch."
+msgstr "Die maximale Anzahl von Nachrichten, die auf einer Seite angezeigt werden sollen. Links zum BlÃ¤ttern erscheinen automatisch."
 
 #: privatemsg.module:203
 msgid "\"Write to author\" links"
-msgstr "„Nachricht an Verfasser“-Links"
+msgstr "Â„Nachricht an VerfasserÂ“-Links"
 
 #: privatemsg.module:207
 msgid "Display link with posts"
@@ -186,7 +186,7 @@ msgstr "Versendete Nachrichten"
 
 #: privatemsg.module:365;724
 msgid "Delete messages"
-msgstr "Nachrichten löschen"
+msgstr "Nachrichten lÃ¶schen"
 
 #: privatemsg.module:372;768
 msgid "New folder"
@@ -206,11 +206,11 @@ msgstr "Ordner leeren"
 
 #: privatemsg.module:398;755
 msgid "Delete folder"
-msgstr "Ordner löschen"
+msgstr "Ordner lÃ¶schen"
 
 #: privatemsg.module:406
 msgid "Folder deleted."
-msgstr "Ordner wurde gelöscht."
+msgstr "Ordner wurde gelÃ¶scht."
 
 #: privatemsg.module:432;433
 msgid "Re:"
@@ -238,7 +238,7 @@ msgstr "Nachricht versenden"
 
 #: privatemsg.module:504
 msgid "The <em>Recipient</em> does not exist."
-msgstr "Der <em>Empfänger</em> existiert nicht"
+msgstr "Der <em>EmpfÃ¤nger</em> existiert nicht"
 
 #: privatemsg.module:507
 msgid "@name does not accept private messages."
@@ -246,7 +246,7 @@ msgstr "@name akzeptiert keine Privatnachrichten."
 
 #: privatemsg.module:511
 msgid "The supplied input format is invalid."
-msgstr "Das Eingabeformat ist ungültig."
+msgstr "Das Eingabeformat ist ungÃ¼ltig."
 
 #: privatemsg.module:520
 msgid "Message sent."
@@ -254,7 +254,7 @@ msgstr "Nachricht versendet."
 
 #: privatemsg.module:552
 msgid "Message deleted."
-msgstr "Nachricht gelöscht."
+msgstr "Nachricht gelÃ¶scht."
 
 #: privatemsg.module:590
 msgid "Name"
@@ -262,7 +262,7 @@ msgstr "Name"
 
 #: privatemsg.module:597
 msgid "Add folder"
-msgstr "Ordner hinzufügen"
+msgstr "Ordner hinzufÃ¼gen"
 
 #: privatemsg.module:606
 msgid "A folder with this name already exists."
@@ -290,11 +290,11 @@ msgstr "Absender akzeptiert keine Antworten"
 
 #: privatemsg.module:651
 msgid "Delete this message"
-msgstr "Nachricht löschen"
+msgstr "Nachricht lÃ¶schen"
 
 #: privatemsg.module:651
 msgid "Are you sure to delete this message?"
-msgstr "Bist du dir sicher, dass du diese Nachricht löschen möchtest?"
+msgstr "Bist du dir sicher, dass du diese Nachricht lÃ¶schen mÃ¶chtest?"
 
 #: privatemsg.module:654
 msgid "List messages"
@@ -306,15 +306,15 @@ msgstr "Fehler: Du kannst diese Nachricht nicht lesen"
 
 #: privatemsg.module:725
 msgid "Are you sure you want to delete these messages?"
-msgstr "Bist du dir sicher, dass du diese Nachrichten löschen möchtest?"
+msgstr "Bist du dir sicher, dass du diese Nachrichten lÃ¶schen mÃ¶chtest?"
 
 #: privatemsg.module:756
 msgid "Are you sure you want to delete this folder and all its messages?"
-msgstr "Bist du dir sicher, dass du diesen Ordner und alle darin befindlichen Nachrichten löschen möchtest?"
+msgstr "Bist du dir sicher, dass du diesen Ordner und alle darin befindlichen Nachrichten lÃ¶schen mÃ¶chtest?"
 
 #: privatemsg.module:763
 msgid "Are you sure you want to delete every message in this folder?"
-msgstr "Bist du sicher, dass du alle Nachrichten in diesem Ordner löschen möchtest?"
+msgstr "Bist du sicher, dass du alle Nachrichten in diesem Ordner lÃ¶schen mÃ¶chtest?"
 
 #: privatemsg.module:789
 msgid "No messages."
@@ -333,8 +333,8 @@ msgstr[1] "Du hast @count neue <a href=\"%url\">Privatnachrichten</a>"
 #: privatemsg.module:288
 msgid "Hi @name,\nThis is an automatic reminder from the site @site. You have received a new private message.\n\nTo read your message, follow this link:\n!link1\n\nIf you don't want to receive these emails again, change your preferences here:\n!link2"
 msgid_plural "Hi @name,\nThis is an automatic reminder from the site @site. You have @count unread private messages.\n\nTo read your messages, follow this link:\n!link1\n\nIf you don't want to receive these emails again, change your preferences here:\n!link2"
-msgstr[0] "Hallo @name,\n\n dies ist eine automatisch versendete Erinnerung von @site. In deinem Posteingang befindet sich eine neue Privatnachricht.\n\nUm die Nachrichten abzurufen, klicke auf den folgenden Link (oder kopiere ihn in Adresszeile deines Webbrowsers):\n!link1\n\nFalls du keine weiteren Benachrichtigungen mehr erhalten möchtest, kannst du deine Einstellungen hier ändern:\n!link2"
-msgstr[1] "Hallo @name,\n\n dies ist eine automatisch versendete Erinnerung von @site. In deinem Posteingang befinden sich @count neue Privatnachrichten.\n\nUm die Nachrichten abzurufen, klicke auf den folgenden Link (oder kopiere ihn in Adresszeile deines Webbrowsers):\n!link1\n\nFalls du keine weiteren Benachrichtigungen mehr erhalten möchtest, kannst du deine Einstellungen hier ändern:\n!link2"
+msgstr[0] "Hallo @name,\n\n dies ist eine automatisch versendete Erinnerung von @site. In deinem Posteingang befindet sich eine neue Privatnachricht.\n\nUm die Nachrichten abzurufen, klicke auf den folgenden Link (oder kopiere ihn in Adresszeile deines Webbrowsers):\n!link1\n\nFalls du keine weiteren Benachrichtigungen mehr erhalten mÃ¶chtest, kannst du deine Einstellungen hier Ã¤ndern:\n!link2"
+msgstr[1] "Hallo @name,\n\n dies ist eine automatisch versendete Erinnerung von @site. In deinem Posteingang befinden sich @count neue Privatnachrichten.\n\nUm die Nachrichten abzurufen, klicke auf den folgenden Link (oder kopiere ihn in Adresszeile deines Webbrowsers):\n!link1\n\nFalls du keine weiteren Benachrichtigungen mehr erhalten mÃ¶chtest, kannst du deine Einstellungen hier Ã¤ndern:\n!link2"
 
 #: privatemsg.module:227
 msgid "access private messages"
