@@ -10,7 +10,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
-"POT-Creation-Date: 2007-03-05 15:45-0800\n"
+"POT-Creation-Date: 2007-03-06 09:54-0800\n"
 "PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
 "Last-Translator: NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
@@ -72,11 +72,11 @@ msgid "Private messages"
 msgstr ""
 
 #: privatemsg.module:126
-msgid "send private message"
+msgid "Write private message"
 msgstr ""
 
 #: privatemsg.module:127
-msgid "send private message to @name"
+msgid "Send private message to @name"
 msgstr ""
 
 #: privatemsg.module:136
