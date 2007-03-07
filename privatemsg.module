@@ -8,6 +8,12 @@ define('PRIVATEMSG_MAIL_INDIVIDUAL', 2);
  * Implementation of hook_help().
  */
 function privatemsg_help($section) {
+  if (preg_match('#^admin/build/menu/item/edit/(\d+)$#', $section, $match)) {
+    $menu_path = db_result(db_query('SELECT path FROM {menu} WHERE mid = %d', $match[1]));
+    if ($menu_path == 'privatemsg') {
+      return t('To move the inbox link to another menu location, enable this menu item and set the location, then disable this menu item again. To change the text for the inbox link, visit <a href="!settings-url">privatemsg settings</a>.', array('!settings-url' => url('admin/settings/privatemsg')));
+    }
+  }
   switch ($section) {
     case 'admin/help#privatemsg':
       $output = '<p>'. t('The private messaging module allows users to send messages to each other without having to share email addresses. An inbox link will appear in the navigation menu. The "write to author" links are included in posts, allowing users to write a private message instead of commenting openly.  Allowing users to communicate directly is an important  part of building the strength of the community.') .'</p>';
@@ -57,7 +63,12 @@ function privatemsg_menu($may_cache) {
                      'title' => t('Privatemsg'),
                      'description' => t('Configure Privatemsg settings.'),
                      'callback' => 'drupal_get_form',
-                     'callback arguments' => array('privatemsg_configure'));
+	 'callback arguments' => array('privatemsg_configure'));
+    $items[] = array('path' => 'privatemsg',
+                     'title' => t('Privatemsg menu'),
+                     'callback' => 'privatemsg_list',
+                     'access' => TRUE, // Check access/redirect in callback
+                     'type' => MENU_SUGGESTED_ITEM);
     $items[] = array('path' => 'privatemsg/new',
                      'title' => t('Write a new message'),
                      'callback' => 'drupal_get_form',
@@ -99,10 +110,9 @@ function privatemsg_menu($may_cache) {
   }
   else {
     $new = (int)_privatemsg_get_new_messages();
-    $items[] = array('path' => 'privatemsg',
-                     'title' => t('My inbox') . ($new ? ' ('. $new .')' : ''),
+    $items[] = array('path' => 'privatemsg/inbox',
+                     'title' => t(variable_get('privatemsg_menu_link', 'My inbox')) . ($new ? ' ('. $new .')' : ''),
                      'callback' => 'privatemsg_list',
-                     'access' => TRUE, // Check access/redirect in callback
                      'type' => $user->uid && (isset($user->privatemsg_allow) ? $user->privatemsg_allow : 1) ? MENU_DYNAMIC_ITEM : MENU_CALLBACK);
 
     if ($new && strncmp($_GET['q'], 'privatemsg', 10) && (isset($user->privatemsg_setmessage_notify) ? $user->privatemsg_setmessage_notify : 1) && user_access('access private messages')) {
@@ -213,6 +223,12 @@ function privatemsg_configure() {
       '#default_value' => variable_get('privatemsg_per_page', 10),
       '#options' => drupal_map_assoc(array(5, 10, 15, 20, 25, 30, 35, 40, 50, 60, 80, 100)),
       '#description' => t('The maximum number of messages displayed per page; links to browse messages automatically appear.')
+      );
+  $form['privatemsg_menu_link'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Menu link'),
+      '#default_value' => variable_get('privatemsg_menu_link', t('My inbox')),
+      '#description' => t("Text shown in link to user's inbox.")
       );
 
   $form['links'] = array(
