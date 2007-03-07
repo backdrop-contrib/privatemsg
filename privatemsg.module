@@ -109,7 +109,7 @@ function privatemsg_menu($may_cache) {
                      'type' => MENU_CALLBACK);
   }
   else {
-    $new = (int)_privatemsg_get_new_messages();
+    $new = _privatemsg_get_new_messages();
     $items[] = array('path' => 'privatemsg/inbox',
                      'title' => t(variable_get('privatemsg_menu_link', 'My inbox')) . ($new ? ' ('. $new .')' : ''),
                      'callback' => 'privatemsg_list',
@@ -197,6 +197,37 @@ function privatemsg_user($type, &$edit, &$user, $category = NULL) {
         }
       }
       break;
+  }
+}
+
+/**
+ * Implementation of hook_block().
+ */
+function privatemsg_block($op = 'list', $delta = 0, $edit = array()) {
+  if ($op == 'list') {
+    $blocks[0]['info'] = t('Private messages');
+    return $blocks;
+  }
+  else if ($op == 'view') {
+    switch ($delta) {
+      case 0:
+        return _privatemsg_block_inbox();
+    }
+  }
+}
+
+function _privatemsg_block_inbox() {
+  global $user;
+  if ($user->uid && user_access('access private messages') && (isset($user->privatemsg_allow) ? $user->privatemsg_allow : 1)) {
+    $new = _privatemsg_get_new_messages();
+    $items = array(
+      l(t('Inbox') . ($new ? " ($new)" : ''), 'privatemsg'),
+      l(t('Write message'), 'privatemsg/msgto'),
+    );
+
+    $block['subject'] = t('Private messages');
+    $block['content'] = theme('item_list', $items);
+    return $block;
   }
 }
 
@@ -705,7 +736,7 @@ function _privatemsg_get_new_messages($uid = 0) {
     $uid = $user->uid;
   }
   if (!isset($cache[$uid])) {
-    $cache[$uid] = db_result(db_query('SELECT COUNT(*) FROM {privatemsg} WHERE recipient = %d AND newmsg = 1 AND recipient_del = 0', $uid));
+    $cache[$uid] = (int)db_result(db_query('SELECT COUNT(*) FROM {privatemsg} WHERE recipient = %d AND newmsg = 1 AND recipient_del = 0', $uid));
   }
   return $cache[$uid];
 }
