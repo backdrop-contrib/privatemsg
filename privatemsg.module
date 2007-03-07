@@ -526,7 +526,7 @@ function privatemsg_new() {
       '#required' => TRUE
       );
   $result = db_query('SELECT DISTINCT(name) AS name FROM {privatemsg} p, {users} u WHERE p.author = u.uid AND recipient = %d AND p.timestamp > (UNIX_TIMESTAMP(NOW()) - (3600 * 24 * 30)) ORDER BY name', $user->uid);
-  $contacts = array(t('Contacts'));
+  $contacts = array();
   while ($name = db_fetch_object($result)) {
     $contacts[] = check_plain($name->name);
   }
@@ -540,6 +540,7 @@ function privatemsg_new() {
     }
     sort($contacts);
   }
+  array_unshift($contacts, t('Contacts'));
   $form['quick'] = array(
       '#type' => 'select',
       '#options' => drupal_map_assoc($contacts),
