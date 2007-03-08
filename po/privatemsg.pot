@@ -3,14 +3,14 @@
 # LANGUAGE translation of Drupal (privatemsg.module)
 # Copyright YEAR NAME <EMAIL@ADDRESS>
 # Generated from files:
-#  privatemsg.module,v 1.70.2.22 2007/03/07 22:10:53 mindless
+#  privatemsg.module,v 1.70.2.23 2007/03/07 23:04:24 mindless
 #  privatemsg.info,v 1.1 2007/01/27 00:56:10 mindless
 #
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
-"POT-Creation-Date: 2007-03-07 15:01-0800\n"
+"POT-Creation-Date: 2007-03-07 16:29-0800\n"
 "PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
 "Last-Translator: NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
@@ -39,363 +39,367 @@ msgstr ""
 msgid "For more information please read the configuration and customization handbook <a href=\"!privatemsg\">Privatemsg page</a>."
 msgstr ""
 
-#: privatemsg.module:45
+#: privatemsg.module:49
 msgid "Write to author"
 msgstr ""
 
-#: privatemsg.module:63 privatemsg.info:2
+#: privatemsg.module:67 privatemsg.info:2
 msgid "Privatemsg"
 msgstr ""
 
-#: privatemsg.module:64
+#: privatemsg.module:68
 msgid "Configure Privatemsg settings."
 msgstr ""
 
-#: privatemsg.module:68
+#: privatemsg.module:72
 msgid "Privatemsg menu"
 msgstr ""
 
-#: privatemsg.module:73;79;85;474;908
+#: privatemsg.module:77;83;89;493;927
 msgid "Write a new message"
 msgstr ""
 
-#: privatemsg.module:91
+#: privatemsg.module:95
 msgid "Privatemsg autocomplete"
 msgstr ""
 
-#: privatemsg.module:96
+#: privatemsg.module:100
 msgid "Read message"
 msgstr ""
 
-#: privatemsg.module:101
+#: privatemsg.module:105
 msgid "Create new folder"
 msgstr ""
 
-#: privatemsg.module:135;145;150;208;228;437
+#: privatemsg.module:139;149;154;241;261;456
 msgid "Private messages"
 msgstr ""
 
-#: privatemsg.module:136
+#: privatemsg.module:140
 msgid "Write private message"
 msgstr ""
 
-#: privatemsg.module:137
+#: privatemsg.module:141
 msgid "Send private message to @name"
 msgstr ""
 
-#: privatemsg.module:146
+#: privatemsg.module:150
 msgid "<a href=\"!login\">login</a> or <a href=\"!register\">register</a> to send private messages to this user"
 msgstr ""
 
-#: privatemsg.module:151
+#: privatemsg.module:155
 msgid "<a href=\"!login\">login</a> to send private messages to this user"
 msgstr ""
 
-#: privatemsg.module:162
+#: privatemsg.module:166
 msgid "Private message settings"
 msgstr ""
 
-#: privatemsg.module:168
+#: privatemsg.module:172
 msgid "Allow private messages"
 msgstr ""
 
-#: privatemsg.module:170
+#: privatemsg.module:174
 msgid "Check this box to allow users to send you private messages."
 msgstr ""
 
-#: privatemsg.module:174
+#: privatemsg.module:178
 msgid "Aggressive notification of new messages"
 msgstr ""
 
-#: privatemsg.module:176
+#: privatemsg.module:180
 msgid "Show status message on every page until new messages are read."
 msgstr ""
 
-#: privatemsg.module:180
+#: privatemsg.module:184
 msgid "Receive e-mail for unread messages"
 msgstr ""
 
-#: privatemsg.module:181
+#: privatemsg.module:185
 msgid "Never"
 msgstr ""
 
-#: privatemsg.module:181
+#: privatemsg.module:185
 msgid "Daily"
 msgstr ""
 
-#: privatemsg.module:181
+#: privatemsg.module:185
 msgid "Every message"
 msgstr ""
 
-#: privatemsg.module:183
+#: privatemsg.module:187
 msgid "Select when to receive e-mail notification for unread messages."
 msgstr ""
 
-#: privatemsg.module:192;292
+#: privatemsg.module:196;311
 msgid "Welcome"
 msgstr ""
 
-#: privatemsg.module:224;446;461
+#: privatemsg.module:215
+msgid "Private message \"Write to author\" links"
+msgstr ""
+
+#: privatemsg.module:219
+msgid "Link on node"
+msgstr ""
+
+#: privatemsg.module:224
+msgid "Link on teaser"
+msgstr ""
+
+#: privatemsg.module:229
+msgid "Link on comments"
+msgstr ""
+
+#: privatemsg.module:257;465;480
 msgid "Inbox"
 msgstr ""
 
-#: privatemsg.module:225
+#: privatemsg.module:258
 msgid "Write message"
 msgstr ""
 
-#: privatemsg.module:239
+#: privatemsg.module:272
 msgid "Private messaging max rate"
 msgstr ""
 
-#: privatemsg.module:242
+#: privatemsg.module:275
 msgid "Max submit rate for private messaging. To prevent abuse."
 msgstr ""
 
-#: privatemsg.module:246
+#: privatemsg.module:279
 msgid "Sent message status"
 msgstr ""
 
-#: privatemsg.module:248
+#: privatemsg.module:281
 msgid "Disabled"
 msgstr ""
 
-#: privatemsg.module:248
+#: privatemsg.module:281
 msgid "Enabled"
 msgstr ""
 
-#: privatemsg.module:249
+#: privatemsg.module:282
 msgid "If enabled users can see whether a message has been read or not."
 msgstr ""
 
-#: privatemsg.module:253
+#: privatemsg.module:286
 msgid "Messages per page"
 msgstr ""
 
-#: privatemsg.module:256
+#: privatemsg.module:289
 msgid "The maximum number of messages displayed per page; links to browse messages automatically appear."
 msgstr ""
 
-#: privatemsg.module:260
+#: privatemsg.module:293
 msgid "Menu link"
 msgstr ""
 
-#: privatemsg.module:261
+#: privatemsg.module:294
 msgid "My inbox"
 msgstr ""
 
-#: privatemsg.module:262
+#: privatemsg.module:295
 msgid "Text shown in link to user's inbox."
 msgstr ""
 
-#: privatemsg.module:267
+#: privatemsg.module:300
 msgid "\"Write to author\" links"
 msgstr ""
 
-#: privatemsg.module:271
-msgid "Display link with posts"
+#: privatemsg.module:301
+msgid "Edit <a href=\"!settings-url\">content types</a> to select where these links are displayed."
 msgstr ""
 
-#: privatemsg.module:274
-msgid "Provide a link to send private messages to users with posts they start."
-msgstr ""
-
-#: privatemsg.module:278
-msgid "Display link with comments"
-msgstr ""
-
-#: privatemsg.module:281
-msgid "Provide a link to send private messages to users with their comments."
-msgstr ""
-
-#: privatemsg.module:287
+#: privatemsg.module:306
 msgid "Welcome message for new users"
 msgstr ""
 
-#: privatemsg.module:291;600;805;958
+#: privatemsg.module:310;619;824;977
 msgid "Subject"
 msgstr ""
 
-#: privatemsg.module:298;608
+#: privatemsg.module:317;627
 msgid "Message"
 msgstr ""
 
-#: privatemsg.module:302
+#: privatemsg.module:321
 msgid "Leave blank to disable this feature."
 msgstr ""
 
-#: privatemsg.module:308
+#: privatemsg.module:327
 msgid "Sender"
 msgstr ""
 
-#: privatemsg.module:326
+#: privatemsg.module:345
 msgid "The <em>Sender</em> does not exist."
 msgstr ""
 
-#: privatemsg.module:394
+#: privatemsg.module:413
 msgid "New private messages at @site."
 msgstr ""
 
-#: privatemsg.module:453;466
+#: privatemsg.module:472;485
 msgid "Sent messages"
 msgstr ""
 
-#: privatemsg.module:476;886
+#: privatemsg.module:495;905
 msgid "Delete messages"
 msgstr ""
 
-#: privatemsg.module:483;930
+#: privatemsg.module:502;949
 msgid "New folder"
 msgstr ""
 
-#: privatemsg.module:485;899
+#: privatemsg.module:504;918
 msgid "Move to folder"
 msgstr ""
 
-#: privatemsg.module:487;502;512
+#: privatemsg.module:506;521;531
 msgid "Attempted use of unauthorized folder"
 msgstr ""
 
-#: privatemsg.module:496;924
+#: privatemsg.module:515;943
 msgid "Empty folder"
 msgstr ""
 
-#: privatemsg.module:509;917
+#: privatemsg.module:528;936
 msgid "Delete folder"
 msgstr ""
 
-#: privatemsg.module:517
+#: privatemsg.module:536
 msgid "Folder deleted."
 msgstr ""
 
-#: privatemsg.module:543;544
+#: privatemsg.module:562;563
 msgid "Re:"
 msgstr ""
 
-#: privatemsg.module:568;804;957
+#: privatemsg.module:587;823;976
 msgid "To"
 msgstr ""
 
-#: privatemsg.module:590
+#: privatemsg.module:609
 msgid "Contacts"
 msgstr ""
 
-#: privatemsg.module:617;629
+#: privatemsg.module:636;648
 msgid "Preview"
 msgstr ""
 
-#: privatemsg.module:621;669
+#: privatemsg.module:640;688
 msgid "Send private message"
 msgstr ""
 
-#: privatemsg.module:646
+#: privatemsg.module:665
 msgid "Preview message"
 msgstr ""
 
-#: privatemsg.module:656
+#: privatemsg.module:675
 msgid "The <em>Recipient</em> does not exist."
 msgstr ""
 
-#: privatemsg.module:659
+#: privatemsg.module:678
 msgid "@name does not accept private messages."
 msgstr ""
 
-#: privatemsg.module:663
+#: privatemsg.module:682
 msgid "The supplied input format is invalid."
 msgstr ""
 
-#: privatemsg.module:675
+#: privatemsg.module:694
 msgid "Message sent."
 msgstr ""
 
-#: privatemsg.module:710
+#: privatemsg.module:729
 msgid "Message deleted."
 msgstr ""
 
-#: privatemsg.module:748
+#: privatemsg.module:767
 msgid "Name"
 msgstr ""
 
-#: privatemsg.module:755
+#: privatemsg.module:774
 msgid "Add folder"
 msgstr ""
 
-#: privatemsg.module:764
+#: privatemsg.module:783
 msgid "A folder with this name already exists."
 msgstr ""
 
-#: privatemsg.module:771
+#: privatemsg.module:790
 msgid "Folder created successfully."
 msgstr ""
 
-#: privatemsg.module:780
+#: privatemsg.module:799
 msgid "Points for sending a private message"
 msgstr ""
 
-#: privatemsg.module:803;957
+#: privatemsg.module:822;976
 msgid "From"
 msgstr ""
 
-#: privatemsg.module:806;956
+#: privatemsg.module:825;975
 msgid "Date"
 msgstr ""
 
-#: privatemsg.module:813
+#: privatemsg.module:832
 msgid "Reply to this message"
 msgstr ""
 
-#: privatemsg.module:816
+#: privatemsg.module:835
 msgid "Sender does not accept replies"
 msgstr ""
 
-#: privatemsg.module:820
+#: privatemsg.module:839
 msgid "Delete this message"
 msgstr ""
 
-#: privatemsg.module:820
+#: privatemsg.module:839
 msgid "Are you sure to delete this message?"
 msgstr ""
 
-#: privatemsg.module:823
+#: privatemsg.module:842
 msgid "List messages"
 msgstr ""
 
-#: privatemsg.module:829
+#: privatemsg.module:848
 msgid "Error: you can't read this message"
 msgstr ""
 
-#: privatemsg.module:887
+#: privatemsg.module:906
 msgid "Are you sure you want to delete these messages?"
 msgstr ""
 
-#: privatemsg.module:918
+#: privatemsg.module:937
 msgid "Are you sure you want to delete this folder and all its messages?"
 msgstr ""
 
-#: privatemsg.module:925
+#: privatemsg.module:944
 msgid "Are you sure you want to delete every message in this folder?"
 msgstr ""
 
-#: privatemsg.module:951
+#: privatemsg.module:970
 msgid "No messages."
 msgstr ""
 
-#: privatemsg.module:487;502;512;0
+#: privatemsg.module:506;521;531;0
 msgid "privatemsg"
 msgstr ""
 
-#: privatemsg.module:121
+#: privatemsg.module:125
 msgid "You have one new <a href=\"%url\">private message</a>"
 msgid_plural "You have @count new <a href=\"%url\">private messages</a>"
 msgstr[0] ""
 msgstr[1] ""
 
-#: privatemsg.module:396
+#: privatemsg.module:415
 msgid "Hi @name,\nThis is an automatic reminder from the site @site. You have received a new private message.\n\nTo read your message, follow this link:\n!link1\n\nIf you don't want to receive these emails again, change your preferences here:\n!link2"
 msgid_plural "Hi @name,\nThis is an automatic reminder from the site @site. You have @count unread private messages.\n\nTo read your messages, follow this link:\n!link1\n\nIf you don't want to receive these emails again, change your preferences here:\n!link2"
 msgstr[0] ""
 msgstr[1] ""
 
-#: privatemsg.module:335
+#: privatemsg.module:354
 msgid "access private messages"
 msgstr ""
 

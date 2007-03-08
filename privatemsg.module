@@ -31,19 +31,23 @@ function privatemsg_help($section) {
 /**
  * Implementation of hook_link().
  */
-function privatemsg_link($type, $node = 0, $main = 0) {
+function privatemsg_link($type, $node = NULL, $teaser = FALSE) {
   global $user;
   static $access = array();
   $links = array();
-  if (user_access('access private messages') && ($type == 'node' || $type == 'comment') && variable_get("privatemsg_link_$type", 0) && $node->uid != $user->uid && (isset($user->privatemsg_allow) ? $user->privatemsg_allow : 1)) {
-    if (!isset($access[$node->uid])) {
-      $author = user_load(array('uid' => $node->uid));
-      $access[$node->uid] = user_access('access private messages', $author) && $author->uid && (isset($author->privatemsg_allow) ? $author->privatemsg_allow : 1);
+  $uid = $node->uid;
+  if ($type == 'comment' && $node->nid) {
+    $node = node_load($node->nid);
+  }
+  if (user_access('access private messages') && in_array($teaser ? 'teaser' : $type, variable_get('privatemsg_link_'. $node->type, array())) && $uid != $user->uid && (isset($user->privatemsg_allow) ? $user->privatemsg_allow : 1)) {
+    if (!isset($access[$uid])) {
+      $author = user_load(array('uid' => $uid));
+      $access[$uid] = user_access('access private messages', $author) && $author->uid && (isset($author->privatemsg_allow) ? $author->privatemsg_allow : 1);
     }
-    if ($access[$node->uid]) {
+    if ($access[$uid]) {
       $links['privatemsg_write_to_author'] = array(
         'title' => t('Write to author'),
-        'href' => 'privatemsg/msgto/'. $node->uid
+        'href' => 'privatemsg/msgto/'. $uid,
       );
     }
   }
@@ -201,6 +205,35 @@ function privatemsg_user($type, &$edit, &$user, $category = NULL) {
 }
 
 /**
+ * Implementation of hook_form_alter().
+ */
+function privatemsg_form_alter($form_id, &$form) {
+  if ($form_id == 'node_type_form') {
+    $link = variable_get('privatemsg_link_'. $form['#node_type']->type, array());
+    $form['workflow']['privatemsg_link'] = array(
+      '#type' => 'checkboxes',
+      '#title' => t('Private message "Write to author" links'),
+      '#weight' => 30,
+      'node' => array(
+        '#type' => 'checkbox',
+        '#title' => t('Link on node'),
+        '#default_value' => in_array('node', $link),
+      ),
+      'teaser' => array(
+        '#type' => 'checkbox',
+        '#title' => t('Link on teaser'),
+        '#default_value' => in_array('teaser', $link),
+      ),
+      'comment' => array(
+        '#type' => module_exists('comment') ? 'checkbox' : 'hidden',
+        '#title' => t('Link on comments'),
+        '#default_value' => in_array('comment', $link),
+      ),
+    );
+  }
+}
+
+/**
  * Implementation of hook_block().
  */
 function privatemsg_block($op = 'list', $delta = 0, $edit = array()) {
@@ -259,28 +292,14 @@ function privatemsg_configure() {
       '#type' => 'textfield',
       '#title' => t('Menu link'),
       '#default_value' => variable_get('privatemsg_menu_link', t('My inbox')),
-      '#description' => t("Text shown in link to user's inbox.")
+      '#description' => t("Text shown in link to user's inbox."),
       );
 
   $form['links'] = array(
       '#type' => 'fieldset',
-      '#title' => t('"Write to author" links')
+      '#title' => t('"Write to author" links'),
+      '#description' => t('Edit <a href="!settings-url">content types</a> to select where these links are displayed.', array('!settings-url' => url('admin/content/types'))),
       );
-  $form['links']['privatemsg_link_node'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Display link with posts'),
-      '#return_value' => 1,
-      '#default_value' => variable_get('privatemsg_link_node', 0),
-      '#description' => t('Provide a link to send private messages to users with posts they start.')
-      );
-  $form['links']['privatemsg_link_comment'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Display link with comments'),
-      '#return_value' => 1,
-      '#default_value' => variable_get('privatemsg_link_comment', 0),
-      '#description' => t('Provide a link to send private messages to users with their comments.')
-      );
-
 
   $form['welcome'] = array(
       '#type' => 'fieldset',
