@@ -75,6 +75,8 @@ function privatemsg_install() {
           PRIMARY KEY (id)
         )");
       db_query("CREATE INDEX {privatemsg_archive_recipient} ON {privatemsg_archive}(recipient)");
+      db_query('CREATE SEQUENCE {privatemsg}_id_seq INCREMENT 1 START 1');
+      db_query('CREATE SEQUENCE {privatemsg_folder}_fid_seq INCREMENT 1 START 1');
       db_query("create or replace function unix_timestamp(timestamp with time zone)
         returns int as '
         declare
