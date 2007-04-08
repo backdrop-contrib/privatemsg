@@ -594,22 +594,21 @@ function privatemsg_new() {
   $result = db_query('SELECT DISTINCT(name) AS name FROM {privatemsg} p, {users} u WHERE p.author = u.uid AND recipient = %d AND p.timestamp > (UNIX_TIMESTAMP(NOW()) - (3600 * 24 * 30)) ORDER BY name', $user->uid);
   $contacts = array();
   while ($name = db_fetch_object($result)) {
-    $contacts[] = check_plain($name->name);
+    $username = check_plain($name->name);
+    $contacts[$username] = $username;
   }
   if (module_exists('buddylist')) {
     $result = db_query('SELECT u.name FROM {buddylist} b, {users} u WHERE b.buddy = u.uid AND b.uid = %d', $user->uid);
     while ($name = db_fetch_object($result)) {
       $buddyname = check_plain($name->name);
-      if (!in_array($buddyname, $contacts)) {
-        $contacts[] = $buddyname;
-      }
+      $contacts[$buddyname] = $buddyname;
     }
-    sort($contacts);
+    asort($contacts);
   }
   array_unshift($contacts, t('Contacts'));
   $form['quick'] = array(
       '#type' => 'select',
-      '#options' => drupal_map_assoc($contacts),
+      '#options' => $contacts,
       '#attributes' => array('style' => 'display: none;'), // hidden unless JS is working
       '#suffix' => '</div>'
       );
