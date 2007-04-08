@@ -673,7 +673,7 @@ function privatemsg_new_validate($form_id, $form_values) {
     if (!$recipient->uid) {
       form_set_error('recipient', t('The <em>Recipient</em> does not exist.'));
     }
-    else if (!(isset($recipient->privatemsg_allow) ? $recipient->privatemsg_allow : 1)) {
+    else if (!$user->status || !(isset($recipient->privatemsg_allow) ? $recipient->privatemsg_allow : 1)) {
       form_set_error('recipient', t('@name does not accept private messages.', array('@name' => $recipient->name)));
     }
   }
