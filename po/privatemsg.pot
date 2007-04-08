@@ -3,14 +3,14 @@
 # LANGUAGE translation of Drupal (privatemsg.module)
 # Copyright YEAR NAME <EMAIL@ADDRESS>
 # Generated from files:
-#  privatemsg.module,v 1.70.2.23 2007/03/07 23:04:24 mindless
+#  privatemsg.module,v 1.70.2.24 2007/03/08 00:33:14 mindless
 #  privatemsg.info,v 1.1 2007/01/27 00:56:10 mindless
 #
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
-"POT-Creation-Date: 2007-03-07 16:29-0800\n"
+"POT-Creation-Date: 2007-04-08 13:02-0700\n"
 "PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
 "Last-Translator: NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
@@ -364,7 +364,7 @@ msgid "List messages"
 msgstr ""
 
 #: privatemsg.module:848
-msgid "Error: you can't read this message"
+msgid "Error: you can't read this message."
 msgstr ""
 
 #: privatemsg.module:906
@@ -388,8 +388,8 @@ msgid "privatemsg"
 msgstr ""
 
 #: privatemsg.module:125
-msgid "You have one new <a href=\"%url\">private message</a>"
-msgid_plural "You have @count new <a href=\"%url\">private messages</a>"
+msgid "You have one new <a href=\"!url\">private message</a>."
+msgid_plural "You have @count new <a href=\"!url\">private messages</a>."
 msgstr[0] ""
 msgstr[1] ""
 

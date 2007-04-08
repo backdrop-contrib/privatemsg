@@ -325,7 +325,7 @@ msgid "List messages"
 msgstr "消息列表"
 
 #: privatemsg.module:658
-msgid "Error: you can't read this message"
+msgid "Error: you can't read this message."
 msgstr "错误：不能阅读该消息"
 
 #: privatemsg.module:725
@@ -350,10 +350,10 @@ msgid "privatemsg"
 msgstr "私人消息"
 
 #: privatemsg.module:106
-msgid "You have one new <a href=\"%url\">private message</a>"
-msgid_plural "You have @count new <a href=\"%url\">private messages</a>"
-msgstr[0] "你有 1 条 <a href=\"%url\">新消息</a>"
-msgstr[1] "你有 @count 条 <a href=\"%url\">新消息</a>"
+msgid "You have one new <a href=\"!url\">private message</a>."
+msgid_plural "You have @count new <a href=\"!url\">private messages</a>."
+msgstr[0] "你有 1 条 <a href=\"!url\">新消息</a>"
+msgstr[1] "你有 @count 条 <a href=\"!url\">新消息</a>"
 
 #: privatemsg.module:288
 msgid ""

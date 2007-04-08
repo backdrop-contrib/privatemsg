@@ -277,8 +277,8 @@ msgid "List messages"
 msgstr "Lijst met berichten"
 
 #: privatemsg.module:616
-msgid "Error: you can't read this message"
-msgstr "Fout: u kunt dit bericht niet lezen"
+msgid "Error: you can't read this message."
+msgstr "Fout: u kunt dit bericht niet lezen."
 
 #: privatemsg.module:687
 msgid "Are you sure you want to delete these messages?"

@@ -312,8 +312,8 @@ msgid "List messages"
 msgstr "Pokaż PW"
 
 #: privatemsg.module:498
-msgid "Error: you can't read this message"
-msgstr "Błąd: nie możesz odczytać tej PW"
+msgid "Error: you can't read this message."
+msgstr "Błąd: nie możesz odczytać tej PW."
 
 #: privatemsg.module:546
 msgid "<p>No messages</p>"

@@ -301,8 +301,8 @@ msgid "List messages"
 msgstr "Nachrichten auflisten"
 
 #: privatemsg.module:658
-msgid "Error: you can't read this message"
-msgstr "Fehler: Du kannst diese Nachricht nicht lesen"
+msgid "Error: you can't read this message."
+msgstr "Fehler: Du kannst diese Nachricht nicht lesen."
 
 #: privatemsg.module:725
 msgid "Are you sure you want to delete these messages?"
@@ -325,10 +325,10 @@ msgid "privatemsg"
 msgstr ""
 
 #: privatemsg.module:106
-msgid "You have one new <a href=\"%url\">private message</a>"
-msgid_plural "You have @count new <a href=\"%url\">private messages</a>"
-msgstr[0] "Du hast eine neue <a href=\"%url\">Privatnachricht</a>"
-msgstr[1] "Du hast @count neue <a href=\"%url\">Privatnachrichten</a>"
+msgid "You have one new <a href=\"!url\">private message</a>."
+msgid_plural "You have @count new <a href=\"!url\">private messages</a>."
+msgstr[0] "Du hast eine neue <a href=\"!url\">Privatnachricht</a>."
+msgstr[1] "Du hast @count neue <a href=\"!url\">Privatnachrichten</a>."
 
 #: privatemsg.module:288
 msgid "Hi @name,\nThis is an automatic reminder from the site @site. You have received a new private message.\n\nTo read your message, follow this link:\n!link1\n\nIf you don't want to receive these emails again, change your preferences here:\n!link2"

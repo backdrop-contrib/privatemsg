@@ -122,7 +122,7 @@ function privatemsg_menu($may_cache) {
     if ($new && strncmp($_GET['q'], 'privatemsg', 10) && (isset($user->privatemsg_setmessage_notify) ? $user->privatemsg_setmessage_notify : 1) && user_access('access private messages')) {
       $m = drupal_set_message();
       if (empty($m)) {
-        drupal_set_message(strtr(format_plural($new, 'You have one new <a href="%url">private message</a>', 'You have @count new <a href="%url">private messages</a>'), array('%url' => url('privatemsg'))));
+        drupal_set_message(strtr(format_plural($new, 'You have one new <a href="!url">private message</a>.', 'You have @count new <a href="!url">private messages</a>.'), array('!url' => url('privatemsg'))));
       }
     }
   }
@@ -845,7 +845,7 @@ function theme_privatemsg_view($message) {
     }
   }
   else {
-    drupal_set_message(t('Error: you can\'t read this message'), 'error');
+    drupal_set_message(t("Error: you can't read this message."), 'error');
     $body = '';
   }
 

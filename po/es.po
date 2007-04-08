@@ -314,8 +314,8 @@ msgid "List messages"
 msgstr "Lista de mensajes"
 
 #: privatemsg.module:498
-msgid "Error: you can't read this message"
-msgstr "Error: no puede leer este mensaje"
+msgid "Error: you can't read this message."
+msgstr "Error: no puede leer este mensaje."
 
 #: privatemsg.module:546
 msgid "<p>No messages</p>"

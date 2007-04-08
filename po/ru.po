@@ -294,8 +294,8 @@ msgid "List messages"
 msgstr "Список сообщений"
 
 #: modules/privatemsg/privatemsg.module:658
-msgid "Error: you can't read this message"
-msgstr "Ошибка: Вы не можете читать это сообщение"
+msgid "Error: you can't read this message."
+msgstr "Ошибка: Вы не можете читать это сообщение."
 
 #: modules/privatemsg/privatemsg.module:725
 msgid "Are you sure you want to delete these messages?"
@@ -319,11 +319,11 @@ msgid "privatemsg"
 msgstr "privatemsg"
 
 #: modules/privatemsg/privatemsg.module:106
-msgid "You have one new <a href=\"%url\">private message</a>"
-msgid_plural "You have @count new <a href=\"%url\">private messages</a>"
-msgstr[0] "УВас есть одно новое <a href=\"%url\">личное сообщение</a>"
-msgstr[1] "У Вас @count новых <a href=\"%url\">личных сообщений</a>"
-msgstr[2] "У Вас @count новых <a href=\"%url\">личных сообщений</a>"
+msgid "You have one new <a href=\"!url\">private message</a>."
+msgid_plural "You have @count new <a href=\"!url\">private messages</a>."
+msgstr[0] "УВас есть одно новое <a href=\"!url\">личное сообщение</a>."
+msgstr[1] "У Вас @count новых <a href=\"!url\">личных сообщений</a>."
+msgstr[2] "У Вас @count новых <a href=\"!url\">личных сообщений</a>."
 
 #: modules/privatemsg/privatemsg.module:288
 msgid ""

@@ -276,7 +276,7 @@ msgid "List messages"
 msgstr "בחזרה לתא דואר נכנס"
 
 #: privatemsg.module:626
-msgid "Error: you can't read this message"
+msgid "Error: you can't read this message."
 msgstr "שגיאה: אינך יכול לקרוא הודעה זו"
 
 #: privatemsg.module:697
