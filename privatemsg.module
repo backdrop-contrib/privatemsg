@@ -201,6 +201,14 @@ function privatemsg_user($type, &$edit, &$user, $category = NULL) {
         }
       }
       break;
+
+    case 'delete':
+      db_query('DELETE FROM {privatemsg} WHERE recipient = %d', $user->uid);
+      db_query('DELETE FROM {privatemsg_archive} WHERE recipient = %d', $user->uid);
+      db_query('DELETE FROM {privatemsg_folder} WHERE uid = %d', $user->uid);
+      db_query('UPDATE {privatemsg} SET author = 0 WHERE author = %d', $user->uid);
+      db_query('UPDATE {privatemsg_archive} SET author = 0 WHERE author = %d', $user->uid);
+      break;
   }
 }
 
