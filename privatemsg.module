@@ -67,9 +67,9 @@ function privatemsg_menu($may_cache) {
                      'title' => t('Privatemsg'),
                      'description' => t('Configure Privatemsg settings.'),
                      'callback' => 'drupal_get_form',
-	 'callback arguments' => array('privatemsg_configure'));
+                     'callback arguments' => array('privatemsg_configure'));
     $items[] = array('path' => 'privatemsg',
-                     'title' => t('Privatemsg menu'),
+                     'title' => t('Private Messages'),
                      'callback' => 'privatemsg_list',
                      'access' => TRUE, // Check access/redirect in callback
                      'type' => MENU_SUGGESTED_ITEM);
