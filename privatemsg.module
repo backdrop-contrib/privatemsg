@@ -225,6 +225,38 @@ function privatemsg_menu($may_cache) {
         'type' => MENU_CALLBACK,
       );
     }
+    if (is_numeric(arg(1)) && (arg(0) == 'privatemsg' || arg(0) == 'user') && ($user->uid == arg(1) || user_access('administer private messages'))) {
+      if (arg(0) == 'user' && arg(2) == 'privatemsg') {
+        $account = $user->uid == arg(1) ? $user : user_load(array('uid' => arg(1)));
+        $items[] = array(
+          'path' => 'user/'. arg(1) .'/privatemsg',
+          'title' => t('Privatemsg'),
+          'callback' => 'privatemsg_list',
+          'callback arguments' => array(arg(1)),
+          'access' => $account->privatemsg_allow,
+          'type' => MENU_LOCAL_TASK,
+        );
+      }
+      if (arg(0) == 'privatemsg') {
+        if ($user->uid == arg(1)) {
+          $account = $user;
+          $title = t('Private messages');
+        }
+        else {
+          $account = user_load(array('uid' => arg(1)));
+          $title = t('Private messages for @name', array('@name' => $account->name));
+        }
+
+        $items[] = array(
+          'path' => 'privatemsg/'. arg(1),
+          'title' => $title,
+          'callback' => 'privatemsg_list',
+          'callback arguments' => array(arg(1)),
+          'access' => $account->privatemsg_allow,
+          'type' => MENU_CALLBACK,
+        );
+      }
+    }
   }
   return $items;
 }
@@ -583,25 +615,28 @@ function privatemsg_configure_validate($form_id, $form_values, $form) {
   }
 }
 
-function privatemsg_list() {
-  global $user;
-
+function privatemsg_list($uid = NULL) {
+  if (!empty($uid) && is_numeric($uid) && user_access('administer private messages')) {
+    $account = user_load(array('uid' => $uid));
+  }
+  else {
+    $account = $GLOBALS['user'];
+  }
   // Notification emails link here, but the user may not be logged in yet.
-  if (!$user->uid) {
+  if (!$account->uid) {
     drupal_goto('user/login', 'destination=privatemsg');
   }
-
-  if (!user_access('access private messages') || !$user->privatemsg_allow) {
+  if (!user_access('access private messages') || !$account->privatemsg_allow) {
     return drupal_access_denied();
   }
 
   $current_folder = intval(arg(2));
 
   if ($current_folder != 1) {
-    $result = pager_query('SELECT id, subject, p.timestamp, u.uid, u.name, newmsg FROM {privatemsg} p, {users} u WHERE p.author = u.uid AND p.recipient = %d AND folder = %d AND p.recipient_del = 0 ORDER BY p.timestamp DESC', variable_get('privatemsg_per_page', 10), 0, NULL, $user->uid, $current_folder);
+    $result = pager_query('SELECT id, subject, p.timestamp, u.uid, u.name, newmsg FROM {privatemsg} p, {users} u WHERE p.author = u.uid AND p.recipient = %d AND folder = %d AND p.recipient_del = 0 ORDER BY p.timestamp DESC', variable_get('privatemsg_per_page', 10), 0, NULL, $account->uid, $current_folder);
 
     if ($current_folder > 0) {
-      $folder_name = db_result(db_query('SELECT name FROM {privatemsg_folder} WHERE fid = %d AND uid = %d', $current_folder, $user->uid));
+      $folder_name = db_result(db_query('SELECT name FROM {privatemsg_folder} WHERE fid = %d AND uid = %d', $current_folder, $account->uid));
     }
     else {
       $folder_name = t('Inbox');
@@ -609,7 +644,7 @@ function privatemsg_list() {
   }
   else {
     // sent messages
-    $result = pager_query('SELECT id, subject, p.timestamp, u.uid, u.name, newmsg FROM {privatemsg} p, {users} u WHERE p.recipient = u.uid AND p.author = %d AND p.author_del = 0 ORDER BY p.timestamp DESC', variable_get('privatemsg_per_page', 10), 0, NULL, $user->uid);
+    $result = pager_query('SELECT id, subject, p.timestamp, u.uid, u.name, newmsg FROM {privatemsg} p, {users} u WHERE p.recipient = u.uid AND p.author = %d AND p.author_del = 0 ORDER BY p.timestamp DESC', variable_get('privatemsg_per_page', 10), 0, NULL, $account->uid);
 
     $folder_name = t('Sent messages');
   }
@@ -619,9 +654,7 @@ function privatemsg_list() {
     $messages[] = $message;
   }
 
-  $folders = privatemsg_load_folders($user->uid);
-
-  drupal_set_title(t('Private messages'));
+  $folders = privatemsg_load_folders($account->uid);
 
   $output = drupal_get_form('privatemsg_cur_folder_form', $folders, $current_folder);
   $output .= drupal_get_form('privatemsg_list_form', $messages, $folders, $current_folder);
@@ -653,15 +686,19 @@ function privatemsg_cur_folder_form($folders, $current_folder) {
 }
 
 function privatemsg_cur_folder_form_submit($form_id, $form_values) {
-  if ($form_values['folder_select'] == 0) {
-    drupal_goto('privatemsg');
+  $redirect = 'privatemsg';
+  if ($form_values['folder_select'] || is_numeric(arg(1))) {
+    $redirect .= '/'. (is_numeric(arg(1)) ? arg(1) : 'list');
+    if ($form_values['folder_select']) {
+      $redirect .= '/'. $form_values['folder_select'];
+    }
   }
-  else {
-    drupal_goto('privatemsg/list/'. $form_values['folder_select']);
-  }
+  return $redirect;
 }
 
 function privatemsg_list_form($messages, $folders, $current_folder) {
+  global $user;
+
   $extra_folders = array();
   foreach ($folders as $folder) {
     if ($folder['fid'] != 1 && $folder['fid'] != $current_folder) {
@@ -734,7 +771,7 @@ function privatemsg_list_form($messages, $folders, $current_folder) {
     }
 
     // Control to move messages to a new folder.
-    if (count($extra_folders) > 0 && $current_folder != 1) {
+    if ((arg(1) == 'list' || arg(1) == $user->uid) && count($extra_folders) > 0 && $current_folder != 1) {
       $form['selected']['folder'] = array(
         '#prefix' => '<div style="margin-left: 1em;">',
         '#type' => 'select',
@@ -1547,14 +1584,15 @@ function privatemsg_view_form_submit($form_id, $form_values) {
   }
 }
 
-function privatemsg_back_to_list($mid) {
-  $fid = db_result(db_query("SELECT folder FROM {privatemsg} WHERE id = %d", $mid));
+function privatemsg_back_to_list($message_id) {
+  global $user;
+  $message = db_fetch_object(db_query("SELECT folder, recipient FROM {privatemsg} WHERE id = %d", $message_id));
 
-  if ($fid > 0) {
+  if ($message->fid > 0) {
     drupal_goto('privatemsg/list/'. $fid);
   }
   else {
-    drupal_goto('privatemsg');
+    drupal_goto('privatemsg' . ($user->uid == $message->recipient ? '' : '/'. $message->recipient));
   }
 }
 
@@ -2030,6 +2068,13 @@ function privatemsg_invoke_privatemsg(&$message, $op) {
 
 function privatemsg_load($message_id) {
   global $user;
-  $result = db_query('SELECT p.id, u.uid, u.name, p.author, p.timestamp, p.subject, p.message, p.newmsg, p.recipient, p.folder, p.format FROM {privatemsg} p, {users} u WHERE (recipient = %d OR author = %d) AND author = u.uid AND id = %d', $user->uid, $user->uid, $message_id);
+  $sql = 'SELECT p.id, u.uid, u.name, p.author, p.timestamp, p.subject, p.message, p.newmsg, p.recipient, p.folder, p.format FROM {privatemsg} p INNER JOIN {users} u ON p.author = u.uid WHERE p.id = %d';
+  $params = array($message_id);
+  if (!user_access('administer private messages')) {
+    $sql .= ' AND (recipient = %d OR author = %d)';
+    $params[] = $user->uid;
+    $params[] = $user->uid;
+  }
+  $result = db_query($sql, $params);
   return db_fetch_object($result);
 }
