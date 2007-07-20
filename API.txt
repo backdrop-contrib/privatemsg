@@ -1,0 +1,1 @@
+See privatemsg_hook.php for API documentation.
