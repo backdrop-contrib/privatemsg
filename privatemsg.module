@@ -1270,6 +1270,7 @@ function privatemsg_new_form_submit($form_id, $form_values) {
   }
 
   $recipients = explode(',', $form_values['recipient']);
+  $sent = FALSE;
   foreach ($recipients as $recipient) {
     $recipient = user_load(array('name' => trim($recipient)));
     $message_id = _privatemsg_send($user, $recipient, $form_values['subject'], $form_values['privatemsgbody'], $form_values['format']);
@@ -1278,10 +1279,13 @@ function privatemsg_new_form_submit($form_id, $form_values) {
       $message = privatemsg_load($message_id);
       // Tell the other modules a new private message has been sent.
       privatemsg_invoke_privatemsg($message, 'sent');
+      $sent = TRUE;
     }
   }
 
-  drupal_set_message(t('Message sent.'));
+  if ($sent) {
+    drupal_set_message(t('Message sent.'));
+  }
   drupal_goto($user->uid ? 'privatemsg' : '');
 }
 
@@ -1292,6 +1296,9 @@ function privatemsg_send_privatemsg($recipient, $subject, $body, $format = FILTE
 }
 
 function _privatemsg_send($sender, $recipient, $subject, $body, $format) {
+  if ($sender->uid == $recipient->uid) {
+    return FALSE;
+  }
   $message_id = db_next_id('{privatemsg}_id');
   $result = db_query("INSERT INTO {privatemsg} (id, author, recipient, subject, message, timestamp, newmsg, hostname, format) VALUES (%d, %d, %d, '%s', '%s', %d, %d, '%s', %d)", $message_id, $sender->uid, $recipient->uid, $subject, $body, time(), 1, getenv('REMOTE_ADDR'), $format);
   if ($result !== false && isset($recipient->privatemsg_mailalert) && $recipient->privatemsg_mailalert == PRIVATEMSG_MAIL_INDIVIDUAL) {
