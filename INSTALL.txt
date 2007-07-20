@@ -15,7 +15,7 @@ Features:
  - option to get mail if you have unread messages
 
 If you want to create a link to send a user a message, use:
-l(t("send private message"), "privatemsg/msgto/$user->uid"))
+l(t("send private message"), "privatemsg/new/$user->uid"))
 
 Send comments to marco@porciletto.org.
 

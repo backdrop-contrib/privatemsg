@@ -151,9 +151,9 @@ function privatemsg_menu($may_cache) {
       );
     }
 
-    if (arg(0) == 'privatemsg' && arg(1) == 'msgto' && intval(arg(2)) > 0) {
+    if (arg(0) == 'privatemsg' && arg(1) == 'new' && intval(arg(2)) > 0) {
       $items[] = array(
-        'path' => 'privatemsg/msgto/'. arg(2),
+        'path' => 'privatemsg/new/'. arg(2),
         'title' => t('Write a new message'),
         'callback' => 'drupal_get_form',
         'callback arguments' => array('privatemsg_new_form'),
@@ -161,14 +161,14 @@ function privatemsg_menu($may_cache) {
         'type' => MENU_CALLBACK,
       );
       $items[] = array(
-        'path' => 'privatemsg/msgto/'. arg(2) .'/write',
+        'path' => 'privatemsg/new/'. arg(2) .'/write',
         'title' => t('Write a new message'),
         'access' => $access,
         'type' => MENU_DEFAULT_LOCAL_TASK,
         'weight' => -10,
       );
       $items[] = array(
-        'path' => 'privatemsg/msgto/'. arg(2) .'/cancel',
+        'path' => 'privatemsg/new/'. arg(2) .'/cancel',
         'title' => t('Cancel message'),
         'callback' => 'drupal_goto',
         'callback arguments' => array('privatemsg'),
@@ -323,7 +323,7 @@ function privatemsg_link($type, $node = NULL, $teaser = FALSE) {
     if ($access[$uid]) {
       $links['privatemsg_write_to_author'] = array(
         'title' => t('Write to author'),
-        'href' => 'privatemsg/msgto/'. $uid,
+        'href' => 'privatemsg/new/'. $uid,
       );
     }
   }
@@ -341,7 +341,7 @@ function privatemsg_user($type, &$edit, &$account, $category = NULL) {
     case 'view':
       if (user_access('access private messages') && $account->privatemsg_allow) {
         return array(t('Private messages') => array(array(
-          'value' => l(t('Write private message'), 'privatemsg/msgto/'. $account->uid, array(
+          'value' => l(t('Write private message'), 'privatemsg/new/'. $account->uid, array(
           'title' => t('Send private message to @name', array('@name' => $account->name)))),
           'class' => 'send-message')));
       }
@@ -475,7 +475,7 @@ function _privatemsg_block_inbox() {
     $new = _privatemsg_get_new_messages();
     $items = array(
       l(t('Inbox') . ($new ? " ($new)" : ''), 'privatemsg'),
-      l(t('Write message'), 'privatemsg/msgto'),
+      l(t('Write message'), 'privatemsg/new'),
     );
 
     $block['subject'] = t('Private messages');
@@ -1156,14 +1156,18 @@ function privatemsg_delete_folder_form_submit($form_id, $form_values) {
   drupal_goto('privatemsg/folders');
 }
 
+/**
+ * Provides a form to write a private message.
+ */
 function privatemsg_new_form() {
   global $user;
   $message = 0;
 
-  if (($op = arg(1)) == 'reply') {
+  $op = arg(1);
+  if ($op == 'reply') {
     $message = arg(2);
   }
-  else if ($op == 'msgto' && ($arg = arg(2)) && ($msg->recipient = db_result(db_query('SELECT name FROM {users} WHERE uid = %d', $arg)))) {
+  else if (($uid = arg(2)) && ($msg->recipient = db_result(db_query('SELECT name FROM {users} WHERE uid = %d', $uid)))) {
     $message = $msg;
   }
 
@@ -1402,7 +1406,7 @@ function privatemsg_contacts_form() {
     );
     $form['contacts'][$uid]['operations'] = array(
       '#type' => 'value',
-      '#value' => l(t('Write private message'), 'privatemsg/msgto/'. $uid),
+      '#value' => l(t('Write private message'), 'privatemsg/new/'. $uid),
     );
   }
 
