@@ -6,36 +6,38 @@ function privatemsg_install() {
     case 'mysql':
     case 'mysqli':
       db_query("CREATE TABLE {privatemsg} (
-          id            int(10) unsigned NOT NULL primary key,
-          author        int(10) unsigned NOT NULL,
-          recipient     int(10) unsigned NOT NULL,
+          id            int unsigned NOT NULL primary key,
+          author        int unsigned NOT NULL,
+          recipient     int unsigned NOT NULL,
           subject       varchar(64) NOT NULL,
           message       text NOT NULL,
-          timestamp     int(11) unsigned NOT NULL,
+          timestamp     int unsigned NOT NULL,
           newmsg        tinyint unsigned NOT NULL,
           hostname      varchar(255) NOT NULL,
-          folder        int(10) unsigned NOT NULL DEFAULT '0',
-          author_del    tinyint unsigned NOT NULL DEFAULT '0',
-          recipient_del tinyint unsigned NOT NULL DEFAULT '0',
-          format        int(4) NOT NULL DEFAULT '0',
+          folder        int unsigned NOT NULL DEFAULT 0,
+          author_del    tinyint unsigned NOT NULL DEFAULT 0,
+          recipient_del tinyint unsigned NOT NULL DEFAULT 0,
+          format        int NOT NULL DEFAULT 0,
+          thread        int NOT NULL DEFAULT 0,
           key (recipient),
           key (folder)
         ) /*!40100 DEFAULT CHARACTER SET utf8 */;");
       db_query("CREATE TABLE {privatemsg_folder} (
-          fid           int(10) unsigned NOT NULL primary key,
-          uid           int(10) unsigned NOT NULL,
+          fid           int unsigned NOT NULL primary key,
+          uid           int unsigned NOT NULL,
           name          varchar(255) NOT NULL
         ) /*!40100 DEFAULT CHARACTER SET utf8 */;");
       db_query("CREATE TABLE {privatemsg_archive} (
-          id            int(10) unsigned NOT NULL primary key,
-          author        int(10) unsigned NOT NULL,
-          recipient     int(10) unsigned NOT NULL,
+          id            int unsigned NOT NULL primary key,
+          author        int unsigned NOT NULL,
+          recipient     int unsigned NOT NULL,
           subject       VARCHAR(64) NOT NULL,
           message       text NOT NULL,
-          timestamp     int(11) unsigned NOT NULL,
+          timestamp     int unsigned NOT NULL,
           hostname      varchar(255) NOT NULL,
-          folder        int(10) unsigned NOT NULL,
-          format        int(4) NOT NULL DEFAULT '0',
+          folder        int unsigned NOT NULL,
+          format        int NOT NULL DEFAULT 0,
+          thread        int NOT NULL DEFAULT 0,
           key (recipient)
         ) /*!40100 DEFAULT CHARACTER SET utf8 */;");
       break;
@@ -49,10 +51,11 @@ function privatemsg_install() {
           timestamp     integer NOT NULL,
           newmsg        smallint NOT NULL,
           hostname      varchar(255) NOT NULL,
-          format        smallint NOT NULL DEFAULT '0',
-          folder        integer NOT NULL DEFAULT '0',
-          author_del    smallint NOT NULL DEFAULT '0',
-          recipient_del smallint NOT NULL DEFAULT '0',
+          format        smallint NOT NULL DEFAULT 0,
+          folder        integer NOT NULL DEFAULT 0,
+          author_del    smallint NOT NULL DEFAULT 0,
+          recipient_del smallint NOT NULL DEFAULT 0,
+          thread        int NOT NULL DEFAULT 0,
           PRIMARY KEY (id)
         )");
       db_query("CREATE INDEX {privatemsg_folder_index} ON {privatemsg}(folder)");
@@ -70,8 +73,9 @@ function privatemsg_install() {
           message       text NOT NULL,
           timestamp     integer NOT NULL,
           hostname      varchar(255) NOT NULL,
-          format        smallint NOT NULL DEFAULT '0',
+          format        smallint NOT NULL DEFAULT 0,
           folder        integer NOT NULL,
+          thread        int NOT NULL DEFAULT 0,
           PRIMARY KEY (id)
         )");
       db_query("CREATE INDEX {privatemsg_archive_recipient} ON {privatemsg_archive}(recipient)");
@@ -129,7 +133,7 @@ function privatemsg_uninstall() {
 
 /* Upgrade on mysql from versions before 22-May-2003:
    Create privatemsg_archive/privatemsg_folder tables and insert one row, shown above^
-   ALTER TABLE privatemsg ADD folder int(10) unsigned NOT NULL;
+   ALTER TABLE privatemsg ADD folder int unsigned NOT NULL;
    ALTER TABLE privatemsg ADD author_del tinyint unsigned NOT NULL;
    ALTER TABLE privatemsg ADD recipient_del tinyint unsigned NOT NULL;
    ALTER TABLE privatemsg ADD INDEX(folder);
@@ -138,8 +142,8 @@ function privatemsg_uninstall() {
  *
  * Upgrade on mysql from versions before 29-Apr-2005:
    ALTER TABLE privatemsg CHANGE new newmsg tinyint UNSIGNED NOT NULL;
-   ALTER TABLE privatemsg ADD format int(4) NOT NULL DEFAULT '0';
-   ALTER TABLE privatemsg_archive ADD format int(4) NOT NULL DEFAULT '0';
+   ALTER TABLE privatemsg ADD format int NOT NULL DEFAULT '0';
+   ALTER TABLE privatemsg_archive ADD format int NOT NULL DEFAULT '0';
    UPDATE privatemsg SET format=1;
    UPDATE privatemsg_archive SET format=1;
  */
@@ -153,7 +157,7 @@ function privatemsg_update_2() {
   switch ($GLOBALS['db_type']) {
     case 'mysql':
     case 'mysqli':
-      $sql = 'ALTER TABLE {%s} MODIFY %s int(10) unsigned NOT NULL';
+      $sql = 'ALTER TABLE {%s} MODIFY %s int unsigned NOT NULL';
       $seq = "INSERT INTO {sequences} (name, id) VALUES ('%s', %d)";
       break;
     case 'pgsql':
@@ -174,4 +178,23 @@ function privatemsg_update_2() {
   $ret[] = update_sql(sprintf($sql, 'privatemsg_archive', 'id'));
   return $ret;
 }
-?>
+
+function privatemsg_update_3() {
+  $ret = array();
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      $ret[] = update_sql('ALTER TABLE {privatemsg} ADD thread int NOT NULL');
+      $ret[] = update_sql('ALTER TABLE {privatemsg_archive} ADD thread int NOT NULL');
+      break;
+    case 'pgsql':
+      foreach (array('privatemsg', 'privatemsg_archive') as $table) {
+        $ret[] = update_sql("ALTER TABLE {$table} ADD thread int");
+        $ret[] = update_sql("ALTER TABLE {$table} ALTER COLUMN thread SET DEFAULT 0");
+        $ret[] = update_sql("UPDATE {$table} SET thread = 0");
+        $ret[] = update_sql("ALTER TABLE {$table} ALTER COLUMN thread SET NOT NULL");
+      }
+      break;
+  }
+  return $ret;
+}

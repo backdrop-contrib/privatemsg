@@ -469,6 +469,16 @@ function privatemsg_block($op = 'list', $delta = 0, $edit = array()) {
   }
 }
 
+/**
+ * Implementation of hook_mail_alter().
+ */
+function privatemsg_mail_alter(&$mailkey, &$to, &$subject, &$body, &$from, &$headers) {
+  $message_types = variable_get('privatemsg_mail_types', array());
+  if (isset($message_types[$mailkey])) {
+
+  }
+}
+
 function _privatemsg_block_inbox() {
   global $user;
   if ($user->uid && user_access('access private messages') && $user->privatemsg_allow) {
@@ -1173,7 +1183,7 @@ function privatemsg_new_form() {
 
   if ($message && !is_object($message)) {
     // This is a reply to another message
-    $message = db_fetch_object(db_query('SELECT subject, message, u.name AS recipient FROM {privatemsg} p, {users} u WHERE u.uid = p.author AND id = %d AND recipient = %d', $message, $user->uid));
+    $message = db_fetch_object(db_query('SELECT thread, subject, message, u.name AS recipient FROM {privatemsg} p INNER JOIN {users} u ON u.uid = p.author WHERE id = %d AND recipient = %d', $message, $user->uid));
 
     if (!stristr($message->subject, t('Re:'))) {
       $message->subject = t('Re:') .' '. $message->subject;
@@ -1201,9 +1211,8 @@ function privatemsg_new_form() {
 
   $form = array('preview' => array());
 
-  $form['header'] = array(
-    '#theme' => 'privatemsg_new_msg_header',
-  );
+  $form['thread'] = array('#type' => 'value', '#value' => isset($message->thread) ? $message->thread : 0);
+  $form['header']['#theme'] = 'privatemsg_new_msg_header';
   $form['header']['recipient'] = array(
     '#type' => 'textfield',
     '#title' => t('To'),
@@ -1314,7 +1323,7 @@ function privatemsg_new_form_submit($form_id, $form_values) {
   $sent = FALSE;
   foreach ($recipients as $recipient) {
     $recipient = user_load(array('name' => trim($recipient)));
-    $message_id = _privatemsg_send($user, $recipient, $form_values['subject'], $form_values['privatemsgbody'], $form_values['format']);
+    $message_id = _privatemsg_send($user, $recipient, $form_values['subject'], $form_values['privatemsgbody'], $form_values['format'], $form_values['thread']);
     if ($message_id) {
       // Load the message for consistency.
       $message = privatemsg_load($message_id);
@@ -1331,17 +1340,20 @@ function privatemsg_new_form_submit($form_id, $form_values) {
 }
 
 // API callable from other modules:
-function privatemsg_send_privatemsg($recipient, $subject, $body, $format = FILTER_FORMAT_DEFAULT) {
+function privatemsg_send_privatemsg($recipient, $subject, $body, $format = FILTER_FORMAT_DEFAULT, $thread = 0) {
   global $user;
-  return _privatemsg_send($user, $recipient, $subject, $body, $format);
+  return _privatemsg_send($user, $recipient, $subject, $body, $format, $thread);
 }
 
-function _privatemsg_send($sender, $recipient, $subject, $body, $format) {
+function _privatemsg_send($sender, $recipient, $subject, $body, $format, $thread) {
   if ($sender->uid == $recipient->uid) {
     return FALSE;
   }
   $message_id = db_next_id('{privatemsg}_id');
-  $result = db_query("INSERT INTO {privatemsg} (id, author, recipient, subject, message, timestamp, newmsg, hostname, format) VALUES (%d, %d, %d, '%s', '%s', %d, %d, '%s', %d)", $message_id, $sender->uid, $recipient->uid, $subject, $body, time(), 1, getenv('REMOTE_ADDR'), $format);
+  if (!$thread) {
+    $thread = db_next_id('{privatemsg}_thread');
+  }
+  $result = db_query("INSERT INTO {privatemsg} (id, author, recipient, subject, message, timestamp, newmsg, hostname, format, thread) VALUES (%d, %d, %d, '%s', '%s', %d, %d, '%s', %d, %d)", $message_id, $sender->uid, $recipient->uid, $subject, $body, time(), 1, getenv('REMOTE_ADDR'), $format, $thread);
   if ($result !== false && isset($recipient->privatemsg_mailalert) && $recipient->privatemsg_mailalert == PRIVATEMSG_MAIL_INDIVIDUAL) {
     _privatemsg_sendmail($recipient, 1);
   }
@@ -1978,7 +1990,7 @@ function _privatemsg_prune() {
   // move deleted message older than 1 month to archive table, and optimize table
   $result = db_query('SELECT * FROM {privatemsg} WHERE author_del = 1 AND recipient_del = 1 AND timestamp < %d', time() - 3600*24*30);
   while ($message = db_fetch_object($result)) {
-    db_query("INSERT INTO {privatemsg_archive} (id, author, recipient, subject, message, timestamp, hostname, format, folder) VALUES (%d, %d, %d, '%s', '%s', %d, '%s', %d, %d)", $message->id, $message->author, $message->recipient, $message->subject, $message->message, $message->timestamp, $message->hostname, $message->format, $message->folder);
+    db_query("INSERT INTO {privatemsg_archive} (id, author, recipient, subject, message, timestamp, hostname, format, folder, thread) VALUES (%d, %d, %d, '%s', '%s', %d, '%s', %d, %d, %d)", $message->id, $message->author, $message->recipient, $message->subject, $message->message, $message->timestamp, $message->hostname, $message->format, $message->folder, $message->thread);
     db_query('DELETE FROM {privatemsg} WHERE id = %d', $message->id);
 
     // Notify other modules that a message is pruned.
