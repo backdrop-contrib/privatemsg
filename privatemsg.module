@@ -747,7 +747,7 @@ function privatemsg_cur_folder_form($folders, $current_folder) {
   $form['header']['go_folder'] = array(
     '#type' => 'submit',
     '#value' => t('Go'),
-    //'#attributes' => array('class' => 'js-hide'),
+    '#attributes' => array('class' => 'js-hide'),
   );
   $actor = $current_folder == 1 ? 'author' : 'recipient';
   $result = db_query("SELECT DISTINCT type FROM {privatemsg} WHERE folder = %d AND {$actor}_del = 0 AND {$actor} = %d", $current_folder, $GLOBALS['user']->uid);
