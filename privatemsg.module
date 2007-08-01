@@ -547,6 +547,15 @@ function privatemsg_configure() {
     '#default_value' => variable_get('privatemsg_delete_loc', '1'),
   );
 
+  $form['privatemsg_threaded_view'] = array(
+    '#type' => 'radios',
+    '#title' => t('How messages are displayed on the detail screen'),
+    '#description' => t('You can choose between displaying a thread of messages (like for example on facebook) or just a single message.'),
+    '#options' => array(t('Single message'), t('Full thread')),
+    '#default_value' => variable_get('privatemsg_threaded_view', 0),
+  );
+
+
   $form['links'] = array(
     '#type' => 'fieldset',
     '#title' => t('"Write to author" links'),
@@ -1460,18 +1469,30 @@ function privatemsg_contacts_form_submit($form_id, $form_values) {
  * Display a private message to a user.
  */
 function privatemsg_view($message_id) {
-  global $user;
   if ($message = privatemsg_load($message_id)) {
-    // Allow other modules to change the message.
-    privatemsg_invoke_privatemsg($message, 'view');
-
-    if ($message->newmsg && $user->uid == $message->recipient) {
-      $result = db_query("UPDATE {privatemsg} SET newmsg = 0 WHERE id = %d", $message_id);
+    if (variable_get('privatemsg_threaded_view', 0) && $message->thread) {
+      $output = '';
+      $result = db_query('SELECT p.id, u.uid, u.name, p.author, p.timestamp, p.subject, p.message, p.newmsg, p.recipient, p.folder, p.format FROM {privatemsg} p INNER JOIN {users} u ON p.author = u.uid WHERE p.thread = %d ORDER BY timestamp ASC', $message->thread);
+      while ($message = db_fetch_object($result)) {
+        $output .= _privatemsg_view($message);
+      }
     }
-    return theme('privatemsg_view', $message);
+    else {
+      $output = _privatemsg_view($message);
+    }
+    return $output;
   }
-
   drupal_goto('privatemsg');
+}
+
+function _privatemsg_view($message) {
+  global $user;
+  // Allow other modules to change the message.
+  privatemsg_invoke_privatemsg($message, 'view');
+  if ($message->newmsg && $user->uid == $message->recipient) {
+    db_query("UPDATE {privatemsg} SET newmsg = 0 WHERE id = %d", $message_id);
+  }
+  return theme('privatemsg_view', $message);
 }
 
 /**
@@ -1739,10 +1760,10 @@ function privatemsg_userpoints($op, $new_points = 0, $uid = 0, $event = '') {
 }
 
 /**
-  @addtogroup theme_system
-
-  Privatemsg module specific theme functions
-  @{
+ * @addtogroup theme_system
+ *
+ * Privatemsg module specific theme functions
+ * @{
 **/
 
 /**
@@ -1824,8 +1845,8 @@ function theme_privatemsg_view($message, $preview = FALSE) {
   if (!$preview && ($option == '1' || $option == '3')) {
     $output .= drupal_get_form('privatemsg_view_form', $message);
   }
-  $output .= theme('table', NULL, $rows, array('class' => 'pm-view-table'))
-           . $body;
+  $output .= theme('table', NULL, $rows, array('id' => 'message-'. $message->id, 'class' => 'pm-view-table'));
+  $output .= $body;
   if (!$preview && ($option == '2' || $option == '3')) {
     $output .= drupal_get_form('privatemsg_view_form', $message);
   }
@@ -1918,7 +1939,9 @@ function theme_privatemsg_new_msg_header($form) {
   return theme('table', NULL, $rows, array('class' => 'pm-view-table'));
 }
 
-/**  @} End of addtogroup theme_system **/
+/**  @} End of addtogroup theme_system
+ *
+**/
 
 /**
  * Return autocomplete results for usernames.
@@ -2084,7 +2107,7 @@ function privatemsg_invoke_privatemsg(&$message, $op) {
 
 function privatemsg_load($message_id) {
   global $user;
-  $sql = 'SELECT p.id, u.uid, u.name, p.author, p.timestamp, p.subject, p.message, p.newmsg, p.recipient, p.folder, p.format FROM {privatemsg} p INNER JOIN {users} u ON p.author = u.uid WHERE p.id = %d';
+  $sql = 'SELECT p.id, u.uid, u.name, p.author, p.timestamp, p.subject, p.message, p.newmsg, p.recipient, p.folder, p.format, p.thread FROM {privatemsg} p INNER JOIN {users} u ON p.author = u.uid WHERE p.id = %d';
   $params = array($message_id);
   if (!user_access('administer private messages')) {
     $sql .= ' AND (recipient = %d OR author = %d)';
