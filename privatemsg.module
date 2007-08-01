@@ -91,6 +91,13 @@ function privatemsg_menu($may_cache) {
       'access' => $access && $user->uid, // No guest access
       'type' => MENU_CALLBACK
     );
+    $items[] = array(
+      'access' => user_access('administer site configuration'),
+      'callback' => 'privatemsg_mail_overview',
+      'description' => t('Edit mails being sent out by Drupal.'),
+      'path' => 'admin/build/privatemsg',
+      'title' => t('Mail templates'),
+    );
   }
   else {
     if (!isset($user->privatemsg_mailalert)) {
@@ -473,9 +480,38 @@ function privatemsg_block($op = 'list', $delta = 0, $edit = array()) {
  * Implementation of hook_mail_alter().
  */
 function privatemsg_mail_alter(&$mailkey, &$to, &$subject, &$body, &$from, &$headers) {
-  $message_types = variable_get('privatemsg_mail_types', array());
-  if (isset($message_types[$mailkey])) {
-
+  if ($alter = db_fetch_object(db_query("SELECT * FROM {privatemsg_mails} WHERE mailkey = '%s'", $mailkey))) {
+    $sender = user_load(array('mail' => $from));
+    $recipient = user_load(array('mail' => $to));
+    $is_privatemsg = $alter->type && $recipient;
+    $variables = array(
+      '!sender_name' => $sender->name,
+      '!sender_page' => url("user/$sender->uid", NULL, NULL, $is_privatemsg),
+    );
+    if ($sender->contact) {
+      $variables['!sender_page_contact'] = url("user/$sender->uid/contact", NULL, NULL, $is_privatemsg);
+    }
+    if ($recipient) {
+      $variables += array(
+        '!recipient_name' => $recipient->name,
+        '!recipient_page' => url("user/$recipient->uid", NULL, NULL, $is_privatemsg),
+      );
+    };
+    if (!empty($GLOBALS['form_values'])) {
+      foreach ($GLOBALS['form_values'] as $key => $value) {
+        $variables["!$key"] = $value;
+      }
+    }
+    if ($alter->subject) {
+      $subject = strtr($alter->subject, $variables);
+    }
+    if ($alter->body) {
+      $body = strtr($alter->body, $variables);
+    }
+    if ($is_privatemsg) {
+      $to = NULL;
+      privatemsg_send_privatemsg($recipient, $subject, $body);
+    }
   }
 }
 
@@ -753,7 +789,7 @@ function privatemsg_list_form($messages, $folders, $current_folder) {
     );
     $form['messages'][$message->id]['subject'] = array(
       '#type' => 'value',
-      '#value' => l($message->subject, 'privatemsg/view/'. $message->id) . ($new ? (' '. $new_text) : ''),
+      '#value' => l($message->subject, 'privatemsg/view/'. $message->id, array(), NULL, 'message-'. $message->id) . ($new ? (' '. $new_text) : ''),
     );
     $form['messages'][$message->id]['date'] = array(
       '#type' => 'value',
@@ -1470,6 +1506,7 @@ function privatemsg_contacts_form_submit($form_id, $form_values) {
  */
 function privatemsg_view($message_id) {
   if ($message = privatemsg_load($message_id)) {
+    echo variable_get('privatemsg_threaded_view', 0);
     if (variable_get('privatemsg_threaded_view', 0) && $message->thread) {
       $output = '';
       $result = db_query('SELECT p.id, u.uid, u.name, p.author, p.timestamp, p.subject, p.message, p.newmsg, p.recipient, p.folder, p.format FROM {privatemsg} p INNER JOIN {users} u ON p.author = u.uid WHERE p.thread = %d ORDER BY timestamp ASC', $message->thread);
@@ -2078,6 +2115,150 @@ If you don\'t want to receive these emails again, change your preferences here:
 
   // revert to previous (site default) locale
   $locale = $save_locale;
+}
+
+/**
+ * Menu callback; administrative mail editing overview.
+ */
+function privatemsg_mail_overview($mailkey = '') {
+  if ($mailkey) {
+    return drupal_get_form('privatemsg_mail_edit_form', $mailkey);
+  }
+  $keys = array();
+  if ($cache = cache_get('privatemsg_mail_overview')) {
+    $keys = unserialize($cache->data);
+  }
+  else {
+    foreach (module_list() as $module) {
+      $file = file_get_contents(drupal_get_path('module', $module) ."/$module.module");
+      preg_match_all('/drupal_mail\((.)(.+)\1,/U', $file, $matches);
+      $keys = array_merge($keys, $matches[2]);
+    }
+    cache_set('privatemsg_mail_overview', 'cache', serialize($keys));
+  }
+  $keys[] = 'user-register-notify';
+  $keys[] = 'user-register-welcome';
+  sort($keys);
+
+  $header = array(t('Key'), t('Description'),);
+  $rows = array();
+  foreach ($keys as $key) {
+    $rows[$key] = array(
+      l($key, 'admin/build/privatemsg/'. $key),
+      t('<em>No description has been set.</em>'),
+    );
+  }
+  $result = db_query('SELECT mailkey, description FROM {privatemsg_mails}');
+  while ($d = db_fetch_object($result)) {
+    $rows[$d->mailkey][1] = $d->description;
+  }
+
+  $output = theme('table', $header, $rows, array('style' => 'width:98%;'));
+
+  return $output;
+}
+
+function privatemsg_mail_edit_form($mailkey = '') {
+  drupal_set_title(t('Settings for %mailkey', array('%mailkey' => $mailkey)));
+  $defaults = (array)db_fetch_array(db_query("SELECT * FROM {privatemsg_mails} WHERE mailkey = '%s'", $mailkey));
+  $form['defaults'] = array('#type' => 'value', '#value' => $defaults);
+  $fields = array(
+    'description' => '',
+    'type' => '',
+    'subject' => '',
+    'body' => '',
+    'notification_subject' => '',
+    'notification_text_body' => '',
+    'notification_html_body' => '',
+    'notification_group_text_body' => '',
+    'notification_group_html_body' => '',
+  );
+  $defaults += $fields;
+  $form['fields'] = array('#type' => 'value', '#value' => array_keys($fields));
+  $form['mailkey'] = array('#type' => 'value', '#value' => $mailkey);
+  $form['help'] = array('#value' => t('You can use variables: !recipient_name, !recipient_page (the user page of the recipient), !sender_name, !sender_page, !sender_page_contact and when relevant (contact messages), !message and !subject.'));
+  $form['description'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Message description'),
+    '#default_value' => $defaults['description'],
+    '#description' => t("The description of this message (for admins only; users don't see this.)"),
+  );
+  $form['type'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Private message type'),
+    '#default_value' => $defaults['type'],
+    '#description' => t('In the folder view, users will be able to filter on this. Example: contact mails. If left empty, mail will be sent.'),
+  );
+  $form['subject'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Subject'),
+    '#default_value' => $defaults['subject'],
+    '#description' => t('The subject of the mail (if no type) or the the private message sent instead of the mail.'),
+  );
+  $form['body'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Body'),
+    '#default_value' => $defaults['body'],
+    '#description' => t('The body of the mail (if no type) or the private message sent instead of the mail.'),
+  );
+  $form['notification_subject'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Subject of the notification'),
+    '#default_value' => $defaults['subject'],
+    '#description' => t('The subject of the notification sent about the private message.'),
+  );
+  $form['notification_text_body'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Text of the notification'),
+    '#default_value' => $defaults['notification_text_body'],
+    '#description' => t('The plain text version of the notification sent about the private message.'),
+  );
+  $form['notification_html_body'] = array(
+    '#type' => 'textarea',
+    '#title' => t('HTML version of the notification'),
+    '#default_value' => $defaults['notification_text_body'],
+    '#description' => t('The HTML version of the notification sent about the private message.'),
+  );
+  $form['notification_group_text_body'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Text of the grouped notification'),
+    '#default_value' => $defaults['notification_group_text_body'],
+    '#description' => t('The text version of the notification sent about several private messages.'),
+  );
+  $form['notification_group_html_body'] = array(
+    '#type' => 'textarea',
+    '#title' => t('HTML version of the grouped notification'),
+    '#default_value' => $defaults['notification_group_html_body'],
+    '#description' => t('The HTML version of the notification sent about several private messages.'),
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save'),
+  );
+  return $form;
+}
+
+function privatemsg_mail_edit_form_submit($form_id, $form_values) {
+  $params = array();
+  $fields = $form_values['fields'];
+  if ($form_values['defaults']) {
+    $up = array();
+    foreach ($fields as $key) {
+      $up[] = "$key = '%s'";
+      $params[] = $form_values[$key];
+    }
+    $params[] = $form_values['mailkey'];
+    db_query('UPDATE {privatemsg_mails} SET '. implode(', ', $up) . " WHERE mailkey = '%s'", $params);
+  }
+  else {
+    $fields[] = 'mailkey';
+    $values = array_fill(0, count($fields), "'%s'");
+    foreach ($fields as $key) {
+      $params[] = $form_values[$key];
+    }
+    db_query('INSERT INTO {privatemsg_mails}  ('. implode(', ', $fields) .') VALUES ('. implode(', ', $values) .')', $params);
+  }
+  return 'admin/build/privatemsg';
 }
 
 /**
