@@ -32,6 +32,7 @@ function privatemsg_menu($may_cache) {
       'path' => 'privatemsg/list',
       'title' => t('List'),
       'callback' => 'privatemsg_list',
+      'callback arguments' => array(NULL),
       'access' => TRUE, // Check access/redirect in callback
       'type' => MENU_DEFAULT_LOCAL_TASK,
       'weight' => -10,
