@@ -2234,7 +2234,9 @@ function privatemsg_mail_overview($mailkey = '') {
 
 function privatemsg_mail_edit_form($mailkey = '') {
   drupal_set_title(t('Settings for %mailkey', array('%mailkey' => $mailkey)));
-  $defaults = (array)db_fetch_array(db_query("SELECT * FROM {privatemsg_mails} WHERE mailkey = '%s'", $mailkey));
+  if (!$defaults = db_fetch_array(db_query("SELECT * FROM {privatemsg_mails} WHERE mailkey = '%s'", $mailkey))) {
+    $defaults = array();
+  }
   $form['defaults'] = array('#type' => 'value', '#value' => $defaults);
   $fields = array(
     'description' => '',
