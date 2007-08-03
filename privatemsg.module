@@ -679,7 +679,7 @@ function privatemsg_list($uid = NULL) {
     $account = $GLOBALS['user'];
   }
   // Notification emails link here, but the user may not be logged in yet.
-  if (!$account->uid) {
+  if ($account && !$account->uid) {
     drupal_goto('user/login', 'destination=privatemsg');
   }
   if (!user_access('access private messages') || !$account->privatemsg_allow) {
@@ -698,8 +698,7 @@ function privatemsg_list($uid = NULL) {
   $current_folder = intval(arg(2));
   if ($current_folder != 1) {
     $args[] = $current_folder;
-    $result = pager_query("SELECT id, subject, p.timestamp, u.uid, u.name, newmsg, type FROM {privatemsg} p INNER JOIN {users} u ON p.author = u.uid WHERE p.recipient = %d $type AND folder = %d AND p.recipient_del = 0 ORDER BY p.timestamp DESC", variable_get('privatemsg_per_page', 10), 0, NULL, $args);
-
+    $sql = "SELECT id, subject, p.timestamp, u.uid, u.name, newmsg, type FROM {privatemsg} p INNER JOIN {users} u ON p.author = u.uid WHERE p.recipient = %d $type AND folder = %d AND p.recipient_del = 0 ";
     if ($current_folder > 0) {
       $folder_name = db_result(db_query('SELECT name FROM {privatemsg_folder} WHERE fid = %d AND uid = %d', $current_folder, $account->uid));
     }
@@ -709,11 +708,19 @@ function privatemsg_list($uid = NULL) {
   }
   else {
     // sent messages
-    $result = pager_query("SELECT id, subject, p.timestamp, u.uid, u.name, newmsg FROM {privatemsg} p INNER JOIN {users} u ON p.recipient = u.uid WHERE p.author = %d $type AND p.author_del = 0 ORDER BY p.timestamp DESC", variable_get('privatemsg_per_page', 10), 0, NULL, $args);
-
+    $sql = "SELECT id, subject, p.timestamp, u.uid, u.name, newmsg FROM {privatemsg} p INNER JOIN {users} u ON p.recipient = u.uid WHERE p.author = %d $type AND p.author_del = 0";
     $folder_name = t('Sent messages');
   }
 
+  $header = _privatemsg_list_header($current_folder);
+  $ts = tablesort_init($header);
+  $_SESSION['privatemsg_list_sql'] = array(
+    'sql' => $sql,
+    'args' => $args,
+    'field' => db_escape_string($ts['sql']),
+    'sort' =>  drupal_strtoupper(db_escape_string($ts['sort'])),
+  );
+  $result = pager_query($sql . tablesort_sql($header), variable_get('privatemsg_per_page', 10), 0, NULL, $args);
   $messages = array();
   while ($message = db_fetch_object($result)) {
     $messages[] = $message;
@@ -725,6 +732,22 @@ function privatemsg_list($uid = NULL) {
   $output .= drupal_get_form('privatemsg_list_form', $messages, $folders, $current_folder);
 
   return $output;
+}
+
+function _privatemsg_list_header($current_folder) {
+  if ($current_folder == 1) {
+    $actor_header = array('data' => t('To'), 'field' => 'recipient');
+  }
+  else {
+    $actor_header = array('data' => t('From'), 'field' => 'author');
+  }
+
+  return array(
+    array('data' => t('Type'), 'field' => 'type'),
+    $actor_header,
+    array('data' => t('Subject'), 'field' => 'subject'),
+    array('data' => t('Date'), 'field' => 'timestamp', 'sort' => 'desc'),
+  );
 }
 
 function privatemsg_cur_folder_form($folders, $current_folder) {
@@ -1576,39 +1599,64 @@ function privatemsg_contacts_form_submit($form_id, $form_values) {
 
 /**
  * Display a private message to a user.
+ *
+ * We calculate previous and next message here. Let's assume the order is
+ * from oldest to newest. The next message is then the first row from:
+ * SELECT id FROM privatemsg WHERE timestamp > %d ORDER BY timestamp ASC
+ * The code below is the abstraction of this to every field and ASC/DESC.
  */
 function privatemsg_view($message_id) {
   if ($message = privatemsg_load($message_id)) {
-    echo variable_get('privatemsg_threaded_view', 0);
-    if (variable_get('privatemsg_threaded_view', 0) && $message->thread) {
+    $threaded_view = variable_get('privatemsg_threaded_view', 0);
+    if (isset($_SESSION['privatemsg_list_sql'])) {
+      // This is the SQL assembled in privatemsg_list
+      $sql = $_SESSION['privatemsg_list_sql']['sql'];
+      // These are the arguments, again from privatemsg_list
+      $args = $_SESSION['privatemsg_list_sql']['args'];
+      // This is the field we are ordering on.
+      $field = $_SESSION['privatemsg_list_sql']['field'];
+      // This is either ASC or DESC.
+      $sort = $_SESSION['privatemsg_list_sql']['sort'];
+      if ($threaded_view) {
+        $sql .= ' AND thread != %d';
+        $args[] = $message->thread;
+      }
+      $placeholder = ($field == 'type' || $field == 'subject') ? "'%s'" : '%d';
+      $args[] = $message->$field;
+      $operator = $sort == 'ASC' ? '<' : '>';
+      $prev = db_result(db_query_range("$sql AND $field $operator $placeholder ORDER BY $field $sort", $args, 0, 1));
+      $operator = $sort == 'ASC' ? '>' : '<';
+      $next = db_result(db_query_range("$sql AND $field $operator $placeholder ORDER BY $field $sort", $args, 0, 1));
+    }
+    if ($threaded_view && $message->thread) {
       $output = '';
       $result = db_query('SELECT p.id, u.uid, u.name, p.author, p.timestamp, p.subject, p.message, p.newmsg, p.recipient, p.folder, p.format FROM {privatemsg} p INNER JOIN {users} u ON p.author = u.uid WHERE p.thread = %d ORDER BY timestamp ASC', $message->thread);
       while ($message = db_fetch_object($result)) {
-        $output .= _privatemsg_view($message);
+        $output .= _privatemsg_view($message, $prev, $next);
       }
     }
     else {
-      $output = _privatemsg_view($message);
+      $output = _privatemsg_view($message, $prev, $next);
     }
     return $output;
   }
   drupal_goto('privatemsg');
 }
 
-function _privatemsg_view($message) {
+function _privatemsg_view($message, $prev, $next) {
   global $user;
   // Allow other modules to change the message.
   privatemsg_invoke_privatemsg($message, 'view');
   if ($message->newmsg && $user->uid == $message->recipient) {
     db_query("UPDATE {privatemsg} SET newmsg = 0 WHERE id = %d", $message_id);
   }
-  return theme('privatemsg_view', $message);
+  return theme('privatemsg_view', $message, FALSE, $prev, $next);
 }
 
 /**
  * Add the action form to the view message screen.
  */
-function privatemsg_view_form($message) {
+function privatemsg_view_form($message, $prev, $next) {
   global $user;
 
   $folders = privatemsg_load_folders($user->uid);
@@ -1639,6 +1687,11 @@ function privatemsg_view_form($message) {
     '#collapsed' => FALSE,
     '#attributes' => array('class' => 'container-inline'),
   );
+  if ($prev) {
+    $form['actions']['prev'] = array(
+      '#value' => l(t('Previous'), 'privatemsg/view/'. $prev, array(), NULL, 'message-'. $prev),
+    );
+  }
   $form['actions']['text'] = array(
     '#value' => '<div><strong>'. t('With this message:') .'</strong> </div>',
   );
@@ -1679,6 +1732,11 @@ function privatemsg_view_form($message) {
       '#value' => t('Delete'),
       '#prefix' => ' &nbsp; &nbsp;',
       '#attributes' => array('class' => 'pm-add-delete pm-spacer'),
+    );
+  }
+  if ($next) {
+    $form['actions']['next'] = array(
+      '#value' => l(t('Next'), 'privatemsg/view/'. $next, array(), NULL, 'message-'. $next),
     );
   }
 
@@ -1881,7 +1939,7 @@ function privatemsg_userpoints($op, $new_points = 0, $uid = 0, $event = '') {
 
  @param message
 **/
-function theme_privatemsg_view($message, $preview = FALSE) {
+function theme_privatemsg_view($message, $preview = FALSE, $prev = 0, $next = 0) {
   drupal_add_css(drupal_get_path('module', 'privatemsg') .'/privatemsg.css');
   $option = variable_get('privatemsg_view_actions', '3');
   global $user;
@@ -1951,14 +2009,17 @@ function theme_privatemsg_view($message, $preview = FALSE) {
 /*  $rows[] = array(
     array('data' => $body, 'class' => 'pm-body', 'colspan' => 5),
   );*/
+  if (!$preview && $option < 4) {
+    $form = drupal_get_form('privatemsg_view_form', $message, $prev, $next);
+  }
 
   if (!$preview && ($option == '1' || $option == '3')) {
-    $output .= drupal_get_form('privatemsg_view_form', $message);
+    $output .= $form;
   }
   $output .= theme('table', NULL, $rows, array('id' => 'message-'. $message->id, 'class' => 'pm-view-table'));
   $output .= $body;
   if (!$preview && ($option == '2' || $option == '3')) {
-    $output .= drupal_get_form('privatemsg_view_form', $message);
+    $output .= $form;
   }
   if (!$preview && $option == '4') {
     $output .= $link_display;
@@ -1990,13 +2051,8 @@ function theme_privatemsg_message_table($form) {
     $select_cell = theme('table_select_header_cell');
   }
 
-  $header = array(
-    $select_cell,
-    t('Type'),
-    ($form['current_folder']['#value'] == 1 ? t('To') : t('From')),
-    t('Subject'),
-    t('Date'),
-  );
+  $header = _privatemsg_list_header($form['current_folder']['#value']);
+  array_unshift($header, $select_cell);
 
   return theme('table', $header, $rows);
 }
