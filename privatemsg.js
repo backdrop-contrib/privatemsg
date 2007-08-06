@@ -12,7 +12,7 @@ if (Drupal.jsEnabled) {
       // Add the JS to the delete button if necessary.
       $('.pm-add-delete').click(
         function() {
-          var response = confirm(pm_delete_msg);
+          var response = confirm(Drupal.settings.privatemsg.deleteMessage);
           if (response == true) {
             $('#edit-js-bypass').val(1);
           }
@@ -24,9 +24,55 @@ if (Drupal.jsEnabled) {
       $('.pm-add-folder-select').change(
         function() {
           // click is necessary for right $op.
-          $('#edit-go-folder').click(); 
+          $('#edit-go-folder').click();
         }
       );
+
+      $('.pm-filter-select').change(function() {
+        var table = $('#privatemsg_message_table');
+        switch (this.value) {
+          case '_privatemsg_delimiter':
+            break;
+          case '_all':
+          case 'all types':
+            table.find('tr td input:checkbox').attr('checked', true);
+            break;
+          case '_read':
+            table.find('tr.pm-new td input:checkbox').attr('checked', false).end()
+              .find('tr:not(.pm-new) td input:checkbox').attr('checked', true);
+            break;
+          case '_unread':
+            table.find('tr.pm-new td input:checkbox').attr('checked', true).end()
+              .find('tr:not(.pm-new) td input:checkbox').attr('checked', false);
+            break;
+          case '_none':
+            table.find('tr td input:checkbox').attr('checked', false);
+            break;
+          case '_invert':
+            table.find('tr td input:checkbox').each(function() {
+              this.checked = !this.checked;
+            });
+            break;
+          default:
+            var cl = this.value.toLowerCase().replace(/[^\w]+/i, '_');
+            table.find('tr.pm-'+ cl +' td input:checkbox').attr('checked', true).end()
+              .find('tr:not(.pm-'+ cl +') td input:checkbox').attr('checked', false);
+        }
+
+        var all = true;
+        table.find('td input:checkbox').each(function() {
+          all = all && this.checked;
+          $(this).parents('tr:first')[ this.checked ? 'addClass' : 'removeClass' ]('selected');
+        });
+
+        if (Drupal.settings.tableSelect) {
+          var settings = Drupal.settings.tableSelect;
+          table.find('th.select-all input:checkbox').attr('checked', all)
+            .attr('title', all ? settings.selectNone : settings.selectAll);
+        }
+
+        this.value = '_privatemsg_delimiter';
+      });
     }
   );
 }

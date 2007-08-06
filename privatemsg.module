@@ -791,6 +791,8 @@ function privatemsg_cur_folder_form($folders, $current_folder) {
     '#type' => 'select',
     '#title' => t('Select'),
     '#options' => $types,
+    '#attributes' => array('class' => 'pm-filter-select'),
+    '#default_value' => '_privatemsg_delimiter',
   );
   if (isset($_SESSION['privatemsg_type'])) {
     $form['header']['type']['#default_value'] = $_SESSION['privatemsg_type'];
@@ -798,6 +800,7 @@ function privatemsg_cur_folder_form($folders, $current_folder) {
   $form['header']['type_submit'] = array(
     '#type' => 'submit',
     '#value' => t('Filter'),
+    '#attributes' => array('class' => 'js-hide'),
   );
 
 
@@ -858,6 +861,8 @@ function privatemsg_list_form($messages, $folders, $current_folder) {
       $new_text = ' <span class="marker">'. t('unread') .'</span>';
     }
 
+    $form['messages'][$message->id]['#new'] = $new;
+
     $form['messages'][$message->id]['selected'] = array(
       '#type' => 'checkbox',
     );
@@ -893,8 +898,7 @@ function privatemsg_list_form($messages, $folders, $current_folder) {
       '#value' => '<div><strong>'. t('With selected:') .'</strong></div>',
     );
 
-    $add_js .= "var pm_delete_msg = '"
-             . t('Are you sure you want to delete these messages?') ."';\n";
+    $js = array('deleteMessage' => t('Are you sure you want to delete these messages?'));
     $del = variable_get('privatemsg_delete_loc', '1');
 
     if ($del == '1') {
@@ -936,7 +940,7 @@ function privatemsg_list_form($messages, $folders, $current_folder) {
   );
 
   drupal_add_js(drupal_get_path('module', 'privatemsg') .'/privatemsg.js');
-  drupal_add_js($add_js, 'inline');
+  drupal_add_js(array('privatemsg' => $js), 'setting');
 
   return $form;
 }
@@ -1740,11 +1744,10 @@ function privatemsg_view_form($message, $prev, $next) {
     );
   }
 
-  $add_js .= "var pm_delete_msg = '"
-         . t('Are you sure you want to delete this message?') ."';\n";
+  $js = array('deleteMessage' => t('Are you sure you want to delete these messages?'));
 
   drupal_add_js(drupal_get_path('module', 'privatemsg') .'/privatemsg.js');
-  drupal_add_js($add_js, 'inline');
+  drupal_add_js(array('privatemsg' => $js), 'setting');
 
   return $form;
 }
@@ -2033,12 +2036,21 @@ function theme_privatemsg_message_table($form) {
 
   foreach (element_children($form) as $key) {
     if ($key != 'current_folder') {
+      $classes = array('pm-'. drupal_strtolower(preg_replace('/[^\w]+/i', '_', $form[$key]['type']['#value'])));
+      
+      if ($form[$key]['#new']) {
+        $classes[] = 'pm-new';
+      }
+      
       $rows[] = array(
-        drupal_render($form[$key]['selected']),
-        drupal_render($form[$key]['type']),
-        $form[$key]['user']['#value'],
-        array('data' => $form[$key]['subject']['#value'], 'width' => '50%'),
-        array('data' => $form[$key]['date']['#value'], 'nowrap' => 'nowrap'),
+        'data' => array(
+          drupal_render($form[$key]['selected']),
+          drupal_render($form[$key]['type']),
+          $form[$key]['user']['#value'],
+          array('data' => $form[$key]['subject']['#value'], 'width' => '50%'),
+          array('data' => $form[$key]['date']['#value'], 'nowrap' => 'nowrap'),
+        ),
+        'class' => implode(' ', $classes),
       );
     }
   }
@@ -2054,7 +2066,7 @@ function theme_privatemsg_message_table($form) {
   $header = _privatemsg_list_header($form['current_folder']['#value']);
   array_unshift($header, $select_cell);
 
-  return theme('table', $header, $rows);
+  return theme('table', $header, $rows, array('id' => 'privatemsg_message_table'));
 }
 
 function theme_privatemsg_contacts_table($form) {
