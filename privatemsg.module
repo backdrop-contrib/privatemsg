@@ -68,7 +68,7 @@ function privatemsg_menu($may_cache) {
       'title' => t('Move to new folder'),
       'callback' => 'drupal_get_form',
       'callback arguments' => array('privatemsg_new_folder_form'),
-      'access' => $access && $user->uid,
+      'access' => user_access('create new folder') && $user->uid,
       'type' => MENU_CALLBACK,
     );
     $items[] = array(
@@ -76,14 +76,6 @@ function privatemsg_menu($may_cache) {
       'title' => t('Privatemsg autocomplete'),
       'callback' => 'privatemsg_autocomplete',
       'access' => $access,
-      'type' => MENU_CALLBACK,
-    );
-    $items[] = array(
-      'path' => 'privatemsg/newfolder',
-      'title' => t('Create new folder'),
-      'callback' => 'drupal_get_form',
-      'callback arguments' => array('privatemsg_new_folder'),
-      'access' => $access && $user->uid, // No guest access
       'type' => MENU_CALLBACK,
     );
     $items[] = array(
@@ -277,7 +269,7 @@ function privatemsg_menu($may_cache) {
  * Implementation of hook_perm().
  */
 function privatemsg_perm() {
-  return array('access private messages', 'administer private messages');
+  return array('access private messages', 'administer private messages', 'create new folder');
 }
 
 /**
@@ -905,7 +897,9 @@ function privatemsg_list_form($messages, $folders, $current_folder) {
       $extra_folders[$folder['fid']] = $folder['name'];
     }
   }
-  $extra_folders['new'] = t('New folder...');
+  if (user_access('create new folder')) {
+    $extra_folders['new'] = t('New folder...');
+  }
 
   $form['messages'] = array(
     '#theme' => 'privatemsg_message_table',
@@ -1161,6 +1155,7 @@ function privatemsg_new_folder_form() {
     '#value' => $movetonew ? t('Create folder') : t('Add'),
     '#suffix' => $movetonew ? l(t('Cancel'), $path) : '</div></fieldset>',
   );
+  $form['#access'] = user_access('create new folder');
 
   return $form;
 }
