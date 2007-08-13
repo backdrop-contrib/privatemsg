@@ -1,0 +1,188 @@
+<?php
+
+function mail_edit_menu($may_cache) {
+  $items = array();
+  if ($may_cache) {
+    $items[] = array(
+      'access' => user_access('administer site configuration'),
+      'callback' => 'mail_edit_overview',
+      'description' => t('Edit mails being sent out by Drupal.'),
+      'path' => 'admin/build/mail_edit',
+      'title' => t('Mail templates'),
+    );
+  }
+  return $items;
+}
+
+/**
+ * Implementation of hook_mail_alter().
+ */
+function mail_edit_mail_alter(&$mailkey, &$to, &$subject, &$body, &$from, &$headers) {
+  $sql = "SELECT * FROM {mail_edit} m";
+  if (module_exists('privatemsg')) {
+    $sql .= ' INNER JOIN {privatemsg_mail_edit} p ON m.mailkey = p.mailkey';
+  }
+  $sql .= " WHERE m.mailkey = '%s'";
+  drupal_set_message($sql);
+  if ($alter = db_fetch_object(db_query($sql, $mailkey))) {
+  drupal_set_message(var_export($alter, TRUE));
+    $sender = user_load(array('mail' => $from));
+    $recipient = user_load(array('mail' => $to));
+    $is_privatemsg = !empty($alter->type) && $recipient;
+    $variables = array(
+      '!sender_name' => $sender->name,
+      '!sender_page' => url("user/$sender->uid", NULL, NULL, !$is_privatemsg),
+    );
+    if ($sender->contact) {
+      $variables['!sender_page_contact'] = url("user/$sender->uid/contact", NULL, NULL, !$is_privatemsg);
+    }
+    if ($recipient) {
+      $variables += array(
+        '!recipient_name' => $recipient->name,
+        '!recipient_page' => url("user/$recipient->uid", NULL, NULL, !$is_privatemsg),
+      );
+    };
+    if (!empty($GLOBALS['form_values'])) {
+      foreach ($GLOBALS['form_values'] as $key => $value) {
+        $variables["!$key"] = $value;
+      }
+    }
+    if ($alter->subject) {
+      $subject = strtr($alter->subject, $variables);
+    }
+    if ($alter->body) {
+      $body = strtr($alter->body, $variables);
+    }
+    if ($is_privatemsg) {
+      $to = NULL;
+      module_invoke('privatemsg', 'send_privatemsg', $recipient, $subject, $body, FILTER_FORMAT_DEFAULT, 0, $alter->type);
+    }
+  }
+}
+
+/**
+ * Menu callback; administrative mail editing overview.
+ */
+function mail_edit_overview($mailkey = '') {
+  $keys = array();
+  if ($cache = cache_get('mail_edit_overview')) {
+    $keys = unserialize($cache->data);
+  }
+  else {
+    foreach (module_list() as $module) {
+      $file = file_get_contents(drupal_get_path('module', $module) ."/$module.module");
+      preg_match_all('/drupal_mail\((.)(.+)\1,/U', $file, $matches);
+      $keys = array_merge($keys, $matches[2]);
+    }
+    cache_set('mail_edit_overview', 'cache', serialize($keys));
+  }
+  if ($mailkey && (array_search($mailkey, $keys) !== FALSE)) {
+    return drupal_get_form('mail_edit_form', $mailkey);
+  }
+  $keys[] = 'user-register-notify';
+  $keys[] = 'user-register-welcome';
+  sort($keys);
+
+  $header = array(t('Key'), t('Description'),);
+  $rows = array();
+  foreach ($keys as $key) {
+    $rows[$key] = array(
+      l($key, 'admin/build/mail_edit/'. $key),
+      t('<em>No description has been set.</em>'),
+    );
+  }
+  $result = db_query('SELECT mailkey, description FROM {mail_edit}');
+  while ($d = db_fetch_object($result)) {
+    $rows[$d->mailkey][1] = $d->description;
+  }
+
+  $output = theme('table', $header, $rows, array('style' => 'width:98%;'));
+
+  return $output;
+}
+
+function mail_edit_form($mailkey) {
+  drupal_set_title(t('Settings for %mailkey', array('%mailkey' => $mailkey)));
+  if ($defaults = db_fetch_array(db_query("SELECT * FROM {mail_edit} WHERE mailkey = '%s'", $mailkey))) {
+    $insert = FALSE;
+  }
+  else {
+    $insert = TRUE;
+    $defaults = array('description' => '', 'subject' => '', 'body' => '');
+  }
+  $form['insert'] = array('#type' => 'value', '#value' => $insert);
+  $form['mailkey'] = array('#type' => 'value', '#value' => $mailkey);
+  $form['help'] = array('#value' => t('You can use variables: !recipient_name, !recipient_page (the user page of the recipient), !sender_name, !sender_page, !sender_page_contact and when relevant (contact messages), !message and !subject.'));
+  $form['description'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Message description'),
+    '#default_value' => $defaults['description'],
+    '#description' => t("The description of this message (for admins only; users don't see this.)"),
+    '#weight' => 0,
+  );
+  $form['subject'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Subject'),
+    '#default_value' => $defaults['subject'],
+    '#description' => t('The subject of the mail (if no type) or the the private message sent instead of the mail.'),
+    '#weight' => 1,
+  );
+  $form['body'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Body'),
+    '#default_value' => $defaults['body'],
+    '#description' => t('The body of the mail (if no type) or the private message sent instead of the mail.'),
+    '#weight' => 2,
+  );
+  /*
+  $form['notification_subject'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Subject of the notification'),
+    '#default_value' => $defaults['subject'],
+    '#description' => t('The subject of the notification sent about the private message.'),
+  );
+  $form['notification_text_body'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Text of the notification'),
+    '#default_value' => $defaults['notification_text_body'],
+    '#description' => t('The plain text version of the notification sent about the private message.'),
+  );
+  $form['notification_html_body'] = array(
+    '#type' => 'textarea',
+    '#title' => t('HTML version of the notification'),
+    '#default_value' => $defaults['notification_text_body'],
+    '#description' => t('The HTML version of the notification sent about the private message.'),
+  );
+  $form['notification_group_text_body'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Text of the grouped notification'),
+    '#default_value' => $defaults['notification_group_text_body'],
+    '#description' => t('The text version of the notification sent about several private messages.'),
+  );
+  $form['notification_group_html_body'] = array(
+    '#type' => 'textarea',
+    '#title' => t('HTML version of the grouped notification'),
+    '#default_value' => $defaults['notification_group_html_body'],
+    '#description' => t('The HTML version of the notification sent about several private messages.'),
+  );
+  */
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save'),
+    '#weight' => 10,
+  );
+  return $form;
+}
+
+function mail_edit_form_submit($form_id, $form_values) {
+  drupal_set_message('Saving'. intval($form_values['insert']));
+  $args = array($form_values['description'], $form_values['subject'], $form_values['body'], $form_values['mailkey']);
+  if ($form_values['insert']) {
+    db_query("INSERT INTO {mail_edit} (description, subject, body, mailkey) VALUES ('%s', '%s', '%s', '%s')", $args);
+  }
+  else {
+    db_query("UPDATE {mail_edit} SET description = '%s', subject = '%s', body = '%s' WHERE mailkey = '%s'", $args);
+  }
+  return 'admin/build/mail_edit';
+}
+

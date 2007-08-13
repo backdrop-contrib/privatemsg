@@ -43,20 +43,19 @@ function privatemsg_install() {
           thread        int NOT NULL DEFAULT 0,
           key (recipient)
         ) /*!40100 DEFAULT CHARACTER SET utf8 */;");
-      db_query("CREATE TABLE {privatemsg_mails} )
-          description varchar(255) NOT NULL,
+      db_query("CREATE TABLE {privatemsg_mail_edit} (
           type varchar(255) NOT NULL,
-          subject varchar(255) NOT NULL,
-          body varchar(255) NOT NULL,
-          notification_subject varchar(255) NOT NULL,
-          notification_text_body varchar(255) NOT NULL,
-          notification_html_body varchar(255) NOT NULL,
-          notification_group_text_body varchar(255) NOT NULL,
-          notification_group_html_body varchar(255) NOT NULL,
           mailkey varchar(255) NOT NULL,
           PRIMARY KEY  (mailkey)
         ) /*!40100 DEFAULT CHARACTER SET utf8 */;");
       break;
+      /*
+                notification_subject varchar(255) NOT NULL,
+          notification_text_body varchar(255) NOT NULL,
+          notification_html_body varchar(255) NOT NULL,
+          notification_group_text_body varchar(255) NOT NULL,
+          notification_group_html_body varchar(255) NOT NULL,
+*/
     case 'pgsql':
       db_query("CREATE TABLE {privatemsg} (
           id            integer NOT NULL,
@@ -102,15 +101,7 @@ function privatemsg_install() {
       db_query('CREATE SEQUENCE {privatemsg}_id_seq INCREMENT 1 START 1');
       db_query('CREATE SEQUENCE {privatemsg_folder}_fid_seq INCREMENT 1 START 1');
       db_query("CREATE TABLE {privatemsg_mails} )
-          description varchar(255) NOT NULL,
           type varchar(255) NOT NULL,
-          subject varchar(255) NOT NULL,
-          body varchar(255) NOT NULL,
-          notification_subject varchar(255) NOT NULL,
-          notification_text_body varchar(255) NOT NULL,
-          notification_html_body varchar(255) NOT NULL,
-          notification_group_text_body varchar(255) NOT NULL,
-          notification_group_html_body varchar(255) NOT NULL,
           mailkey varchar(255) NOT NULL,
           PRIMARY KEY  (mailkey)
         ) /*!40100 DEFAULT CHARACTER SET utf8 */;");

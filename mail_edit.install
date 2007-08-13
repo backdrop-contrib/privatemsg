@@ -1,0 +1,14 @@
+<?php
+function mail_edit_install() {
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      db_query("CREATE TABLE {mail_edit} (
+          description varchar(255) NOT NULL,
+          subject varchar(255) NOT NULL,
+          body TEXT,
+          mailkey varchar(255) NOT NULL,
+          PRIMARY KEY  (mailkey)
+        ) /*!40100 DEFAULT CHARACTER SET utf8 */");
+  }
+}
