@@ -840,9 +840,11 @@ function privatemsg_cur_folder_form($folders, $current_folder) {
     '_privatemsg_delimiter' => '----------------',
     'all types' => t('All types'),
   );
+  $filter_types = array('all types' => t('All types'),);
   while ($t = db_fetch_object($result)) {
     $type = check_plain($t->type);
     $types[$type] = $type;
+    $filter_types[$type] = $type;
   }
   $form['header']['type'] = array(
     '#type' => 'select',
@@ -850,6 +852,12 @@ function privatemsg_cur_folder_form($folders, $current_folder) {
     '#options' => $types,
     '#attributes' => array('class' => 'pm-filter-select'),
     '#default_value' => '_privatemsg_delimiter',
+  );
+  $form['header']['filter_type'] = array(
+    '#type' => 'select',
+    '#title' => t('Filter'),
+    '#options' => $filter_types,
+    '#default_value' => isset($_SESSION['privatemsg_type']) ? $_SESSION['privatemsg_type'] : 'all types',
   );
   if (isset($_SESSION['privatemsg_type'])) {
     $form['header']['type']['#default_value'] = $_SESSION['privatemsg_type'];
@@ -875,14 +883,14 @@ function privatemsg_cur_folder_form_submit($form_id, $form_values) {
       unset($_SESSION['privatemsg_type']);
       return $redirect;
     case t('Filter'):
-      $type = $form_values['type'];
+      $type = $form_values['filter_type'];
       // all other '_' will be handled by JS.
       if ($type[0] != '_') {
         if ($type == 'all types') {
           unset($_SESSION['privatemsg_type']);
         }
         else {
-          $_SESSION['privatemsg_type'] = $form_values['type'];
+          $_SESSION['privatemsg_type'] = $form_values['filter_type'];
         }
       }
       break;
@@ -930,7 +938,7 @@ function privatemsg_list_form($messages, $folders, $current_folder) {
     );
     $form['messages'][$message->id]['user'] = array(
       '#type' => 'value',
-      '#value' => theme('username', $message),
+      '#value' => theme('privatemsg_username', $message),
     );
     $form['messages'][$message->id]['subject'] = array(
       '#type' => 'value',
@@ -1619,7 +1627,7 @@ function privatemsg_contacts_form() {
     );
     $form['contacts'][$uid]['contact'] = array(
       '#type' => 'value',
-      '#value' => theme('username', (object) array('uid' => $uid, 'name' => $name)),
+      '#value' => theme('privatemsg_username', (object) array('uid' => $uid, 'name' => $name)),
     );
     $form['contacts'][$uid]['operations'] = array(
       '#type' => 'value',
@@ -2033,7 +2041,7 @@ function theme_privatemsg_view($message, $preview = FALSE, $prev = 0, $next = 0)
     $pm_from = $user->name;
   }
   else {
-    $pm_from = theme('username', $message);
+    $pm_from = theme('privatemsg_username', $message);
   }
   $rows[] = array(
     array('data' => t('From:'), 'class' => 'title-cell', 'nowrap' => 'nowrap'),
@@ -2045,7 +2053,7 @@ function theme_privatemsg_view($message, $preview = FALSE, $prev = 0, $next = 0)
     $pm_to = $message->recipient;
   }
   else {
-    $pm_to = theme('username', user_load(array('uid' => $message->recipient)));
+    $pm_to = theme('privatemsg_username', user_load(array('uid' => $message->recipient)));
   }
   $rows[] = array(
     array('data' => t('To:'), 'class' => 'title-cell', 'nowrap' => 'nowrap'),
@@ -2356,4 +2364,8 @@ function privatemsg_load($message_id) {
   }
   $result = db_query($sql, $params);
   return db_fetch_object($result);
+}
+
+function theme_privatemsg_username($user) {
+  return theme('username', $user);
 }
