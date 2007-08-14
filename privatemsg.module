@@ -177,7 +177,8 @@ function privatemsg_menu($may_cache) {
       $items[] = array(
         'path' => 'privatemsg/block/' . arg(2),
         'title' => $blocked ? t('Unblock @user', $title_args) : t('Block @user', $title_args),
-        'callback' => $blocked ? 'privatemsg_unblock_user_form' : 'privatemsg_block_user_form',
+        'callback' => 'drupal_get_form',
+        'callback arguments' => array($blocked ? 'privatemsg_unblock_user_form' : 'privatemsg_block_user_form'),
         'type' => MENU_CALLBACK,
       );
     }
