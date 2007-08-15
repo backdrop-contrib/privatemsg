@@ -2387,7 +2387,7 @@ function privatemsg_invoke_privatemsg(&$message, $op) {
 
 function privatemsg_load($message_id) {
   global $user;
-  $sql = 'SELECT p.id, u.uid, u.name, p.author, p.timestamp, p.subject, p.message, p.newmsg, p.recipient, p.folder, p.format, p.thread FROM {privatemsg} p INNER JOIN {users} u ON p.author = u.uid WHERE p.id = %d';
+  $sql = 'SELECT p.id, u.uid, u.name, p.author, p.timestamp, p.subject, p.message, p.newmsg, p.recipient, p.folder, p.format, p.thread, p.type FROM {privatemsg} p INNER JOIN {users} u ON p.author = u.uid WHERE p.id = %d';
   $params = array($message_id);
   if (!user_access('administer private messages')) {
     $sql .= ' AND (recipient = %d OR author = %d)';
@@ -2398,9 +2398,9 @@ function privatemsg_load($message_id) {
   return db_fetch_object($result);
 }
 
-function prvatemsg_subscriptions_mailvars_pmsg($sid, $object_id, $placeholders, $sql_args) {
+function privatemsg_subscriptions_mailvars_pmsg($sid, $object_id, $placeholders, $sql_args) {
   $message = privatemsg_load($object_id);
-  $sql_args[] = $message->uid;
+  $sql_args[] = $message->recipient;
   $sql = "SELECT u.uid, u.name, u.mail, u.language
     FROM {users} u
     INNER JOIN {subscriptions} s ON u.uid = s.uid
@@ -2422,7 +2422,7 @@ function privatemsg_subscriptions_held_pmsg($message, $uid) {
 
 function privatemsg_subscriptions_handle($message, $cron = FALSE) {
   subscriptions_hold($message, 'pmsg', 'insert', $message->uid);
-  subscriptions_mailvars($message->type, $message->id, $message->uid, 'pmsg', $cron);
+  subscriptions_mailvars($message->type, $message->id, $message->author, 'pmsg', $cron);
 }
 
 function privatemsg_subscriptions_page_pmsg($account) {
@@ -2431,7 +2431,7 @@ function privatemsg_subscriptions_page_pmsg($account) {
 
 function privatemsg_subscriptions_form($account) {
   $result = db_query("
-    SELECT type, description, send_interval
+    SELECT type, description, send_interval, stype
     FROM {privatemsg_mail_edit} p
     INNER JOIN {mail_edit} m ON p.mailkey = m.mailkey
     LEFT JOIN {subscriptions} s ON concat('pmsg', type) = stype AND uid = %d
@@ -2440,7 +2440,7 @@ function privatemsg_subscriptions_form($account) {
   $default_value = array();
   while ($type = db_fetch_object($result)) {
     $checkboxes[$type->type] = $type->description;
-    if ($type->send_interval) {
+    if ($type->stype) {
       $default_value[] = $type->type;
     }
     $form['subscriptions']['select'][$type->type] = array(

@@ -23,9 +23,7 @@ function mail_edit_mail_alter(&$mailkey, &$to, &$subject, &$body, &$from, &$head
     $sql .= ' INNER JOIN {privatemsg_mail_edit} p ON m.mailkey = p.mailkey';
   }
   $sql .= " WHERE m.mailkey = '%s'";
-  drupal_set_message($sql);
   if ($alter = db_fetch_object(db_query($sql, $mailkey))) {
-  drupal_set_message(var_export($alter, TRUE));
     $sender = user_load(array('mail' => $from));
     $recipient = user_load(array('mail' => $to));
     $is_privatemsg = !empty($alter->type) && $recipient;
