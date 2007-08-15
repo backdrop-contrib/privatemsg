@@ -86,7 +86,7 @@ function privatemsg_menu($may_cache) {
     );
   }
   else {
-    if (!isset($user->privatemsg_mailalert)) {
+    if (!isset($user->privatemsg_allow)) {
       _privatemsg_user_add_defaults($user);
     }
     if (arg(0) == 'privatemsg' && arg(1) == 'view' && intval(arg(2)) > 0) {
@@ -365,10 +365,10 @@ function privatemsg_user($type, &$edit, &$account, $category = NULL) {
         }
         return $return;
       }
-      else if ($GLOBALS['user']->uid) {
+      elseif ($GLOBALS['user']->uid) {
         return;
       }
-      else if (!isset($account->privatemsg_allow) || $account->privatemsg_allow) {
+      elseif ($account->privatemsg_allow) {
         if (variable_get('user_register', 1)) {
           return array(t('Private messages') => array(array(
             'value' => t('<a href="!login">login</a> or <a href="!register">register</a> to send private messages to this user', array('!login' => url('user/login'), '!register' => url('user/register'))),
@@ -403,14 +403,6 @@ function privatemsg_user($type, &$edit, &$account, $category = NULL) {
             '#default_value' => isset($edit['privatemsg_setmessage_notify']) ? $edit['privatemsg_setmessage_notify'] : 1,
             '#description' => t('Show status message on every page until new messages are read.')
             );
-        $form['privatemsg_settings']['privatemsg_mailalert'] = array(
-            '#type' => 'radios',
-            '#title' => t('Receive e-mail for unread messages'),
-            '#options' => array(PRIVATEMSG_MAIL_NONE => t('Never'), PRIVATEMSG_MAIL_DIGEST => t('Daily'), PRIVATEMSG_MAIL_INDIVIDUAL => t('Every message')),
-            '#default_value' => isset($edit['privatemsg_mailalert']) ? $edit['privatemsg_mailalert'] : PRIVATEMSG_MAIL_NONE,
-            '#description' => t('Select when to receive e-mail notification for unread messages.')
-            );
-
         return $form;
       }
       break;
@@ -437,8 +429,7 @@ function privatemsg_user($type, &$edit, &$account, $category = NULL) {
 }
 
 function _privatemsg_user_add_defaults(&$account) {
-  if (!isset($account->privatemsg_mailalert)) {
-    $account->privatemsg_mailalert = variable_get('privatemsg_default_mailalert', PRIVATEMSG_MAIL_NONE);
+  if (!isset($account->privatemsg_allow)) {
     $account->privatemsg_allow = variable_get('privatemsg_default_allow', 1);
     $account->privatemsg_setmessage_notify = variable_get('privatemsg_default_setmessage_notify', 1);
   }
@@ -510,9 +501,41 @@ function privatemsg_block($op = 'list', $delta = 0, $edit = array()) {
   }
 }
 
+/**
+ * Implementation of hook_subscriptions().
+ */
+function privatemsg_subscriptions($op) {
+  $args = func_get_args();
+  array_shift($args);
+  switch ($op) {
+    case 'menu':
+      return array(
+        'pmsg' => array(
+          'access' => 'subscribe to private messages',
+          'title' => t('private messages'),
+        ),
+      );
+    case 'stype':
+      return array(
+        'pmsg' => 'privatemsg',
+      );
+    case 'ptype':
+      return array(
+        'pmsg' => 'privatemsg',
+      );
+      return isset($functions[$index]) ? $functions[$index] : FALSE;
+    case 'stype_map':
+      return array(
+        'pmsg' => array('sid' => 'message_id'),
+      );
+  }
+}
+
+
+
 function privatemsg_message_allowed($recipient, $author = NULL) {
-  $author = ($author >= 0) ? $author : $GLOBALS['user']->uid;
-  $user = user_load($author);
+  $author = $author ? $author : $GLOBALS['user']->uid;
+  $user = user_load(array('uid' => $author));
   # user can not message themselves
   if ($recipient == $author) {
     return FALSE;
@@ -1024,7 +1047,6 @@ function privatemsg_list_form_submit($form_id, $form_values) {
   $args[] = $user->uid;
   $where = 'WHERE id IN ('. implode(', ', $placeholders) .')  AND recipient = %d';
   $new = 0;
-  drupal_set_message(var_export($form_values, TRUE));
   switch ($form_values['action']) {
     case t('Delete'):
       if ($_POST['js_bypass'] == 1) {
@@ -1575,12 +1597,10 @@ function _privatemsg_send($sender, $recipient, $subject, $body, $format, $thread
     $thread = db_next_id('{privatemsg}_thread');
   }
   $result = db_query("INSERT INTO {privatemsg} (id, author, recipient, subject, message, timestamp, newmsg, hostname, format, thread, type) VALUES (%d, %d, %d, '%s', '%s', %d, %d, '%s', %d, %d, '%s')", $message_id, $sender->uid, $recipient->uid, $subject, $body, time(), 1, getenv('REMOTE_ADDR'), $format, $thread, $type);
-  if ($result !== false && isset($recipient->privatemsg_mailalert) && $recipient->privatemsg_mailalert == PRIVATEMSG_MAIL_INDIVIDUAL) {
-    _privatemsg_sendmail($recipient, 1);
-  }
   if ($points = variable_get('privatemsg_userpoints', 0)) {
     module_invoke('userpoints', 'userpointsapi', 'points', $points, $sender->uid, 'privatemsg');
   }
+  privatemsg_subscriptions_handle(privatemsg_load($message_id));
   return $result ? $message_id : $result;
 }
 
@@ -2195,6 +2215,10 @@ function theme_privatemsg_new_msg_header($form) {
   return theme('table', NULL, $rows, array('class' => 'pm-view-table'));
 }
 
+function theme_privatemsg_username($user) {
+  return theme('username', $user);
+}
+
 /**  @} End of addtogroup theme_system
  *
 **/
@@ -2374,6 +2398,66 @@ function privatemsg_load($message_id) {
   return db_fetch_object($result);
 }
 
-function theme_privatemsg_username($user) {
-  return theme('username', $user);
+function prvatemsg_subscriptions_mailvars_pmsg($sid, $object_id, $placeholders, $sql_args) {
+  $message = privatemsg_load($object_id);
+  $sql_args[] = $message->uid;
+  $sql = "SELECT u.uid, u.name, u.mail, u.language
+    FROM {users} u
+    INNER JOIN {subscriptions} s ON u.uid = s.uid
+    INNER JOIN {subscriptions_sent} ss ON u.uid = ss.uid
+    WHERE $placeholders u.status= 1 AND s.sid = %d AND s.stype = 'pmsg' AND s.uid = %d";
+  $result = db_query($sql, $sql_args);
+  return array(
+    'result' => $result,
+    'subject' => $message->subject,
+    'page' => url('privatemsg/view/'. $object_id, NULL, NULL, TRUE),
+    'strtype' => 'privatemsg',
+  );
+}
+
+function privatemsg_subscriptions_held_pmsg($message, $uid) {
+  privatemsg_subscriptions_handle($message, $uid, TRUE);
+  return TRUE;
+}
+
+function privatemsg_subscriptions_handle($message, $cron = FALSE) {
+  subscriptions_hold($message, 'pmsg', 'insert', $message->uid);
+  subscriptions_mailvars($message->type, $message->id, $message->uid, 'pmsg', $cron);
+}
+
+function privatemsg_subscriptions_page_pmsg($account) {
+  return drupal_get_form('privatemsg_subscriptions_form', $account);
+}
+
+function privatemsg_subscriptions_form($account) {
+  $result = db_query('
+    SELECT type, description, send_interval
+    FROM {privatemsg_mail_edit} p
+    INNER JOIN {mail_edit} m ON p.mailkey = m.mailkey
+    LEFT JOIN {subscriptions} s ON type = sid AND uid = %d
+    ORDER BY type', $account->uid);
+  $intervals = _subscriptions_send_intervals();
+  $default_value = array();
+  while ($type = db_fetch_object($result)) {
+    $checkboxes[$type->type] = $type->description;
+    if ($type->send_interval) {
+      $default_value[] = $type->type;
+    }
+    $form['subscriptions']['select'][$type->type] = array(
+      '#type' => 'select',
+      '#options' => $intervals,
+      '#default_value' => $type->send_interval,
+    );
+  }
+  $form['subscriptions']['checkbox'] = array(
+    '#type' => 'checkboxes',
+    '#options' => $checkboxes,
+    '#default_value' => $default_value,
+  );
+  $form['subscriptions']['#theme'] = 'subscriptions_form_table';
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save'),
+  );
+  return $form;
 }
