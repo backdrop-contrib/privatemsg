@@ -9,7 +9,7 @@ function privatemsg_install() {
           id            int unsigned NOT NULL primary key,
           author        int unsigned NOT NULL,
           recipient     int unsigned NOT NULL,
-          subject       varchar(64) NOT NULL,
+          subject       varchar(256) NOT NULL,
           message       text NOT NULL,
           timestamp     int unsigned NOT NULL,
           newmsg        tinyint unsigned NOT NULL,

@@ -1813,6 +1813,13 @@ function privatemsg_view_form($message, $prev, $next) {
       '#attributes' => array('class' => 'pm-add-delete pm-spacer'),
     );
   }
+  
+  $form['actions']['unread'] = array(
+      '#type' => 'submit',
+      '#value' => t('Mark as Unread'),
+      '#prefix' => ' &nbsp; &nbsp;',
+      '#attributes' => array('class' => 'pm-add-unread pm-spacer'),
+    );
 
   if ($user->uid == $message->recipient) {
     $form['actions']['folder'] = array(
@@ -1859,6 +1866,9 @@ function privatemsg_view_form_submit($form_id, $form_values) {
         drupal_goto('privatemsg/delete/'. $form_values['pm_id']);
       }
       drupal_goto('privatemsg/delete/confirm/'. $form_values['pm_id']);
+    case t('Mark as Unread'):
+      db_query("UPDATE {privatemsg} SET newmsg = 1 WHERE id = %d", $form_values['pm_id']);
+      drupal_goto('privatemsg/list/'. $form_values['pm_fid']);
     case t('Move to folder'):
       if (!isset($form_values['folder']) || ($form_values['folder'] != 'new' && (($fid = intval($form_values['folder'])) != 0 && !db_result(db_query('SELECT fid FROM {privatemsg_folder} WHERE fid = %d AND uid = %d', $fid, $user->uid))))) {
         watchdog('privatemsg', t('Attempted use of unauthorized folder'), WATCHDOG_WARNING);
