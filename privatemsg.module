@@ -270,7 +270,7 @@ function privatemsg_menu($may_cache) {
  * Implementation of hook_perm().
  */
 function privatemsg_perm() {
-  return array('access private messages', 'administer private messages', 'create new folder');
+  return array('access private messages', 'administer private messages', 'create new folder', 'subscribe to private messages');
 }
 
 /**
