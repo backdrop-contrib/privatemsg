@@ -2405,7 +2405,7 @@ function prvatemsg_subscriptions_mailvars_pmsg($sid, $object_id, $placeholders, 
     FROM {users} u
     INNER JOIN {subscriptions} s ON u.uid = s.uid
     INNER JOIN {subscriptions_sent} ss ON u.uid = ss.uid
-    WHERE $placeholders u.status= 1 AND s.sid = %d AND s.stype = 'pmsg' AND s.uid = %d";
+    WHERE $placeholders u.status= 1 AND s.stype = 'pmsg%s' AND s.uid = %d";
   $result = db_query($sql, $sql_args);
   return array(
     'result' => $result,
@@ -2430,12 +2430,12 @@ function privatemsg_subscriptions_page_pmsg($account) {
 }
 
 function privatemsg_subscriptions_form($account) {
-  $result = db_query('
+  $result = db_query("
     SELECT type, description, send_interval
     FROM {privatemsg_mail_edit} p
     INNER JOIN {mail_edit} m ON p.mailkey = m.mailkey
-    LEFT JOIN {subscriptions} s ON type = sid AND uid = %d
-    ORDER BY type', $account->uid);
+    LEFT JOIN {subscriptions} s ON concat('pmsg', type) = stype AND uid = %d
+    ORDER BY type", $account->uid);
   $intervals = _subscriptions_send_intervals();
   $default_value = array();
   while ($type = db_fetch_object($result)) {
@@ -2454,10 +2454,20 @@ function privatemsg_subscriptions_form($account) {
     '#options' => $checkboxes,
     '#default_value' => $default_value,
   );
+  $form['subscriptions']['select']['#tree'] = TRUE;
   $form['subscriptions']['#theme'] = 'subscriptions_form_table';
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Save'),
   );
+  $form['account'] = array('#type' => 'value', '#value' => $account);
   return $form;
+}
+
+function privatemsg_subscriptions_form_submit($form_id, $form_values) {
+  $uid = $form_values['account']->uid;
+  db_query("DELETE FROM {subscriptions} WHERE stype LIKE 'pmsg%%' AND uid = %d", $uid);
+  foreach(array_filter(array_keys($form_values['checkbox'])) as $sid) {
+    subscriptions_add(0, $uid, 'pmsg'. $sid, $form_values['select'][$sid]);
+  }
 }
