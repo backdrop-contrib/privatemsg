@@ -27,6 +27,14 @@ if (Drupal.jsEnabled) {
           $('#edit-go-folder').click();
         }
       );
+      
+      // Add the JS to the folder select if necessary.
+      $('#edit-action').change(
+        function() {
+          // click is necessary for right $op.
+          $('#edit-submit').click();
+        }
+      );
 
       $('.pm-filter-select').change(function() {
         var table = $('#privatemsg_message_table');

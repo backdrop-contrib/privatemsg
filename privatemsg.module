@@ -170,14 +170,14 @@ function privatemsg_menu($may_cache) {
         'weight' => 0,
       );
     }
-    if (arg(0) == 'privatemsg' && arg(1) == 'block' && ($account == user_load(array('uid' => arg(2))))) {
+    if (arg(0) == 'privatemsg' && arg(1) == 'block' && ($account = user_load(array('uid' => arg(2))))) {
       $blocked = privatemsg_user_blocked($account->uid);
       $title_args = array('@user' => $account->name);
       $items[] = array(
         'path' => 'privatemsg/block/' . arg(2),
         'title' => $blocked ? t('Unblock @user', $title_args) : t('Block @user', $title_args),
         'callback' => 'drupal_get_form',
-        'callback arguments' => array($blocked ? 'privatemsg_unblock_user_form' : 'privatemsg_block_user_form'),
+        'callback arguments' => array($blocked ? 'privatemsg_unblock_user_form' : 'privatemsg_block_user_form', $account),
         'type' => MENU_CALLBACK,
       );
     }
@@ -344,22 +344,22 @@ function privatemsg_user($type, &$edit, &$account, $category = NULL) {
       break;
     case 'view':
       if (user_access('access private messages')) {
-        if (privatemsg_message_allowed($user->uid)) {
+        if (privatemsg_message_allowed($account->uid)) {
           $return[t('Private messages')][] = array(
-            'value' => l(t('Write private message'), 'privatemsg/msgto/'. $user->uid, array(
-             'title' => t('Send private message to @name', array('@name' => $user->name)))),
+            'value' => l(t('Write private message'), 'privatemsg/new/'. $account->uid, array(
+             'title' => t('Send private message to @name', array('@name' => $account->name)))),
             'class' => 'send-message');
         }
-        if (!privatemsg_user_blocked($user->uid)) {
+        if (!privatemsg_user_blocked($account->uid)) {
           $return[t('Private messages')][] = array(
-          'value' => l(t('Block messages'), 'privatemsg/block/'. $user->uid, array(
-          'title' => t('Block private messages from @name', array('@name' => $user->name)))),
+          'value' => l(t('Block messages'), 'privatemsg/block/'. $account->uid, array(
+          'title' => t('Block private messages from @name', array('@name' => $account->name)))),
           'class' => 'block-message');
         }
         else  {
           $return[t('Private messages')][] = array(
-            'value' => l(t('Unblock messages'), 'privatemsg/block/'. $user->uid, array(
-             'title' => t('Unblock private messages from @name', array('@name' => $user->name)))),
+            'value' => l(t('Unblock messages'), 'privatemsg/block/'. $account->uid, array(
+             'title' => t('Unblock private messages from @name', array('@name' => $account->name)))),
             'class' => 'unblock-message');
         }
         return $return;
@@ -539,7 +539,7 @@ function privatemsg_message_allowed($recipient, $author = NULL) {
   if ($recipient == $author) {
     return FALSE;
   }
-  if (privatemsg_user_blocked($recipient, $author)) {
+  if (privatemsg_user_blocked($author, $recipient)) {    
     return FALSE;
   }
   if (isset($user->privatemsg_allow) && !$user->privatemsg_allow) {
@@ -567,15 +567,14 @@ function privatemsg_unblock_user($author, $recipient = NULL) {
   global $user;
   $recipient = ($recipient) ? $recipient : $user->uid;
   if (privatemsg_user_blocked($author, $recipient)) {
-    db_query("DELETE FROM {privatemsg_block_user} WHERE author = %d AND recipient=%d)", $author, $recipient);
+    db_query("DELETE FROM {privatemsg_block_user} WHERE author = %d AND recipient = %d", $author, $recipient);
   }
 }
 
-function privatemsg_block_user_form($uid) {
+function privatemsg_block_user_form($account) {
   $form = array();
-  $form['uid'] = array('#type' => 'value', '#value' => $uid);
-  $user = user_load(array('uid' => $uid));
-  return confirm_form($form, t("Are you sure you want to block !user from sending you any more messages?", array('!user' => $user->name)), 'user/' . $uid);
+  $form['uid'] = array('#type' => 'value', '#value' => $account->uid);
+  return confirm_form($form, t("Are you sure you want to block !user from sending you any more messages?", array('!user' => $account->name)), 'user/' . $account->uid);
 }
 
 function privatemsg_block_user_form_submit($form_id, $form_values) {
@@ -583,11 +582,10 @@ function privatemsg_block_user_form_submit($form_id, $form_values) {
   return 'user/'. $form_values['uid'];
 }
 
-function privatemsg_unblock_user_form($uid) {
+function privatemsg_unblock_user_form($account) {
   $form = array();
-  $form['uid'] = array('#type' => 'value', '#value' => $uid);
-  $user = user_load(array('uid' => $uid));
-  return confirm_form($form, t("Are you sure you want to allow !user to send you messages?", array("!user" => $user->name)), 'user/' . $uid);
+  $form['uid'] = array('#type' => 'value', '#value' => $account->uid);
+  return confirm_form($form, t("Are you sure you want to allow !user to send you messages?", array("!user" => $account->name)), 'user/' . $account->uid);
 }
 
 function privatemsg_unblock_user_form_submit($form_id, $form_values) {
@@ -999,7 +997,7 @@ function privatemsg_list_form($messages, $folders, $current_folder) {
     $actions['submit'] = array(
       '#type' => 'submit',
       '#value' => t('Go'),
-      //'#attributes' => array('class' => 'js-hide'),
+      '#attributes' => array('class' => 'js-hide'),
     );
 
 
@@ -1412,6 +1410,10 @@ function privatemsg_new_form() {
     $message = arg(2);
   }
   else if (($uid = arg(2)) && ($msg->recipient = db_result(db_query('SELECT name FROM {users} WHERE uid = %d', $uid)))) {
+    if (!privatemsg_message_allowed($uid, $user->uid)) {
+      drupal_set_message(t('You cannot contact %recipient', array('%recipient' => $msg->recipient)));
+      drupal_goto("user/$uid");
+    }
     $message = $msg;
   }
 
