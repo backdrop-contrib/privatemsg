@@ -170,7 +170,7 @@ function privatemsg_menu($may_cache) {
         'weight' => 0,
       );
     }
-    if (arg(0) == 'privatemsg' && arg(1) == 'block' && ($account == user_load(array('uid' => arg(2)))) {
+    if (arg(0) == 'privatemsg' && arg(1) == 'block' && ($account == user_load(array('uid' => arg(2))))) {
       $blocked = privatemsg_user_blocked($account->uid);
       $title_args = array('@user' => $account->name);
       $items[] = array(
