@@ -776,13 +776,20 @@ function privatemsg_list($uid = NULL) {
 
   $current_folder = intval(arg(2));
   if ($current_folder != 1) {
-    $args[] = $current_folder;
-    $sql = "SELECT id, subject, p.timestamp, u.uid, u.name, newmsg, type FROM {privatemsg} p INNER JOIN {users} u ON p.author = u.uid WHERE p.recipient = %d $type AND folder = %d AND p.recipient_del = 0 ";
     if ($current_folder > 0) {
       $folder_name = db_result(db_query('SELECT name FROM {privatemsg_folder} WHERE fid = %d AND uid = %d', $current_folder, $account->uid));
     }
     else {
       $folder_name = t('Inbox');
+    }
+    $sql = "SELECT id, subject, p.timestamp, u.uid, u.name, newmsg, type FROM {privatemsg} p INNER JOIN {users} u ON p.author = u.uid WHERE p.recipient = %d $type AND p.recipient_del = %d";
+    if ($folder_name == t('Recycle bin')) {
+      $args[] = 1;
+    }
+    else {
+      $args[] = 0;
+      $args[] = $current_folder;
+      $sql .= " AND folder = %d";
     }
   }
   else {
@@ -849,7 +856,7 @@ function privatemsg_cur_folder_form($folders, $current_folder) {
   $form['header']['go_folder'] = array(
     '#type' => 'submit',
     '#value' => t('Go'),
-    '#attributes' => array('class' => 'js-hide'),
+    //'#attributes' => array('class' => 'js-hide'),
   );
   $actor = $current_folder == 1 ? 'author' : 'recipient';
   $result = db_query("SELECT DISTINCT type FROM {privatemsg} WHERE folder = %d AND {$actor}_del = 0 AND {$actor} = %d", $current_folder, $GLOBALS['user']->uid);
