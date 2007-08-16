@@ -551,7 +551,7 @@ function privatemsg_message_allowed($recipient, $author = NULL) {
 function privatemsg_user_blocked($author, $recipient = NULL) {
   global $user;
   $recipient = ($recipient) ? $recipient : $user->uid;
-  return db_result(db_query("select count(*) from {privatemsg_block_user} where author = %d and recipient = %d", $author, $recipient));
+  return db_result(db_query("SELECT COUNT(*) FROM {privatemsg_block_user} WHERE author = %d AND recipient = %d", $author, $recipient));
 }
 
 
@@ -1812,7 +1812,7 @@ function privatemsg_view_form($message, $prev, $next) {
       '#attributes' => array('class' => 'pm-add-delete pm-spacer'),
     );
   }
-  
+
   $form['actions']['unread'] = array(
       '#type' => 'submit',
       '#value' => t('Mark as Unread'),
@@ -2420,6 +2420,7 @@ function privatemsg_subscriptions_mailvars_pmsg($sid, $object_id, $placeholders,
     'result' => $result,
     'subject' => $message->subject,
     'page' => url('privatemsg/view/'. $object_id, NULL, NULL, TRUE),
+    'postfix' => 'pmsg-'. $sid,
     'strtype' => 'privatemsg',
   );
 }
@@ -2480,3 +2481,13 @@ function privatemsg_subscriptions_form_submit($form_id, $form_values) {
     subscriptions_add(0, $uid, 'pmsg'. $sid, $form_values['select'][$sid]);
   }
 }
+
+function privatemsg_mailkeys() {
+  $mailkeys = array();
+  $result = db_query('SELECT type FROM {privatemsg_mail_edit}');
+  while ($type = db_fetch_object($result)) {
+    $mailkeys[] = 'subscriptions-pmsg-'. $type->type;
+  }
+  return $mailkeys;
+}
+

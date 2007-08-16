@@ -48,6 +48,11 @@ function privatemsg_install() {
           mailkey varchar(255) NOT NULL,
           PRIMARY KEY  (mailkey)
         ) /*!40100 DEFAULT CHARACTER SET utf8 */;");
+      db_query('CREATE TABLE {privatemsg_block_user} (
+          author int unsigned NOT NULL,
+          recipient int unsigned NOT NULL,
+          PRIMARY KEY (author, recipient)
+        )  /*!40100 DEFAULT CHARACTER SET utf8 */');
       break;
       /*
                 notification_subject varchar(255) NOT NULL,
@@ -97,6 +102,11 @@ function privatemsg_install() {
           thread        int NOT NULL DEFAULT 0,
           PRIMARY KEY (id)
         )");
+      db_query('CREATE TABLE {privatemsg_block_user} (
+          author int unsigned NOT NULL,
+          recipient int unsigned NOT NULL,
+          PRIMARY KEY (author, recipient)
+        )');
       db_query("CREATE INDEX {privatemsg_archive_recipient} ON {privatemsg_archive}(recipient)");
       db_query('CREATE SEQUENCE {privatemsg}_id_seq INCREMENT 1 START 1');
       db_query('CREATE SEQUENCE {privatemsg_folder}_fid_seq INCREMENT 1 START 1');

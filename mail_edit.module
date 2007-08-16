@@ -72,13 +72,12 @@ function mail_edit_overview($mailkey = '') {
       preg_match_all('/drupal_mail\((.)(.+)\1,/U', $file, $matches);
       $keys = array_merge($keys, $matches[2]);
     }
+    $keys = array_merge($keys, module_invoke_all('mailkeys'));
     cache_set('mail_edit_overview', 'cache', serialize($keys));
   }
   if ($mailkey && (array_search($mailkey, $keys) !== FALSE)) {
     return drupal_get_form('mail_edit_form', $mailkey);
   }
-  $keys[] = 'user-register-notify';
-  $keys[] = 'user-register-welcome';
   sort($keys);
 
   $header = array(t('Key'), t('Description'),);
@@ -184,3 +183,10 @@ function mail_edit_form_submit($form_id, $form_values) {
   return 'admin/build/mail_edit';
 }
 
+/**
+ * We provide some of the mailkeys for user module which are not catched by the
+ * regexp in mail_edit_overview.
+ */
+function mail_edit_mailkeys() {
+  return array('user-register-notify', 'user-register-welcome');
+}
