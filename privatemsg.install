@@ -118,7 +118,7 @@ function privatemsg_install() {
       db_query("create or replace function unix_timestamp(timestamp with time zone)
         returns int as '
         declare
-           date alias for " .'$1'. ";
+           date alias for \$1;
            timezero timestamp;
            offset interval;
         begin
@@ -134,7 +134,7 @@ function privatemsg_install() {
       db_query("create or replace function unix_timestamp(timestamp without time zone)
         returns int as '
         declare
-           date alias for " .'$1'. ";
+           date alias for \$1;
            timezero timestamp;
            offset interval;
         begin

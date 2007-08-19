@@ -107,7 +107,7 @@ function privatemsg_menu($may_cache) {
         'weight' => -10,
       );
       $items[] = array(
-        'path' => 'privatemsg/view/'. arg(2). '/back',
+        'path' => 'privatemsg/view/'. arg(2) .'/back',
         'title' => t('Back to list'),
         'callback' => 'privatemsg_back_to_list',
         'callback arguments' => array(intval(arg(2))),
@@ -174,7 +174,7 @@ function privatemsg_menu($may_cache) {
       $blocked = privatemsg_user_blocked($account->uid);
       $title_args = array('@user' => $account->name);
       $items[] = array(
-        'path' => 'privatemsg/block/' . arg(2),
+        'path' => 'privatemsg/block/'. arg(2),
         'title' => $blocked ? t('Unblock @user', $title_args) : t('Block @user', $title_args),
         'callback' => 'drupal_get_form',
         'callback arguments' => array($blocked ? 'privatemsg_unblock_user_form' : 'privatemsg_block_user_form', $account),
@@ -515,14 +515,8 @@ function privatemsg_subscriptions($op) {
         ),
       );
     case 'stype':
-      return array(
-        'pmsg' => 'privatemsg',
-      );
     case 'ptype':
-      return array(
-        'pmsg' => 'privatemsg',
-      );
-      return isset($functions[$index]) ? $functions[$index] : FALSE;
+      return array('pmsg');
     case 'stype_map':
       return array(
         'pmsg' => array('sid' => 'message_id'),
@@ -539,7 +533,7 @@ function privatemsg_message_allowed($recipient, $author = NULL) {
   if ($recipient == $author) {
     return FALSE;
   }
-  if (privatemsg_user_blocked($author, $recipient)) {    
+  if (privatemsg_user_blocked($author, $recipient)) {
     return FALSE;
   }
   if (isset($user->privatemsg_allow) && !$user->privatemsg_allow) {
@@ -574,7 +568,7 @@ function privatemsg_unblock_user($author, $recipient = NULL) {
 function privatemsg_block_user_form($account) {
   $form = array();
   $form['uid'] = array('#type' => 'value', '#value' => $account->uid);
-  return confirm_form($form, t("Are you sure you want to block !user from sending you any more messages?", array('!user' => $account->name)), 'user/' . $account->uid);
+  return confirm_form($form, t('Are you sure you want to block !user from sending you any more messages?', array('!user' => $account->name)), 'user/'. $account->uid);
 }
 
 function privatemsg_block_user_form_submit($form_id, $form_values) {
@@ -585,7 +579,7 @@ function privatemsg_block_user_form_submit($form_id, $form_values) {
 function privatemsg_unblock_user_form($account) {
   $form = array();
   $form['uid'] = array('#type' => 'value', '#value' => $account->uid);
-  return confirm_form($form, t("Are you sure you want to allow !user to send you messages?", array("!user" => $account->name)), 'user/' . $account->uid);
+  return confirm_form($form, t('Are you sure you want to allow !user to send you messages?', array('!user' => $account->name)), 'user/'. $account->uid);
 }
 
 function privatemsg_unblock_user_form_submit($form_id, $form_values) {
@@ -867,7 +861,7 @@ function privatemsg_cur_folder_form($folders, $current_folder) {
     '_privatemsg_delimiter' => '----------------',
     'all types' => t('All types'),
   );
-  $filter_types = array('all types' => t('All types'),);
+  $filter_types = array('all types' => t('All types'));
   while ($t = db_fetch_object($result)) {
     $type = check_plain($t->type);
     $types[$type] = $type;
@@ -1156,7 +1150,7 @@ function privatemsg_new_folder_form() {
   if (isset($_SESSION['privatemsg'])) {
     $name_desc = t('Enter a name for the new folder.');
     $form['messages'] = array('#tree' => TRUE);
-    foreach($_SESSION['privatemsg'] as $mid => $message) {
+    foreach ($_SESSION['privatemsg'] as $mid => $message) {
       if ($message['selected']) {
         $form['messages'][$mid] = array(
           '#type' => 'hidden',
@@ -1914,7 +1908,7 @@ function privatemsg_back_to_list($message_id) {
     drupal_goto('privatemsg/list/'. $fid);
   }
   else {
-    drupal_goto('privatemsg' . ($user->uid == $message->recipient ? '' : '/'. $message->recipient));
+    drupal_goto('privatemsg'. ($user->uid == $message->recipient ? '' : '/'. $message->recipient));
   }
 }
 
@@ -1958,7 +1952,7 @@ function privatemsg_delete_form_submit($form_id, $form_values) {
 }
 
 function privatemsg_delete_multiple_form() {
-  foreach($_SESSION['privatemsg'] as $mid => $message) {
+  foreach ($_SESSION['privatemsg'] as $mid => $message) {
     if ($message['selected']) {
       $messages[] = $message['subject'];
     }
@@ -2218,9 +2212,12 @@ function theme_privatemsg_new_msg_header($form) {
 
   $title = $form['recipient']['#title'] .':';
   unset($form['recipient']['#title']);
-  $rows[] = array('data' => array(
-    array('data' => $title, 'class' => 'title-cell'),
-    drupal_render($form['recipient']),), 'valign' => 'top'
+  $rows[] = array(
+    'data' => array(
+      array('data' => $title, 'class' => 'title-cell'),
+      drupal_render($form['recipient']),
+    ),
+    'valign' => 'top'
   );
 
   $title = $form['subject']['#title'] .':';
@@ -2427,10 +2424,10 @@ function privatemsg_subscriptions_mailvars_pmsg($sid, $object_id, $placeholders,
   $result = db_query($sql, $sql_args);
   return array(
     'result' => $result,
-    'subject' => $message->subject,
-    'page' => url('privatemsg/view/'. $object_id, NULL, NULL, TRUE),
+    '@subject' => $message->subject,
+    '!url' => url('privatemsg/view/'. $object_id, NULL, NULL, TRUE),
     'postfix' => 'pmsg-'. $sid,
-    'strtype' => 'privatemsg',
+    '@type' => 'privatemsg',
   );
 }
 
@@ -2486,7 +2483,7 @@ function privatemsg_subscriptions_form($account) {
 function privatemsg_subscriptions_form_submit($form_id, $form_values) {
   $uid = $form_values['account']->uid;
   db_query("DELETE FROM {subscriptions} WHERE stype LIKE 'pmsg%%' AND uid = %d", $uid);
-  foreach(array_filter(array_keys($form_values['checkbox'])) as $sid) {
+  foreach (array_filter(array_keys($form_values['checkbox'])) as $sid) {
     subscriptions_add(0, $uid, 'pmsg'. $sid, $form_values['select'][$sid]);
   }
 }
@@ -2499,4 +2496,5 @@ function privatemsg_mailkeys() {
   }
   return $mailkeys;
 }
+
 

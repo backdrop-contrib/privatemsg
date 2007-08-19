@@ -1,4 +1,5 @@
 <?php
+// $Id$
 
 function mail_edit_menu($may_cache) {
   $items = array();
@@ -80,7 +81,7 @@ function mail_edit_overview($mailkey = '') {
   }
   sort($keys);
 
-  $header = array(t('Key'), t('Description'),);
+  $header = array(t('Key'), t('Description'));
   $rows = array();
   foreach ($keys as $key) {
     $rows[$key] = array(
