@@ -1,5 +1,6 @@
 <?php
 // $Id$
+
 define('PRIVATEMSG_MAIL_NONE', 0);
 define('PRIVATEMSG_MAIL_DIGEST', 1);
 define('PRIVATEMSG_MAIL_INDIVIDUAL', 2);
