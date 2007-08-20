@@ -110,7 +110,11 @@ function mail_edit_form($mailkey) {
   }
   $form['insert'] = array('#type' => 'value', '#value' => $insert);
   $form['mailkey'] = array('#type' => 'value', '#value' => $mailkey);
-  $form['help'] = array('#value' => t('You can use variables: !recipient_name, !recipient_page (the user page of the recipient), !sender_name, !sender_page, !sender_page_contact and when relevant (contact messages), !message and !subject.'));
+  $form['_submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save'),
+    '#weight' => -40,
+  );
   $form['description'] = array(
     '#type' => 'textfield',
     '#title' => t('Message description'),
@@ -123,51 +127,35 @@ function mail_edit_form($mailkey) {
     '#title' => t('Subject'),
     '#default_value' => $defaults['subject'],
     '#description' => t('The subject of the mail (if no type) or the the private message sent instead of the mail.'),
-    '#weight' => 1,
+    '#weight' => 10,
   );
   $form['body'] = array(
     '#type' => 'textarea',
     '#title' => t('Body'),
     '#default_value' => $defaults['body'],
     '#description' => t('The body of the mail (if no type) or the private message sent instead of the mail.'),
-    '#weight' => 2,
+    '#weight' => 20,
   );
-  /*
-  $form['notification_subject'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Subject of the notification'),
-    '#default_value' => $defaults['subject'],
-    '#description' => t('The subject of the notification sent about the private message.'),
+  $form['help'] = array(
+    '#theme' => 'mail_edit_variables',
+    '#variables' => array(
+      '!recipient_name' => t('Name of the recipient.'),
+      '!recipient_page' => ('The user page of the recipient.'),
+      '!sender_page' => t('The user page of the sender.'),
+      '!sender_page_contact' => t('The contact page of the sender.'),
+    ),
+    '#weight' => 30,
   );
-  $form['notification_text_body'] = array(
-    '#type' => 'textarea',
-    '#title' => t('Text of the notification'),
-    '#default_value' => $defaults['notification_text_body'],
-    '#description' => t('The plain text version of the notification sent about the private message.'),
-  );
-  $form['notification_html_body'] = array(
-    '#type' => 'textarea',
-    '#title' => t('HTML version of the notification'),
-    '#default_value' => $defaults['notification_text_body'],
-    '#description' => t('The HTML version of the notification sent about the private message.'),
-  );
-  $form['notification_group_text_body'] = array(
-    '#type' => 'textarea',
-    '#title' => t('Text of the grouped notification'),
-    '#default_value' => $defaults['notification_group_text_body'],
-    '#description' => t('The text version of the notification sent about several private messages.'),
-  );
-  $form['notification_group_html_body'] = array(
-    '#type' => 'textarea',
-    '#title' => t('HTML version of the grouped notification'),
-    '#default_value' => $defaults['notification_group_html_body'],
-    '#description' => t('The HTML version of the notification sent about several private messages.'),
-  );
-  */
+  if (substr($mailkey, 0, 7) == 'contact') {
+    $form['help']['#variables'] += array(
+      '!message' => t('The contact message itself.'),
+      '!subject' => t('The subject of the contact message.'),
+    );
+  }
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Save'),
-    '#weight' => 10,
+    '#weight' => 40,
   );
   return $form;
 }
@@ -182,6 +170,16 @@ function mail_edit_form_submit($form_id, $form_values) {
     db_query("UPDATE {mail_edit} SET description = '%s', subject = '%s', body = '%s' WHERE mailkey = '%s'", $args);
   }
   return 'admin/build/mail_edit';
+}
+
+function theme_mail_edit_variables($element) {
+  $output = "<p>Usable variables are:</p>";
+  $output .= "<dl>\n";
+  foreach($element['#variables'] as $dt => $dd) {
+    $output .= "<dt>$dt</dt><dd>$dd</dd>\n";
+  }
+  $output .= "</dl>\n";
+  return $output;
 }
 
 /**

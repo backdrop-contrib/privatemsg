@@ -469,7 +469,7 @@ function privatemsg_form_alter($form_id, &$form) {
         '#title' => t('Private message type'),
         '#default_value' => db_result(db_query("SELECT type FROM {privatemsg_mail_edit} WHERE mailkey = '%s'", $form['mailkey']['#value'])),
         '#description' => t('Fill this in to send a private message instead of the mail (when the recipient has an account on %site). In the folder view, users will be able to filter on this. Example: contact mails.', array('%site' => variable_get('site_name', t('Drupal')))),
-        '#weight' => 3,
+        '#weight' => 1,
       );
       $form['#submit']['privatemsg_mail_edit_submit'] = array();
   }
