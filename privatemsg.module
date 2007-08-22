@@ -4,6 +4,9 @@
 define('PRIVATEMSG_MAIL_NONE', 0);
 define('PRIVATEMSG_MAIL_DIGEST', 1);
 define('PRIVATEMSG_MAIL_INDIVIDUAL', 2);
+define('PRIVATEMSG_FOLDER_RECYCLE_BIN', -1);
+define('PRIVATEMSG_FOLDER_INBOX', 0);
+define('PRIVATEMSG_FOLDER_SENT', 1);
 
 /**
  * Implementation of hook_menu().
@@ -280,7 +283,6 @@ function privatemsg_cron() {
   // Perform these actions just once per day.
   if (variable_get('privatemsg_last_cron', 0) < (time() - 3600*24)) {
     _privatemsg_prune();
-    _privatemsg_mailalert();
     variable_set('privatemsg_last_cron', time());
   }
 }
@@ -464,14 +466,20 @@ function privatemsg_form_alter($form_id, &$form) {
       );
       break;
     case 'mail_edit_form':
-      $form['privatemsg_type'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Private message type'),
-        '#default_value' => db_result(db_query("SELECT type FROM {privatemsg_mail_edit} WHERE mailkey = '%s'", $form['mailkey']['#value'])),
-        '#description' => t('Fill this in to send a private message instead of the mail (when the recipient has an account on %site). In the folder view, users will be able to filter on this. Example: contact mails.', array('%site' => variable_get('site_name', t('Drupal')))),
-        '#weight' => 1,
-      );
-      $form['#submit']['privatemsg_mail_edit_submit'] = array();
+      $mailkey = $form['mailkey']['#value'];
+      if ($mailkey == 'private-message') {
+        unset($form['body'], $form['subject'], $form['help']);
+      }
+      elseif (substr($mailkey, 0, 19) != 'subscriptions-pmsg-') {
+        $form['privatemsg_type'] = array(
+          '#type' => 'textfield',
+          '#title' => t('Private message type'),
+          '#default_value' => db_result(db_query("SELECT type FROM {privatemsg_mail_edit} WHERE mailkey = '%s'", $mailkey)),
+          '#description' => t('Fill this in to send a private message instead of the mail (when the recipient has an account on %site). In the folder view, users will be able to filter on this. Example: contact mails.', array('%site' => variable_get('site_name', t('Drupal')))),
+          '#weight' => 1,
+        );
+        $form['#submit']['privatemsg_mail_edit_submit'] = array();
+      }
   }
 }
 
@@ -483,6 +491,7 @@ function privatemsg_mail_edit_submit($form_id, $form_values) {
   else {
     db_query("UPDATE {privatemsg_mail_edit} SET type = '%s' WHERE mailkey = '%s'", $args);
   }
+  cache_clear_all();
 }
 
 /**
@@ -505,8 +514,6 @@ function privatemsg_block($op = 'list', $delta = 0, $edit = array()) {
  * Implementation of hook_subscriptions().
  */
 function privatemsg_subscriptions($op) {
-  $args = func_get_args();
-  array_shift($args);
   switch ($op) {
     case 'menu':
       return array(
@@ -720,14 +727,6 @@ function privatemsg_configure() {
     '#default_value' => variable_get('privatemsg_default_setmessage_notify', 1),
     '#description' => t("Check this box to set the default value of the 'Aggressive notification of new messages' user setting."),
   );
-  $form['admin_default']['privatemsg_default_mailalert'] = array(
-    '#type' => 'radios',
-    '#title' => t("'Receive e-mail for unread messages' default"),
-    '#options' => array(PRIVATEMSG_MAIL_NONE => t('Never'), PRIVATEMSG_MAIL_DIGEST => t('Daily'), PRIVATEMSG_MAIL_INDIVIDUAL => t('Every message')),
-    '#default_value' => variable_get('privatemsg_default_mailalert', PRIVATEMSG_MAIL_NONE),
-    '#description' => t("Check this box to set the default value of the 'Receive e-mail for unread messages' user setting.")
-  );
-
   return system_settings_form($form);
 }
 
@@ -768,27 +767,28 @@ function privatemsg_list($uid = NULL) {
   }
 
   $current_folder = intval(arg(2));
-  if ($current_folder != 1) {
-    if ($current_folder > 0) {
-      $folder_name = db_result(db_query('SELECT name FROM {privatemsg_folder} WHERE fid = %d AND uid = %d', $current_folder, $account->uid));
-    }
-    else {
-      $folder_name = t('Inbox');
-    }
-    $sql = "SELECT id, subject, p.timestamp, u.uid, u.name, newmsg, type FROM {privatemsg} p INNER JOIN {users} u ON p.author = u.uid WHERE p.recipient = %d $type AND p.recipient_del = %d";
-    if ($folder_name == t('Recycle bin')) {
-      $args[] = 1;
-    }
-    else {
-      $args[] = 0;
+  $folder_name = _privatemsg_folder_map($current_folder, $account->uid);
+  if ($current_folder == PRIVATEMSG_FOLDER_SENT) {
+    $where_field = 'author';
+    $join_field = 'recipient';
+  }
+  else {
+    $where_field = 'recipient';
+    $join_field = 'author';
+  }
+  $sql1 = "SELECT id, subject, p.timestamp, u.uid, u.name, newmsg, type FROM {privatemsg} p INNER JOIN {users} u ON ";
+  $sql = $sql1 . "p.$join_field = u.uid WHERE p.$where_field = %d $type AND p.{$where_field}_del = %d";
+  if ($current_folder == PRIVATEMSG_FOLDER_RECYCLE_BIN) {
+    $args[] = 1;
+    $sql .= " UNION $sql1 p.recipient = u.uid WHERE p.author = %d $type AND p.author_del = %d";
+    $args = array_merge($args, $args);
+  }
+  else {
+    $args[] = 0;
+    if ($current_folder != PRIVATEMSG_FOLDER_SENT) {
       $args[] = $current_folder;
       $sql .= " AND folder = %d";
     }
-  }
-  else {
-    // sent messages
-    $sql = "SELECT id, subject, p.timestamp, u.uid, u.name, newmsg FROM {privatemsg} p INNER JOIN {users} u ON p.recipient = u.uid WHERE p.author = %d $type AND p.author_del = 0";
-    $folder_name = t('Sent messages');
   }
 
   $header = _privatemsg_list_header($current_folder);
@@ -808,9 +808,21 @@ function privatemsg_list($uid = NULL) {
   $folders = privatemsg_load_folders($account->uid);
 
   $output = drupal_get_form('privatemsg_cur_folder_form', $folders, $current_folder);
-  $output .= drupal_get_form('privatemsg_list_form', $messages, $folders, $current_folder);
+  $output .= drupal_get_form('privatemsg_list_form', $messages, $folders, $current_folder, $account);
 
   return $output;
+}
+
+function _privatemsg_folder_map($fid = NULL, $uid = NULL) {
+  $map = array(
+    PRIVATEMSG_FOLDER_SENT => t('Sent messages'),
+    PRIVATEMSG_FOLDER_INBOX => t('Inbox'),
+    PRIVATEMSG_FOLDER_RECYCLE_BIN => t('Recycle bin'),
+  );
+  if (!isset($fid)) {
+    return $map;
+  }
+  return isset($map[$fid]) ? $map[$fid] : db_result(db_query('SELECT name FROM {privatemsg_folder} WHERE fid = %d AND uid = %d', $current_folder, $uid));
 }
 
 function _privatemsg_list_header($current_folder) {
@@ -849,7 +861,7 @@ function privatemsg_cur_folder_form($folders, $current_folder) {
   $form['header']['go_folder'] = array(
     '#type' => 'submit',
     '#value' => t('Go'),
-    //'#attributes' => array('class' => 'js-hide'),
+    '#attributes' => array('class' => 'js-hide'),
   );
   $actor = $current_folder == 1 ? 'author' : 'recipient';
   $result = db_query("SELECT DISTINCT type FROM {privatemsg} WHERE folder = %d AND {$actor}_del = 0 AND {$actor} = %d", $current_folder, $GLOBALS['user']->uid);
@@ -919,18 +931,18 @@ function privatemsg_cur_folder_form_submit($form_id, $form_values) {
   }
 }
 
-function privatemsg_list_form($messages, $folders, $current_folder) {
+function privatemsg_list_form($messages, $folders, $current_folder, $account) {
   global $user;
-
   $extra_folders = array();
   foreach ($folders as $folder) {
-    if ($folder['fid'] != 1 && $folder['fid'] != $current_folder) {
+    if ($folder['fid'] != PRIVATEMSG_FOLDER_SENT && $folder['fid'] != $current_folder) {
       $extra_folders[$folder['fid']] = $folder['name'];
     }
   }
   if (user_access('create new folder')) {
     $extra_folders['new'] = t('New folder...');
   }
+  $form['account'] = array('#type' => 'value', '#value' => $account);
 
   $form['messages'] = array(
     '#theme' => 'privatemsg_message_table',
@@ -949,6 +961,12 @@ function privatemsg_list_form($messages, $folders, $current_folder) {
       $new = variable_get('privatemsg_sent_status', 1) ? $message->newmsg : 0;
       $new_text = ' <span class="marker">'. t('unread') .'</span>';
     }
+
+
+    $form['messages'][$message->id]['message'] = array(
+      '#type' => 'value',
+      '#value' => $message,
+    );
 
     $form['messages'][$message->id]['#new'] = $new;
 
@@ -985,15 +1003,33 @@ function privatemsg_list_form($messages, $folders, $current_folder) {
       '#prefix' => '<div class="container-inline">',
       '#suffix' => '</div>',
     );
-    $actions['action'] = array(
-      '#type' => 'select',
-      '#options' => drupal_map_assoc(array(t('With selected'), t('Delete'), t('Mark as read'), t('Mark as unread'))),
-    );
-    $actions['submit'] = array(
-      '#type' => 'submit',
-      '#value' => t('Go'),
-      '#attributes' => array('class' => 'js-hide'),
-    );
+    switch ($current_folder) {
+      case PRIVATEMSG_FOLDER_RECYCLE_BIN:
+        $actions['permanent'] = array(
+          '#type' => 'submit',
+          '#value' => t('Delete permanently'),
+        );
+        $actions['undelete'] = array(
+          '#type' => 'submit',
+          '#value' => t('Undelete'),
+        );
+        break;
+      default:
+        $actions['mark_read'] = array(
+          '#type' => 'submit',
+          '#value' => t('Mark as read'),
+        );
+        $actions['mark_unread'] = array(
+          '#type' => 'submit',
+          '#value' => t('Mark as unread'),
+        );
+        // deliberate no break.
+      case PRIVATEMSG_FOLDER_SENT:
+        $actions['delete'] = array(
+          '#type' => 'submit',
+          '#value' => t('Delete'),
+        );
+    }
 
 
     if ($del == 1) {
@@ -1001,12 +1037,13 @@ function privatemsg_list_form($messages, $folders, $current_folder) {
     }
 
     // Control to move messages to a new folder.
-    if ((arg(1) == 'list' || arg(1) == $user->uid) && count($extra_folders) > 0 && $current_folder != 1) {
+    if ((arg(1) == 'list' || arg(1) == $account->uid) && count($extra_folders) > 0 && $current_folder != 1) {
       $form['selected']['folder'] = array(
         '#prefix' => '<div style="margin-left: 1em;">',
         '#type' => 'select',
         '#options' => $extra_folders,
       );
+      $form['selected']['extra_folders'] = array('#type' => 'value', '#value' => $extra_folders);
       $form['selected']['move_messages'] = array(
         '#type' => 'submit',
         '#value' => t('Move to folder'),
@@ -1031,7 +1068,6 @@ function privatemsg_list_form($messages, $folders, $current_folder) {
 }
 
 function privatemsg_list_form_submit($form_id, $form_values) {
-  global $user;
   $selected = array();
   foreach ($form_values['messages'] as $mid => $message) {
     if ($message['selected']) {
@@ -1043,10 +1079,11 @@ function privatemsg_list_form_submit($form_id, $form_values) {
     return;
   }
   $args = array_keys($selected);
-  $args[] = $user->uid;
-  $where = 'WHERE id IN ('. implode(', ', $placeholders) .')  AND recipient = %d';
+  $args[] = $form_values['account']->uid;
+  $where1 = 'WHERE id IN ('. implode(', ', $placeholders) .')  AND ';
+  $where = $where1 .'recipient = %d';
   $new = 0;
-  switch ($form_values['action']) {
+  switch ($form_values['op']) {
     case t('Delete'):
       if ($_POST['js_bypass'] == 1) {
         foreach ($selected as $mid => $message) {
@@ -1065,36 +1102,42 @@ function privatemsg_list_form_submit($form_id, $form_values) {
       // deliberate no break;
     case t('Mark as read'):
       array_unshift($args, $new);
-      drupal_set_message('UPDATE privatemsg SET newmsg = %d '. $where . var_export($args, TRUE));
-
       db_query('UPDATE {privatemsg} SET newmsg = %d '. $where, $args);
       break;
     case t('Move to folder'):
-      if (!isset($form_values['folder']) || ($form_values['folder'] != 'new' && (($fid = intval($form_values['folder'])) != 0 && !db_result(db_query('SELECT fid FROM {privatemsg_folder} WHERE fid = %d AND uid = %d', $fid, $user->uid))))) {
-        watchdog('privatemsg', t('Attempted use of unauthorized folder'), WATCHDOG_WARNING);
-        return drupal_access_denied();
-      }
-
-      if ($form_values['folder'] == 'new') {
+      $fid = $form_values['folder'];
+      if ($fid == 'new') {
         $_SESSION['privatemsg'] = $form_values['messages'];
         $_SESSION['fromfolder'] = intval(arg(2));
         drupal_goto('privatemsg/folders/movetonew');
       }
-
-      array_unshift($args, $fid);
-      db_query('UPDATE {privatemsg} SET folder = %d '. $where, $args);
-      $msg_count = count($selected);
-
-      $folder = $fid ? db_result(db_query("SELECT name FROM {privatemsg_folder} WHERE fid = %d", $fid)) : t('Inbox');
-      $link = l(t('%folder', array('%folder' => $folder)), 'privatemsg/list/'. $fid, array(), NULL, NULL, FALSE, TRUE);
-
-      if ($msg_count == 1) {
-        drupal_set_message(t('Your message has been moved to !link.', array('!link' => $link)));
-      }
-      elseif ($msg_count > 1) {
-        drupal_set_message(t('Your messages have been moved to !link.', array('!link' => $link)));
-      }
+      _privatemsg_move_folder($where, $args, $fid, $form_values['extra_folders']);
       break;
+    case t('Delete permanently'):
+      db_query('DELETE FROM {privatemsg} '. $where, $args);
+      drupal_set_message(t('Your messages have been deleted permanently'));
+      break;
+    case t('Undelete'):
+      db_query('UPDATE {privatemsg} SET recipient_del = 0 '. $where, $args);
+      $where = $where1 .'author = %d';
+      db_query('UPDATE {privatemsg} SET author_del = 0 '. $where, $args);
+      break;
+  }
+}
+
+function _privatemsg_move_folder($where, $args, $fid, $extra_folders) {
+  array_unshift($args, $fid);
+  db_query('UPDATE {privatemsg} SET folder = %d '. $where, $args);
+  $msg_count = count($args);
+
+  $folder = $extra_folders[$fid];
+  $link = l(t('%folder', array('%folder' => $folder)), 'privatemsg/list/'. $fid, array(), NULL, NULL, FALSE, TRUE);
+
+  if ($msg_count == 1) {
+    drupal_set_message(t('Your message has been moved to !link.', array('!link' => $link)));
+  }
+  elseif ($msg_count > 1) {
+    drupal_set_message(t('Your messages have been moved to !link.', array('!link' => $link)));
   }
 }
 
@@ -1396,20 +1439,22 @@ function privatemsg_delete_folder_form_submit($form_id, $form_values) {
 /**
  * Provides a form to write a private message.
  */
-function privatemsg_new_form() {
+function privatemsg_new_form($message = NULL) {
   global $user;
-  $message = 0;
+  if (!isset($message)) {
+    $message = 0;
 
-  $op = arg(1);
-  if ($op == 'reply') {
-    $message = arg(2);
-  }
-  else if (($uid = arg(2)) && ($msg->recipient = db_result(db_query('SELECT name FROM {users} WHERE uid = %d', $uid)))) {
-    if (!privatemsg_message_allowed($uid, $user->uid)) {
-      drupal_set_message(t('You cannot contact %recipient', array('%recipient' => $msg->recipient)));
-      drupal_goto("user/$uid");
+    $op = arg(1);
+    if ($op == 'reply') {
+      $message = arg(2);
     }
-    $message = $msg;
+    else if (($uid = arg(2)) && ($msg->recipient = db_result(db_query('SELECT name FROM {users} WHERE uid = %d', $uid)))) {
+      if (!privatemsg_message_allowed($uid, $user->uid)) {
+        drupal_set_message(t('You cannot contact %recipient', array('%recipient' => $msg->recipient)));
+        drupal_goto("user/$uid");
+      }
+      $message = $msg;
+    }
   }
 
   if ($message && !is_object($message)) {
@@ -1586,12 +1631,12 @@ function privatemsg_new_form_submit($form_id, $form_values) {
  * @param $type
  *   Type of the message as defined on admin/build/privatemsg .
  **/
-function privatemsg_send_privatemsg($recipient, $subject, $body, $format = FILTER_FORMAT_DEFAULT, $thread = 0, $type = 'private message') {
+function privatemsg_send_privatemsg($recipient, $subject, $body, $format = FILTER_FORMAT_DEFAULT, $thread = 0, $type = 'private-message') {
   global $user;
   return _privatemsg_send($user, $recipient, $subject, $body, $format, $thread, $type);
 }
 
-function _privatemsg_send($sender, $recipient, $subject, $body, $format, $thread, $type = 'private message') {
+function _privatemsg_send($sender, $recipient, $subject, $body, $format, $thread, $type = 'private-message') {
   if ($sender->uid == $recipient->uid) {
     return FALSE;
   }
@@ -1709,6 +1754,7 @@ function privatemsg_contacts_form_submit($form_id, $form_values) {
  * The code below is the abstraction of this to every field and ASC/DESC.
  */
 function privatemsg_view($message_id) {
+  global $user;
   if ($message = privatemsg_load($message_id)) {
     $threaded_view = variable_get('privatemsg_threaded_view', 0);
     if (isset($_SESSION['privatemsg_list_sql'])) {
@@ -1727,39 +1773,58 @@ function privatemsg_view($message_id) {
       $placeholder = ($field == 'type' || $field == 'subject') ? "'%s'" : '%d';
       $args[] = $message->$field;
       $operator = $sort == 'ASC' ? '<' : '>';
-      $prev = db_result(db_query_range("$sql AND $field $operator $placeholder ORDER BY $field $sort", $args, 0, 1));
+      if ($previous_id = db_result(db_query_range("$sql AND $field $operator $placeholder ORDER BY $field $sort", $args, 0, 1))) {
+        $previous_link = l(t('Previous'), 'privatemsg/view/'. $previous_id, array(), NULL, 'message-'. $previous_id);
+      }
+      else {
+        $previous_link = '';
+      }
       $operator = $sort == 'ASC' ? '>' : '<';
-      $next = db_result(db_query_range("$sql AND $field $operator $placeholder ORDER BY $field $sort", $args, 0, 1));
+      if ($next_id = db_result(db_query_range("$sql AND $field $operator $placeholder ORDER BY $field $sort", $args, 0, 1))) {
+        $next_link =  l(t('Next'), 'privatemsg/view/'. $next_id, array(), NULL, 'message-'. $next_id);
+      }
+      else {
+        $next_link = '';
+      }
     }
     if ($threaded_view && $message->thread) {
-      $output = '';
-      $result = db_query('SELECT p.id, u.uid, u.name, p.author, p.timestamp, p.subject, p.message, p.newmsg, p.recipient, p.folder, p.format FROM {privatemsg} p INNER JOIN {users} u ON p.author = u.uid WHERE p.thread = %d ORDER BY timestamp ASC', $message->thread);
+      $result = db_query('SELECT p.id, u.uid, u.name, p.author, p.timestamp, p.subject, p.message, p.newmsg, p.recipient, p.folder, p.format FROM {privatemsg} p INNER JOIN {users} u ON p.author = u.uid WHERE p.thread = %d ORDER BY timestamp DESC', $message->thread);
+      $messages = '';
       while ($message = db_fetch_object($result)) {
-        $output .= _privatemsg_view($message, $prev, $next);
+        if (!isset($first)) {
+          $first = $message;
+        }
+        $messages .= _privatemsg_view($message);
       }
     }
     else {
-      $output = _privatemsg_view($message, $prev, $next);
+      $first = $message;
+      $messages = _privatemsg_view($message);
     }
+    $output = theme('privatemsg_links', $previous_link, $next_link);
+    if ($first->recipient == $user->uid) {
+      $output .= drupal_get_form('privatemsg_new_form', $first->id);
+    }
+    $output .= $messages;
     return $output;
   }
   drupal_goto('privatemsg');
 }
 
-function _privatemsg_view($message, $prev, $next) {
+function _privatemsg_view($message) {
   global $user;
   // Allow other modules to change the message.
   privatemsg_invoke_privatemsg($message, 'view');
   if ($message->newmsg && $user->uid == $message->recipient) {
     db_query("UPDATE {privatemsg} SET newmsg = 0 WHERE id = %d", $message->id);
   }
-  return theme('privatemsg_view', $message, FALSE, $prev, $next);
+  return theme('privatemsg_view', $message, FALSE);
 }
 
 /**
  * Add the action form to the view message screen.
  */
-function privatemsg_view_form($message, $prev, $next) {
+function privatemsg_view_form($message) {
   global $user;
 
   $folders = privatemsg_load_folders($user->uid);
@@ -1779,6 +1844,10 @@ function privatemsg_view_form($message, $prev, $next) {
     '#type' => 'hidden',
     '#value' => $message->folder,
   );
+  $form['author']= array(
+    '#type' => 'value',
+    '#value' => $message->author,
+  );
   $form['js_bypass'] = array(
     '#type' => 'hidden',
     '#value' => 0,
@@ -1790,11 +1859,6 @@ function privatemsg_view_form($message, $prev, $next) {
     '#collapsed' => FALSE,
     '#attributes' => array('class' => 'container-inline'),
   );
-  if ($prev) {
-    $form['actions']['prev'] = array(
-      '#value' => l(t('Previous'), 'privatemsg/view/'. $prev, array(), NULL, 'message-'. $prev),
-    );
-  }
   $form['actions']['text'] = array(
     '#value' => '<div><strong>'. t('With this message:') .'</strong> </div>',
   );
@@ -1830,10 +1894,17 @@ function privatemsg_view_form($message, $prev, $next) {
       '#options' => $extra_folders,
       '#attributes' => array('class' => 'pm-spacer'),
     );
+    $form['actions']['extra_folders'] = array('#type' => 'value', '#value' => $extra_folders);
     $form['actions']['move_messages'] = array(
       '#type' => 'submit',
       '#value' => t('Move to folder'),
     );
+    if (!privatemsg_user_blocked($message->author)) {
+      $form['actions']['block'] = array(
+        '#type' => 'submit',
+        '#value' => t('Block this user'),
+      );
+    }
   }
 
   if ($del == '2') {
@@ -1842,11 +1913,6 @@ function privatemsg_view_form($message, $prev, $next) {
       '#value' => t('Delete'),
       '#prefix' => ' &nbsp; &nbsp;',
       '#attributes' => array('class' => 'pm-add-delete pm-spacer'),
-    );
-  }
-  if ($next) {
-    $form['actions']['next'] = array(
-      '#value' => l(t('Next'), 'privatemsg/view/'. $next, array(), NULL, 'message-'. $next),
     );
   }
 
@@ -1872,13 +1938,12 @@ function privatemsg_view_form_submit($form_id, $form_values) {
     case t('Mark as Unread'):
       db_query("UPDATE {privatemsg} SET newmsg = 1 WHERE id = %d", $form_values['pm_id']);
       drupal_goto('privatemsg/list/'. $form_values['pm_fid']);
+    case t('Block this user'):
+      privatemsg_block_user($form_values['author']);
+      break;
     case t('Move to folder'):
-      if (!isset($form_values['folder']) || ($form_values['folder'] != 'new' && (($fid = intval($form_values['folder'])) != 0 && !db_result(db_query('SELECT fid FROM {privatemsg_folder} WHERE fid = %d AND uid = %d', $fid, $user->uid))))) {
-        watchdog('privatemsg', t('Attempted use of unauthorized folder'), WATCHDOG_WARNING);
-        return drupal_access_denied();
-      }
-
-      if ($form_values['folder'] == 'new') {
+      $fid = $form_values['folder'];
+      if ($fid == 'new') {
         $_SESSION['privatemsg'] = array(
           $form_values['pm_id'] => array('selected' => TRUE)
         );
@@ -1887,14 +1952,7 @@ function privatemsg_view_form_submit($form_id, $form_values) {
       }
 
       db_query("UPDATE {privatemsg} SET folder = %d WHERE id = %d AND recipient = %d", $fid, $form_values['pm_id'], $user->uid);
-
-      if ($fid == 0) {
-        $folder = t('Inbox');
-      }
-      else {
-        $folder = db_result(db_query("SELECT name FROM {privatemsg_folder} WHERE fid = %d", $fid));
-      }
-      $link = l(t('%folder', array('%folder' => $folder)), 'privatemsg/list/'. $fid, array(), NULL, NULL, FALSE, TRUE);
+      $link = l(t('%folder', array('%folder' => $form_values['extra_folders'][$fid])), 'privatemsg/list/'. $fid, array(), NULL, NULL, FALSE, TRUE);
       drupal_set_message(t('Your message has been moved to !link.', array('!link' => $link)));
 
       break;
@@ -2235,6 +2293,11 @@ function theme_privatemsg_username($user) {
   return theme('username', $user);
 }
 
+function theme_privatemsg_links($previous_link, $next_link) {
+  $output = "<div class=\"privatemsg-nav-links\"><div class=\"next\">$next_link</div><div class=\"previous\">$previous_link</div></div>";
+  return $output;
+}
+
 /**  @} End of addtogroup theme_system
  *
 **/
@@ -2268,13 +2331,14 @@ function privatemsg_autocomplete($string) {
  * Return an array of folders for a user.
  */
 function privatemsg_load_folders($uid) {
-  $folders[] = array('fid' => 0, 'name' => t('Inbox'));
+  $folders = array();
+  foreach (_privatemsg_folder_map() as $fid => $name) {
+    $folders[] = array('fid' => $fid, 'name' => $name);
+  }
   $result = db_query('SELECT fid, name FROM {privatemsg_folder} WHERE uid = %d', $uid);
   while ($folder = db_fetch_array($result)) {
     $folders[] = $folder;
   }
-  $folders[] = array('fid' => 1, 'name' => t('Sent messages'));
-
   return $folders;
 }
 
@@ -2320,60 +2384,6 @@ function _privatemsg_prune() {
   if (!strncmp($GLOBALS['db_type'], 'mysql', 5)) {
     db_query('OPTIMIZE TABLE {privatemsg}');
   }
-}
-
-function _privatemsg_mailalert() {
-  $result = db_query('SELECT COUNT(*) AS c, recipient FROM {privatemsg} WHERE newmsg = 1 AND recipient_del = 0 GROUP BY recipient');
-
-  while ($alert = db_fetch_object($result)) {
-    $user = user_load(array('uid' => $alert->recipient));
-
-    if ($user->privatemsg_allow && isset($user->privatemsg_mailalert) && $user->privatemsg_mailalert == PRIVATEMSG_MAIL_DIGEST && $user->status != 0) {
-      _privatemsg_sendmail($user, $alert->c);
-    }
-  }
-}
-
-function _privatemsg_sendmail($user, $new_count) {
-  global $locale;
-  static $from, $languages;
-  if (!isset($from)) {
-    $from = variable_get('site_mail', ini_get('sendmail_from'));
-    $languages = array();
-    if (function_exists('locale')) {
-      $languages = locale_supported_languages();
-      $languages = $languages['name'];
-    }
-  }
-  $save_locale = $locale;
-
-  // use each user's individual locale
-  if (isset($languages[$user->language])) {
-    $locale = $user->language;
-  }
-
-  $subject = t('New private messages at @site.', array('@site' => variable_get('site_name', 'drupal')));
-  // Can't pass tokens directly to format_plural, so strtr+check_plain here
-  $message = strtr(format_plural($new_count, 'Hi @name,
-This is an automatic reminder from the site @site. You have received a new private message.
-
-To read your message, follow this link:
-!link1
-
-If you don\'t want to receive these emails again, change your preferences here:
-!link2', 'Hi @name,
-This is an automatic reminder from the site @site. You have @count unread private messages.
-
-To read your messages, follow this link:
-!link1
-
-If you don\'t want to receive these emails again, change your preferences here:
-!link2'), array('@name' => check_plain($user->name), '@site' => check_plain(variable_get('site_name', 'drupal')), '!link1' => url('privatemsg', NULL, NULL, 1), '!link2' => url('user/'. $user->uid .'/edit', NULL, NULL, 1)));
-
-  drupal_mail('privatemsg_mailalert', $user->mail, $subject, $message, $from);
-
-  // revert to previous (site default) locale
-  $locale = $save_locale;
 }
 
 /**
@@ -2422,13 +2432,16 @@ function privatemsg_subscriptions_mailvars_pmsg($sid, $object_id, $placeholders,
     INNER JOIN {subscriptions} s ON u.uid = s.uid
     INNER JOIN {subscriptions_sent} ss ON u.uid = ss.uid
     WHERE $placeholders u.status= 1 AND s.stype = 'pmsg%s' AND s.uid = %d";
+  $d = $sql_args;
+  array_unshift($d, $sql);
   $result = db_query($sql, $sql_args);
   return array(
     'result' => $result,
-    '@subject' => $message->subject,
+    '!subject' => $message->subject,
+    '!title' => $message->subject,
     '!url' => url('privatemsg/view/'. $object_id, NULL, NULL, TRUE),
     'postfix' => 'pmsg-'. $sid,
-    '@type' => 'privatemsg',
+    '!type' => 'privatemsg',
   );
 }
 
@@ -2447,20 +2460,22 @@ function privatemsg_subscriptions_page_pmsg($account) {
 }
 
 function privatemsg_subscriptions_form($account) {
+  include_once drupal_get_path('module', 'subscriptions') .'/subscriptions.admin.inc';
   $result = db_query("
     SELECT type, description, send_interval, stype
     FROM {privatemsg_mail_edit} p
-    INNER JOIN {mail_edit} m ON p.mailkey = m.mailkey
+    LEFT JOIN {mail_edit} m ON p.mailkey = m.mailkey
     LEFT JOIN {subscriptions} s ON concat('pmsg', type) = stype AND uid = %d
     ORDER BY type", $account->uid);
   $intervals = _subscriptions_send_intervals();
   $default_value = array();
   while ($type = db_fetch_object($result)) {
-    $checkboxes[$type->type] = $type->description;
+    $index = $type->type;
+    $checkboxes[$index] = $type->description;
     if ($type->stype) {
-      $default_value[] = $type->type;
+      $default_value[] = $index;
     }
-    $form['subscriptions']['select'][$type->type] = array(
+    $form['subscriptions']['select'][$index] = array(
       '#type' => 'select',
       '#options' => $intervals,
       '#default_value' => $type->send_interval,
@@ -2484,7 +2499,8 @@ function privatemsg_subscriptions_form($account) {
 function privatemsg_subscriptions_form_submit($form_id, $form_values) {
   $uid = $form_values['account']->uid;
   db_query("DELETE FROM {subscriptions} WHERE stype LIKE 'pmsg%%' AND uid = %d", $uid);
-  foreach (array_filter(array_keys($form_values['checkbox'])) as $sid) {
+  foreach (array_keys(array_filter($form_values['checkbox'])) as $sid) {
+    //$sid = substr($sid, 1);
     subscriptions_add(0, $uid, 'pmsg'. $sid, $form_values['select'][$sid]);
   }
 }
@@ -2493,9 +2509,8 @@ function privatemsg_mailkeys() {
   $mailkeys = array();
   $result = db_query('SELECT type FROM {privatemsg_mail_edit}');
   while ($type = db_fetch_object($result)) {
-    $mailkeys[] = 'subscriptions-pmsg-'. $type->type;
+    $mailkeys['subscriptions-pmsg-'. $type->type] = 'subscriptions-pmsg-'. $type->type;
   }
+  $mailkeys['private-message'] = 'private-message';
   return $mailkeys;
 }
-
-

@@ -153,8 +153,9 @@ function privatemsg_install() {
   db_query("INSERT INTO {privatemsg_folder} (fid, uid, name) VALUES (1, 0, 'Sent')");
   do {
     $i = db_next_id('{privatemsg_folder}_fid');
-  }
-  while ($i < 1);  // In case this api ever changes to start at zero..
+  } while ($i < 1);  // In case this api ever changes to start at zero..
+  db_query("INSERT INTO {privatemsg_mail_edit} (type, mailkey) VALUES ('private-message', 'private-message')");
+  db_query("INSERT INTO {mail_edit} (mailkey, description) VALUES ('private-message', '%s')", st('When someone contacts you directly'));
 }
 
 function privatemsg_uninstall() {

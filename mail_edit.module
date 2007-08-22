@@ -19,13 +19,14 @@ function mail_edit_menu($may_cache) {
  * Implementation of hook_mail_alter().
  */
 function mail_edit_mail_alter(&$mailkey, &$to, &$subject, &$body, &$from, &$headers) {
+  global $user;
   $sql = "SELECT * FROM {mail_edit} m";
   if (module_exists('privatemsg')) {
     $sql .= ' INNER JOIN {privatemsg_mail_edit} p ON m.mailkey = p.mailkey';
   }
   $sql .= " WHERE m.mailkey = '%s'";
   if ($alter = db_fetch_object(db_query($sql, $mailkey))) {
-    $sender = user_load(array('mail' => $from));
+    $sender = $user;
     $recipient = user_load(array('mail' => $to));
     $is_privatemsg = !empty($alter->type) && $recipient;
     $variables = array(
@@ -161,7 +162,6 @@ function mail_edit_form($mailkey) {
 }
 
 function mail_edit_form_submit($form_id, $form_values) {
-  drupal_set_message('Saving'. intval($form_values['insert']));
   $args = array($form_values['description'], $form_values['subject'], $form_values['body'], $form_values['mailkey']);
   if ($form_values['insert']) {
     db_query("INSERT INTO {mail_edit} (description, subject, body, mailkey) VALUES ('%s', '%s', '%s', '%s')", $args);
