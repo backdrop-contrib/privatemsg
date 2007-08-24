@@ -20,32 +20,52 @@ function mail_edit_menu($may_cache) {
  */
 function mail_edit_mail_alter(&$mailkey, &$to, &$subject, &$body, &$from, &$headers) {
   global $user;
-  $sql = "SELECT * FROM {mail_edit} m";
-  if (module_exists('privatemsg')) {
-    $sql .= ' INNER JOIN {privatemsg_mail_edit} p ON m.mailkey = p.mailkey';
+  static $stored_variables, $alters;
+  if (!isset($stored_variables)) {
+    if (!empty($GLOBALS['form_values'])) {
+      foreach ($GLOBALS['form_values'] as $key => $value) {
+        $stored_variables["!$key"] = $value;
+      }
+    }
+    $stored_variables = array(
+      '!site' => variable_get('site_name', 'Drupal'),
+      '!uri' => $base_url,
+      '!uri_brief' => substr($base_url, strlen('http://')),
+      '!date' => format_date(time()),
+      '!login_uri' => url('user', NULL, NULL, TRUE),
+    );
   }
-  $sql .= " WHERE m.mailkey = '%s'";
-  if ($alter = db_fetch_object(db_query($sql, $mailkey))) {
+  if (!isset($alters[$mailkey])) {
+    $sql = "SELECT * FROM {mail_edit} m";
+    if (module_exists('privatemsg')) {
+      $sql .= ' INNER JOIN {privatemsg_mail_edit} p ON m.mailkey = p.mailkey';
+    }
+    $sql .= " WHERE m.mailkey = '%s'";
+    $alters[$mailkey] = db_fetch_object(db_query($sql, $mailkey));
+  }
+  if (!empty($alters[$mailkey])) {
     $sender = $user;
     $recipient = user_load(array('mail' => $to));
     $is_privatemsg = !empty($alter->type) && $recipient;
-    $variables = array(
-      '!sender_name' => $sender->name,
-      '!sender_page' => url("user/$sender->uid", NULL, NULL, !$is_privatemsg),
-    );
-    if ($sender->contact) {
-      $variables['!sender_page_contact'] = url("user/$sender->uid/contact", NULL, NULL, !$is_privatemsg);
+    $variables = $stored_variables;
+    $variables['!sender_name'] = $sender->name;
+    $variables['!sender_name'] = url("user/$sender->uid", NULL, NULL, TRUE);
+    if (!empty($sender->contact)) {
+      $variables['!sender_page_contact'] = url("user/$sender->uid/contact", NULL, NULL, TRUE);
     }
     if ($recipient) {
-      $variables += array(
-        '!recipient_name' => $recipient->name,
-        '!recipient_page' => url("user/$recipient->uid", NULL, NULL, !$is_privatemsg),
-      );
-    };
-    if (!empty($GLOBALS['form_values'])) {
-      foreach ($GLOBALS['form_values'] as $key => $value) {
-        $variables["!$key"] = $value;
+      $variables['!recipient_name'] = $recipient->name;
+      $variables['!recipient_name'] = url("user/$recipient->uid", NULL, NULL, TRUE);
+      $variables['!edit_uri'] = url('user/'. $account->uid .'/edit', NULL, NULL, TRUE);
+      if (substr($mailkey, 0, 5) == 'user-') {
+        $variables['!username'] = $recipient->name;
+        $variables['!login_url'] = user_pass_reset_url($recipient);
+        $variables['!mailto'] = $recipient->mail;
       }
+    }
+    foreach (module_implements('mail_edit_variables') as $module) {
+      $function = $module .'_mail_edit_variables';
+      $function($variables, $mailkey, $sender, $recipient);
     }
     if ($alter->subject) {
       $subject = strtr($alter->subject, $variables);
@@ -127,14 +147,14 @@ function mail_edit_form($mailkey) {
     '#type' => 'textfield',
     '#title' => t('Subject'),
     '#default_value' => $defaults['subject'],
-    '#description' => t('The subject of the mail (if no type) or the the private message sent instead of the mail.'),
+    '#description' => t('The subject of the mail or the private message sent instead of the mail.'),
     '#weight' => 10,
   );
   $form['body'] = array(
     '#type' => 'textarea',
     '#title' => t('Body'),
     '#default_value' => $defaults['body'],
-    '#description' => t('The body of the mail (if no type) or the private message sent instead of the mail.'),
+    '#description' => t('The body of the mail or the private message sent instead of the mail.'),
     '#weight' => 20,
   );
   $form['help'] = array(

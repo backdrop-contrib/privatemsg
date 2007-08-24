@@ -697,7 +697,7 @@ function privatemsg_configure() {
     '#rows' => 5,
     '#description' => t('Leave blank to disable this feature.'),
   );
-  $form['welcome'][] = filter_form(variable_get('privatemsg_welcome_format', FILTER_FORMAT_DEFAULT));
+  $form['welcome']['filterform'] = filter_form(variable_get('privatemsg_welcome_format', FILTER_FORMAT_DEFAULT));
   $sender = user_load(array('uid' => variable_get('privatemsg_welcome_sender', 1)));
   $form['welcome']['privatemsg_welcome_sender'] = array(
     '#type' => 'textfield',
@@ -989,7 +989,7 @@ function privatemsg_list_form($messages, $folders, $current_folder, $account) {
       '#value' => format_date($message->timestamp, 'small'),
     );
   }
-  $form[] = array(
+  $form['pager'] = array(
     '#value' => theme('pager', array(), variable_get('privatemsg_per_page', 10)),
   );
 
@@ -1479,6 +1479,14 @@ function privatemsg_new_form($message = NULL) {
       $message->message = "\n\n\n". str_replace("\n", "\n> ", "\n". $message->message);
     }
   }
+  // The first if can provide a partial message, so we fill it in to avoid
+  // notices. Also we remove the message if it's a reply in a threaded view,
+  // the original message will be seen anyways.
+  if (!isset($message->thread) || variable_get('privatemsg_threaded_view', 0)) {
+    $message->thread = 0;
+    $message->subject = '';
+    $message->message = '';
+  }
 
   if (isset($_SESSION['recipients'])) {
     $recipient = implode(', ', $_SESSION['recipients']);
@@ -1512,12 +1520,12 @@ function privatemsg_new_form($message = NULL) {
     '#cols' => 80,
     '#rows' => 6,
   );
-  $form[] = filter_form($message->format);
-  $form[] = array(
+  $form['filter_form'] = filter_form($message->format);
+  $form['preview'] = array(
     '#type' => 'submit',
     '#value' => t('Preview')
   );
-  $form[] = array(
+  $form['send'] = array(
     '#type' => 'submit',
     '#value' => t('Send private message')
   );
@@ -2294,7 +2302,10 @@ function theme_privatemsg_username($user) {
 }
 
 function theme_privatemsg_links($previous_link, $next_link) {
-  $output = "<div class=\"privatemsg-nav-links\"><div class=\"next\">$next_link</div><div class=\"previous\">$previous_link</div></div>";
+  $output = "<div class=\"privatemsg-nav-links\">";
+  $output .= $next_link ? "<div class=\"next\">$next_link</div>" : '';
+  $output .= $previous_link ? "<div class=\"previous\">$previous_link</div>" : '';
+  $output .= "</div>";
   return $output;
 }
 
