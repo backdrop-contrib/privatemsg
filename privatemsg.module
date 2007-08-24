@@ -802,6 +802,9 @@ function privatemsg_list($uid = NULL) {
   $result = pager_query($sql . tablesort_sql($header), variable_get('privatemsg_per_page', 10), 0, NULL, $args);
   $messages = array();
   while ($message = db_fetch_object($result)) {
+    if ($current_folder == PRIVATEMSG_FOLDER_SENT) {
+      $message->newmsg = 0;
+    }
     $messages[] = $message;
   }
 
@@ -1482,8 +1485,7 @@ function privatemsg_new_form($message = NULL) {
   // The first if can provide a partial message, so we fill it in to avoid
   // notices. Also we remove the message if it's a reply in a threaded view,
   // the original message will be seen anyways.
-  if (!isset($message->thread) || variable_get('privatemsg_threaded_view', 0)) {
-    $message->thread = 0;
+  if (!isset($message->subject) || variable_get('privatemsg_threaded_view', 0)) {
     $message->subject = '';
     $message->message = '';
   }
@@ -1599,14 +1601,22 @@ function privatemsg_new_form_validate($form_id, $form_values) {
 
 function privatemsg_new_form_submit($form_id, $form_values) {
   global $user;
+  static $seen = array();
   if ($form_values['op'] != t('Send private message')) {
     return FALSE;
   }
 
+  // Do not allow sending a message to yourself.
+  $seen[$user->name] = TRUE;
   $recipients = explode(',', $form_values['recipient']);
   $sent = FALSE;
   foreach ($recipients as $recipient) {
-    $recipient = user_load(array('name' => trim($recipient)));
+    $recipient = trim($recipient);
+    if (isset($seen[$recipient])) {
+      continue;
+    }
+    $seen[$recipient] = TRUE;
+    $recipient = user_load(array('name' => $recipient));
     $message_id = _privatemsg_send($user, $recipient, $form_values['subject'], $form_values['privatemsgbody'], $form_values['format'], $form_values['thread']);
     if ($message_id) {
       // Load the message for consistency.
