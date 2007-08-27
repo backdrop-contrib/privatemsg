@@ -29,7 +29,7 @@ function privatemsg_menu($may_cache) {
       'path' => 'privatemsg',
       'title' => t('Private messages'),
       'callback' => 'privatemsg_list',
-      'access' => TRUE, // Check access/redirect in callback
+      'access' => !$user->uid || $access,
       'type' => MENU_SUGGESTED_ITEM,
     );
     $items[] = array(
@@ -37,7 +37,7 @@ function privatemsg_menu($may_cache) {
       'title' => t('List'),
       'callback' => 'privatemsg_list',
       'callback arguments' => array(NULL),
-      'access' => TRUE, // Check access/redirect in callback
+      'access' => !$user->uid || $access,
       'type' => MENU_DEFAULT_LOCAL_TASK,
       'weight' => -10,
     );
