@@ -9,7 +9,7 @@ function privatemsg_install() {
           id            int unsigned NOT NULL primary key,
           author        int unsigned NOT NULL,
           recipient     int unsigned NOT NULL,
-          subject       varchar(256) NOT NULL,
+          subject       varchar(255) NOT NULL,
           message       text NOT NULL,
           timestamp     int unsigned NOT NULL,
           newmsg        tinyint unsigned NOT NULL,
@@ -66,7 +66,7 @@ function privatemsg_install() {
           id            integer NOT NULL,
           author        integer NOT NULL,
           recipient     integer NOT NULL,
-          subject       varchar(64) NOT NULL,
+          subject       varchar(255) NOT NULL,
           message       text NOT NULL,
           timestamp     integer NOT NULL,
           newmsg        smallint NOT NULL,
@@ -102,19 +102,19 @@ function privatemsg_install() {
           thread        int NOT NULL DEFAULT 0,
           PRIMARY KEY (id)
         )");
+      db_query("CREATE INDEX {privatemsg_archive_recipient} ON {privatemsg_archive}(recipient)");
+      db_query('CREATE SEQUENCE {privatemsg}_id_seq INCREMENT 1 START 1');
+      db_query('CREATE SEQUENCE {privatemsg_folder}_fid_seq INCREMENT 1 START 1');
+      db_query("CREATE TABLE {privatemsg_mail_edit} (
+          type varchar(255) NOT NULL,
+          mailkey varchar(255) NOT NULL,
+          PRIMARY KEY  (mailkey)
+        ) /*!40100 DEFAULT CHARACTER SET utf8 */;");
       db_query('CREATE TABLE {privatemsg_block_user} (
           author int unsigned NOT NULL,
           recipient int unsigned NOT NULL,
           PRIMARY KEY (author, recipient)
         )');
-      db_query("CREATE INDEX {privatemsg_archive_recipient} ON {privatemsg_archive}(recipient)");
-      db_query('CREATE SEQUENCE {privatemsg}_id_seq INCREMENT 1 START 1');
-      db_query('CREATE SEQUENCE {privatemsg_folder}_fid_seq INCREMENT 1 START 1');
-      db_query("CREATE TABLE {privatemsg_mails} )
-          type varchar(255) NOT NULL,
-          mailkey varchar(255) NOT NULL,
-          PRIMARY KEY  (mailkey)
-        ) /*!40100 DEFAULT CHARACTER SET utf8 */;");
       db_query("create or replace function unix_timestamp(timestamp with time zone)
         returns int as '
         declare
@@ -162,6 +162,15 @@ function privatemsg_uninstall() {
   db_query("DROP TABLE {privatemsg}");
   db_query("DROP TABLE {privatemsg_folder}");
   db_query("DROP TABLE {privatemsg_archive}");
+  if (db_table_exists('privatemsg_mails')) {
+    db_query("DROP TABLE {privatemsg_mails}");
+  }
+  if (db_table_exists('privatemsg_mail_edit')) {
+    db_query("DROP TABLE {privatemsg_mail_edit}");
+  }
+  if (db_table_exists('privatemsg_block_user')) {
+    db_query("DROP TABLE {privatemsg_block_user}");
+  }
   db_query("DELETE FROM {variable} WHERE name LIKE 'privatemsg_%'");
   cache_clear_all('variables', 'cache');
 }
@@ -231,5 +240,62 @@ function privatemsg_update_3() {
       }
       break;
   }
+  return $ret;
+}
+
+function privatemsg_update_4() {
+  $ret = array();
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      $ret[] = update_sql("ALTER TABLE {privatemsg} ADD type varchar(255) NOT NULL default '', ADD KEY (type)");
+      if (!db_table_exists('privatemsg_mail_edit')) {
+        if (db_table_exists('privatemsg_mails')) {
+          $ret[] = update_sql('RENAME TABLE {privatemsg_mails} TO {privatemsg_mail_edit}');
+        }
+        else {
+          $ret[] = update_sql("CREATE TABLE {privatemsg_mail_edit} (
+              type varchar(255) NOT NULL,
+              mailkey varchar(255) NOT NULL,
+              PRIMARY KEY  (mailkey)
+            ) /*!40100 DEFAULT CHARACTER SET utf8 */;");
+        }
+      }
+      $ret[] = update_sql("ALTER TABLE {privatemsg} CHANGE subject subject varchar(255) NOT NULL default ''");
+      if (!db_table_exists('privatemsg_block_user')) {
+        $ret[] = update_sql('CREATE TABLE {privatemsg_block_user} (
+            author int unsigned NOT NULL,
+            recipient int unsigned NOT NULL,
+            PRIMARY KEY (author, recipient)
+          )  /*!40100 DEFAULT CHARACTER SET utf8 */');
+      }
+      break;
+    case 'pgsql':
+      db_add_column($ret, 'privatemsg', 'type', 'varchar(255)', array('not null' => TRUE, 'default' => "''"));
+      $ret[] = update_sql("CREATE INDEX {privatemsg_folder_type} ON {privatemsg}(type)");
+      if (!db_table_exists('privatemsg_mail_edit')) {
+        if (db_table_exists('privatemsg_mails')) {
+          $ret[] = update_sql('ALTER TABLE {privatemsg_mails} RENAME TO {privatemsg_mail_edit}');
+        }
+        else {
+          $ret[] = update_sql("CREATE TABLE {privatemsg_mail_edit} (
+              type varchar(255) NOT NULL,
+              mailkey varchar(255) NOT NULL,
+              PRIMARY KEY  (mailkey)
+            ) /*!40100 DEFAULT CHARACTER SET utf8 */;");
+        }
+      }
+      db_change_column($ret, 'privatemsg', 'subject', 'subject', 'varchar(255)', array('not null' => TRUE, 'default' => "''"));
+      if (!db_table_exists('privatemsg_block_user')) {
+        $ret[] = update_sql('CREATE TABLE {privatemsg_block_user} (
+            author int unsigned NOT NULL,
+            recipient int unsigned NOT NULL,
+            PRIMARY KEY (author, recipient)
+          )');
+      }
+      break;
+  }
+  $ret[] = update_sql("INSERT INTO {privatemsg_mail_edit} (type, mailkey) VALUES ('private-message', 'private-message')");
+  $ret[] = update_sql("INSERT INTO {mail_edit} (mailkey, description) VALUES ('private-message', '%s')", st('When someone contacts you directly'));
   return $ret;
 }
