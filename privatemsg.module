@@ -1482,6 +1482,9 @@ function privatemsg_new_form($message = NULL) {
       $message->message = "\n\n\n". str_replace("\n", "\n> ", "\n". $message->message);
     }
   }
+  if (!is_object($message)) {
+    $message = new stdClass();
+  }
   // The first if can provide a partial message, so we fill it in to avoid
   // notices. Also we remove the message if it's a reply in a threaded view,
   // the original message will be seen anyways.
