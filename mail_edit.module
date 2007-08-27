@@ -49,7 +49,7 @@ function mail_edit_mail_alter(&$mailkey, &$to, &$subject, &$body, &$from, &$head
     $is_privatemsg = !empty($alter->type) && $recipient;
     $variables = $stored_variables;
     $variables['!sender_name'] = $sender->name;
-    $variables['!sender_name'] = url("user/$sender->uid", NULL, NULL, TRUE);
+    $variables['!sender_page'] = url("user/$sender->uid", NULL, NULL, TRUE);
     if (!empty($sender->contact)) {
       $variables['!sender_page_contact'] = url("user/$sender->uid/contact", NULL, NULL, TRUE);
     }
