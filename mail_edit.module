@@ -51,7 +51,7 @@ function mail_edit_mail_alter(&$mailkey, &$to, &$subject, &$body, &$from, &$head
     $variables['!sender_name'] = $sender->name;
     $variables['!sender_page'] = url("user/$sender->uid", NULL, NULL, TRUE);
     if (!empty($sender->contact)) {
-      $variables['!sender_page_contact'] = url("user/$sender->uid/contact", NULL, NULL, TRUE);
+      $variables['!sender_contact_page'] = url("user/$sender->uid/contact", NULL, NULL, TRUE);
     }
     if ($recipient) {
       $variables['!recipient_name'] = $recipient->name;
@@ -163,7 +163,7 @@ function mail_edit_form($mailkey) {
       '!recipient_name' => t('Name of the recipient.'),
       '!recipient_page' => ('The user page of the recipient.'),
       '!sender_page' => t('The user page of the sender.'),
-      '!sender_page_contact' => t('The contact page of the sender.'),
+      '!sender_contact_page' => t('The contact page of the sender.'),
     ),
     '#weight' => 30,
   );
