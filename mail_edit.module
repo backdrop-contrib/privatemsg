@@ -19,7 +19,7 @@ function mail_edit_menu($may_cache) {
  * Implementation of hook_mail_alter().
  */
 function mail_edit_mail_alter(&$mailkey, &$to, &$subject, &$body, &$from, &$headers) {
-  global $user;
+  global $user, $base_url;
   static $stored_variables, $alters;
   if (!isset($stored_variables)) {
     if (!empty($GLOBALS['form_values'])) {

@@ -1793,15 +1793,25 @@ function privatemsg_view($message_id) {
       }
       $placeholder = ($field == 'type' || $field == 'subject') ? "'%s'" : '%d';
       $args[] = $message->$field;
-      $operator = $sort == 'ASC' ? '<' : '>';
-      if ($previous_id = db_result(db_query_range("$sql AND $field $operator $placeholder ORDER BY $field $sort", $args, 0, 1))) {
+      if ($sort == 'ASC') {
+        $prev_operator = '<';
+        $next_operator = '>';
+        $prev_sort = 'DESC';
+        $next_sort = 'ASC';
+      }
+      else {
+        $prev_operator = '>';
+        $next_operator = '<';
+        $prev_sort = 'ASC';
+        $next_sort = 'DESC';
+      }
+      if ($previous_id = db_result(db_query_range("$sql AND $field $prev_operator $placeholder ORDER BY $field $prev_sort", $args, 0, 1))) {
         $previous_link = l(t('Previous'), 'privatemsg/view/'. $previous_id, array(), NULL, 'message-'. $previous_id);
       }
       else {
         $previous_link = '';
       }
-      $operator = $sort == 'ASC' ? '>' : '<';
-      if ($next_id = db_result(db_query_range("$sql AND $field $operator $placeholder ORDER BY $field $sort", $args, 0, 1))) {
+      if ($next_id = db_result(db_query_range("$sql AND $field $next_operator $placeholder ORDER BY $field $next_sort", $args, 0, 1))) {
         $next_link =  l(t('Next'), 'privatemsg/view/'. $next_id, array(), NULL, 'message-'. $next_id);
       }
       else {
