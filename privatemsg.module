@@ -2484,7 +2484,7 @@ function privatemsg_subscriptions_mailvars_pmsg($sid, $object_id, $placeholders,
 }
 
 function privatemsg_subscriptions_held_pmsg($message, $uid) {
-  privatemsg_subscriptions_handle($message, $uid, TRUE);
+  privatemsg_subscriptions_handle($message, TRUE);
   return TRUE;
 }
 
