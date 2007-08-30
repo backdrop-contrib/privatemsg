@@ -599,13 +599,8 @@ function _privatemsg_block_inbox() {
   global $user;
   if ($user->uid && user_access('access private messages') && $user->privatemsg_allow) {
     $new = _privatemsg_get_new_messages();
-    $items = array(
-      l(t('Inbox') . ($new ? " ($new)" : ''), 'privatemsg'),
-      l(t('Write message'), 'privatemsg/new'),
-    );
 
-    $block['subject'] = t('Private messages');
-    $block['content'] = theme('item_list', $items);
+    $block = theme('privatemsg_block_inbox', $new);
     return $block;
   }
 }
@@ -2330,6 +2325,15 @@ function theme_privatemsg_links($previous_link, $next_link) {
   $output .= $previous_link ? "<div class=\"previous\">$previous_link</div>" : '';
   $output .= "</div>";
   return $output;
+}
+
+function theme_privatemsg_block_inbox($new) {
+  $items = array(
+    l(t('Inbox') . ($new ? " ($new)" : ''), 'privatemsg'),
+    l(t('Write message'), 'privatemsg/new'),
+  );
+
+  return array('subject' => t('Private messages'), 'content' => theme('item_list', $items));
 }
 
 /**  @} End of addtogroup theme_system

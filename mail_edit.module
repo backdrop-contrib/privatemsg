@@ -44,6 +44,7 @@ function mail_edit_mail_alter(&$mailkey, &$to, &$subject, &$body, &$from, &$head
     $alters[$mailkey] = db_fetch_object(db_query($sql, $mailkey));
   }
   if (!empty($alters[$mailkey])) {
+    $alter = $alters[$mailkey];
     $sender = $user;
     $recipient = user_load(array('mail' => $to));
     $is_privatemsg = !empty($alter->type) && $recipient;
