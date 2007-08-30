@@ -2489,7 +2489,9 @@ function privatemsg_subscriptions_held_pmsg($message, $uid) {
 }
 
 function privatemsg_subscriptions_handle($message, $cron = FALSE) {
-  subscriptions_hold($message, 'pmsg', 'insert', $message->uid);
+  if (!$cron) {
+    subscriptions_hold($message, 'pmsg', 'insert', $message->uid);
+  }
   subscriptions_mailvars($message->type, $message->id, $message->author, 'pmsg', $cron);
 }
 
