@@ -155,7 +155,7 @@ function privatemsg_install() {
     $i = db_next_id('{privatemsg_folder}_fid');
   } while ($i < 1);  // In case this api ever changes to start at zero..
   db_query("INSERT INTO {privatemsg_mail_edit} (type, mailkey) VALUES ('private-message', 'private-message')");
-  db_query("INSERT INTO {mail_edit} (mailkey, description) VALUES ('private-message', '%s')", st('When someone contacts you directly'));
+  db_query("INSERT INTO {mail_edit} (mailkey, subject, description) VALUES ('private-message', '', '%s')", st('When someone contacts you directly'));
 }
 
 function privatemsg_uninstall() {
@@ -243,8 +243,24 @@ function privatemsg_update_3() {
   return $ret;
 }
 
+function _privatemsg_abort_update(&$ret) {
+  // Keep our caller update_data() from setting the installed_schema_version:
+  $ret['#finished'] = FALSE;
+  // Keep update_data()'s caller update_do_updates() from going into an endless loop (HACK!):
+  unset($_SESSION['update_remaining'][key($_SESSION['update_remaining'])]);
+}
+
 function privatemsg_update_4() {
   $ret = array();
+
+  if (!module_exists('mail_edit')) {
+    // If Privatemsg 5.x-1.8 is replaced by 5.x-2.x and the Mail Editor module is not enabled, then this will fail!
+    module_disable(array('privatemsg'));
+    $ret[] = array('success' => FALSE, 'query' => 'The required Mail Editor module is missing &mdash; the Privatemsg module has been disabled!<br>Be sure to re-run the database update after re-enabling the Privatemsg module!');
+    _privatemsg_abort_update($ret);
+    return $ret;
+  }
+
   switch ($GLOBALS['db_type']) {
     case 'mysql':
     case 'mysqli':
@@ -296,6 +312,35 @@ function privatemsg_update_4() {
       break;
   }
   $ret[] = update_sql("INSERT INTO {privatemsg_mail_edit} (type, mailkey) VALUES ('private-message', 'private-message')");
-  $ret[] = update_sql("INSERT INTO {mail_edit} (mailkey, description) VALUES ('private-message', '%s')", st('When someone contacts you directly'));
+
+  if (!module_exists('subscriptions')) {
+    // If Privatemsg 5.x-1.8 is replaced by 5.x-2.x and the Subscriptions module is not enabled, then Privatemsg will not run correctly!
+    module_disable(array('privatemsg'));
+    $ret[] = array('success' => FALSE, 'query' => 'The required Subscriptions module is missing &mdash; the Privatemsg module has been disabled!');
+  }
+  return $ret;
+}
+
+function privatemsg_update_5() {
+  $ret = array();
+
+  if (!module_exists('privatemsg')) {
+    // privatemsg_update_5() is called even if privatemsg_update_4() disabled Privatemsg, so we have to abort here...
+    $ret[] = array('success' => FALSE, 'query' => 'The Privatemsg module is disabled.<br>Be sure to re-run the database update after re-enabling the Privatemsg module!');
+    _privatemsg_abort_update($ret);
+    return $ret;
+  }
+
+  if (!db_result(db_query("SELECT COUNT(*) FROM {mail_edit} WHERE mailkey = 'private-message'"))) {
+    $ret[] = update_sql("INSERT INTO {mail_edit} (mailkey, subject, description) VALUES ('private-message', '', '%s')", st('When someone contacts you directly'));
+  }
+
+  if (drupal_get_installed_schema_version('subscriptions') < 1) {
+    module_disable(array('privatemsg'));
+    $ret[] = array('success' => FALSE, 'query' => 'You must upgrade the Subscriptions module to run this version of the Privatemsg module &mdash; the Privatemsg module has been disabled!');
+  }
+  else {
+    $ret[] = array('success' => TRUE, 'query' => 'Subscriptions module: OK');
+  }
   return $ret;
 }
