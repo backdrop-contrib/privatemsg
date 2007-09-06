@@ -480,18 +480,23 @@ function privatemsg_form_alter($form_id, &$form) {
         );
         $form['#submit']['privatemsg_mail_edit_submit'] = array();
       }
+      else {
+        $form['help']['#variables']['!message_sender'] = t('The name of the sender of the private message');
+      }
   }
 }
 
 function privatemsg_mail_edit_submit($form_id, $form_values) {
-  $args = array($form_values['privatemsg_type'], $form_values['mailkey']);
-  if ($form_values['insert']) {
-    db_query("INSERT {privatemsg_mail_edit} (type, mailkey) VALUES ('%s', '%s')", $args);
+  if ($form_values['privatemsg_type']) {
+    $args = array($form_values['privatemsg_type'], $form_values['mailkey']);
+    if ($form_values['insert']) {
+      db_query("INSERT {privatemsg_mail_edit} (type, mailkey) VALUES ('%s', '%s')", $args);
+    }
+    else {
+      db_query("UPDATE {privatemsg_mail_edit} SET type = '%s' WHERE mailkey = '%s'", $args);
+    }
+    cache_clear_all();
   }
-  else {
-    db_query("UPDATE {privatemsg_mail_edit} SET type = '%s' WHERE mailkey = '%s'", $args);
-  }
-  cache_clear_all();
 }
 
 /**
@@ -536,7 +541,7 @@ function privatemsg_subscriptions($op) {
 
 function privatemsg_message_allowed($recipient, $author = NULL) {
   $author = $author ? $author : $GLOBALS['user']->uid;
-  $user = user_load(array('uid' => $author));
+  $user = user_load(array('uid' => $recipient));
   # user can not message themselves
   if ($recipient == $author) {
     return FALSE;
@@ -748,7 +753,10 @@ function privatemsg_list($uid = NULL) {
   if ($account && !$account->uid) {
     drupal_goto('user/login', 'destination=privatemsg');
   }
-  if (!user_access('access private messages') || !$account->privatemsg_allow) {
+  // wha? Disallow users who have set their pref to "don't contact me" from seeing their inbox?
+  // Surely not: privatemsg_allow only determines whether a user receives direct private messages,
+  // there are still other types of message that arrive in a user's inbox
+  if (!user_access('access private messages')) {// || !$account->privatemsg_allow) {
     return drupal_access_denied();
   }
 
@@ -824,16 +832,9 @@ function _privatemsg_folder_map($fid = NULL, $uid = NULL) {
 }
 
 function _privatemsg_list_header($current_folder) {
-  if ($current_folder == 1) {
-    $actor_header = array('data' => t('To'), 'field' => 'recipient');
-  }
-  else {
-    $actor_header = array('data' => t('From'), 'field' => 'author');
-  }
-
   return array(
     array('data' => t('Type'), 'field' => 'type'),
-    $actor_header,
+    array('data' => ($current_folder == 1) ? t('To') : t('From'), 'field' => 'name'),
     array('data' => t('Subject'), 'field' => 'subject'),
     array('data' => t('Date'), 'field' => 'timestamp', 'sort' => 'desc'),
   );
@@ -1112,7 +1113,9 @@ function privatemsg_list_form_submit($form_id, $form_values) {
       _privatemsg_move_folder($where, $args, $fid, $form_values['extra_folders']);
       break;
     case t('Delete permanently'):
-      db_query('DELETE FROM {privatemsg} '. $where, $args);
+      foreach (array_keys($selected) as $mid) {
+        _privatemsg_delete($mid, 2);
+      }
       drupal_set_message(t('Your messages have been deleted permanently'));
       break;
     case t('Undelete'):
@@ -1652,7 +1655,16 @@ function privatemsg_send_privatemsg($recipient, $subject, $body, $format = FILTE
   return _privatemsg_send($user, $recipient, $subject, $body, $format, $thread, $type);
 }
 
-function _privatemsg_send($sender, $recipient, $subject, $body, $format, $thread, $type = 'private-message') {
+function _privatemsg_send($sender, $recipient, $subject, $body, $format, $thread = 0, $type = 'private-message') {
+  // hook to allow other modules to alter any aspect of a privatemsg
+  // by accepting these params by reference.  Any module can cancel a
+  // privatemsg by returning false here
+  foreach (module_implements('privatemsg_alter') as $name) {
+    $function = $name .'_privatemsg_alter';
+    if (!$function($sender, $recipient, $subject, $body, $format, $thread, $type)) {
+      return FALSE;
+    }
+  }
   if ($sender->uid == $recipient->uid) {
     return FALSE;
   }
@@ -1666,6 +1678,26 @@ function _privatemsg_send($sender, $recipient, $subject, $body, $format, $thread
   }
   privatemsg_subscriptions_handle(privatemsg_load($message_id));
   return $result ? $message_id : $result;
+}
+
+/**
+ * Implementation of hook privatemsg_alter
+ */
+function privatemsg_privatemsg_alter($sender = NULL, $recipient = NULL, $subject = NULL, $body = NULL, $format = NULL, $thread = NULL, $type = NULL) {
+  $key = _privatemsg_get_type_key($type);
+  // use isset() and ! here to determine if the user has actually set the preference to FALSE
+  // explicitly - allow message otherwise (if the user has specified no preference)
+  if (isset($recipient->$key) && !$recipient->$key) {
+    return FALSE;
+  }
+  return TRUE;
+}
+
+/**
+ * Return a version of type that can be used as an object property key (change whitespace to _)
+ */
+function _privatemsg_get_type_key($type) {
+  return 'privatemsg_allow_' . preg_replace('/\s+/', '_', $type);
 }
 
 /**
@@ -1814,11 +1846,14 @@ function privatemsg_view($message_id) {
       }
     }
     if ($threaded_view && $message->thread) {
-      $result = db_query('SELECT p.id, u.uid, u.name, p.author, p.timestamp, p.subject, p.message, p.newmsg, p.recipient, p.folder, p.format FROM {privatemsg} p INNER JOIN {users} u ON p.author = u.uid WHERE p.thread = %d ORDER BY timestamp DESC', $message->thread);
+      $result = db_query('SELECT p.id, u.uid, u.name, p.author, p.timestamp, p.subject, p.message, p.newmsg, p.recipient, p.folder, p.format FROM {privatemsg} p INNER JOIN {users} u ON p.author = u.uid WHERE p.thread = %d ORDER BY timestamp ASC', $message->thread);
       $messages = '';
       while ($message = db_fetch_object($result)) {
         if (!isset($first)) {
           $first = $message;
+        }
+        if ($message->recipient == $user->uid) {
+          $last = $message;
         }
         $messages .= _privatemsg_view($message);
       }
@@ -1828,10 +1863,10 @@ function privatemsg_view($message_id) {
       $messages = _privatemsg_view($message);
     }
     $output = theme('privatemsg_links', $previous_link, $next_link);
-    if ($first->recipient == $user->uid) {
-      $output .= drupal_get_form('privatemsg_new_form', $first->id);
-    }
     $output .= $messages;
+    if ($last->recipient == $user->uid) {
+      $output .= drupal_get_form('privatemsg_new_form', $last->id);
+    }
     return $output;
   }
   drupal_goto('privatemsg');
@@ -2079,18 +2114,18 @@ function privatemsg_delete_multiple_form_submit($form_id, $form_values) {
   drupal_goto($path);
 }
 
-function _privatemsg_delete($id) {
+function _privatemsg_delete($id, $deleted_status = 1) {
   global $user;
 
   $result = db_query('SELECT author, recipient, folder FROM {privatemsg} WHERE (recipient = %d OR author = %d) AND id = %d', $user->uid, $user->uid, $id);
 
   if ($message = db_fetch_object($result)) {
     if ($message->author == $user->uid) {
-      db_query('UPDATE {privatemsg} SET author_del = 1 WHERE id = %d', $id);
+      db_query('UPDATE {privatemsg} SET author_del = %d WHERE id = %d', $deleted_status, $id);
       $retval = 1;
     }
     if ($message->recipient == $user->uid) {
-      db_query('UPDATE {privatemsg} SET recipient_del = 1 WHERE id = %d', $id);
+      db_query('UPDATE {privatemsg} SET recipient_del = %d WHERE id = %d', $deleted_status, $id);
       $retval = $message->folder;
     }
     // Notify other modules that a message is deleted.
@@ -2467,7 +2502,7 @@ function privatemsg_subscriptions_mailvars_pmsg($sid, $object_id, $placeholders,
   $sql_args[] = $message->recipient;
   $sql = "SELECT u.uid, u.name, u.mail, u.language
     FROM {users} u
-    INNER JOIN {subscriptions} s ON u.uid = s.uid
+    INNER JOIN {subscriptions} s ON u.uid = s.uid AND send_interval != -1
     INNER JOIN {subscriptions_sent} ss ON u.uid = ss.uid
     WHERE $placeholders u.status= 1 AND s.stype = 'pmsg%s' AND s.uid = %d";
   $d = $sql_args;
@@ -2475,11 +2510,12 @@ function privatemsg_subscriptions_mailvars_pmsg($sid, $object_id, $placeholders,
   $result = db_query($sql, $sql_args);
   return array(
     'result' => $result,
+    '!message_sender' => $message->name,
     '!subject' => $message->subject,
     '!title' => $message->subject,
     '!url' => url('privatemsg/view/'. $object_id, NULL, NULL, TRUE),
     'postfix' => 'pmsg-'. $sid,
-    '!type' => 'privatemsg',
+    '!type' => 'private message',
   );
 }
 
@@ -2512,13 +2548,18 @@ function privatemsg_subscriptions_form($account) {
   while ($type = db_fetch_object($result)) {
     $index = $type->type;
     $checkboxes[$index] = $type->description;
-    if ($type->stype) {
+    $key = _privatemsg_get_type_key($type->type);
+    if (!isset($account->$key) || $account->$key) {
       $default_value[] = $index;
+      $select_default = $type->send_interval;
+    }
+    else {
+      $select_default = -1;
     }
     $form['subscriptions']['select'][$index] = array(
       '#type' => 'select',
       '#options' => $intervals,
-      '#default_value' => $type->send_interval,
+      '#default_value' => $select_default,
     );
   }
   $form['subscriptions']['checkbox'] = array(
@@ -2540,9 +2581,22 @@ function privatemsg_subscriptions_form_submit($form_id, $form_values) {
   $uid = $form_values['account']->uid;
   db_query("DELETE FROM {subscriptions} WHERE stype LIKE 'pmsg%%' AND uid = %d", $uid);
   foreach (array_keys(array_filter($form_values['checkbox'])) as $sid) {
-    //$sid = substr($sid, 1);
     subscriptions_add(0, $uid, 'pmsg'. $sid, $form_values['select'][$sid]);
   }
+  $account = new stdClass();
+  $account->uid = $uid;
+  $privatemsg_settings = array();
+  foreach($form_values['checkbox'] as $type => $checked) {
+    $key = _privatemsg_get_type_key($type);
+    $privatemsg_settings[$key] = $checked ? 1 : 0;
+    // special case - type 'private-message' indicates whether a user wants to
+    // allow contact via direct private message at all.  we need to link this to the
+    // privatemsg_allow preference setting, so that the "contact" tab reacts correctly
+    if ($type == 'private-message') {
+      $privatemsg_settings['privatemsg_allow'] = $checked ? 1 : 0;
+    }
+  }
+  $account = user_save($account, $privatemsg_settings);
 }
 
 function privatemsg_mailkeys() {
