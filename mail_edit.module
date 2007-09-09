@@ -52,11 +52,11 @@ function mail_edit_mail_alter(&$mailkey, &$to, &$subject, &$body, &$from, &$head
     $variables['!sender_name'] = $sender->name;
     $variables['!sender_page'] = url("user/$sender->uid", NULL, NULL, TRUE);
     if (!empty($sender->contact)) {
-      $variables['!sender_contact_page'] = url("user/$sender->uid/contact", NULL, NULL, TRUE);
+      $variables['!sender_contact_page'] = url("privatemsg/new/$sender->uid", NULL, NULL, TRUE);
     }
     if ($recipient) {
       $variables['!recipient_name'] = $recipient->name;
-      $variables['!recipient_name'] = url("user/$recipient->uid", NULL, NULL, TRUE);
+      $variables['!recipient_page'] = url("user/$recipient->uid", NULL, NULL, TRUE);
       $variables['!edit_uri'] = url('user/'. $account->uid .'/edit', NULL, NULL, TRUE);
       if (substr($mailkey, 0, 5) == 'user-') {
         $variables['!username'] = $recipient->name;
@@ -163,6 +163,7 @@ function mail_edit_form($mailkey) {
     '#variables' => array(
       '!recipient_name' => t('Name of the recipient.'),
       '!recipient_page' => ('The user page of the recipient.'),
+      '!sender_name' => t('Name of the sender.'),
       '!sender_page' => t('The user page of the sender.'),
       '!sender_contact_page' => t('The contact page of the sender.'),
     ),

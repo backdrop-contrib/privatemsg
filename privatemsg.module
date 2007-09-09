@@ -567,6 +567,7 @@ function privatemsg_block_user($author, $recipient = NULL) {
   $recipient = ($recipient) ? $recipient : $user->uid;
   if (!privatemsg_user_blocked($author, $recipient)) {
     db_query("INSERT INTO {privatemsg_block_user} (author, recipient) VALUES (%d, %d)", $author, $recipient);
+    drupal_set_message(t('User has been blocked'));
   }
 }
 
@@ -575,6 +576,7 @@ function privatemsg_unblock_user($author, $recipient = NULL) {
   $recipient = ($recipient) ? $recipient : $user->uid;
   if (privatemsg_user_blocked($author, $recipient)) {
     db_query("DELETE FROM {privatemsg_block_user} WHERE author = %d AND recipient = %d", $author, $recipient);
+    drupal_set_message(t('User has been unblocked'));
   }
 }
 
@@ -1487,7 +1489,6 @@ function privatemsg_new_form($message = NULL) {
   // notices. Also we remove the message if it's a reply in a threaded view,
   // the original message will be seen anyways.
   if (!isset($message->subject) || variable_get('privatemsg_threaded_view', 0)) {
-    $message->subject = '';
     $message->message = '';
   }
 
@@ -1508,6 +1509,7 @@ function privatemsg_new_form($message = NULL) {
     '#autocomplete_path' => 'privatemsg/autocomplete',
     '#size' => 50,
     '#maxlength' => 1000,
+    '#required' => TRUE,
   );
   $form['header']['subject'] = array(
     '#type' => 'textfield',
@@ -1515,10 +1517,11 @@ function privatemsg_new_form($message = NULL) {
     '#default_value' => $message->subject,
     '#size' => 50,
     '#maxlength' => 64,
+    '#required' => TRUE,
   );
   $form['privatemsgbody'] = array(
     '#type' => 'textarea',
-    '#title' => t('Message'),
+    '#title' => empty($message->thread) ? t('Message') : t('Reply'),
     '#default_value' => $message->message,
     '#cols' => 80,
     '#rows' => 6,
@@ -1589,12 +1592,6 @@ function privatemsg_new_form_validate($form_id, $form_values) {
   if (!isset($form_values['format']) || !filter_access($form_values['format'])) {
     form_set_error('format', t('The supplied input format is invalid.'));
   }
-  if (empty($form_values['recipient'])) {
-    form_set_error('recipient', t('To field is required.'));
-  }
-  if (empty($form_values['subject'])) {
-    form_set_error('subject', t('Subject field is required.'));
-  }
   if (empty($form_values['privatemsgbody'])) {
     form_set_error('privatemsgbody', t('Message field is required.'));
   }
@@ -1656,6 +1653,11 @@ function privatemsg_send_privatemsg($recipient, $subject, $body, $format = FILTE
 }
 
 function _privatemsg_send($sender, $recipient, $subject, $body, $format, $thread = 0, $type = 'private-message') {
+  if (!privatemsg_message_allowed($recipient->uid, $sender->uid)) {
+    drupal_set_message(t('You cannot contact %recipient', array('%recipient' => $recipient->name)));
+    return;
+  }
+
   // hook to allow other modules to alter any aspect of a privatemsg
   // by accepting these params by reference.  Any module can cancel a
   // privatemsg by returning false here
@@ -2499,15 +2501,12 @@ function privatemsg_load($message_id) {
 
 function privatemsg_subscriptions_mailvars_pmsg($sid, $object_id, $placeholders, $sql_args) {
   $message = privatemsg_load($object_id);
-  $sql_args[] = $message->recipient;
   $sql = "SELECT u.uid, u.name, u.mail, u.language
     FROM {users} u
     INNER JOIN {subscriptions} s ON u.uid = s.uid AND send_interval != -1
     INNER JOIN {subscriptions_sent} ss ON u.uid = ss.uid
-    WHERE $placeholders u.status= 1 AND s.stype = 'pmsg%s' AND s.uid = %d";
-  $d = $sql_args;
-  array_unshift($d, $sql);
-  $result = db_query($sql, $sql_args);
+    WHERE u.status= 1 AND s.stype = 'pmsg%s' AND s.uid = %d";
+  $result = db_query($sql, $sid, $message->recipient);
   return array(
     'result' => $result,
     '!message_sender' => $message->name,
@@ -2528,6 +2527,7 @@ function privatemsg_subscriptions_handle($message, $cron = FALSE) {
   if (!$cron) {
     subscriptions_hold($message, 'pmsg', 'insert', $message->uid);
   }
+  watchdog('debug', var_export($message, TRUE));
   subscriptions_mailvars($message->type, $message->id, $message->author, 'pmsg', $cron);
 }
 
