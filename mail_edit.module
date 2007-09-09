@@ -49,11 +49,10 @@ function mail_edit_mail_alter(&$mailkey, &$to, &$subject, &$body, &$from, &$head
     $recipient = user_load(array('mail' => $to));
     $is_privatemsg = !empty($alter->type) && $recipient;
     $variables = $stored_variables;
+    $variables['!site'] = t(variable_get('site_name', 'drupal'));
     $variables['!sender_name'] = $sender->name;
     $variables['!sender_page'] = url("user/$sender->uid", NULL, NULL, TRUE);
-    if (!empty($sender->contact)) {
-      $variables['!sender_contact_page'] = url("privatemsg/new/$sender->uid", NULL, NULL, TRUE);
-    }
+    $variables['!sender_contact_page'] = (empty($sender->contact) ? '(disabled)' : url("user/$sender->uid/contact", NULL, NULL, TRUE));
     if ($recipient) {
       $variables['!recipient_name'] = $recipient->name;
       $variables['!recipient_page'] = url("user/$recipient->uid", NULL, NULL, TRUE);
@@ -141,21 +140,21 @@ function mail_edit_form($mailkey) {
     '#type' => 'textfield',
     '#title' => t('Message description'),
     '#default_value' => $defaults['description'],
-    '#description' => t("The description of this message (for admins only; users don't see this.)"),
+    '#description' => t("The description of this message (for admins only; users don't see this, except possibly in <a href='/subscriptions/pmsg'>/subscriptions/pmsg</a>, if the Subscriptions module is active.)"),
     '#weight' => 0,
   );
   $form['subject'] = array(
     '#type' => 'textfield',
     '#title' => t('Subject'),
     '#default_value' => $defaults['subject'],
-    '#description' => t('The subject of the mail or the private message sent instead of the mail.'),
+    '#description' => t('The subject of the mail or private message.'),
     '#weight' => 10,
   );
   $form['body'] = array(
     '#type' => 'textarea',
     '#title' => t('Body'),
     '#default_value' => $defaults['body'],
-    '#description' => t('The body of the mail or the private message sent instead of the mail.'),
+    '#description' => t('The body of the mail or private message.'),
     '#weight' => 20,
   );
   $form['help'] = array(
