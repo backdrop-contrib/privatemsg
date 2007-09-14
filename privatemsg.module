@@ -2514,6 +2514,7 @@ function privatemsg_subscriptions_mailvars_pmsg($sid, $object_id, $placeholders,
     '!title' => $message->subject,
     '!url' => url('privatemsg/view/'. $object_id, NULL, NULL, TRUE),
     'postfix' => 'pmsg-'. $sid,
+    'send_self' => TRUE,
     '!type' => 'private message',
   );
 }
