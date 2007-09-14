@@ -773,6 +773,7 @@ function privatemsg_list($uid = NULL) {
 
   $current_folder = intval(arg(2));
   $folder_name = _privatemsg_folder_map($current_folder, $account->uid);
+  $count_query = NULL;
   if ($current_folder == PRIVATEMSG_FOLDER_SENT) {
     $where_field = 'author';
     $join_field = 'recipient';
@@ -782,15 +783,12 @@ function privatemsg_list($uid = NULL) {
     $join_field = 'author';
   }
   $sql1 = "SELECT id, subject, p.timestamp, u.uid, u.name, newmsg, type FROM {privatemsg} p INNER JOIN {users} u ON ";
-  $count_sql1 = "SELECT COUNT(*) FROM {privatemsg} p INNER JOIN {users} u ON ";
   $sql = $sql1 . "p.$join_field = u.uid WHERE p.$where_field = %d $type AND p.{$where_field}_del = %d";
-  $count_sql = $count_sql1 . "p.$join_field = u.uid WHERE p.$where_field = %d $type AND p.{$where_field}_del = %d";
   if ($current_folder == PRIVATEMSG_FOLDER_RECYCLE_BIN) {
     $args[] = 1;
     $sql .= " UNION $sql1 p.recipient = u.uid WHERE p.author = %d $type AND p.author_del = %d";
-    $count_sql .= " UNION $count_sql1 p.recipient = u.uid WHERE p.author = %d $type AND p.author_del = %d";
     $args = array_merge($args, $args);
-    
+    $count_query = "SELECT (SELECT COUNT(*) FROM {privatemsg} p INNER JOIN {users} u ON p.author = u.uid WHERE p.recipient = %d AND p.recipient_del = %d) + (SELECT COUNT(*) FROM {privatemsg} p INNER JOIN {users} u ON p.recipient = u.uid WHERE p.author = %d AND p.author_del = %d)";
   }
   else {
     $args[] = 0;
@@ -808,7 +806,7 @@ function privatemsg_list($uid = NULL) {
     'field' => db_escape_string($ts['sql']),
     'sort' =>  drupal_strtoupper(db_escape_string($ts['sort'])),
   );
-  $result = pager_query($sql . tablesort_sql($header), variable_get('privatemsg_per_page', 10), 0, $count_sql, $args);
+  $result = pager_query($sql . tablesort_sql($header), variable_get('privatemsg_per_page', 10), 0, $count_query, $args);
   $messages = array();
   while ($message = db_fetch_object($result)) {
     if ($current_folder == PRIVATEMSG_FOLDER_SENT) {
