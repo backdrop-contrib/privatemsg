@@ -24,7 +24,7 @@ if (Drupal.jsEnabled) {
       $('.pm-add-folder-select').change(
         function() {
           // click is necessary for right $op.
-          $('#edit-go-folder').click();
+          $('#edit-go-folder').each(function() { this.click(); });
         }
       );
       
@@ -32,7 +32,7 @@ if (Drupal.jsEnabled) {
       $('#edit-action').change(
         function() {
           // click is necessary for right $op.
-          $('#edit-submit').click();
+          $('#edit-submit').each(function() { this.click(); });
         }
       );
 
