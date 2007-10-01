@@ -33,6 +33,7 @@ function mail_edit_mail_alter(&$mailkey, &$to, &$subject, &$body, &$from, &$head
       '!uri_brief' => substr($base_url, strlen('http://')),
       '!date' => format_date(time()),
       '!login_uri' => url('user', NULL, NULL, TRUE),
+      '!mailkey' => $mailkey,
     );
   }
   if (!isset($alters[$mailkey])) {
@@ -68,14 +69,16 @@ function mail_edit_mail_alter(&$mailkey, &$to, &$subject, &$body, &$from, &$head
       $function($variables, $mailkey, $sender, $recipient);
     }
     if ($alter->subject) {
+      subscriptions_template_preprocess($alter->subject, $variables);
       $subject = strtr($alter->subject, $variables);
     }
     if ($alter->body) {
+      subscriptions_template_preprocess($alter->body, $variables);
       $body = strtr($alter->body, $variables);
     }
     if ($is_privatemsg) {
       $to = NULL;
-      module_invoke('privatemsg', 'send_privatemsg', $recipient, $subject, $body, FILTER_FORMAT_DEFAULT, 0, $alter->type);
+      module_invoke('privatemsg', 'send_privatemsg', $recipient, $subject, $body, FILTER_FORMAT_DEFAULT, 0, $alter->type, $variables);
     }
   }
 }

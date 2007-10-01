@@ -344,3 +344,22 @@ function privatemsg_update_5() {
   }
   return $ret;
 }
+
+function privatemsg_update_6() {
+  $ret = array();
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      // add name_length column (for sorting results by the length of username - 
+      // this needs a whole new column for performance on autocomplete callbacks)
+      $ret[] = update_sql("ALTER TABLE {users} ADD name_length INT NOT NULL DEFAULT 0");
+      $ret[] = update_sql("UPDATE {users} SET name_length = LENGTH(name)");
+      // keep the column automatically updated ...
+      // note: the following will fail if the database user used by drupal
+      // does not have the SUPER privelege, but the update script will tell you,
+      // and you will have to create these 2 triggers manually
+      $ret[] = update_sql("CREATE TRIGGER user_name_length_insert BEFORE INSERT ON {users} FOR EACH ROW SET NEW.name_length = LENGTH(NEW.name)");
+      $ret[] = update_sql("CREATE TRIGGER user_name_length_update BEFORE UPDATE ON {users} FOR EACH ROW SET NEW.name_length = LENGTH(NEW.name)");
+  }
+  return $ret;
+}

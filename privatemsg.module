@@ -312,6 +312,15 @@ function privatemsg_help($section) {
 }
 
 /**
+ * Implementation of hook_simpletest
+ */
+function privatemsg_simpletest() {
+  $dir = drupal_get_path('module', 'privatemsg') .'/tests';
+  $tests = file_scan_directory($dir, '\.test$');
+  return array_keys($tests);
+}
+
+/**
  * Implementation of hook_link().
  */
 function privatemsg_link($type, $node = NULL, $teaser = FALSE) {
@@ -997,13 +1006,13 @@ function privatemsg_list_form($messages, $folders, $current_folder, $account) {
   );
 
   if (count($messages) > 0) {
-    $js = array('deleteMessage' => t('Are you sure you want to delete these messages?'));
+    $js = array('deleteMessage' => t('Are you sure you want to recycle these messages?'));
     $del = variable_get('privatemsg_actions_loc', 1);
     $form['selected'] = array(
       '#type' => 'fieldset',
       '#collapsible' => FALSE,
       '#collapsed' => FALSE,
-      '#prefix' => '<div class="container-inline">',
+       '#prefix' => '<div class="container-inline" id="privatemsg-action-buttons">',
       '#suffix' => '</div>',
     );
     switch ($current_folder) {
@@ -1014,7 +1023,11 @@ function privatemsg_list_form($messages, $folders, $current_folder, $account) {
         );
         $actions['undelete'] = array(
           '#type' => 'submit',
-          '#value' => t('Undelete'),
+          '#value' => t('Move to inbox'),
+        );
+        $actions['empty'] = array(
+          '#type' => 'submit',
+          '#value' => t('Empty recycle bin'),
         );
         break;
       default:
@@ -1030,7 +1043,7 @@ function privatemsg_list_form($messages, $folders, $current_folder, $account) {
       case PRIVATEMSG_FOLDER_SENT:
         $actions['delete'] = array(
           '#type' => 'submit',
-          '#value' => t('Delete'),
+          '#value' => t('Recycle'),
         );
     }
 
@@ -1078,7 +1091,7 @@ function privatemsg_list_form_submit($form_id, $form_values) {
       $placeholders[] = '%d';
     }
   }
-  if (!$selected) {
+  if (!$selected && ($form_values['op'] != t('Empty recycle bin'))) {
     return;
   }
   $args = array_keys($selected);
@@ -1087,12 +1100,12 @@ function privatemsg_list_form_submit($form_id, $form_values) {
   $where = $where1 .'recipient = %d';
   $new = 0;
   switch ($form_values['op']) {
-    case t('Delete'):
+    case t('Recycle'):
       if ($_POST['js_bypass'] == 1) {
         foreach ($selected as $mid => $message) {
           _privatemsg_delete($mid);
         }
-        drupal_set_message(t('Messages deleted.'));
+        drupal_set_message(t('Messages recycled.'));
       }
       else {
         $_SESSION['privatemsg'] = $form_values['messages'];
@@ -1122,10 +1135,17 @@ function privatemsg_list_form_submit($form_id, $form_values) {
       }
       drupal_set_message(t('Your messages have been deleted permanently'));
       break;
-    case t('Undelete'):
+    case t('Move to inbox'):
       db_query('UPDATE {privatemsg} SET recipient_del = 0 '. $where, $args);
       $where = $where1 .'author = %d';
       db_query('UPDATE {privatemsg} SET author_del = 0 '. $where, $args);
+      break;
+    case t('Empty recycle bin'):
+      $result = db_query('SELECT id FROM privatemsg p WHERE p.recipient = %d AND p.recipient_del = 1 UNION SELECT id FROM privatemsg p  WHERE p.author = %d AND p.author_del = 1', $GLOBALS['user']->uid, $GLOBALS['user']->uid);
+      while ($message = db_fetch_object($result)) {
+        _privatemsg_delete($message->id, 2);
+      }
+      drupal_set_message('Recycle bin emptied');
       break;
   }
 }
@@ -1648,13 +1668,15 @@ function privatemsg_new_form_submit($form_id, $form_values) {
  *   The thread this message belongs to (take care to preserve on replies).
  * @param $type
  *   Type of the message as defined on admin/build/privatemsg .
+ * @param $variables
+ *   If this message is a subscriptions mail, the variables used to compose the message.
  **/
-function privatemsg_send_privatemsg($recipient, $subject, $body, $format = FILTER_FORMAT_DEFAULT, $thread = 0, $type = 'private-message') {
+function privatemsg_send_privatemsg($recipient, $subject, $body, $format = FILTER_FORMAT_DEFAULT, $thread = 0, $type = 'private-message', $variables = array()) {
   global $user;
-  return _privatemsg_send($user, $recipient, $subject, $body, $format, $thread, $type);
+  return _privatemsg_send($user, $recipient, $subject, $body, $format, $thread, $type, $variables);
 }
 
-function _privatemsg_send($sender, $recipient, $subject, $body, $format, $thread = 0, $type = 'private-message') {
+function _privatemsg_send($sender, $recipient, $subject, $body, $format, $thread = 0, $type = 'private-message', $original_variables = array()) {
   if (!privatemsg_message_allowed($recipient->uid, $sender->uid)) {
     drupal_set_message(t('You cannot contact %recipient', array('%recipient' => $recipient->name)));
     return;
@@ -1676,7 +1698,11 @@ function _privatemsg_send($sender, $recipient, $subject, $body, $format, $thread
   if (!$thread) {
     $thread = db_next_id('{privatemsg}_thread');
   }
-  $result = db_query("INSERT INTO {privatemsg} (id, author, recipient, subject, message, timestamp, newmsg, hostname, format, thread, type) VALUES (%d, %d, %d, '%s', '%s', %d, %d, '%s', %d, %d, '%s')", $message_id, $sender->uid, $recipient->uid, $subject, $body, time(), 1, getenv('REMOTE_ADDR'), $format, $thread, $type);
+  $variables = array();
+  foreach ($original_variables as $name => $value) {
+    $variables[str_replace('!', '!original_', $name)] = $value;
+  }
+  $result = db_query("INSERT INTO {privatemsg} (id, author, recipient, subject, message, timestamp, newmsg, hostname, format, thread, type, variables) VALUES (%d, %d, %d, '%s', '%s', %d, %d, '%s', %d, %d, '%s', '%s')", $message_id, $sender->uid, $recipient->uid, $subject, $body, time(), 1, getenv('REMOTE_ADDR'), $format, $thread, $type, serialize($variables));
   if ($points = variable_get('privatemsg_userpoints', 0)) {
     module_invoke('userpoints', 'userpointsapi', 'points', $points, $sender->uid, 'privatemsg');
   }
@@ -1940,7 +1966,7 @@ function privatemsg_view_form($message) {
   if ($del == '1') {
     $form['actions']['delete'] = array(
       '#type' => 'submit',
-      '#value' => t('Delete'),
+      '#value' => t('Recycle'),
       '#prefix' => ' &nbsp; &nbsp;',
       '#attributes' => array('class' => 'pm-add-delete pm-spacer'),
     );
@@ -1975,16 +2001,21 @@ function privatemsg_view_form($message) {
   if ($del == '2') {
     $form['actions']['delete'] = array(
       '#type' => 'submit',
-      '#value' => t('Delete'),
+      '#value' => t('Recycle'),
       '#prefix' => ' &nbsp; &nbsp;',
       '#attributes' => array('class' => 'pm-add-delete pm-spacer'),
     );
   }
 
-  $js = array('deleteMessage' => t('Are you sure you want to delete these messages?'));
+  // only add the JS once, otherwise we get dupllicated JS confirm messages on thread views
+  static $count = 0;
+  if ($count == 0) {
+    $js = array('deleteMessage' => t('Are you sure you want to recycle this message?'));
 
-  drupal_add_js(drupal_get_path('module', 'privatemsg') .'/privatemsg.js');
-  drupal_add_js(array('privatemsg' => $js), 'setting');
+    drupal_add_js(drupal_get_path('module', 'privatemsg') .'/privatemsg.js');
+    drupal_add_js(array('privatemsg' => $js), 'setting');
+    ++$count;
+  }
 
   return $form;
 }
@@ -1995,7 +2026,7 @@ function privatemsg_view_form_submit($form_id, $form_values) {
   switch ($form_values['op']) {
     case t('Reply'):
       drupal_goto('privatemsg/reply/'. $form_values['pm_id']);
-    case t('Delete'):
+    case t('Recycle'):
       if ($_POST['js_bypass'] == 1) {
         drupal_goto('privatemsg/delete/'. $form_values['pm_id']);
       }
@@ -2056,17 +2087,17 @@ function privatemsg_delete() {
   }
 
   if (($folder = _privatemsg_delete(arg(2))) !== FALSE) {
-    drupal_set_message(t('Message deleted.'));
+    drupal_set_message(t('Message recycled.'));
   }
   drupal_goto($folder ? 'privatemsg/list/'. $folder : 'privatemsg');
 }
 
 function privatemsg_delete_form($mid) {
   $subject = db_result(db_query("SELECT subject FROM {privatemsg} WHERE id = %d", $mid));
-  $message = t('Are you sure you wish to delete the message %subject?', array('%subject' => $subject));
+  $message = t('Are you sure you wish to recycle the message %subject?', array('%subject' => $subject));
 
-  $form = confirm_form(array(), t('Delete message?'), 'privatemsg/view/'. $mid,
-                       $message, t('Delete'), t('Cancel'), 'delete');
+  $form = confirm_form(array(), t('Recycle message?'), 'privatemsg/view/'. $mid,
+                       $message, t('Recycle'), t('Cancel'), 'delete');
 
   return $form;
 }
@@ -2089,11 +2120,11 @@ function privatemsg_delete_multiple_form() {
     $cancel_path = 'privatemsg/list/'. $_SESSION['fromfolder'];
   }
 
-  $message = t('Are you sure you wish to delete the following messages?')
+  $message = t('Are you sure you wish to recycle the following messages?')
            . theme('item_list', $messages);
 
-  $form = confirm_form(array(), t('Delete messages?'), $cancel_path,
-                       $message, t('Delete'), t('Cancel'), 'delete');
+  $form = confirm_form(array(), t('Recycle messages?'), $cancel_path,
+                       $message, t('Recycle'), t('Cancel'), 'delete');
 
   return $form;
 }
@@ -2113,7 +2144,7 @@ function privatemsg_delete_multiple_form_submit($form_id, $form_values) {
   }
   unset($_SESSION['privatemsg'], $_SESSION['fromfolder']);
 
-  drupal_set_message(t('Messages deleted.'));
+  drupal_set_message(t('Messages recycled.'));
 
   drupal_goto($path);
 }
@@ -2191,7 +2222,7 @@ function theme_privatemsg_view($message, $preview = FALSE, $prev = 0, $next = 0)
       }
     }
     if ($message->recipient == $user->uid || variable_get('privatemsg_sent_status', 1)) {
-      $links['privatemsg_delete'] = array('title' => t('Delete this message'), 'href' => 'privatemsg/delete/'. $message->id, 'attributes' => array('onclick' => "return confirm('". t('Are you sure to delete this message?') ."')"));
+      $links['privatemsg_delete'] = array('title' => t('Recycle this message'), 'href' => 'privatemsg/delete/'. $message->id, 'attributes' => array('onclick' => "return confirm('". t('Are you sure you want to recycle this message?') ."')"));
     }
 
     $links['privatemsg_list'] = array('title' => t('List messages'), 'href' => ($message->recipient == $user->uid && $message->folder) ? 'privatemsg/list/'. $message->folder : 'privatemsg');
@@ -2392,6 +2423,7 @@ function privatemsg_autocomplete($string) {
   if ($search != '') {
     $sql = "SELECT name FROM {users} u WHERE status <> 0 AND LOWER(name) LIKE LOWER('%s%%') AND ";
     $sql .= variable_get('privatemsg_default_allow', 1) ? '(data NOT LIKE \'%%:16:"privatemsg_allow";i:0%%\' OR data IS NULL)' : 'data LIKE \'%%:16:"privatemsg_allow";i:1%%\'';
+    $sql .= ' ORDER BY name_length ASC, name ASC';
     watchdog('privatemsg', $sql);
     $result = db_query_range($sql, $search, 0, 10);
     $prefix = count($names) ? implode(', ', $names) .', ' : '';
@@ -2490,7 +2522,7 @@ function privatemsg_invoke_privatemsg(&$message, $op) {
 
 function privatemsg_load($message_id) {
   global $user;
-  $sql = 'SELECT p.id, u.uid, u.name, p.author, p.timestamp, p.subject, p.message, p.newmsg, p.recipient, p.folder, p.format, p.thread, p.type FROM {privatemsg} p INNER JOIN {users} u ON p.author = u.uid WHERE p.id = %d';
+  $sql = 'SELECT p.id, u.uid, u.name, p.author, p.timestamp, p.subject, p.message, p.newmsg, p.recipient, p.folder, p.format, p.thread, p.type, p.variables FROM {privatemsg} p INNER JOIN {users} u ON p.author = u.uid WHERE p.id = %d';
   $params = array($message_id);
   if (!user_access('administer private messages')) {
     $sql .= ' AND (recipient = %d OR author = %d)';
@@ -2509,7 +2541,7 @@ function privatemsg_subscriptions_mailvars_pmsg($sid, $object_id, $placeholders,
     INNER JOIN {subscriptions_sent} ss ON u.uid = ss.uid
     WHERE u.status= 1 AND s.stype = 'pmsg%s' AND s.uid = %d";
   $result = db_query($sql, $sid, $message->recipient);
-  return array(
+  $mailvars = array(
     'result' => $result,
     '!message_sender' => $message->name,
     '!subject' => $message->subject,
@@ -2519,6 +2551,11 @@ function privatemsg_subscriptions_mailvars_pmsg($sid, $object_id, $placeholders,
     'send_self' => TRUE,
     '!type' => 'private message',
   );
+  $unserialized = unserialize($message->variables);
+  if (is_array($unserialized)) {
+    $mailvars = array_merge($mailvars, $unserialized);
+  }
+  return $mailvars;
 }
 
 function privatemsg_subscriptions_held_pmsg($message, $uid) {
@@ -2530,7 +2567,8 @@ function privatemsg_subscriptions_handle($message, $cron = FALSE) {
   if (!$cron) {
     subscriptions_hold($message, 'pmsg', 'insert', $message->uid);
   }
-  watchdog('debug', var_export($message, TRUE));
+  $variables = ($unserialized = unserialize($message->variables)) ? $unserialized : array();
+  privatemsg_mail_edit_variables($variables);
   subscriptions_mailvars($message->type, $message->id, $message->author, 'pmsg', $cron);
 }
 
@@ -2610,4 +2648,16 @@ function privatemsg_mailkeys() {
   }
   $mailkeys['private-message'] = 'private-message';
   return $mailkeys;
+}
+
+function privatemsg_mail_edit_variables(&$variables, $mailkey = NULL, $sender = NULL, $recipient = NULL) {
+  static $stored_variables = array();
+  if (isset($mailkey)) {
+    if (substr($mailkey, 0, 18) == 'subscriptions-pmsg') {
+      $variables = $stored_variables + $variables;
+    }
+  }
+  else {
+    $stored_variables = $variables;
+  }
 }

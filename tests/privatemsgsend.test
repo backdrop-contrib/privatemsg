@@ -1,0 +1,54 @@
+<?php
+// $Id$
+
+class PrivateMsgSend extends  DrupalTestCase {
+  /**
+   * Implementation of get_info() for information
+   */
+  function get_info() {
+    return array('name' => t('Privatemsg message send'), 'desc' => t('Send a message and check that it landed.') , 'group' => 'Privatemsg');
+  }
+
+  function tearDown() {
+    parent::tearDown();
+  }
+
+  function setUp() {
+    parent::setUp();
+  }
+
+  function testPrivateMsgSend() {
+    global $np_web_server;
+    /* Prepare a user to do the stuff */
+    $sender = $this->drupalCreateUserRolePerm(array('access private messages'));
+    $recipients[] = $this->drupalCreateUserRolePerm(array('access private messages'));
+    $recipients[] = $this->drupalCreateUserRolePerm(array('access private messages'));
+    $this->drupalLoginUser($sender, 'user-signin');
+    $edit = array();
+    $edit['subject']    = '!SimpleTest test message subject! ' . $this->randomName(10);
+    $edit['privatemsgbody']     = '!SimpleTest test message body! ' . $this->randomName(32) . ' ' . $this->randomName(32);
+    $this->drupalPostRequest('privatemsg/new', $edit, 'Send private message');
+    $this->asserttext(t('To field is required.'), t('To field is required'));
+    $edit['recipient'] = $this->randomName(128);
+    $this->drupalPostRequest('privatemsg/new', $edit, 'Send private message');
+    $this->assertText(t('The recipient does not exist.'), t('The recipient does not exist'));
+    $edit['recipient'] = 'mmeyers;nk';
+    $this->drupalPostRequest('privatemsg/new', $edit, 'Send private message');
+    $this->assertText(t('The recipient does not exist.'), t('The recipient does not exist'));
+    $edit['recipient'] = $sender->name;
+    $this->drupalPostRequest('privatemsg/new', $edit, 'Send private message');
+    $this->assertNoText(t('Message sent.'), t("Can't message yourself"));
+    $edit['recipient'] = $recipients[0]->name .','. $recipients[1]->name;
+    $this->drupalPostRequest('privatemsg/new', $edit, 'Send private message');
+    $this->assertText(t('Message sent.'), t("Can't message yourself."));
+    $this->drupalGet("$np_web_server.nowpublic.com/logout");
+    foreach ($recipients as $key => $recipient) {
+      $this->drupalLoginUser($recipient, 'user-signin');
+      $this->drupalGet("$np_web_server.nowpublic.com/privatemsg");
+      $this->assertText($edit['subject'], t('Subject found in listing'));
+      $result = $this->clickLink($edit['subject']);
+      $this->assertTrue(strpos($result, $edit['privatemsgbody']) !== FALSE, t('Message found'));
+      $this->drupalGet("$np_web_server.nowpublic.com/logout");
+    }
+  }
+}
