@@ -1,0 +1,165 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * The pm_archive module is an add-on for the privatemsg module that
+ * automatically archives private messages during cron runs. Eventually, all
+ * archive related code should be moved into this module.
+ *
+ * @author Karthik Kumar / Zen [ http://drupal.org/user/21209 ].
+ *
+ * @internal
+ *   The PM module needs a timestamp field to indicate when the message was
+ * read or something similar to correctly calculate the "age" of the message.
+ * Currently, if the age parameter is set to 30 days and the recipient reads the
+ * PM only on day 45, the message will be immediately archived, potentially
+ * without giving him a chance to reply.
+ *
+ * This module does not handle clean-up of the actual archive table as of yet. 
+ *
+ * Threads should also perhaps be taken into account. 
+ */
+
+// Folder type constants - avoid the use of 0 to simplify handling of checkbox
+// elements.
+define('PM_ARCHIVE_INBOX', 1);
+define('PM_ARCHIVE_CUSTOM', 2);
+define('PM_ARCHIVE_DELETED', 3);
+
+/**
+ * Implementation of hook_menu().
+ */
+function pm_archive_menu($may_cache) {
+  $items = array();
+
+  if ($may_cache) {
+    $items[] = array(
+      'path' => 'admin/settings/pm_archive',
+      'title' => t('PM archive'),
+      'description' => t('Configure archive settings for the pm_archive module.'),
+      'callback' => 'drupal_get_form',
+      'callback arguments' => array('pm_archive_settings_form'),
+      'access' => user_access('administer private messages')
+    );
+  }
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_cron().
+ */
+function pm_archive_cron() {
+  $age = time() - (pm_archive_variable_get('age') * 31 * 24 * 60 * 60);
+  $types = pm_archive_variable_get('types');
+
+  $base_move_sql = "INSERT INTO {privatemsg_archive} (id, author, recipient, subject, message, timestamp, hostname, folder, format, thread) 
+    SELECT pm.id, pm.author, pm.recipient, pm.subject, pm.message, pm.timestamp, pm.hostname, pm.folder, pm.format, pm.thread FROM {privatemsg} pm
+    WHERE pm.timestamp < %d ";
+  $base_delete_sql = "DELETE pm FROM {privatemsg} pm WHERE pm.timestamp < %d ";
+  $vars[] = $age;
+
+  foreach ($types as $type) {
+    $move_sql = $base_move_sql;
+    $delete_sql = $base_delete_sql;
+
+    switch ($type) {
+      case PM_ARCHIVE_DELETED:
+        // Clear recycle bin. Do not worry about read / unread status.
+        $where = 'AND pm.recipient_del > 0';
+        break;
+      case PM_ARCHIVE_CUSTOM:
+        // Delete expired messages from custom folders.
+        $where = 'AND pm.newmsg = 0 AND pm.folder > '. PRIVATEMSG_FOLDER_SENT;
+        break;
+      case PM_ARCHIVE_INBOX:
+        // Delete expired messages from the inbox.
+        $where = 'AND pm.newmsg = 0 AND pm.folder = '. PRIVATEMSG_FOLDER_INBOX;
+        break;
+    }
+
+    // Archive messages only if requested.
+    if (!pm_archive_variable_get('delete')) {
+      $move_sql .= $where;
+      db_query($move_sql, $vars);
+    }
+
+    $delete_sql .= $where;
+    db_query($delete_sql, $vars);
+  }
+}
+
+/**
+ * Menu callback: pm_archive module settings form.
+ */
+function pm_archive_settings_form() {
+  $form = array();
+
+  $form['pm_archive'] = array('#tree' => TRUE);
+  $form['pm_archive']['age'] = array(
+    '#type' => 'select',
+    '#title' => t('Age'),
+    '#description' => t('Only messages older than this value will be considered for archival.'),
+    '#options' => array(
+      1 => t('@count month', array('@count' => 1)),
+      3 => t('@count months', array('@count' => 3)),
+      6 => t('@count months', array('@count' => 6)),
+      12 => t('@count year', array('@count' => 1)),
+    ),
+    '#default_value' => pm_archive_variable_get('age')
+  );
+  $form['pm_archive']['types'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Configure the types of messages to archive'),
+    '#description' => t('Choose the types of messages to archive. Only messages <em>read</em> by the recipient are considered unless they are in the recycle bin. Sent messages are automatically handled along with the equivalent message in the recipient\'s folder.'),
+    '#options' => array(
+      PM_ARCHIVE_INBOX => t('Messages in the inbox folder'),
+      PM_ARCHIVE_CUSTOM => t('Messages in custom folders'),
+      PM_ARCHIVE_DELETED => t('Messages in the recycle bin')
+    ),
+    '#default_value' => pm_archive_variable_get('types')
+  );
+  $form['pm_archive']['delete'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Do not bother archiving messages - just delete them.'),
+    '#default_value' => pm_archive_variable_get('delete')
+  );
+
+  // Add validation handler to clean up checkboxes.
+  $form['#validate']['pm_archive_settings_form_validate'] = array();
+
+  return system_settings_form($form);
+}
+
+/**
+ * Validate pm_archive_settings_form submissions.
+ */
+function pm_archive_settings_form_validate($form_id, $form_values, $form) {
+  // Clean up checkboxes element.
+  form_set_value(array('#parents' => array('pm_archive', 'types')), array_filter($form_values['pm_archive']['types']));
+}
+
+/**
+ * Return a pm_archive module variable.
+ *
+ * @param $name
+ *   The name of the variable to retrieve.
+ * @return
+ *   The value of the variable requested.
+ */
+function pm_archive_variable_get($name) {
+  static $variables = array();
+
+  if (empty($variables)) {
+    $defaults = array(
+      'types' => array(PM_ARCHIVE_INBOX, PM_ARCHIVE_DELETED),
+      'age' => 3,
+      'delete' => FALSE
+    );
+    $variables = variable_get('pm_archive', array());
+    $variables = array_merge($defaults, $variables);
+  }
+
+  return $variables[$name];
+}
