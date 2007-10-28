@@ -537,7 +537,7 @@ function privatemsg_unblock_user($author, $recipient = NULL) {
 function privatemsg_block_user_form($account) {
   $form = array();
   $form['uid'] = array('#type' => 'value', '#value' => $account->uid);
-  return confirm_form($form, t('Are you sure you want to block !user from sending you any more messages?', array('!user' => $account->name)), 'user/'. $account->uid);
+  return confirm_form($form, t('Are you sure you want to block !user from sending you any more messages?', array('!user' => $account->name)), 'user/'. $account->uid, '');
 }
 
 function privatemsg_block_user_form_submit($form_id, $form_values) {
@@ -548,7 +548,7 @@ function privatemsg_block_user_form_submit($form_id, $form_values) {
 function privatemsg_unblock_user_form($account) {
   $form = array();
   $form['uid'] = array('#type' => 'value', '#value' => $account->uid);
-  return confirm_form($form, t('Are you sure you want to allow !user to send you messages?', array('!user' => $account->name)), 'user/'. $account->uid);
+  return confirm_form($form, t('Are you sure you want to allow !user to send you messages?', array('!user' => $account->name)), 'user/'. $account->uid, '');
 }
 
 function privatemsg_unblock_user_form_submit($form_id, $form_values) {
