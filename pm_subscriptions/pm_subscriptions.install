@@ -1,0 +1,41 @@
+<?php
+// $Id$
+
+function pm_subscriptions_install() {
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      db_query("CREATE TABLE {pm_subscriptions_mail_edit} (
+          type varchar(255) NOT NULL,
+          mailkey varchar(255) NOT NULL,
+          PRIMARY KEY (mailkey)
+        ) /*!40100 DEFAULT CHARACTER SET utf8 */"
+      );
+      break;
+    case 'pgsql':
+      db_query("CREATE TABLE {pm_subscriptions_mail_edit} (
+          type varchar(255) NOT NULL,
+          mailkey varchar(255) NOT NULL,
+          PRIMARY KEY (mailkey)
+        )"
+      );
+      break;
+  }
+
+  if (db_table_exists('mail_edit')) {
+    if (!db_result(db_query("SELECT COUNT(*) FROM {mail_edit} WHERE mailkey = 'private-message'"))) {
+      $ret[] = db_query("INSERT INTO {mail_edit} (mailkey, subject, description) VALUES ('private-message', '', '%s')", st('When someone contacts you directly'));
+    }
+  }
+  // Drop any pre-existing tables.
+  if (db_table_exists('privatemsg_mail_edit')) {
+    db_query("DROP TABLE {privatemsg_mail_edit}");
+  }
+  if (db_table_exists('privatemsg_mails')) {
+    db_query("DROP TABLE {privatemsg_mails}");
+  }
+}
+
+function pm_subscriptions_uninstall() {
+  db_query("DROP TABLE {pm_subscriptions_mail_edit}");
+}
