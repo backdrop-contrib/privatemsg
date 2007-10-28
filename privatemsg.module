@@ -1545,12 +1545,12 @@ function privatemsg_new_form_validate($form_id, $form_values) {
   if (!empty($form_values['recipient'])) {
     $recipients = explode(',', $form_values['recipient']);
     foreach ($recipients as $recipient) {
-      $recipient = user_load(array('name' => trim($recipient)));
-      if (!$recipient->uid) {
+      $account = user_load(array('name' => trim($recipient)));
+      if (!$account) {
         form_set_error('recipient', t('The recipient %name does not exist.', array('%name' => $recipient)));
       }
-      else if (!$recipient->status || !$recipient->privatemsg_allow) {
-        form_set_error('recipient', t('%name does not accept private messages.', array('%name' => $recipient->name)));
+      else if (!$account->status || !$account->privatemsg_allow) {
+        form_set_error('recipient', t('%name does not accept private messages.', array('%name' => $account->name)));
       }
     }
   }
