@@ -1707,7 +1707,7 @@ function privatemsg_contacts_form() {
     $result = db_query("SELECT u.name, u.uid FROM {buddylist} AS b LEFT JOIN "
                       ."{users} AS u ON b.buddy = u.uid WHERE b.uid = %d", $user->uid);
     while ($buddy = db_fetch_object($result)) {
-      $contacts[check_plain($buddy->uid)] = $buddy->uid;
+      $contacts[check_plain($buddy->name)] = $buddy->uid;
     }
   }
 
