@@ -1496,11 +1496,13 @@ function privatemsg_new_form($message = NULL) {
   $form['filter_form'] = filter_form($message->format);
   $form['preview'] = array(
     '#type' => 'submit',
-    '#value' => t('Preview')
+    '#value' => t('Preview'),
+    '#weight' => 9
   );
   $form['send'] = array(
     '#type' => 'submit',
-    '#value' => t('Send private message')
+    '#value' => t('Send private message'),
+    '#weight' => 10
   );
   $form['#after_build'] = array('_privatemsg_new_preview');
 
