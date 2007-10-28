@@ -1138,7 +1138,7 @@ function privatemsg_manage_folders() {
       $operations = '';
     }
     $rows[] = array(
-      l($folder['name'], $fid > 0 ? 'privatemsg/list/'. $fid : 'privatemsg'),
+      l($folder['name'], $fid != 0 ? 'privatemsg/list/'. $fid : 'privatemsg'),
       array('data' => $msg_count, 'align' => 'center'),
       is_array($operations) ? implode(' &nbsp; ', $operations) : $operations,
     );
