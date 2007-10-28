@@ -2368,7 +2368,6 @@ function privatemsg_autocomplete($string) {
     $sql = "SELECT name FROM {users} u WHERE status <> 0 AND LOWER(name) LIKE LOWER('%s%%') AND ";
     $sql .= variable_get('privatemsg_default_allow', 1) ? '(data NOT LIKE \'%%:16:"privatemsg_allow";i:0%%\' OR data IS NULL)' : 'data LIKE \'%%:16:"privatemsg_allow";i:1%%\'';
     $sql .= ' ORDER BY name ASC';
-    watchdog('privatemsg', $sql);
     $result = db_query_range($sql, $search, 0, 10);
     $prefix = count($names) ? implode(', ', $names) .', ' : '';
     $matches = array();
