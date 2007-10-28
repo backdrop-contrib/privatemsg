@@ -1,5 +1,4 @@
 ; $Id$
 name = Privatemsg
-description = Allow private messages between users. Requires Subscriptions 5.x-2.x.
-dependencies = mail_edit subscriptions
+description = Allow private messages between users.
 package = Mail

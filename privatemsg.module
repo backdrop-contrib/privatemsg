@@ -273,7 +273,7 @@ function privatemsg_menu($may_cache) {
  * Implementation of hook_perm().
  */
 function privatemsg_perm() {
-  return array('access private messages', 'administer private messages', 'create new folder', 'subscribe to private messages');
+  return array('access private messages', 'administer private messages', 'create new folder');
 }
 
 /**
@@ -474,37 +474,6 @@ function privatemsg_form_alter($form_id, &$form) {
         ),
       );
       break;
-    case 'mail_edit_form':
-      $mailkey = $form['mailkey']['#value'];
-      if ($mailkey == 'private-message') {
-        unset($form['body'], $form['subject'], $form['help']);
-      }
-      elseif (substr($mailkey, 0, 19) != 'subscriptions-pmsg-') {
-        $form['privatemsg_type'] = array(
-          '#type' => 'textfield',
-          '#title' => t('Private message type'),
-          '#default_value' => db_result(db_query("SELECT type FROM {privatemsg_mail_edit} WHERE mailkey = '%s'", $mailkey)),
-          '#description' => t('Fill this in to send a private message instead of the mail (when the recipient has an account on %site). In the folder view, users will be able to filter on this. Example: contact mails.', array('%site' => variable_get('site_name', t('Drupal')))),
-          '#weight' => 1,
-        );
-        $form['#submit']['privatemsg_mail_edit_submit'] = array();
-      }
-      else {
-        $form['help']['#variables']['!message_sender'] = t('The name of the sender of the private message');
-      }
-  }
-}
-
-function privatemsg_mail_edit_submit($form_id, $form_values) {
-  if ($form_values['privatemsg_type']) {
-    $args = array($form_values['privatemsg_type'], $form_values['mailkey']);
-    if ($form_values['insert']) {
-      db_query("INSERT {privatemsg_mail_edit} (type, mailkey) VALUES ('%s', '%s')", $args);
-    }
-    else {
-      db_query("UPDATE {privatemsg_mail_edit} SET type = '%s' WHERE mailkey = '%s'", $args);
-    }
-    cache_clear_all();
   }
 }
 
@@ -523,30 +492,6 @@ function privatemsg_block($op = 'list', $delta = 0, $edit = array()) {
     }
   }
 }
-
-/**
- * Implementation of hook_subscriptions().
- */
-function privatemsg_subscriptions($op) {
-  switch ($op) {
-    case 'menu':
-      return array(
-        'pmsg' => array(
-          'access' => 'subscribe to private messages',
-          'title' => t('private messages'),
-        ),
-      );
-    case 'stype':
-    case 'ptype':
-      return array('pmsg');
-    case 'stype_map':
-      return array(
-        'pmsg' => array('sid' => 'message_id'),
-      );
-  }
-}
-
-
 
 function privatemsg_message_allowed($recipient, $author = NULL) {
   $author = $author ? $author : $GLOBALS['user']->uid;
@@ -1706,7 +1651,8 @@ function _privatemsg_send($sender, $recipient, $subject, $body, $format, $thread
   if ($points = variable_get('privatemsg_userpoints', 0)) {
     module_invoke('userpoints', 'userpointsapi', 'points', $points, $sender->uid, 'privatemsg');
   }
-  privatemsg_subscriptions_handle(privatemsg_load($message_id));
+  module_invoke('pm_subscriptions', 'subscriptions_handle', privatemsg_load($message_id));
+
   return $result ? $message_id : $result;
 }
 
@@ -2423,7 +2369,7 @@ function privatemsg_autocomplete($string) {
   if ($search != '') {
     $sql = "SELECT name FROM {users} u WHERE status <> 0 AND LOWER(name) LIKE LOWER('%s%%') AND ";
     $sql .= variable_get('privatemsg_default_allow', 1) ? '(data NOT LIKE \'%%:16:"privatemsg_allow";i:0%%\' OR data IS NULL)' : 'data LIKE \'%%:16:"privatemsg_allow";i:1%%\'';
-    $sql .= ' ORDER BY name_length ASC, name ASC';
+    $sql .= ' ORDER BY name ASC';
     watchdog('privatemsg', $sql);
     $result = db_query_range($sql, $search, 0, 10);
     $prefix = count($names) ? implode(', ', $names) .', ' : '';
@@ -2522,7 +2468,7 @@ function privatemsg_invoke_privatemsg(&$message, $op) {
 
 function privatemsg_load($message_id) {
   global $user;
-  $sql = 'SELECT p.id, u.uid, u.name, p.author, p.timestamp, p.subject, p.message, p.newmsg, p.recipient, p.folder, p.format, p.thread, p.type, p.variables FROM {privatemsg} p INNER JOIN {users} u ON p.author = u.uid WHERE p.id = %d';
+  $sql = 'SELECT p.id, u.uid, u.name, p.author, p.timestamp, p.subject, p.message, p.newmsg, p.recipient, p.folder, p.format, p.thread, p.type FROM {privatemsg} p INNER JOIN {users} u ON p.author = u.uid WHERE p.id = %d';
   $params = array($message_id);
   if (!user_access('administer private messages')) {
     $sql .= ' AND (recipient = %d OR author = %d)';
@@ -2531,133 +2477,4 @@ function privatemsg_load($message_id) {
   }
   $result = db_query($sql, $params);
   return db_fetch_object($result);
-}
-
-function privatemsg_subscriptions_mailvars_pmsg($sid, $object_id, $placeholders, $sql_args) {
-  $message = privatemsg_load($object_id);
-  $sql = "SELECT u.uid, u.name, u.mail, u.language
-    FROM {users} u
-    INNER JOIN {subscriptions} s ON u.uid = s.uid AND send_interval != -1
-    INNER JOIN {subscriptions_sent} ss ON u.uid = ss.uid
-    WHERE u.status= 1 AND s.stype = 'pmsg%s' AND s.uid = %d";
-  $result = db_query($sql, $sid, $message->recipient);
-  $mailvars = array(
-    'result' => $result,
-    '!message_sender' => $message->name,
-    '!subject' => $message->subject,
-    '!title' => $message->subject,
-    '!url' => url('privatemsg/view/'. $object_id, NULL, NULL, TRUE),
-    'postfix' => 'pmsg-'. $sid,
-    'send_self' => TRUE,
-    '!type' => 'private message',
-  );
-  $unserialized = unserialize($message->variables);
-  if (is_array($unserialized)) {
-    $mailvars = array_merge($mailvars, $unserialized);
-  }
-  return $mailvars;
-}
-
-function privatemsg_subscriptions_held_pmsg($message, $uid) {
-  privatemsg_subscriptions_handle($message, TRUE);
-  return TRUE;
-}
-
-function privatemsg_subscriptions_handle($message, $cron = FALSE) {
-  if (!$cron) {
-    subscriptions_hold($message, 'pmsg', 'insert', $message->uid);
-  }
-  $variables = ($unserialized = unserialize($message->variables)) ? $unserialized : array();
-  privatemsg_mail_edit_variables($variables);
-  subscriptions_mailvars($message->type, $message->id, $message->author, 'pmsg', $cron);
-}
-
-function privatemsg_subscriptions_page_pmsg($account) {
-  return drupal_get_form('privatemsg_subscriptions_form', $account);
-}
-
-function privatemsg_subscriptions_form($account) {
-  include_once drupal_get_path('module', 'subscriptions') .'/subscriptions.admin.inc';
-  $result = db_query("
-    SELECT type, description, send_interval, stype
-    FROM {privatemsg_mail_edit} p
-    LEFT JOIN {mail_edit} m ON p.mailkey = m.mailkey
-    LEFT JOIN {subscriptions} s ON concat('pmsg', type) = stype AND uid = %d
-    ORDER BY type", $account->uid);
-  $intervals = _subscriptions_send_intervals();
-  $default_value = array();
-  while ($type = db_fetch_object($result)) {
-    $index = $type->type;
-    $checkboxes[$index] = $type->description;
-    $key = _privatemsg_get_type_key($type->type);
-    if (!isset($account->$key) || $account->$key) {
-      $default_value[] = $index;
-      $select_default = $type->send_interval;
-    }
-    else {
-      $select_default = -1;
-    }
-    $form['subscriptions']['select'][$index] = array(
-      '#type' => 'select',
-      '#options' => $intervals,
-      '#default_value' => $select_default,
-    );
-  }
-  $form['subscriptions']['checkbox'] = array(
-    '#type' => 'checkboxes',
-    '#options' => $checkboxes,
-    '#default_value' => $default_value,
-  );
-  $form['subscriptions']['select']['#tree'] = TRUE;
-  $form['subscriptions']['#theme'] = 'subscriptions_form_table';
-  $form['submit'] = array(
-    '#type' => 'submit',
-    '#value' => t('Save'),
-  );
-  $form['account'] = array('#type' => 'value', '#value' => $account);
-  return $form;
-}
-
-function privatemsg_subscriptions_form_submit($form_id, $form_values) {
-  $uid = $form_values['account']->uid;
-  db_query("DELETE FROM {subscriptions} WHERE stype LIKE 'pmsg%%' AND uid = %d", $uid);
-  foreach (array_keys(array_filter($form_values['checkbox'])) as $sid) {
-    subscriptions_add(0, $uid, 'pmsg'. $sid, $form_values['select'][$sid]);
-  }
-  $account = new stdClass();
-  $account->uid = $uid;
-  $privatemsg_settings = array();
-  foreach($form_values['checkbox'] as $type => $checked) {
-    $key = _privatemsg_get_type_key($type);
-    $privatemsg_settings[$key] = $checked ? 1 : 0;
-    // special case - type 'private-message' indicates whether a user wants to
-    // allow contact via direct private message at all.  we need to link this to the
-    // privatemsg_allow preference setting, so that the "contact" tab reacts correctly
-    if ($type == 'private-message') {
-      $privatemsg_settings['privatemsg_allow'] = $checked ? 1 : 0;
-    }
-  }
-  $account = user_save($account, $privatemsg_settings);
-}
-
-function privatemsg_mailkeys() {
-  $mailkeys = array();
-  $result = db_query('SELECT type FROM {privatemsg_mail_edit}');
-  while ($type = db_fetch_object($result)) {
-    $mailkeys['subscriptions-pmsg-'. $type->type] = 'subscriptions-pmsg-'. $type->type;
-  }
-  $mailkeys['private-message'] = 'private-message';
-  return $mailkeys;
-}
-
-function privatemsg_mail_edit_variables(&$variables, $mailkey = NULL, $sender = NULL, $recipient = NULL) {
-  static $stored_variables = array();
-  if (isset($mailkey)) {
-    if (substr($mailkey, 0, 18) == 'subscriptions-pmsg') {
-      $variables = $stored_variables + $variables;
-    }
-  }
-  else {
-    $stored_variables = $variables;
-  }
 }
