@@ -638,7 +638,7 @@ function privatemsg_configure() {
     '#type' => 'fieldset',
     '#title' => t('Welcome message for new users'),
   );
-  $form['welcome']['subject'] = array(
+  $form['welcome']['privatemsg_welcome_subject'] = array(
     '#type' => 'textfield',
     '#title' => t('Subject'),
     '#default_value' => variable_get('privatemsg_welcome_subject', t('Welcome')),
