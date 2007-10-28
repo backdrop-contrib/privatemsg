@@ -1464,8 +1464,6 @@ function privatemsg_new_form($message = NULL) {
     unset($_SESSION['recipients']);
   }
 
-  $form = array('preview' => array());
-
   $form['thread'] = array('#type' => 'value', '#value' => isset($message->thread) ? $message->thread : 0);
   $form['header']['#theme'] = 'privatemsg_new_msg_header';
   $form['header']['recipient'] = array(
@@ -1496,13 +1494,11 @@ function privatemsg_new_form($message = NULL) {
   $form['filter_form'] = filter_form($message->format);
   $form['preview'] = array(
     '#type' => 'submit',
-    '#value' => t('Preview'),
-    '#weight' => 9
+    '#value' => t('Preview')
   );
   $form['send'] = array(
     '#type' => 'submit',
-    '#value' => t('Send private message'),
-    '#weight' => 10
+    '#value' => t('Send private message')
   );
   $form['#after_build'] = array('_privatemsg_new_preview');
 
