@@ -28,11 +28,11 @@ function privatemsg_help($section) {
  * Implementation of hook_menu().
  */
 function privatemsg_menu($may_cache) {
-  $access = user_access('access private messages');
-  $items = array();
   global $user;
+
+  $items = array();
+  $access = user_access('access private messages');
   if ($may_cache) {
-    $access = user_access('access private messages');
     $items[] = array(
       'path' => 'admin/settings/privatemsg',
       'title' => t('Privatemsg'),
