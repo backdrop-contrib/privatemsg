@@ -6,6 +6,25 @@ define('PRIVATEMSG_FOLDER_INBOX', 0);
 define('PRIVATEMSG_FOLDER_SENT', 1);
 
 /**
+ * Implementation of hook_help().
+ */
+function privatemsg_help($section) {
+  switch ($section) {
+    case 'admin/help#privatemsg':
+      $output = '<p>'. t('The private messaging module allows users to send messages to each other without having to share email addresses. An inbox link will appear in the navigation menu. The "write to author" links are included in posts, allowing users to write a private message instead of commenting openly. Allowing users to communicate directly is an important  part of building the strength of the community.') .'</p>';
+      $output .= '<p>'. t('The contacts list contains only users that you have previously messaged. To contact users not in your list, you need to know their local user name. Administrators can set messaging options such as frequency of emails, message status display, and number of messages to display per page. They can also configure \'Write to Author\' options.') .'</p>';
+      $output .= t('<p>You can</p>
+<ul>
+<li>administer privatemsg at <a href="!admin-settings-privatemsg">administer &gt;&gt; settings &gt;&gt; private message</a>.</li>
+<li>view your private messages at <a href="!privatemsg">view inbox</a>.</li>
+</ul>', array('!admin-settings-privatemsg' => url('admin/settings/privatemsg'), '!privatemsg' => url('privatemsg')));
+      $output .= '<p>'. t('For more information please read the configuration and customization handbook <a href="!privatemsg">Privatemsg page</a>.', array('!privatemsg' => 'http://drupal.org/handbook/modules/privatemsg/')) .'</p>';
+
+      return $output;
+  }
+}
+
+/**
  * Implementation of hook_menu().
  */
 function privatemsg_menu($may_cache) {
@@ -285,34 +304,6 @@ function privatemsg_cron() {
 }
 
 /**
- * Implementation of hook_help().
- */
-function privatemsg_help($section) {
-  switch ($section) {
-    case 'admin/help#privatemsg':
-      $output = '<p>'. t('The private messaging module allows users to send messages to each other without having to share email addresses. An inbox link will appear in the navigation menu. The "write to author" links are included in posts, allowing users to write a private message instead of commenting openly. Allowing users to communicate directly is an important  part of building the strength of the community.') .'</p>';
-      $output .= '<p>'. t('The contacts list contains only users that you have previously messaged. To contact users not in your list, you need to know their local user name. Administrators can set messaging options such as frequency of emails, message status display, and number of messages to display per page. They can also configure \'Write to Author\' options.') .'</p>';
-      $output .= t('<p>You can</p>
-<ul>
-<li>administer privatemsg at <a href="!admin-settings-privatemsg">administer &gt;&gt; settings &gt;&gt; private message</a>.</li>
-<li>view your private messages at <a href="!privatemsg">view inbox</a>.</li>
-</ul>', array('!admin-settings-privatemsg' => url('admin/settings/privatemsg'), '!privatemsg' => url('privatemsg')));
-      $output .= '<p>'. t('For more information please read the configuration and customization handbook <a href="!privatemsg">Privatemsg page</a>.', array('!privatemsg' => 'http://drupal.org/handbook/modules/privatemsg/')) .'</p>';
-
-      return $output;
-  }
-}
-
-/**
- * Implementation of hook_simpletest
- */
-function privatemsg_simpletest() {
-  $dir = drupal_get_path('module', 'privatemsg') .'/tests';
-  $tests = file_scan_directory($dir, '\.test$');
-  return array_keys($tests);
-}
-
-/**
  * Implementation of hook_link().
  */
 function privatemsg_link($type, $node = NULL, $teaser = FALSE) {
@@ -483,6 +474,28 @@ function privatemsg_block($op = 'list', $delta = 0, $edit = array()) {
         return _privatemsg_block_inbox();
     }
   }
+}
+
+/**
+ * Implementation of hook privatemsg_alter
+ */
+function privatemsg_privatemsg_alter($sender = NULL, $recipient = NULL, $subject = NULL, $body = NULL, $format = NULL, $thread = NULL, $type = NULL) {
+  $key = _privatemsg_get_type_key($type);
+  // use isset() and ! here to determine if the user has actually set the preference to FALSE
+  // explicitly - allow message otherwise (if the user has specified no preference)
+  if (isset($recipient->$key) && !$recipient->$key) {
+    return FALSE;
+  }
+  return TRUE;
+}
+
+/**
+ * Implementation of hook_simpletest
+ */
+function privatemsg_simpletest() {
+  $dir = drupal_get_path('module', 'privatemsg') .'/tests';
+  $tests = file_scan_directory($dir, '\.test$');
+  return array_keys($tests);
 }
 
 function privatemsg_message_allowed($recipient, $author = NULL) {
@@ -1644,19 +1657,6 @@ function _privatemsg_send($sender, $recipient, $subject, $body, $format, $thread
   module_invoke('pm_subscriptions', 'subscriptions_handle', privatemsg_load($message_id));
 
   return $result ? $message_id : $result;
-}
-
-/**
- * Implementation of hook privatemsg_alter
- */
-function privatemsg_privatemsg_alter($sender = NULL, $recipient = NULL, $subject = NULL, $body = NULL, $format = NULL, $thread = NULL, $type = NULL) {
-  $key = _privatemsg_get_type_key($type);
-  // use isset() and ! here to determine if the user has actually set the preference to FALSE
-  // explicitly - allow message otherwise (if the user has specified no preference)
-  if (isset($recipient->$key) && !$recipient->$key) {
-    return FALSE;
-  }
-  return TRUE;
 }
 
 /**
