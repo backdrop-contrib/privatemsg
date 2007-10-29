@@ -38,8 +38,8 @@ function mail_edit_mail_alter(&$mailkey, &$to, &$subject, &$body, &$from, &$head
   }
   if (!isset($alters[$mailkey])) {
     $sql = "SELECT * FROM {mail_edit} m";
-    if (module_exists('privatemsg')) {
-      $sql .= ' LEFT JOIN {privatemsg_mail_edit} p ON m.mailkey = p.mailkey';
+    if (module_exists('pm_subscriptions')) {
+      $sql .= ' LEFT JOIN {pm_subscriptions_mail_edit} p ON m.mailkey = p.mailkey';
     }
     $sql .= " WHERE m.mailkey = '%s'";
     $alters[$mailkey] = db_fetch_object(db_query($sql, $mailkey));
