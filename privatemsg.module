@@ -956,7 +956,7 @@ function privatemsg_list_form($messages, $folders, $current_folder, $account) {
   );
 
   if (count($messages) > 0) {
-    $js = array('deleteMessage' => t('Are you sure you want to recycle these messages?'));
+    $js = array('deleteMessage' => t('Are you sure you want to delete these messages?'));
     $del = variable_get('privatemsg_actions_loc', 1);
     $form['selected'] = array(
       '#type' => 'fieldset',
@@ -993,7 +993,7 @@ function privatemsg_list_form($messages, $folders, $current_folder, $account) {
       case PRIVATEMSG_FOLDER_SENT:
         $actions['delete'] = array(
           '#type' => 'submit',
-          '#value' => t('Recycle'),
+          '#value' => t('Delete'),
         );
     }
 
@@ -1050,12 +1050,12 @@ function privatemsg_list_form_submit($form_id, $form_values) {
   $where = $where1 .'recipient = %d';
   $new = 0;
   switch ($form_values['op']) {
-    case t('Recycle'):
+    case t('Delete'):
       if ($_POST['js_bypass'] == 1) {
         foreach ($selected as $mid => $message) {
           _privatemsg_delete($mid);
         }
-        drupal_set_message(t('Messages recycled.'));
+        drupal_set_message(t('Messages deleted.'));
       }
       else {
         $_SESSION['privatemsg'] = $form_values['messages'];
@@ -1902,7 +1902,7 @@ function privatemsg_view_form($message) {
   if ($del == '1') {
     $form['actions']['delete'] = array(
       '#type' => 'submit',
-      '#value' => t('Recycle'),
+      '#value' => t('Delete'),
       '#prefix' => ' &nbsp; &nbsp;',
       '#attributes' => array('class' => 'pm-add-delete pm-spacer'),
     );
@@ -1937,7 +1937,7 @@ function privatemsg_view_form($message) {
   if ($del == '2') {
     $form['actions']['delete'] = array(
       '#type' => 'submit',
-      '#value' => t('Recycle'),
+      '#value' => t('Delete'),
       '#prefix' => ' &nbsp; &nbsp;',
       '#attributes' => array('class' => 'pm-add-delete pm-spacer'),
     );
@@ -1946,7 +1946,7 @@ function privatemsg_view_form($message) {
   // only add the JS once, otherwise we get dupllicated JS confirm messages on thread views
   static $count = 0;
   if ($count == 0) {
-    $js = array('deleteMessage' => t('Are you sure you want to recycle this message?'));
+    $js = array('deleteMessage' => t('Are you sure you want to delete this message?'));
 
     drupal_add_js(drupal_get_path('module', 'privatemsg') .'/privatemsg.js');
     drupal_add_js(array('privatemsg' => $js), 'setting');
@@ -1962,7 +1962,7 @@ function privatemsg_view_form_submit($form_id, $form_values) {
   switch ($form_values['op']) {
     case t('Reply'):
       drupal_goto('privatemsg/reply/'. $form_values['pm_id']);
-    case t('Recycle'):
+    case t('Delete'):
       if ($_POST['js_bypass'] == 1) {
         drupal_goto('privatemsg/delete/'. $form_values['pm_id']);
       }
@@ -2023,17 +2023,17 @@ function privatemsg_delete() {
   }
 
   if (($folder = _privatemsg_delete(arg(2))) !== FALSE) {
-    drupal_set_message(t('Message recycled.'));
+    drupal_set_message(t('Message deleted.'));
   }
   drupal_goto($folder ? 'privatemsg/list/'. $folder : 'privatemsg');
 }
 
 function privatemsg_delete_form($mid) {
   $subject = db_result(db_query("SELECT subject FROM {privatemsg} WHERE id = %d", $mid));
-  $message = t('Are you sure you wish to recycle the message %subject?', array('%subject' => $subject));
+  $message = t('Are you sure you wish to delete the message %subject?', array('%subject' => $subject));
 
-  $form = confirm_form(array(), t('Recycle message?'), 'privatemsg/view/'. $mid,
-                       $message, t('Recycle'), t('Cancel'), 'delete');
+  $form = confirm_form(array(), t('Delete message?'), 'privatemsg/view/'. $mid,
+                       $message, t('Delete'), t('Cancel'), 'delete');
 
   return $form;
 }
@@ -2056,11 +2056,11 @@ function privatemsg_delete_multiple_form() {
     $cancel_path = 'privatemsg/list/'. $_SESSION['fromfolder'];
   }
 
-  $message = t('Are you sure you wish to recycle the following messages?')
+  $message = t('Are you sure you wish to delete the following messages?')
            . theme('item_list', $messages);
 
-  $form = confirm_form(array(), t('Recycle messages?'), $cancel_path,
-                       $message, t('Recycle'), t('Cancel'), 'delete');
+  $form = confirm_form(array(), t('Delete messages?'), $cancel_path,
+                       $message, t('Delete'), t('Cancel'), 'delete');
 
   return $form;
 }
@@ -2080,7 +2080,7 @@ function privatemsg_delete_multiple_form_submit($form_id, $form_values) {
   }
   unset($_SESSION['privatemsg'], $_SESSION['fromfolder']);
 
-  drupal_set_message(t('Messages recycled.'));
+  drupal_set_message(t('Messages deleted.'));
 
   drupal_goto($path);
 }
@@ -2158,7 +2158,7 @@ function theme_privatemsg_view($message, $preview = FALSE, $prev = 0, $next = 0)
       }
     }
     if ($message->recipient == $user->uid || variable_get('privatemsg_sent_status', 1)) {
-      $links['privatemsg_delete'] = array('title' => t('Recycle this message'), 'href' => 'privatemsg/delete/'. $message->id, 'attributes' => array('onclick' => "return confirm('". t('Are you sure you want to recycle this message?') ."')"));
+      $links['privatemsg_delete'] = array('title' => t('Delete this message'), 'href' => 'privatemsg/delete/'. $message->id, 'attributes' => array('onclick' => "return confirm('". t('Are you sure you want to delete this message?') ."')"));
     }
 
     $links['privatemsg_list'] = array('title' => t('List messages'), 'href' => ($message->recipient == $user->uid && $message->folder) ? 'privatemsg/list/'. $message->folder : 'privatemsg');
