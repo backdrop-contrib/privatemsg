@@ -288,22 +288,17 @@ function privatemsg_cron() {
  * Implementation of hook_help().
  */
 function privatemsg_help($section) {
-  if (preg_match('#^admin/build/menu/item/edit/(\d+)$#', $section, $match)) {
-    $menu_path = db_result(db_query('SELECT path FROM {menu} WHERE mid = %d', $match[1]));
-    if ($menu_path == 'privatemsg') {
-      return t('To move the inbox link to another menu location, enable this menu item and set the location, then disable this menu item again. To change the text for the inbox link, visit <a href="!settings-url">privatemsg settings</a>.', array('!settings-url' => url('admin/settings/privatemsg')));
-    }
-  }
   switch ($section) {
     case 'admin/help#privatemsg':
-      $output = '<p>'. t('The private messaging module allows users to send messages to each other without having to share email addresses. An inbox link will appear in the navigation menu. The "write to author" links are included in posts, allowing users to write a private message instead of commenting openly.  Allowing users to communicate directly is an important  part of building the strength of the community.') .'</p>';
-      $output .= '<p>'. t('Users can also select whether to receive email notices of new messages by editing their user profile.  The contacts list contains only users that you have previously messaged. To contact users not in your list, you need to know their local user name.  Administrators can set messaging options such as frequency of emails, message status display, and number of messages to display per page.   They can also configure \'Write to Author\' options.') .'</p>';
+      $output = '<p>'. t('The private messaging module allows users to send messages to each other without having to share email addresses. An inbox link will appear in the navigation menu. The "write to author" links are included in posts, allowing users to write a private message instead of commenting openly. Allowing users to communicate directly is an important  part of building the strength of the community.') .'</p>';
+      $output .= '<p>'. t('The contacts list contains only users that you have previously messaged. To contact users not in your list, you need to know their local user name. Administrators can set messaging options such as frequency of emails, message status display, and number of messages to display per page. They can also configure \'Write to Author\' options.') .'</p>';
       $output .= t('<p>You can</p>
 <ul>
-<li>administer privatemsg at <a href="%admin-settings-privatemsg">administer &gt;&gt; settings &gt;&gt; private message</a>.</li>
-<li>view your private messages at <a href="%privatemsg">view inbox</a>.</li>
-', array('%admin-settings-privatemsg' => url('admin/settings/privatemsg'), '%privatemsg' => url('privatemsg'))) .'</ul>';
+<li>administer privatemsg at <a href="!admin-settings-privatemsg">administer &gt;&gt; settings &gt;&gt; private message</a>.</li>
+<li>view your private messages at <a href="!privatemsg">view inbox</a>.</li>
+</ul>', array('!admin-settings-privatemsg' => url('admin/settings/privatemsg'), '!privatemsg' => url('privatemsg')));
       $output .= '<p>'. t('For more information please read the configuration and customization handbook <a href="!privatemsg">Privatemsg page</a>.', array('!privatemsg' => 'http://drupal.org/handbook/modules/privatemsg/')) .'</p>';
+
       return $output;
   }
 }
@@ -1623,7 +1618,7 @@ function _privatemsg_send($sender, $recipient, $subject, $body, $format, $thread
   }
 
   // hook to allow other modules to alter any aspect of a privatemsg
-  // by accepting these params by reference.  Any module can cancel a
+  // by accepting these params by reference. Any module can cancel a
   // privatemsg by returning false here
   foreach (module_implements('privatemsg_alter') as $name) {
     $function = $name .'_privatemsg_alter';
