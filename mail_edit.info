@@ -1,4 +1,0 @@
-; $Id$
-name = Mail Editor
-description = Allows editing of all mails
-package = Mail
