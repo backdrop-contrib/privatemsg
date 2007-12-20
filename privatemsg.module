@@ -190,7 +190,7 @@ function privatemsg_menu($may_cache) {
         'weight' => 0,
       );
     }
-    if (arg(0) == 'privatemsg' && arg(1) == 'block' && ($account = user_load(array('uid' => arg(2))))) {
+    if ($user-> uid != arg(2) && arg(0) == 'privatemsg' && arg(1) == 'block' && ($account = user_load(array('uid' => arg(2))))) {
       $blocked = privatemsg_user_blocked($account->uid);
       $title_args = array('@user' => $account->name);
       $items[] = array(
@@ -333,6 +333,8 @@ function privatemsg_link($type, $node = NULL, $teaser = FALSE) {
  * Implementation of hook_user().
  */
 function privatemsg_user($type, &$edit, &$account, $category = NULL) {
+  global $user;
+
   switch ($type) {
     case 'load':
       _privatemsg_user_add_defaults($account);
@@ -345,18 +347,22 @@ function privatemsg_user($type, &$edit, &$account, $category = NULL) {
              'title' => t('Send private message to @name', array('@name' => $account->name)))),
             'class' => 'send-message');
         }
-        if (!privatemsg_user_blocked($account->uid)) {
-          $return[t('Private messages')][] = array(
-          'value' => l(t('Block messages'), 'privatemsg/block/'. $account->uid, array(
-          'title' => t('Block private messages from @name', array('@name' => $account->name)))),
-          'class' => 'block-message');
+        if ($account->uid != $user->uid) {
+          if (!privatemsg_user_blocked($account->uid) ) {
+            $return[t('Private messages')][] = array(
+              'value' => l(t('Block messages'), 'privatemsg/block/'. $account->uid, array(
+              'title' => t('Block private messages from @name', array('@name' => $account->name)))),
+              'class' => 'block-message'
+            );
+          }
+          else  {
+            $return[t('Private messages')][] = array(
+              'value' => l(t('Unblock messages'), 'privatemsg/block/'. $account->uid, array(
+              'title' => t('Unblock private messages from @name', array('@name' => $account->name)))),
+              'class' => 'unblock-message');
+          }
         }
-        else  {
-          $return[t('Private messages')][] = array(
-            'value' => l(t('Unblock messages'), 'privatemsg/block/'. $account->uid, array(
-             'title' => t('Unblock private messages from @name', array('@name' => $account->name)))),
-            'class' => 'unblock-message');
-        }
+
         return $return;
       }
       elseif ($GLOBALS['user']->uid) {
