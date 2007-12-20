@@ -13,6 +13,10 @@
   width: 100%;
 }
 
+.pm-block-link {
+  margin-left: 1em;
+}
+
 .pm-spacer {
   margin-left: 1em;
 }

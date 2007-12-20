@@ -2181,6 +2181,14 @@ function theme_privatemsg_view($message, $preview = FALSE, $prev = 0, $next = 0)
   }
   else {
     $pm_from = theme('privatemsg_username', $message);
+    if ($message->author != $user->uid) {
+      if (!privatemsg_user_blocked($message->author)) {
+        $pm_from .= t('<span class="pm-block-link">(<a href="!block-link">Block user</a>)</span>', array('!block-link' => url('privatemsg/block/'. $message->author, drupal_get_destination())));
+      }
+      else {
+        $pm_from .= t('<span class="pm-block-link">(<a href="!block-link">Unblock user</a>)</span>', array('!block-link' => url('privatemsg/block/'. $message->author, drupal_get_destination())));
+      }
+    }
   }
   $rows[] = array(
     array('data' => t('From:'), 'class' => 'title-cell', 'nowrap' => 'nowrap'),
