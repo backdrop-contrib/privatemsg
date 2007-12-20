@@ -365,7 +365,7 @@ function privatemsg_user($type, &$edit, &$account, $category = NULL) {
 
         return $return;
       }
-      elseif ($GLOBALS['user']->uid) {
+      elseif ($user->uid) {
         return;
       }
       elseif ($account->privatemsg_allow) {
@@ -505,8 +505,10 @@ function privatemsg_simpletest() {
 }
 
 function privatemsg_message_allowed($recipient, $author = NULL) {
-  $author = $author ? $author : $GLOBALS['user']->uid;
-  $user = user_load(array('uid' => $recipient));
+  global $user;
+
+  $author = $author ? $author : $user->uid;
+  $account = user_load(array('uid' => $recipient));
   # user can not message themselves
   if ($recipient == $author) {
     return FALSE;
@@ -514,7 +516,7 @@ function privatemsg_message_allowed($recipient, $author = NULL) {
   if (privatemsg_user_blocked($author, $recipient)) {
     return FALSE;
   }
-  if (isset($user->privatemsg_allow) && !$user->privatemsg_allow) {
+  if (isset($account->privatemsg_allow) && !$account->privatemsg_allow) {
     return FALSE;
   }
   return TRUE;
@@ -710,11 +712,13 @@ function privatemsg_configure_validate($form_id, $form_values, $form) {
 }
 
 function privatemsg_list($uid = NULL) {
+  global $user;
+
   if (!empty($uid) && is_numeric($uid) && user_access('administer private messages')) {
     $account = user_load(array('uid' => $uid));
   }
   else {
-    $account = $GLOBALS['user'];
+    $account = $user;
   }
   // Notification emails link here, but the user may not be logged in yet.
   if ($account && !$account->uid) {
@@ -810,6 +814,8 @@ function _privatemsg_list_header($current_folder) {
 }
 
 function privatemsg_cur_folder_form($folders, $current_folder) {
+  global $user;
+
   foreach ($folders as $folder) {
     $options[$folder['fid']] = $folder['name'];
   }
@@ -832,7 +838,7 @@ function privatemsg_cur_folder_form($folders, $current_folder) {
     '#attributes' => array('class' => 'js-hide'),
   );
   $actor = $current_folder == 1 ? 'author' : 'recipient';
-  $result = db_query("SELECT DISTINCT type FROM {privatemsg} WHERE folder = %d AND {$actor}_del = 0 AND {$actor} = %d", $current_folder, $GLOBALS['user']->uid);
+  $result = db_query("SELECT DISTINCT type FROM {privatemsg} WHERE folder = %d AND {$actor}_del = 0 AND {$actor} = %d", $current_folder, $user->uid);
   $types = array(
     '_all' => t('All'),
     '_read' => t('Read'),
@@ -901,6 +907,7 @@ function privatemsg_cur_folder_form_submit($form_id, $form_values) {
 
 function privatemsg_list_form($messages, $folders, $current_folder, $account) {
   global $user;
+
   $extra_folders = array();
   foreach ($folders as $folder) {
     if ($folder['fid'] != PRIVATEMSG_FOLDER_SENT && $folder['fid'] != $current_folder) {
@@ -1043,6 +1050,8 @@ function privatemsg_list_form($messages, $folders, $current_folder, $account) {
 }
 
 function privatemsg_list_form_submit($form_id, $form_values) {
+  global $user;
+
   $selected = array();
   foreach ($form_values['messages'] as $mid => $message) {
     if ($message['selected']) {
@@ -1105,7 +1114,7 @@ function privatemsg_list_form_submit($form_id, $form_values) {
 
       break;
     case t('Empty recycle bin'):
-      $result = db_query('SELECT id FROM {privatemsg} p WHERE p.recipient = %d AND p.recipient_del = 1 UNION SELECT id FROM {privatemsg} p WHERE p.author = %d AND p.author_del = 1', $GLOBALS['user']->uid, $GLOBALS['user']->uid);
+      $result = db_query('SELECT id FROM {privatemsg} p WHERE p.recipient = %d AND p.recipient_del = 1 UNION SELECT id FROM {privatemsg} p WHERE p.author = %d AND p.author_del = 1', $user->uid, $user->uid);
       while ($message = db_fetch_object($result)) {
         _privatemsg_delete($message->id, 2);
       }
