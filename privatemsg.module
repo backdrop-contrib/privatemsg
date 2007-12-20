@@ -1064,7 +1064,7 @@ function privatemsg_list_form_submit($form_id, $form_values) {
         foreach ($selected as $mid => $message) {
           _privatemsg_delete($mid);
         }
-        drupal_set_message(t('Messages deleted.'));
+        drupal_set_message(t('The selected messages have been deleted.'));
       }
       else {
         $_SESSION['privatemsg'] = $form_values['messages'];
@@ -1078,6 +1078,8 @@ function privatemsg_list_form_submit($form_id, $form_values) {
     case t('Mark as read'):
       array_unshift($args, $new);
       db_query('UPDATE {privatemsg} SET newmsg = %d '. $where, $args);
+
+      drupal_set_message(t('The selected messages have been updated.'));
       break;
     case t('Move to folder'):
       $fid = $form_values['folder'];
@@ -1092,7 +1094,7 @@ function privatemsg_list_form_submit($form_id, $form_values) {
       foreach (array_keys($selected) as $mid) {
         _privatemsg_delete($mid, 2);
       }
-      drupal_set_message(t('Your messages have been deleted permanently'));
+      drupal_set_message(t('The selected messages have been deleted permanently.'));
       break;
     case t('Restore'):
       db_query('UPDATE {privatemsg} SET recipient_del = 0 '. $where, $args);
@@ -1107,7 +1109,7 @@ function privatemsg_list_form_submit($form_id, $form_values) {
       while ($message = db_fetch_object($result)) {
         _privatemsg_delete($message->id, 2);
       }
-      drupal_set_message('Recycle bin emptied');
+      drupal_set_message('Recycle bin emptied.');
       break;
   }
 }
