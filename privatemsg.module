@@ -1003,13 +1003,16 @@ function privatemsg_list_form($messages, $folders, $current_folder, $account) {
         );
     }
 
-
     if ($del == 1) {
       $form['selected']['actions'] = $actions;
     }
 
     // Control to move messages to a new folder.
-    if ((arg(1) == 'list' || arg(1) == $account->uid) && count($extra_folders) > 0 && $current_folder != 1) {
+    if ((arg(1) == NULL || arg(1) == 'list') && count($extra_folders) > 0 && $current_folder != 1) {
+      // Do not display the recycle bin in the move to folder drop down when the
+      // delete button is already available.
+      unset($extra_folders[PRIVATEMSG_FOLDER_RECYCLE_BIN]);
+
       $form['selected']['folder'] = array(
         '#prefix' => '<div style="margin-left: 1em;">',
         '#type' => 'select',
@@ -1922,6 +1925,10 @@ function privatemsg_view_form($message) {
     );
 
   if ($user->uid == $message->recipient) {
+    // Avoid listing the recycle bin as a folder when the delete button is
+    // available.
+    unset($extra_folders[PRIVATEMSG_FOLDER_RECYCLE_BIN]);
+
     $form['actions']['folder'] = array(
       '#type' => 'select',
       '#options' => $extra_folders,
