@@ -1094,10 +1094,13 @@ function privatemsg_list_form_submit($form_id, $form_values) {
       }
       drupal_set_message(t('Your messages have been deleted permanently'));
       break;
-    case t('Move to inbox'):
+    case t('Restore'):
       db_query('UPDATE {privatemsg} SET recipient_del = 0 '. $where, $args);
       $where = $where1 .'author = %d';
       db_query('UPDATE {privatemsg} SET author_del = 0 '. $where, $args);
+
+      drupal_set_message(t('The selected messages have been restored.'));
+
       break;
     case t('Empty recycle bin'):
       $result = db_query('SELECT id FROM privatemsg p WHERE p.recipient = %d AND p.recipient_del = 1 UNION SELECT id FROM privatemsg p  WHERE p.author = %d AND p.author_del = 1', $GLOBALS['user']->uid, $GLOBALS['user']->uid);
