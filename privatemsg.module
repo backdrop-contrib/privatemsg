@@ -2261,7 +2261,7 @@ function theme_privatemsg_message_table($form) {
   }
 
   if (count($rows) == 0) {
-    $rows[] = array(array('data' => t('No messages.'), 'colspan' => 4));
+    $rows[] = array(array('data' => t('No messages.'), 'colspan' => 5));
     $select_cell = NULL;
   }
   else {
