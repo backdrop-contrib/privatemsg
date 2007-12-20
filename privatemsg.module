@@ -748,7 +748,7 @@ function privatemsg_list($uid = NULL) {
     $join_field = 'author';
   }
   $sql1 = "SELECT id, subject, p.timestamp, u.uid, u.name, newmsg, type FROM {privatemsg} p INNER JOIN {users} u ON ";
-  $sql = $sql1 . "p.$join_field = u.uid WHERE p.$where_field = %d $type AND p.{$where_field}_del = %d";
+  $sql = $sql1 ."p.$join_field = u.uid WHERE p.$where_field = %d $type AND p.{$where_field}_del = %d";
   if ($current_folder == PRIVATEMSG_FOLDER_RECYCLE_BIN) {
     $args[] = 1;
     $sql .= " UNION $sql1 p.recipient = u.uid WHERE p.author = %d $type AND p.author_del = %d";
@@ -1105,7 +1105,7 @@ function privatemsg_list_form_submit($form_id, $form_values) {
 
       break;
     case t('Empty recycle bin'):
-      $result = db_query('SELECT id FROM privatemsg p WHERE p.recipient = %d AND p.recipient_del = 1 UNION SELECT id FROM privatemsg p  WHERE p.author = %d AND p.author_del = 1', $GLOBALS['user']->uid, $GLOBALS['user']->uid);
+      $result = db_query('SELECT id FROM {privatemsg} p WHERE p.recipient = %d AND p.recipient_del = 1 UNION SELECT id FROM {privatemsg} p WHERE p.author = %d AND p.author_del = 1', $GLOBALS['user']->uid, $GLOBALS['user']->uid);
       while ($message = db_fetch_object($result)) {
         _privatemsg_delete($message->id, 2);
       }
@@ -1677,7 +1677,7 @@ function _privatemsg_send($sender, $recipient, $subject, $body, $format, $thread
  * Return a version of type that can be used as an object property key (change whitespace to _)
  */
 function _privatemsg_get_type_key($type) {
-  return 'privatemsg_allow_' . preg_replace('/\s+/', '_', $type);
+  return 'privatemsg_allow_'. preg_replace('/\s+/', '_', $type);
 }
 
 /**
