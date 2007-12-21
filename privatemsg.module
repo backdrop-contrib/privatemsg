@@ -11,7 +11,7 @@ define('PRIVATEMSG_FOLDER_SENT', 1);
 function privatemsg_help($section) {
   switch ($section) {
     case 'admin/help#privatemsg':
-      $output = '<p>'. t('The private messaging module allows users to send messages to each other without having to share email addresses. An inbox link will appear in the navigation menu. The "write to author" links are included in posts, allowing users to write a private message instead of commenting openly. Allowing users to communicate directly is an important  part of building the strength of the community.') .'</p>';
+      $output = '<p>'. t('The private messaging module allows users to send messages to each other without having to share email addresses. An inbox link will appear in the navigation menu. The "write to author" links are included in posts, allowing users to write a private message instead of commenting openly. Allowing users to communicate directly is an important part of building the strength of the community.') .'</p>';
       $output .= '<p>'. t('The contacts list contains only users that you have previously messaged. To contact users not in your list, you need to know their local user name. Administrators can set messaging options such as frequency of emails, message status display, and number of messages to display per page. They can also configure \'Write to Author\' options.') .'</p>';
       $output .= t('<p>You can</p>
 <ul>
@@ -342,7 +342,7 @@ function privatemsg_user($type, &$edit, &$account, $category = NULL) {
               'class' => 'block-message'
             );
           }
-          else  {
+          else {
             $return[t('Private messages')][] = array(
               'value' => l(t('Unblock messages'), 'privatemsg/block/'. $account->uid, array(
               'title' => t('Unblock private messages from @name', array('@name' => $account->name)))),
@@ -2133,7 +2133,7 @@ function privatemsg_simpletest() {
 
 /**
  * Returns content to view a private message.
- * 
+ *
  * @param message
  */
 function theme_privatemsg_view($message, $preview = FALSE, $prev = 0, $next = 0) {
