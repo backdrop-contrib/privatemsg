@@ -146,22 +146,6 @@ function privatemsg_menu($may_cache) {
         'access' => $access,
         'type' => MENU_CALLBACK,
       );
-      $items[] = array(
-        'path' => 'privatemsg/reply/'. arg(2) .'/write',
-        'title' => t('Write a reply'),
-        'access' => $access,
-        'type' => MENU_DEFAULT_LOCAL_TASK,
-        'weight' => -10,
-      );
-      $items[] = array(
-        'path' => 'privatemsg/reply/'. arg(2) .'/cancel',
-        'title' => t('Cancel reply'),
-        'callback' => 'drupal_goto',
-        'callback arguments' => array('privatemsg/view/'. arg(2)),
-        'access' => $access && $user->uid,
-        'type' => MENU_LOCAL_TASK,
-        'weight' => 0,
-      );
     }
 
     if (arg(0) == 'privatemsg' && arg(1) == 'new' && intval(arg(2)) > 0) {
@@ -1513,6 +1497,8 @@ function privatemsg_new_form($message = NULL) {
     '#type' => 'submit',
     '#value' => t('Send private message')
   );
+  $form['cancel'] = array('#value' => l(t('Cancel'), 'privatemsg/view/'. arg(2)));
+
   $form['#after_build'] = array('_privatemsg_new_preview');
 
   drupal_add_js(drupal_get_path('module', 'privatemsg') .'/privatemsg.js');
