@@ -1445,7 +1445,7 @@ function privatemsg_new_form($message = NULL) {
     $message = db_fetch_object(db_query('SELECT thread, subject, message, u.name AS recipient FROM {privatemsg} p INNER JOIN {users} u ON u.uid = p.author WHERE id = %d AND recipient = %d', $message, $user->uid));
 
     if (!stristr($message->subject, t('Re:'))) {
-      $message->subject = t('Re:') .' '. $message->subject;
+      $message->subject = t('Re: ') . $message->subject;
     }
 
     // quoting; [quote] if default input format uses bbcode or quote, else > quoting
