@@ -428,13 +428,6 @@ function privatemsg_user($type, &$edit, &$account, $category = NULL) {
   }
 }
 
-function _privatemsg_user_add_defaults(&$account) {
-  if (!isset($account->privatemsg_allow)) {
-    $account->privatemsg_allow = variable_get('privatemsg_default_allow', 1);
-    $account->privatemsg_setmessage_notify = variable_get('privatemsg_default_setmessage_notify', 1);
-  }
-}
-
 /**
  * Implementation of hook_form_alter().
  */
@@ -2482,4 +2475,11 @@ function privatemsg_load($message_id) {
   }
   $result = db_query($sql, $params);
   return db_fetch_object($result);
+}
+
+function _privatemsg_user_add_defaults(&$account) {
+  if (!isset($account->privatemsg_allow)) {
+    $account->privatemsg_allow = variable_get('privatemsg_default_allow', 1);
+    $account->privatemsg_setmessage_notify = variable_get('privatemsg_default_setmessage_notify', 1);
+  }
 }
