@@ -1493,13 +1493,17 @@ function privatemsg_new_form($message = NULL) {
   $form['filter_form'] = filter_form($message->format);
   $form['preview'] = array(
     '#type' => 'submit',
-    '#value' => t('Preview')
+    '#value' => t('Preview'),
+    '#prefix' => '<div class="pm-controls">'
   );
   $form['send'] = array(
     '#type' => 'submit',
     '#value' => t('Send private message')
   );
-  $form['cancel'] = array('#value' => l(t('Cancel'), 'privatemsg/view/'. arg(2)));
+  $form['cancel'] = array(
+    '#value' => l(t('Cancel'), 'privatemsg/view/'. arg(2)),
+    '#suffix' => '</div>'
+  );
 
   $form['#after_build'] = array('_privatemsg_new_preview');
 
