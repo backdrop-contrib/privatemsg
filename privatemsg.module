@@ -477,7 +477,7 @@ function privatemsg_block($op = 'list', $delta = 0, $edit = array()) {
 }
 
 /**
- * Implementation of hook privatemsg_alter
+ * Implementation of hook privatemsg_alter().
  */
 function privatemsg_privatemsg_alter($sender = NULL, $recipient = NULL, $subject = NULL, $body = NULL, $format = NULL, $thread = NULL, $type = NULL) {
   $key = _privatemsg_get_type_key($type);
@@ -709,9 +709,10 @@ function privatemsg_list($uid = NULL) {
   if ($account && !$account->uid) {
     drupal_goto('user/login', 'destination=privatemsg');
   }
-  // wha? Disallow users who have set their pref to "don't contact me" from seeing their inbox?
-  // Surely not: privatemsg_allow only determines whether a user receives direct private messages,
-  // there are still other types of message that arrive in a user's inbox
+  // wha? Disallow users who have set their pref to "don't contact me" from
+  // seeing their inbox? Surely not: privatemsg_allow only determines whether a
+  // user receives direct private messages, there are still other types of
+  // messages that arrive in a user's inbox.
   if (!user_access('access private messages')) {// || !$account->privatemsg_allow) {
     return drupal_access_denied();
   }
@@ -860,7 +861,6 @@ function privatemsg_cur_folder_form($folders, $current_folder) {
     '#value' => t('Filter'),
     '#attributes' => array('class' => 'js-hide'),
   );
-
 
   return $form;
 }
@@ -1625,7 +1625,8 @@ function privatemsg_new_form_submit($form_id, $form_values) {
  * @param $type
  *   Type of the message as defined on admin/build/privatemsg .
  * @param $variables
- *   If this message is a subscriptions mail, the variables used to compose the message.
+ *   If this message is a subscriptions mail, the variables used to compose the
+ * message.
  **/
 function privatemsg_send_privatemsg($recipient, $subject, $body, $format = FILTER_FORMAT_DEFAULT, $thread = 0, $type = 'private-message', $variables = array()) {
   global $user;
@@ -1638,9 +1639,9 @@ function _privatemsg_send($sender, $recipient, $subject, $body, $format, $thread
     return;
   }
 
-  // hook to allow other modules to alter any aspect of a privatemsg
-  // by accepting these params by reference. Any module can cancel a
-  // privatemsg by returning false here
+  // Hook to allow other modules to alter any aspect of a privatemsg by
+  // accepting these params by reference. Any module can cancel a privatemsg by
+  // returning false here
   foreach (module_implements('privatemsg_alter') as $name) {
     $function = $name .'_privatemsg_alter';
     if (!$function($sender, $recipient, $subject, $body, $format, $thread, $type)) {
@@ -1668,7 +1669,8 @@ function _privatemsg_send($sender, $recipient, $subject, $body, $format, $thread
 }
 
 /**
- * Return a version of type that can be used as an object property key (change whitespace to _)
+ * Return a version of type that can be used as an object property key
+ * (change whitespace to _)
  */
 function _privatemsg_get_type_key($type) {
   return 'privatemsg_allow_'. preg_replace('/\s+/', '_', $type);
@@ -1770,8 +1772,8 @@ function privatemsg_contacts_form_submit($form_id, $form_values) {
 /**
  * Display a private message to a user.
  *
- * We calculate previous and next message here. Let's assume the order is
- * from oldest to newest. The next message is then the first row from:
+ * We calculate previous and next message here. Let's assume the order is from
+ * oldest to newest. The next message is then the first row from:
  * SELECT id FROM privatemsg WHERE timestamp > %d ORDER BY timestamp ASC
  * The code below is the abstraction of this to every field and ASC/DESC.
  */
@@ -2137,15 +2139,15 @@ function privatemsg_simpletest() {
 /**
  * @addtogroup theme_system
  *
- * Privatemsg module specific theme functions
+ * Privatemsg module specific theme functions.
  * @{
-**/
+ */
 
 /**
- Returns content to view a private message
-
- @param message
-**/
+ * Returns content to view a private message.
+ * 
+ * @param message
+ */
 function theme_privatemsg_view($message, $preview = FALSE, $prev = 0, $next = 0) {
   $option = variable_get('privatemsg_view_actions', '3');
   global $user;
@@ -2354,7 +2356,7 @@ function theme_privatemsg_block_inbox($new) {
 
 /**  @} End of addtogroup theme_system
  *
-**/
+ */
 
 /**
  * Return autocomplete results for usernames.
