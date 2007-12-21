@@ -157,22 +157,6 @@ function privatemsg_menu($may_cache) {
         'access' => $access,
         'type' => MENU_CALLBACK,
       );
-      $items[] = array(
-        'path' => 'privatemsg/new/'. arg(2) .'/write',
-        'title' => t('Write a new message'),
-        'access' => $access,
-        'type' => MENU_DEFAULT_LOCAL_TASK,
-        'weight' => -10,
-      );
-      $items[] = array(
-        'path' => 'privatemsg/new/'. arg(2) .'/cancel',
-        'title' => t('Cancel message'),
-        'callback' => 'drupal_goto',
-        'callback arguments' => array('privatemsg'),
-        'access' => $access && $user->uid,
-        'type' => MENU_LOCAL_TASK,
-        'weight' => 0,
-      );
     }
     if ($user-> uid != arg(2) && arg(0) == 'privatemsg' && arg(1) == 'block' && ($account = user_load(array('uid' => arg(2))))) {
       $blocked = privatemsg_user_blocked($account->uid);
