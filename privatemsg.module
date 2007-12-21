@@ -282,6 +282,7 @@ function privatemsg_menu($may_cache) {
       }
     }
   }
+
   return $items;
 }
 
@@ -2143,7 +2144,6 @@ function privatemsg_userpoints($op, $new_points = 0, $uid = 0, $event = '') {
  @param message
 **/
 function theme_privatemsg_view($message, $preview = FALSE, $prev = 0, $next = 0) {
-  drupal_add_css(drupal_get_path('module', 'privatemsg') .'/privatemsg.css');
   $option = variable_get('privatemsg_view_actions', '3');
   global $user;
 
@@ -2278,7 +2278,6 @@ function theme_privatemsg_message_table($form) {
 }
 
 function theme_privatemsg_contacts_table($form) {
-  drupal_add_css(drupal_get_path('module', 'privatemsg') .'/privatemsg.css');
   $rows = array();
 
   foreach (element_children($form) as $key) {
@@ -2307,7 +2306,6 @@ function theme_privatemsg_contacts_table($form) {
 }
 
 function theme_privatemsg_new_msg_header($form) {
-  drupal_add_css(drupal_get_path('module', 'privatemsg') .'/privatemsg.css');
   $rows = array();
 
   $title = $form['recipient']['#title'] .':';
