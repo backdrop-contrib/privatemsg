@@ -1485,7 +1485,7 @@ function privatemsg_new_form($message = NULL) {
     '#value' => t('Send private message')
   );
   $form['cancel'] = array(
-    '#value' => l(t('Cancel'), 'privatemsg/view/'. arg(2)),
+    '#value' => l(t('Cancel'), arg(1) == 'reply' ? 'privatemsg/view/'. arg(2) : 'privatemsg'),
     '#suffix' => '</div>'
   );
 
