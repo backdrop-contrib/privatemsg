@@ -1007,21 +1007,25 @@ function privatemsg_list_form($messages, $folders, $current_folder, $account) {
 function privatemsg_list_form_submit($form_id, $form_values) {
   global $user;
 
-  $selected = array();
+  $selected = $placeholders = array();
   foreach ($form_values['messages'] as $mid => $message) {
     if ($message['selected']) {
       $selected[$mid] = $message;
       $placeholders[] = '%d';
     }
   }
-  if (!$selected && ($form_values['op'] != t('Empty recycle bin'))) {
+  if (empty($selected) && ($form_values['op'] != t('Empty recycle bin'))) {
+    drupal_set_message(t('No messages selected.'), 'error');
     return;
   }
-  $args = array_keys($selected);
-  $args[] = $form_values['account']->uid;
-  $where1 = 'WHERE id IN ('. implode(', ', $placeholders) .')  AND ';
-  $where = $where1 .'recipient = %d';
-  $new = 0;
+  else {
+    $args = array_keys($selected);
+    $args[] = $form_values['account']->uid;
+    $where1 = 'WHERE id IN ('. implode(', ', $placeholders) .')  AND ';
+    $where = $where1 .'recipient = %d';
+    $new = 0;
+  }
+
   switch ($form_values['op']) {
     case t('Delete'):
       if ($_POST['js_bypass'] == 1) {
