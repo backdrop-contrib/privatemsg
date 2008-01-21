@@ -1109,7 +1109,7 @@ function privatemsg_manage_folders() {
   $folders = privatemsg_load_folders($user->uid);
   foreach ($folders as $folder) {
     $fid = $folder['fid'];
-    $operations = '';
+    $operations = array();
     switch ($fid) {
       case PRIVATEMSG_FOLDER_RECYCLE_BIN:
         // Deleted messages are not necessarily stored in a folder with folder
@@ -1125,22 +1125,22 @@ function privatemsg_manage_folders() {
       default:
         // Custom folders.
         $msg_count = db_result(db_query("SELECT COUNT(*) FROM {privatemsg} WHERE recipient = %d AND folder = %d AND recipient_del = 0", $user->uid, $fid));
-        $operations = array();
         $operations[] = l(t('Rename'), 'privatemsg/folders/'. $fid .'/rename');
         $operations[] = l(t('Empty'), 'privatemsg/folders/'. $fid .'/empty');
         $operations[] = l(t('Delete'), 'privatemsg/folders/'. $fid .'/delete');
         break;
     }
 
-    $rows[] = array(
+    $row = array(
       l($folder['name'], $fid != 0 ? 'privatemsg/list/'. $fid : 'privatemsg'),
-      array('data' => $msg_count, 'align' => 'center'),
-      is_array($operations) ? implode(' &nbsp; ', $operations) : $operations,
+      $msg_count
     );
+    $row = array_merge($row , !empty($operations) ? $operations : array(array('data' => '', 'colspan' => 3)));
+
+    $rows[] = $row;
   }
 
-  $output = theme('table', $header, $rows, array('style' => 'width: auto;'))
-          . drupal_get_form('privatemsg_new_folder_form');
+  $output = theme('table', $header, $rows, array('class' => 'pm-manage-folders')) . drupal_get_form('privatemsg_new_folder_form');
 
   return $output;
 }
