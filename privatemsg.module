@@ -79,7 +79,7 @@ function privatemsg_menu($may_cache) {
       'path' => 'privatemsg/folders',
       'title' => t('Manage folders'),
       'callback' => 'privatemsg_manage_folders',
-      'access' => $access && $user->uid,
+      'access' => user_access('create new folder') && $user->uid,
       'type' => MENU_LOCAL_TASK,
       'weight' => 5,
     );
@@ -863,15 +863,6 @@ function privatemsg_cur_folder_form_submit($form_id, $form_values) {
 function privatemsg_list_form($messages, $folders, $current_folder, $account) {
   global $user;
 
-  $extra_folders = array();
-  foreach ($folders as $folder) {
-    if ($folder['fid'] != PRIVATEMSG_FOLDER_SENT && $folder['fid'] != $current_folder) {
-      $extra_folders[$folder['fid']] = $folder['name'];
-    }
-  }
-  if (user_access('create new folder')) {
-    $extra_folders['new'] = t('New folder...');
-  }
   $form['account'] = array('#type' => 'value', '#value' => $account);
 
   $form['messages'] = array(
@@ -968,24 +959,33 @@ function privatemsg_list_form($messages, $folders, $current_folder, $account) {
       $form['selected']['actions'] = $actions;
     }
 
-    // Control to move messages to a new folder. Display only for inbox and
-    // custom folders.
-    if ((arg(1) == NULL || arg(1) == 'list') && count($extra_folders) > 0 && $current_folder != PRIVATEMSG_FOLDER_RECYCLE_BIN && $current_folder != PRIVATEMSG_FOLDER_SENT) {
-      // Do not display the recycle bin in the move to folder drop down as the
-      // delete button is already available.
-      unset($extra_folders[PRIVATEMSG_FOLDER_RECYCLE_BIN]);
-
-      $form['selected']['folder'] = array(
-        '#prefix' => '<div style="margin-left: 1em;">',
-        '#type' => 'select',
-        '#options' => $extra_folders,
-      );
-      $form['selected']['extra_folders'] = array('#type' => 'value', '#value' => $extra_folders);
-      $form['selected']['move_messages'] = array(
-        '#type' => 'submit',
-        '#value' => t('Move to folder'),
-        '#suffix' => '</div>',
-      );
+    if (user_access('create new folder')) {
+      $extra_folders = array();
+      foreach ($folders as $folder) {
+        // Do not display the recycle bin in the move to folder drop down as the
+        // delete button is already available. Similarly, avoid displaying
+        // the sent items folder as it is for internal use only.
+        if ($folder['fid'] != PRIVATEMSG_FOLDER_SENT && $folder['fid'] != PRIVATEMSG_FOLDER_RECYCLE_BIN && $folder['fid'] != $current_folder) {
+          $extra_folders[$folder['fid']] = $folder['name'];
+        }
+      }
+      $extra_folders['new'] = t('New folder...');
+  
+      // Control to move messages to a new folder. Display only for inbox and
+      // custom folders.
+      if ((arg(1) == NULL || arg(1) == 'list') && count($extra_folders) > 0 && $current_folder != PRIVATEMSG_FOLDER_RECYCLE_BIN && $current_folder != PRIVATEMSG_FOLDER_SENT) {
+        $form['selected']['folder'] = array(
+          '#prefix' => '<div class="pm-spacer">',
+          '#type' => 'select',
+          '#options' => $extra_folders,
+        );
+        $form['selected']['extra_folders'] = array('#type' => 'value', '#value' => $extra_folders);
+        $form['selected']['move_messages'] = array(
+          '#type' => 'submit',
+          '#value' => t('Move to folder'),
+          '#suffix' => '</div>',
+        );
+      }
     }
 
     if ($del == 2) {
@@ -1852,15 +1852,6 @@ function _privatemsg_view($message) {
 function privatemsg_view_form($message) {
   global $user;
 
-  $folders = privatemsg_load_folders($user->uid);
-  $extra_folders = array();
-  foreach ($folders as $folder) {
-    if ($folder['fid'] != 1 && $folder['fid'] != $message->folder) {
-      $extra_folders[$folder['fid']] = $folder['name'];
-    }
-  }
-  $extra_folders['new'] = t('New folder...');
-
   $form['pm_id'] = array(
     '#type' => 'hidden',
     '#value' => $message->id,
@@ -1906,21 +1897,31 @@ function privatemsg_view_form($message) {
     );
   }
 
-  if ($user->uid == $message->recipient) {
-    // Avoid listing the recycle bin as a folder when the delete button is
-    // available.
-    unset($extra_folders[PRIVATEMSG_FOLDER_RECYCLE_BIN]);
+  $folders = privatemsg_load_folders($user->uid);
+  if (user_access('create new folder')) {
+    $extra_folders = array();
+    foreach ($folders as $folder) {
+      // Do not display the recycle bin in the move to folder drop down as the
+      // delete button is already available. Similarly, avoid displaying
+      // the sent items folder as it is for internal use only.
+      if ($folder['fid'] != PRIVATEMSG_FOLDER_SENT && $folder['fid'] != PRIVATEMSG_FOLDER_RECYCLE_BIN && $folder['fid'] != $message->folder) {
+        $extra_folders[$folder['fid']] = $folder['name'];
+      }
+    }
+    $extra_folders['new'] = t('New folder...');
 
-    $form['actions']['folder'] = array(
-      '#type' => 'select',
-      '#options' => $extra_folders,
-      '#attributes' => array('class' => 'pm-spacer'),
-    );
-    $form['actions']['extra_folders'] = array('#type' => 'value', '#value' => $extra_folders);
-    $form['actions']['move_messages'] = array(
-      '#type' => 'submit',
-      '#value' => t('Move to folder'),
-    );
+    if ($user->uid == $message->recipient) {
+      $form['actions']['folder'] = array(
+        '#type' => 'select',
+        '#options' => $extra_folders,
+        '#attributes' => array('class' => 'pm-spacer'),
+      );
+      $form['actions']['extra_folders'] = array('#type' => 'value', '#value' => $extra_folders);
+      $form['actions']['move_messages'] = array(
+        '#type' => 'submit',
+        '#value' => t('Move to folder'),
+      );
+    }
   }
 
   if ($del == '2') {
