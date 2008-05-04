@@ -1,5 +1,5 @@
 ; $Id$
-name = PM archive
-description = The pm_archive module is an add-on for the privatemsg module that automatically archives private messages during cron runs.
+name = Private messages archive
+description = Allow archiving private messages automatically during cron runs.
 package = Mail
 dependencies = privatemsg
