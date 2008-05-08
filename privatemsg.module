@@ -464,10 +464,6 @@ function privatemsg_message_allowed($recipient, $author = NULL) {
 
   $author = $author ? $author : $user->uid;
   $account = user_load(array('uid' => $recipient));
-  # user can not message themselves
-  if ($recipient == $author) {
-    return FALSE;
-  }
   if (privatemsg_user_blocked($author, $recipient)) {
     return FALSE;
   }
@@ -1570,8 +1566,6 @@ function privatemsg_new_form_submit($form_id, $form_values) {
     return FALSE;
   }
 
-  // Do not allow sending a message to yourself.
-  $seen[$user->name] = TRUE;
   $recipients = explode(',', $form_values['recipient']);
   $sent = FALSE;
   foreach ($recipients as $recipient) {
