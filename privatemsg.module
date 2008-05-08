@@ -1636,9 +1636,7 @@ function _privatemsg_send($sender, $recipient, $subject, $body, $format, $thread
       return FALSE;
     }
   }
-  if ($sender->uid == $recipient->uid) {
-    return FALSE;
-  }
+  
   $message_id = db_next_id('{privatemsg}_id');
   if (!$thread) {
     $thread = db_next_id('{privatemsg}_thread');
