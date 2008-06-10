@@ -1421,11 +1421,17 @@ function privatemsg_new_form($message = NULL) {
   if ($message && !is_object($message)) {
     // This is a reply to another message
     $message = db_fetch_object(db_query('SELECT thread, subject, message, u.name AS recipient FROM {privatemsg} p INNER JOIN {users} u ON u.uid = p.author WHERE id = %d AND recipient = %d', $message, $user->uid));
-
+    //on reply add RE: to subject
+    /**
+     * TODO: allow subject to be editable
+     */
     if (!stristr($message->subject, t('Re:'))) {
       $message->subject = t('Re: ') . $message->subject;
     }
 
+    /**
+     * BEGIN QUOTING
+     */
     // quoting; [quote] if default input format uses bbcode or quote, else > quoting
     foreach (filter_list_format(filter_resolve_format(FILTER_FORMAT_DEFAULT)) as $filter) {
       if ($filter->module == 'bbcode' || $filter->module == 'quote') {
@@ -1439,7 +1445,14 @@ function privatemsg_new_form($message = NULL) {
     else {
       $message->message = "\n\n\n". str_replace("\n", "\n> ", "\n". $message->message);
     }
+    /**
+     * END QUOTING
+     * TODO: quoting is exposed
+     */
   }
+  /**
+   * This is executed only when the message is not a reply
+   */
   if (!is_object($message)) {
     $message = new stdClass();
   }
