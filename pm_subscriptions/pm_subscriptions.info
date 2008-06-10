@@ -1,5 +1,0 @@
-; $Id$
-name = Private messages subscriptions
-description = Allow users to subscribe to private messages.
-dependencies = subscriptions mail_edit privatemsg
-package = Mail
