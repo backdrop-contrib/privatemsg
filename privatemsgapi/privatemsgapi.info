@@ -1,0 +1,6 @@
+; $Id$
+name = Private messages API
+description = Offers API for private messages
+version = VERSION
+package = Mail
+core = 6.x
