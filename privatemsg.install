@@ -5,7 +5,7 @@ function privatemsg_schema() {
   $schema['pm_index'] = array(
     'description'       => t('{pm_index} holds indexing information about messages and recepients for fast retrieval'),
     'fields'        => array(
-      'message_id'    => array(
+      'mid'    => array(
         'description'   => t('Private Message ID'),
         'type'          => 'int',
         'not null'      => TRUE,
@@ -31,7 +31,7 @@ function privatemsg_schema() {
       ),
     ),
     'indexes'         => array(
-      '`message_id`'         => array('`message_id`'),
+      '`mid`'         => array('`mid`'),
       '`thread_id`'         => array('`thread_id`'),
       '`recipient`'         => array('`recipient`'),
       '`timestamp`'         => array('`timestamp`'),
@@ -41,7 +41,7 @@ function privatemsg_schema() {
   $schema['pm_message'] = array(
     'description'       => t('{pm_messages} holds the message information'),
     'fields'        => array(
-      'message_id'    => array(
+      'mid'    => array(
         'description'   => t('Private Message ID'),
         'type'          => 'serial',
         'not null'      => TRUE,
@@ -66,7 +66,7 @@ function privatemsg_schema() {
         'size'          => 'big',
       ),
     ),
-    'primary key'     => array('message_id'),
+    'primary key'     => array('mid'),
     'indexes'         => array(
       '`author`'            => array('`author`'),
       '`subject`'           => array(array('`subject`', 20)),
