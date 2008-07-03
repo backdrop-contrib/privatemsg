@@ -20,26 +20,30 @@ function privatemsg_perm() {
  *
  */
 function privatemsg_menu() {
+  //later should be a user admin screen for his private messages
   $items['messages/private'] = array(
     'title' => t('Private messages'),
-    'page callback' => 'privatemsg_list',
+    'page callback' => 'privatemsg_hello',
     'access arguments' => array('read privatemsg'),
     'type' => MENU_NORMAL_ITEM,
   );
+  //list all messages this user received
   $items['messages/private/inbox'] = array(
     'title' => t('Inbox'),
-    'page callback' => 'privatemsg_list',
+    'page callback' => 'privatemsg_list_inbox',
     'access arguments' => array('read privatemsg'),
     'type' => MENU_NORMAL_ITEM,
     'weight'  => -10,
   );
-  $items['messages/private/list'] = array(
-    'title' => t('List'),
+  //list messages that this user is an author of
+  $items['messages/private/sent'] = array(
+    'title' => t('Sent'),
     'page callback' => 'privatemsg_list',
     'access arguments' => array('read privatemsg'),
-    'type' => MENU_DEFAULT_LOCAL_TASK,
-    'weight' => -10,
+    'type' => MENU_NORMAL_ITEM,
+    'weight'  => -8,
   );
+  //view a single message
   $items['messages/private/view/%'] = array(
     'title' => t('Read Private Message'),
     'page callback' => 'privatemsg_view',
@@ -48,6 +52,7 @@ function privatemsg_menu() {
     'type' => MENU_CALLBACK,
     'weight' => -10,
   );
+  //create a new message
   $items['messages/private/new'] = array(
     'title' => t('Write New'),
     'page callback' => 'drupal_get_form',
@@ -56,14 +61,13 @@ function privatemsg_menu() {
     'type' => MENU_NORMAL_ITEM,
     'weight' => -10,
   );
+  //auto completes available user names & removes duplicates
   $items['messages/private/user-name-autocomplete'] = array(
     'page callback' => 'privatemsg_user_name_autocomplete',
     'access arguments' => array('write privatemsg'),
     'type' => MENU_CALLBACK,
     'weight' => -10,
-  );
-  
-//  
+  );  
   //Admin pages
   $items['admin/settings/messages/private'] = array(
     'title'               => t('Private Messages'),
@@ -173,6 +177,68 @@ function privatemsg_preprocess_privatemsg_to(&$vars) {
   
   $vars['recipients'] = 'Between '. $recipients . $you;
 }
+
+/**
+ * Lists messages in built in folder 'inbox'
+ * does not allow viewing some one else's messages unless logged in as that user
+ *
+ */
+function privatemsg_list_inbox() {
+  //prevent anon access
+  disallow_anon_access();
+  global $user;
+  $account = $user;
+  $query = _privatemsg_assemble_query('privatemsg_list_inbox', $account);
+
+  $result = db_query($query);
+  
+  //debugging info
+//  drupal_set_message('<pre>'. print_r($query, 1) .'</pre>');
+  
+   $messages = array();
+  while($row = db_fetch_array($result)) {
+    $row['subject'] = l($row['subject'], 'messages/private/view/'. $row['mid']);
+    $messages[] = $row;
+  }
+  
+  //debugging
+  $head = array();
+  if (count($messages)) {
+    $row = $messages[0];
+    foreach ($row as $index => $value) {
+      $head[] = array('data' => t($index), 'field' => $index, 'sort'=> 'desc');
+    }
+    $tablesort = tablesort_sql($head);
+    if ( arg(2) == 'inbox') {
+      $query = _privatemsg_assemble_query('privatemsg_list', $account);  
+    }
+    else if( arg(2) == 'sent') {
+      $query = _privatemsg_assemble_query('privatemsg_list_sent', $account);
+    }
+    $query .= $tablesort;
+//      drupal_set_message('<pre>'. print_r($query, 1) .'</pre>');
+
+    $result = db_query($query);
+
+    $messages = array();
+    while($row = db_fetch_array($result)) {
+      $row['subject'] = l($row['subject'], 'messages/private/view/'. $row['id']);
+      $row['author'] = theme('username', user_load($row['author']));
+      $messages[] = $row;
+    }
+
+  }
+  $content = theme_table($head, $messages);
+//  drupal_set_message('<pre>'. print_r(count($messages), 1) .'</pre>');
+
+  //begin theming process
+  //1) expose each message to table HEADER and table row alteration
+  //2) something else
+  return $content;
+  
+  
+}
+
 /**
  * Function that lists messages 
  *
@@ -180,14 +246,8 @@ function privatemsg_preprocess_privatemsg_to(&$vars) {
  */
 function privatemsg_list($uid = NULL) {
   global $user;
-  //access permissions
-  if (!$user->uid) {
-    //even though admin/user/permissions may allow anonymous users 
-    //to access privatemsg, it still doesnt make sense for that to 
-    //happen. therefore we disallow this here so there's no way to overcome it.
-    drupal_access_denied();
-    return false;
-  }
+  disallow_anon_access();
+  
   if (!$uid) {    
     // default behavior: we are trying to view our own private message if no uid is passed
     $account = $user;
@@ -210,9 +270,12 @@ function privatemsg_list($uid = NULL) {
    */
   
 //  drupal_set_message('<pre>'. print_r($uid, 1) .'</pre>');
-
-  $query = _privatemsg_assemble_query('privatemsg_list', $account);
-  
+  if ( arg(2) == 'inbox') {
+    $query = _privatemsg_assemble_query('privatemsg_list', $account);
+  }
+  else if( arg(2) == 'sent') {
+    $query = _privatemsg_assemble_query('privatemsg_list_sent', $account);
+  }
   $result = db_query($query);
   
   //debugging info
@@ -229,11 +292,15 @@ function privatemsg_list($uid = NULL) {
   if (count($messages)) {
     $row = $messages[0];
     foreach ($row as $index => $value) {
-//      $head[] = $index;
       $head[] = array('data' => t($index), 'field' => $index, 'sort'=> 'desc');
     }
     $tablesort = tablesort_sql($head);
-    $query = _privatemsg_assemble_query('privatemsg_list', $account);  
+    if ( arg(2) == 'inbox') {
+      $query = _privatemsg_assemble_query('privatemsg_list', $account);  
+    }
+    else if( arg(2) == 'sent') {
+      $query = _privatemsg_assemble_query('privatemsg_list_sent', $account);
+    }
     $query .= $tablesort;
 //      drupal_set_message('<pre>'. print_r($query, 1) .'</pre>');
 
@@ -418,9 +485,9 @@ function pm_send_validate($form, &$form_state) {
     }
   }
   //when user sends a message he also sends a message to himself
-  if ($user->uid) {
-    $message['recipients'][$user->uid] = $user;
-  }
+//  if ($user->uid) {
+//    $message['recipients'][$user->uid] = $user;
+//  }
   /**
    * End verify user existance
    */
@@ -451,28 +518,29 @@ function pm_send($form, &$form_state) {
 //  drupal_set_message('<pre>'. print_r('two', 1) .' </pre>');
 //  drupal_set_message('<pre>'. print_r($form_state, 1) .' </pre>');;
   $message = $form_state['validate_built_message'];
+//  drupal_set_message('<pre>'. print_r($message, 1) .' </pre>');;
   //1) save the message body first
   $args = array();
-  $args[] = $message['author']->uid;
   $args[] = $message['subject'];
+  $args[] = $message['author']->uid;
   $args[] = $message['body'];
-  $query = "INSERT INTO {pm_message} (message_id, author, subject, body) VALUES (null, %d, '%s', '%s')";
+  $query = "INSERT INTO {pm_message} (mid, subject, author, body) VALUES (null, '%s', %d, '%s')";
   $resuld = db_query($query, $args);
-  $message_id = db_last_insert_id('pm_message', 'message_id');
-  $message['message_id'] = $message_id;
+  $mid = db_last_insert_id('pm_message', 'mid');
+  $message['mid'] = $mid;
   
-  //thread ID is the same as the message_id if its the first message in the thread
+  //thread ID is the same as the mid if its the first message in the thread
   if (!isset($message['thread_id'])) {
-    $message['thread_id'] = $message_id;
+    $message['thread_id'] = $mid;
   }
   //2) save message to recipients
   //each repicient gets a recods in the pm_index table
-  $query = "INSERT INTO {pm_index} (message_id, thread_id, recipient, timestamp) VALUES (%d, %d, %d, %d)";
+  $query = "INSERT INTO {pm_index} (mid, thread_id, recipient, author, timestamp) VALUES (%d, %d, %d, %d, %d)";
   foreach ($message['recipients'] as $recipient) {
-    $message_id = $message['message_id'];
+    $mid = $message['mid'];
     $thread_id  = $message['thread_id'];
     $timestamp = $message['timestamp'];
-    db_query($query, $message_id, $thread_id, $recipient->uid, $timestamp);
+    db_query($query, $mid, $thread_id, $recipient->uid, $message['author']->uid , $timestamp);
   }
   
   drupal_set_message('Private message has been sent to '. $form_state['values']['recipient']);
@@ -499,6 +567,7 @@ function privatemsg_render_preview($message) {
   $output = theme('privatemsg_to', $message);
   return $output . theme('privatemsg_view', $message);
 }
+
 function pm_preview($form, &$form_state) {
 //    drupal_set_message('<pre>two </pre>');
 //    drupal_set_message('<pre>'. print_r($form_state, 1) .' </pre>');
@@ -515,53 +584,37 @@ function pm_preview($form, &$form_state) {
   }
   $form_state['rebuild'] = true;      //this forces our form to be rebuild instead of being submitted
 }
-/**
- * Return autocomplete results for usernames.
- * prevents usernames from being used and/or suggested twice
- */
-function privatemsg_user_name_autocomplete($string) {
-  $names = array();
-  //1: parse $string and build list of valid user names
-  $fragments = explode(',', $string);
-  foreach ($fragments as $index => $name) {
-    $name = trim($name);
-    if ($error = module_invoke('user', 'validate_name', $name)) {
-      //do nothing if this name does not validate
-    }
-    else {
-      $names[$name] = $name;
-    }
-  }
+function privatemsg_privatemsg_list_sent_alter(&$fragments, $account) {
+  $fragments['primary_table'] = '{pm_message} pm';
   
-  //by using user_validate_user we can ensure that names included in $names are at least logisticaly possible.
-  //2: find the next user name suggestion
-  $fragment = array_pop($names);
-  if (!empty($fragment)) {
-    $query = "SELECT name FROM {users} u WHERE name like '%s%%'";
-    $query.= " AND name NOT IN ('". implode("', '", $names) ."')";  //this will prevent suggesting name that is already in our list
-    $query.= " AND status <> 0 ORDER BY name ASC";
-    $result = db_query_range($query, $fragment, 0, 10);
-    $prefix = count($names) ? implode(", ", $names). ", " : '';
-    //3: build proper suggestions and print
-    $matches = array();
-    while ($user = db_fetch_object($result)) {
-      $matches[$prefix. $user->name. ", "] = $user->name;
-    }
-    print drupal_to_js($matches);
-    exit();
-  }
+  $fragments['select'][] = 'pm.mid as id';
+  $fragments['select'][] = 'pm.subject';
+  $fragments['select'][] = 'pmi.author';
+  
+  $fragments['inner_join'][] = 'INNER JOIN {pm_index} pmi ON pm.mid = pmi.mid';
+  $fragments['where'][] = 'pmi.author = %d';
+  $fragments['query_args'][] = $account->uid;
+//  $fragments['group_by'][] = 'pmi.mid';
 }
 
-
+function privatemsg_privatemsg_list_inbox_alter(&$fragments, $account) {
+  $fragments['primary_table'] = '{pm_message} pm';
+  $fragments['select'][]      = 'pm.mid';
+  $fragments['select'][]      = 'pm.subject';
+  $fragments['select'][]      = 'pmi.timestamp';
+  $fragments['inner_join'][]  = 'INNER JOIN {pm_index} pmi ON pm.mid = pmi.mid';
+  $fragments['where'][] = 'pmi.recipient = %d';
+  $fragments['query_args'][] = $account->uid;
+}
 function privatemsg_privatemsg_list_alter(&$fragments, $account) {
   
   $fragments['primary_table'] = '{pm_message} pm';
   
-  $fragments['select'][] = 'pmi.message_id as id';
+  $fragments['select'][] = 'pmi.mid as id';
   $fragments['select'][] = 'pm.subject';
-  $fragments['select'][] = 'pm.author';
+  $fragments['select'][] = 'pmi.author';
   $fragments['select'][] = 'pmi.*';
-  $fragments['inner_join'][] = 'INNER JOIN {pm_index} pmi ON pm.message_id = pmi.message_id';
+  $fragments['inner_join'][] = 'INNER JOIN {pm_index} pmi ON pm.mid = pmi.mid';
   $fragments['where'][]  = 'pmi.recipient = %d';
   $fragments['query_args'][] = $account->uid;
 
@@ -602,10 +655,11 @@ function privatemsg_privatemsg_load_alter(&$fragments, $pmid, $uid) {
   $fragments['select'][] = "pm.*";                    //fets all data from primary table
   $fragments['select'][] = "pmi.*";
   
-  $fragments['inner_join'][] = 'INNER JOIN {pm_index} pmi ON pm.message_id = pmi.message_id';
-  $fragments['where'][]  = 'pmi.message_id = %d';
+  $fragments['inner_join'][] = 'INNER JOIN {pm_index} pmi ON pm.mid = pmi.mid';
+  $fragments['where'][]  = 'pmi.mid = %d';
   $fragments['query_args'][]  = $pmid;
-  $fragments['where'][]  = 'pmi.recipient = %d';
+  $fragments['where'][]  = 'pmi.recipient = %d or pmi.author = %d';
+  $fragments['query_args'][]  = $uid;
   $fragments['query_args'][]  = $uid;
 }
 
@@ -615,4 +669,68 @@ function privatemsg_privatemsg_recipients_alter(&$fragments, $thread_id) {
   $fragments['select'][] = 'pmi.recipient as uid';
   $fragments['where'][]  = 'pmi.thread_id = %d';
   $fragments['query_args'][] = $thread_id;
+}
+
+
+/**
+ * Return autocomplete results for usernames.
+ * prevents usernames from being used and/or suggested twice
+ */
+function privatemsg_user_name_autocomplete($string) {
+  $names = array();
+  //1: parse $string and build list of valid user names
+  $fragments = explode(',', $string);
+  foreach ($fragments as $index => $name) {
+    $name = trim($name);
+    if ($error = module_invoke('user', 'validate_name', $name)) {
+      //do nothing if this name does not validate
+    }
+    else {
+      $names[$name] = $name;
+    }
+  }
+  
+  //by using user_validate_user we can ensure that names included in $names are at least logisticaly possible.
+  //2: find the next user name suggestion
+  $fragment = array_pop($names);
+  if (!empty($fragment)) {
+    $query = "SELECT name FROM {users} u WHERE name like '%s%%'";
+    $query.= " AND name NOT IN ('". implode("', '", $names) ."')";  //this will prevent suggesting name that is already in our list
+    $query.= " AND status <> 0 ORDER BY name ASC";
+    $result = db_query_range($query, $fragment, 0, 10);
+    $prefix = count($names) ? implode(", ", $names). ", " : '';
+    //3: build proper suggestions and print
+    $matches = array();
+    while ($user = db_fetch_object($result)) {
+      $matches[$prefix. $user->name. ", "] = $user->name;
+    }
+    print drupal_to_js($matches);
+    exit();
+  }
+}
+
+/**
+ * Placeholder function for the messages/private menu space
+ */
+function privatemsg_hello() {
+  $output = '';
+  $output.= 'Welcome to your Private Messages box';
+  
+  
+  return $output;
+}
+
+/**
+ * Use this function at the top of your own function to block anon user access
+ */
+function disallow_anon_access() {
+  global $user;
+  //access permissions
+  if (!$user->uid) {
+    //even though admin/user/permissions may allow anonymous users 
+    //to access privatemsg, it still doesnt make sense for that to 
+    //happen. therefore we disallow this here so there's no way to overcome it.
+    drupal_access_denied();
+    exit;
+  }
 }
