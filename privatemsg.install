@@ -23,6 +23,12 @@ function privatemsg_schema() {
         'not null'      => TRUE,
         'unsigned'      => TRUE,
       ),
+      'author'     => array(
+        'description'   => t('UID of the author'),
+        'type'          => 'int',
+        'not null'      => TRUE,
+        'unsigned'      => TRUE,
+      ),
       'timestamp'     => array(
         'description'   => t('Time when the message was sent'),
         'type'          => 'int',
