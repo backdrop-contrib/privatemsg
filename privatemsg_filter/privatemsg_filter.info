@@ -1,0 +1,8 @@
+; $Id$
+name = Privatemsg filter
+description = Allow users to filter messages using tags or other criteria.
+version = HEAD
+package = Mail
+core = 6.x
+dependencies[] = privatemsg
+

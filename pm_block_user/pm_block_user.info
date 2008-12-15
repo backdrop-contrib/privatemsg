@@ -1,0 +1,8 @@
+; $Id$
+name = Block user messages
+description = Allows users to block other users from sending them messages.
+version = VERSION
+package = Mail
+core = 6.x
+dependencies[] = privatemsg
+

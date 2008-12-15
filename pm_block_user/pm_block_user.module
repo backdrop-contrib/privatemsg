@@ -1,0 +1,119 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Allows users to block other users from sending them any messages
+ */
+
+/**
+ * Implementation of hook_menu().
+ */
+function pm_block_user_menu() {
+  $items['messages/block/%user'] = array(
+    'title'            => 'Block user messages',
+    'page callback'    => 'drupal_get_form',
+    'page arguments'   => array('pm_block_user_form', 2),
+    'access arguments' => array('read privatemsg'),
+    'type'             => MENU_CALLBACK,
+    'weight'           => -10,
+  );
+  return $items;
+}
+
+function pm_block_user_form($form_state, $author) {
+  global $user;
+
+  $form['author'] = array(
+    '#type' => 'value',
+    '#value' => $author->uid,
+  );
+    $form['recipient'] = array(
+    '#type' => 'value',
+    '#value' => $user->uid,
+  );
+  $form['author_name'] = array(
+    '#type' => 'value',
+    '#value' => $author->name,
+  );
+  $form['destination'] = array(
+    '#type' => 'value',
+    '#value' => isset($_GET['destination']) ? $_GET['destination'] : 'messages/',
+  );
+
+  if (db_result(db_query('SELECT COUNT(recipient) FROM {pm_block_user} WHERE author = %d AND recipient = %d', $author->uid, $user->uid))) {
+    $form['block_action'] = array(
+      '#type' => 'value',
+      '#value' => 'unblock_user',
+    );
+    return confirm_form($form,
+      t('You have previously blocked "@author" from sending you any more messages. Are you sure you want to unblock this user?', array('@author' => $author->name)),
+      isset($_GET['destination']) ? $_GET['destination'] : 'messages/',
+      t('This action cannot be undone.'),
+      t('Unblock @author', array('@author' => $author->name)),
+      t('Cancel')
+    );
+  }
+  else {
+    $form['block_action'] = array(
+      '#type' => 'value',
+      '#value' => 'block_user',
+    );
+    return confirm_form($form,
+      t('Are you sure you want to block "@author" from sending you any more messages?', array('@author' => $author->name)),
+      isset($_GET['destination']) ? $_GET['destination'] : 'messages/',
+      t('This action cannot be undone.'),
+      t('Block @author', array('@author' => $author->name)),
+      t('Cancel')
+    );
+  }
+}
+
+function pm_block_user_form_submit($form, &$form_state) {
+
+  if ($form_state['values']['confirm']) {
+    switch ($form_state['values']['block_action']) {
+      case 'block_user':
+        db_query('INSERT INTO {pm_block_user} (author, recipient) VALUES (%d, %d)', $form_state['values']['author'], $form_state['values']['recipient']);
+        drupal_set_message(t('@author has been blocked from sending you any further messages.', array('@author' => $form_state['values']['author_name'])));
+      break;
+      case 'unblock_user':
+        db_query('DELETE FROM {pm_block_user} WHERE author = %d AND recipient = %d', $form_state['values']['author'], $form_state['values']['recipient']);
+        drupal_set_message(t('@author is now allowed to send you new messages.', array('@author' => $form_state['values']['author_name'])));
+      break;
+    }
+  }
+  $form_state['redirect'] = $form_state['values']['destination'];
+}
+
+/**
+ * Implementation of hook_privatemsg_block_message.
+ */
+ function pm_block_user_privatemsg_block_message($author, $recipient) {
+  global $user;
+  $result = db_result(db_query('SELECT COUNT(*) FROM {pm_block_user} WHERE author = %d AND recipient = %d', $author->uid, $recipient->uid));
+  if ($result <> 0) {
+    return t('!name has chosen to not recieve any more messages from you.', array('!name' => $recipient->name));
+  }
+}
+
+/**
+ * Implementation of hook_privatemsg_pm_controls.
+ */
+ function pm_block_user_privatemsg_pm_controls($pmid) {
+  global $user;
+  $author_id = db_result(db_query('SELECT author FROM {pm_message} WHERE mid = %d', $pmid));
+  $thread = db_result(db_query('SELECT thread_id FROM {pm_index} WHERE mid = %d', $pmid));
+
+  if ($user->uid <> $author_id) {
+    if (db_result(db_query('SELECT COUNT(recipient) FROM {pm_block_user} WHERE author = %d AND recipient = %d', $author_id, $user->uid))) {
+      $output = l(t('Unblock author'), 'messages/block/'. $author_id, array('query' => 'destination=messages/view/' . $thread));
+    }
+    else {
+      $output = l(t('Block author'), 'messages/block/'. $author_id, array('query' => 'destination=messages/view/' . $thread));
+    }
+  }
+  if (isset($output)) {
+    return $output;
+  }
+}

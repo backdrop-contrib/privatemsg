@@ -1,0 +1,489 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Allows users to tag private messages and to filter based upon those tags.
+ */
+
+/**
+ * Implementation of hook_perm().
+ */
+function privatemsg_filter_perm() {
+  return array(
+    'use privatemsg_filter',
+    'create privatemsg_filter',
+    'delete privatemsg_filter',
+  );
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function privatemsg_filter_menu() {
+  $items['messages/tags'] = array(
+    'title'            => 'Tags',
+    'page callback'    => 'privatemsg_filter_page',
+    'access arguments' => array('use privatemsg_filter'),
+    'type'             => MENU_LOCAL_TASK,
+  );
+  return $items;
+}
+
+function privatemsg_filter_page() {
+  $content = '';
+  drupal_set_title('Tags');
+
+  $sql = 'SELECT * FROM {pm_tags}';
+  $query = db_query($sql);
+  $tag_array = array();
+
+  while ($result = db_fetch_object($query)) {
+    $tag_array[] = l($result->tag, 'messages', array('query' => 'tags='. $result->tag));
+  }
+  if (count($tag_array)) {
+    $content .= '<h2>'. t('Current tags:') .'</h2>';
+    $content .= implode(', ', $tag_array) .'.';
+  }
+
+  if (user_access('create privatemsg_filter')) {
+    $content .= drupal_get_form('privatemsg_filter_add_tags');
+  }
+  if (user_access('delete privatemsg_filter')) {
+    $content .= drupal_get_form('privatemsg_filter_delete_tags');
+  }
+
+  return $content;
+}
+
+/**
+ * Add new tags
+ */
+function privatemsg_filter_add_tags($form_state) {
+  $form['addtags'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Add tags'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+  );
+
+  $form['addtags']['newtags'] = array(
+    '#type' => 'textfield',
+    '#title' => t('What tags would you like to add?'),
+    '#description' => t('Please insert a comma separated list of new tags in the form of "tag1, tag2, tag3...". All spaces will be replaced by hyphens.'),
+    '#default_value' => '',
+    '#required' => 1,
+  );
+
+  $form['addtags']['submit'] = array(
+   '#type'     => 'submit',
+   '#value'    => t('Add tags'),
+  );
+
+
+  return $form;
+}
+
+function privatemsg_filter_add_tags_submit($form, &$form_state) {
+
+  if (isset($form_state['values']['submit'])) {
+    $tags = explode(',', $form_state['values']['newtags']);
+
+    foreach ($tags as $tag) {
+      $tag = trim($tag);
+      $tag = str_replace(' ', '-', $tag);
+      $count = db_result(db_query("SELECT COUNT(*) FROM {pm_tags} WHERE tag = '%s'", $tag));
+      if ($count == 0) {
+        db_query("INSERT INTO {pm_tags} (tag) VALUES ('%s')", $tag);
+        $inserted[] = $tag;
+      }
+    }
+  }
+  if (count($inserted)) {
+    drupal_set_message(t('!count tags have been saved: !tags.', array('!count' => count($inserted), '!tags' => implode(', ', $inserted))));
+  }
+}
+
+/**
+ * Delete existing tags
+ */
+function privatemsg_filter_delete_tags($form_state) {
+
+  $form['deletetags'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Delete tags'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+
+  $sql = 'SELECT * FROM {pm_tags}';
+  $query = db_query($sql);
+  $tag_array = array();
+
+  while ($result = db_fetch_object($query)) {
+    $checked = 0;
+    $form_data = array('#type' => 'checkbox', '#title' => $result->tag, '#default_value' => $checked, '#return_value' => 1);
+    $form['deletetags']['tag_'. $result->tag_id] = $form_data;
+  }
+
+  $form['deletetags']['submit'] = array(
+    '#type'     => 'submit',
+    '#value'    => t('Delete selected tags'),
+  );
+
+  return $form;
+
+}
+
+function privatemsg_filter_delete_tags_submit($form, &$form_state) {
+  if (isset($form_state['values']['submit'])) {
+    $sql = 'SELECT * FROM {pm_tags}';
+    $query = db_query($sql);
+
+    while ($result = db_fetch_object($query)) {
+      if ($form_state['values']['tag_'. $result->tag_id] == 1) {
+        db_query('DELETE FROM {pm_tags_index} WHERE tag_id = %d', $result->tag_id);
+        db_query('DELETE FROM {pm_tags} WHERE tag_id = %d', $result->tag_id);
+        $deleted[] = $result->tag;
+      }
+    }
+  }
+  if (count($deleted)) {
+    drupal_set_message(t('!count tags have been deleted: !tags.', array('!count' => count($deleted), '!tags' => implode(', ', $deleted))));
+  }
+}
+
+function privatemsg_filter_get_filter($account) {
+  $filter = array();
+  if (isset($_GET['tags'])) {
+    $tag_data = privatemsg_filter_get_tags_data($account);
+    foreach (explode(' ', $_GET['tags']) as $tag) {
+      if (isset($tag_data[$tag])) {
+        $filter['tags'][$tag] = $tag;
+      }
+      elseif (in_array($tag, $tag_data)) {
+        $filter['tags'][array_search($tag, $tag_data)] = array_search($tag, $tag_data);
+      }
+    }
+  }
+
+  if (isset($_GET['author'])) {
+    foreach (explode(' ', $_GET['author']) as $author) {
+      $author_data = privatemsg_filter_get_author_data($account);
+      if (isset($author_data[$author])) {
+        $filter[$author] = $author;
+      }
+      elseif (in_array($author, $author_data)) {
+        $filter['author'][array_search($author, $author_data)] = array_search($author, $author_data);
+      }
+    }
+  }
+
+  if (isset($_GET['search'])) {
+    $filter['search'] = $_GET['search'];
+  }
+
+  if(!empty($filter)) {
+    return $filter;
+  }
+
+  if (!empty($_SESSION['privatemsg_filter'])) {
+    return $_SESSION['privatemsg_filter'];
+  }
+
+}
+
+function privatemsg_filter_get_author_data($account) {
+ static $author_data;
+
+  if (is_array($author_data)) {
+    return $author_data;
+  }
+  $sql = 'SELECT DISTINCT pm.author, u.name FROM {pm_message} pm INNER JOIN pm_index pmi ON pm.mid = pmi.mid INNER JOIN {users} u ON pm.author = u.uid WHERE pmi.uid = %d AND u.uid > 0 ORDER BY u.name';
+  $query = db_query($sql, $account->uid);
+
+  $author_data = array();
+  while ($result = db_fetch_object($query)) {
+    $author_data[$result->author] = $result->name;
+  }
+  return $author_data;
+}
+
+function privatemsg_filter_get_tags_data($account) {
+ static $tag_data;
+ 
+  if (is_array($tag_data)) {
+    return $tag_data;
+  }
+
+  // Only show the tags that a user has used.
+  $sql = 'SELECT pmt.tag, pmt.tag_id FROM {pm_tags_index} pmti LEFT JOIN {pm_tags} pmt ON pmti.tag_id = pmt.tag_id WHERE pmti.uid = %d GROUP BY pmt.tag_id, pmt.tag';
+  $query = db_query($sql, $account->uid);
+
+  $tag_data = array();
+  while ($result = db_fetch_object($query)) {
+    $tag_data[$result->tag_id] = $result->tag;
+  }
+  return $tag_data;
+}
+
+function privatemsg_filter_dropdown(&$form_state, $account) {
+
+  drupal_add_css(drupal_get_path('module', 'privatemsg_filter') .'/privatemsg_filter.css');
+
+  $form['filter'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Filter Messages'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+  );
+  $form['filter']['search'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Search Subjects'),
+      '#weight' => -20
+  );
+
+  $form['filter']['author'] = array(
+      '#type' => 'select',
+      '#title' => t('Authors'),
+      '#options' => privatemsg_filter_get_author_data($account),
+      '#multiple' => TRUE,
+      '#size' => 5,
+      '#weight' => -10
+  );
+
+  // Only show form if the user has some messages tagged.
+  if (count($tag_data = privatemsg_filter_get_tags_data($account))) {
+    $form['filter']['tags'] = array(
+      '#type' => 'select',
+      '#title' => t('Tags'),
+      '#options' => $tag_data,
+      '#multiple' => TRUE,
+      '#size' => 5,
+      '#weight' => 0
+    );
+  }
+    $form['filter']['submit'] = array(
+      '#type'     => 'submit',
+      '#value'    => t('Filter'),
+      '#prefix'   => '<div id="privatemsg-filter-buttons">',
+      '#weight'   => 10,
+    );
+
+    $form['filter']['save'] = array(
+      '#type'     => 'submit',
+      '#value'    => t('Save Filter'),
+      '#suffix'   => '</div>',
+      '#weight'   => 11,
+    );
+
+    if ($filter = privatemsg_filter_get_filter($account)) {
+      privatemsg_filter_dropdown_set_active($form, $filter);
+    }
+
+    return $form;
+}
+
+function privatemsg_filter_dropdown_set_active(&$form, $filter) {
+  $form['filter']['#title'] = t('Filter Messages (Active)');
+  $form['filter']['#collapsed'] = FALSE;
+
+  if (isset($filter['author'])) {
+    $form['filter']['author']['#default_value'] = $filter['author'];
+  }
+  if (isset($filter['tags'])) {
+    $form['filter']['tags']['#default_value'] = $filter['tags'];
+  }
+  if (isset($filter['search'])) {
+    $form['filter']['search']['#default_value'] = $filter['search'];
+  }
+  
+  $form['filter']['reset'] = array(
+      '#type'     => 'submit',
+      '#value'    => t('Reset'),
+      '#suffix'   => '</div>',
+      '#weight'   => 12
+  );
+  unset($form['filter']['save']['#suffix']);
+}
+
+function privatemsg_filter_dropdown_submit($form, &$form_state) {
+  switch ($form_state['values']['op']) {
+    case t('Save Filter'):
+      $filter = array();
+      if (!empty($form_state['values']['tags'])) {
+        $filter['tags'] = $form_state['values']['tags'];
+      }
+      if (!empty($form_state['values']['author'])) {
+        $filter['author'] = $form_state['values']['author'];
+      }
+      if (!empty($form_state['values']['search'])) {
+        $filter['search'] = $form_state['values']['search'];
+      }
+      $_SESSION['privatemsg_filter'] = $filter;
+      break;
+    case t('Filter'):
+      drupal_goto('messages', privatemsg_filter_create_get_query($form_state['values']));
+      return;
+      break;
+    case t('Reset'):
+      $_SESSION['privatemsg_filter'] = array();
+      break;
+  }
+  $form_state['redirect'] = 'messages';
+}
+
+function privatemsg_filter_create_get_query($filter)
+{
+  $query = array();
+  if (isset($filter['tags']) && !empty($filter['tags'])) {
+    $ids = array();
+    foreach ($filter['tags'] as $tag) {
+      if ((int)$tag > 0) {
+        $ids[] = $tag;
+      }
+      else {
+        $query['tags'][] = $tag;
+      }
+    }
+    $sql = 'SELECT pmt.tag FROM {pm_tags} pmt WHERE pmt.tag_id IN ('. implode(', ', $filter['tags']) .')';
+    $result = db_query($sql);
+    while ($row = db_fetch_object($result)) {
+      $query['tags'][] = $row->tag;
+    }
+
+    if (isset($query['tags'])) {
+      $query['tags'] = implode(' ', $query['tags']);
+    }
+  }
+
+  if (isset($filter['author']) && !empty($filter['author'])) {
+    array_map('user_load', $filter['author']);
+    foreach ($filter['author'] as $author) {
+      if (is_object($author) && isset($author->uid) && isset($author->name)) {
+        $query['author'][] = $author->name;
+      }
+      elseif ($author_obj = user_load($author)) {
+        $query['author'][] = $author_obj->name;
+      }
+    }
+    if (isset($query['author'])) {
+      $query['author'] = implode(' ', $query['author']);
+    }
+  }
+
+  if (isset($filter['search']) && !empty($filter['search'])) {
+    $query['search'] = $filter['search'];
+  }
+  return $query;
+}
+
+/**
+ * Implementation of hook_privatemsg_list_messages_alter().
+ */
+function privatemsg_filter_privatemsg_list_messages_alter(&$content, $account) {
+  if (!empty($content['list']['content']) || privatemsg_filter_get_filter($account)) {
+    $content['tags']['content'] = drupal_get_form('privatemsg_filter_dropdown', $account);
+    $content['tags']['#weight'] = -5;
+  }
+}
+
+
+/**
+ * Hook into the query builder to add the tagging info to the correct query
+ */
+function privatemsg_filter_privatemsg_list_alter(&$fragments) {
+  // Filter the message listing by any set tags.
+  if ($filter = privatemsg_filter_get_filter(user_load($fragments['query_args'][0]))) {
+
+    if (isset($filter['tags']) && !empty($filter['tags'])) {
+      $count = 0;
+      foreach ($filter['tags'] as $tag) {
+        $fragments['inner_join'][]  = "INNER JOIN {pm_tags_index} pmti$count ON (pmti$count.thread_id = pmi.thread_id AND pmti$count.uid = pmi.uid)";
+        $fragments['where'][]       = "pmti$count.tag_id = %d";
+        $fragments['query_args'][]   = $tag;
+        $count++;
+      }
+    }
+
+    if (isset($filter['author']) && !empty($filter['author'])) {
+      $count = 0;
+      foreach ($filter['author'] as $author) {
+        $fragments['inner_join'][]  = "INNER JOIN {users} u$count ON (u$count.uid = pmi.uid)";
+        $fragments['where'][]       = "u$count.uid = %d";
+        $fragments['query_args'][]   = $author;
+        $count++;
+      }
+    }
+
+    if (isset($filter['search']) && !empty($filter['search'])) {
+      $fragments['where'][]       = "pm.subject LIKE '%s'";
+      $fragments['query_args'][]    = '%%'. $filter['search'] .'%%';
+    }
+  }
+}
+
+function privatemsg_filter_privatemsg_view_messages_alter(&$content, $count) {
+  if ($count > 0) {
+    $content['tags']['content'] = drupal_get_form('privatemsg_filter_form');
+    $content['tags']['#weight'] = 10;
+  }
+}
+
+function privatemsg_filter_form(&$form_state) {
+  global $user;
+  $thread_id = arg(2);
+
+  $form['tags'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Tags'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  $form['tags']['user_id'] = array(
+    '#type' => 'value',
+    '#value' => $user->uid,
+  );
+  $form['tags']['thread_id'] = array(
+    '#type' => 'value',
+    '#value' => $thread_id,
+  );
+
+  $sql = 'SELECT * FROM {pm_tags}';
+  $query = db_query($sql);
+  $tag_array = array();
+
+  while ($result = db_fetch_object($query)) {
+    $checked = 0;
+    if (db_result(db_query('SELECT COUNT(*) FROM {pm_tags_index} WHERE tag_id = %d AND (uid = %d AND thread_id = %d)', $result->tag_id, $user->uid, $thread_id))) {
+      $checked = 1;
+    }
+    $form_data = array('#type' => 'checkbox', '#title' => $result->tag, '#default_value' => $checked, '#return_value' => 1);
+    $form['tags']['tag_'. $result->tag_id] = $form_data;
+  }
+
+  $form['tags']['submit'] = array(
+    '#type'     => 'submit',
+    '#value'    => t('Tag this message'),
+    '#submit'   => array('privatemsg_filter_form_submit'),
+  );
+
+  return $form;
+}
+
+function privatemsg_filter_form_submit($form, &$form_state) {
+  if (isset($form_state['values']['submit'])) {
+    $sql = 'SELECT * FROM {pm_tags}';
+    $query = db_query($sql);
+
+    while ($result = db_fetch_object($query)) {
+      if ($form_state['values']['tag_'. $result->tag_id] == 0) {
+        db_query('DELETE FROM {pm_tags_index} WHERE tag_id = %d AND (uid = %d AND thread_id = %d)', $result->tag_id, $form_state['values']['user_id'], $form_state['values']['thread_id']);
+      }
+      elseif (db_result(db_query('SELECT COUNT(*) FROM {pm_tags_index} WHERE tag_id = %d AND (uid = %d AND thread_id = %d)', $result->tag_id, $form_state['values']['user_id'], $form_state['values']['thread_id'])) == 0) {
+        db_query('INSERT INTO {pm_tags_index} (tag_id, uid, thread_id) VALUES (%d, %d, %d)', $result->tag_id, $form_state['values']['user_id'], $form_state['values']['thread_id']);
+      }
+    }
+    drupal_set_message(t('Tagging information has been saved.'));
+  }
+}

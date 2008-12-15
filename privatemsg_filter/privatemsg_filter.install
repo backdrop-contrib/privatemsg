@@ -1,0 +1,69 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * install file for privatemsg_filter
+ */
+
+
+function privatemsg_filter_schema() {
+  $schema = array();
+
+  $schema['pm_tags'] = array(
+    'description'       => t('{pm_tags} holds the names of tags and their id.'),
+    'fields'        => array(
+      'tag_id'    => array(
+        'description'   => t('Tag ID'),
+        'type'          => 'serial',
+        'not null'      => TRUE,
+        'unsigned'      => TRUE,
+      ),
+      'tag'     => array(
+        'description'   => t('The name of the tag'),
+        'type'          => 'varchar',
+        'length'        => 255,
+        'not null'      => TRUE,
+      ),
+    ),
+    'primary key'     => array('tag_id')
+  );
+
+  $schema['pm_tags_index'] = array(
+    'description'       => t('{pm_tags_index} holds mapping information between tags, threads the users.'),
+    'fields'        => array(
+      'tag_id'    => array(
+        'description'   => t('Tag ID'),
+        'type'          => 'int',
+        'not null'      => TRUE,
+        'unsigned'      => TRUE,
+      ),
+      'uid'    => array(
+        'description'   => t('ID of the user'),
+        'type'          => 'int',
+        'not null'      => TRUE,
+        'unsigned'      => TRUE,
+      ),
+      'thread_id'    => array(
+        'description'   => t('id of the thread'),
+        'type'          => 'int',
+        'not null'      => TRUE,
+        'unsigned'      => TRUE,
+      ),
+    ),
+    'primary key'     => array('tag_id', 'uid', 'thread_id'),
+    'indexes'         => array(
+     'uid'            => array('uid'),
+    ),
+  );
+
+  return $schema;
+}
+function privatemsg_filter_install() {
+  drupal_install_schema('privatemsg_filter');
+
+}
+
+function privatemsg_filter_uninstall() {
+  drupal_uninstall_schema('privatemsg_filter');
+}
