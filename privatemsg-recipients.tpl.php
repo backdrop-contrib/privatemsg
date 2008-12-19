@@ -3,5 +3,5 @@
   drupal_add_css(drupal_get_path('module', 'privatemsg').'/styles/privatemsg-recipients.css');
 ?>
 <div class="message-participants">
-  <?php print $recipients; ?>
+  <?php print $participants; ?>
 </div>
