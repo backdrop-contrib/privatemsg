@@ -199,7 +199,7 @@ function privatemsg_filter_get_author_data($account) {
   if (is_array($author_data)) {
     return $author_data;
   }
-  $sql = 'SELECT DISTINCT pm.author, u.name FROM {pm_message} pm INNER JOIN pm_index pmi ON pm.mid = pmi.mid INNER JOIN {users} u ON pm.author = u.uid WHERE pmi.uid = %d AND u.uid > 0 ORDER BY u.name';
+  $sql = 'SELECT DISTINCT pm.author, u.name FROM {pm_message} pm INNER JOIN {pm_index pmi} ON pm.mid = pmi.mid INNER JOIN {users} u ON pm.author = u.uid WHERE pmi.uid = %d AND u.uid > 0 ORDER BY u.name';
   $query = db_query($sql, $account->uid);
 
   $author_data = array();
