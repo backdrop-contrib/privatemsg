@@ -979,7 +979,7 @@ function privatemsg_delete_submit($form, &$form_state) {
 
   if ($form_state['values']['confirm']) {
     db_query('UPDATE {pm_index} SET deleted = %d WHERE mid = %d AND uid = %d', $deleted, $form_state['values']['pmid'], $user->uid);
-    drupal_set_message('Message has been deleted');
+    drupal_set_message(t('Message has been deleted'));
   }
   $form_state['redirect'] = 'messages';
 }
