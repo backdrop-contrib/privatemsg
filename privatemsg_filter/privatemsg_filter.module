@@ -409,7 +409,7 @@ function privatemsg_filter_privatemsg_list_alter(&$fragments) {
     if (isset($filter['author']) && !empty($filter['author'])) {
       $count = 0;
       foreach ($filter['author'] as $author) {
-        $fragments['inner_join'][]  = "INNER JOIN {users} u$count ON (u$count.uid = pmi.uid)";
+        $fragments['inner_join'][]  = "INNER JOIN {users} u$count ON (u$count.uid = pm.author)";
         $fragments['where'][]       = "u$count.uid = %d";
         $fragments['query_args'][]   = $author;
         $count++;
