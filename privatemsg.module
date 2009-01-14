@@ -861,13 +861,11 @@ function privatemsg_block($op = 'list', $delta = 0, $edit = array()) {
 
 function privatemsg_title_callback($title) {
   $count = privatemsg_unread_count();
-  $new = '';
-  if ($count) {
-    $new = " ({$count})";
-  }
-  $title .= $new;
 
-  return $title;
+  if ($count > 0) {
+    return t('Messages (@count)', array('@count' => $count));
+  }
+  return t('Messages');
 }
 
 
