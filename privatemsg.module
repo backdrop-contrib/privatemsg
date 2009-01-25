@@ -996,6 +996,6 @@ function privatemsg_per_message_actions($pmid) {
 }
 
 function privatemsg_privatemsg_pm_controls($pmid) {
-  return l(t('Delete message'), 'messages/delete/'. $pmid);
+  return l(t('Delete message'), 'messages/delete/'. $pmid, array('attributes' => array('class' => 'message-delete')));
 }
 
