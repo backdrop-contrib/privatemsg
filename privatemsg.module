@@ -524,18 +524,17 @@ function privatemsg_new(&$form_state, $account = NULL) {
     '#value'              => t('Send message'),
     '#submit'             => array('pm_send'),
   );
+  $url = 'messages';
+  if (isset($_REQUEST['destination'])) {
+    $url = $_REQUEST['destination'];
+  }
+
   $form['privatemsg']['cancel'] = array(
-    '#type'               => 'submit',
-    '#value'              => t('Cancel'),
-    '#submit'             => array('pm_cancel'),
+    '#value'              => l(t('Cancel'), $url, array('attributes' => array('id' => 'edit-cancel'))),
   );
   $form['#validate'][]    = 'pm_send_validate';
 
   return $form;
-}
-
-function pm_cancel($form, &$form_state) {
-  $form_state['redirect'] = 'messages/new';
 }
 
 function pm_send_validate($form, &$form_state) {
