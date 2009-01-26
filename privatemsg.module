@@ -109,12 +109,12 @@ function privatemsg_menu() {
     'type'             => MENU_LOCAL_TASK,
     'weight'           => -5,
   );
-  $items['messages/view/%'] = array(
-    'title'            => 'Read private message',
+  $items['messages/view/%privatemsg_thread'] = array(
+    'title'            => 'Read message',
     'page callback'    => 'privatemsg_view',
     'page arguments'   => array(2),
     'access arguments' => array('read privatemsg'),
-    'type'             => MENU_CALLBACK,
+    'type'             => MENU_LOCAL_TASK,
     'weight'           => -10,
   );
   $items['messages/delete/%'] = array(
@@ -128,17 +128,10 @@ function privatemsg_menu() {
   $items['messages/new'] = array(
     'title'            => 'Write new message',
     'page callback'    => 'drupal_get_form',
-    'page arguments'   => array('privatemsg_new'),
+    'page arguments'   => array('privatemsg_new', 2),
     'access arguments' => array('write privatemsg'),
     'type'             => MENU_LOCAL_TASK,
     'weight'           => -7,
-  );
-  $items['messages/new/%user'] = array(
-    'page callback'    => 'drupal_get_form',
-    'page arguments'   => array('privatemsg_new', 2),
-    'access arguments' => array('write privatemsg'),
-    'type'             => MENU_CALLBACK,
-    'weight'           => -10,
   );
   // Auto-completes available user names & removes duplicates.
   $items['messages/user-name-autocomplete'] = array(
@@ -156,6 +149,17 @@ function privatemsg_menu() {
     'type'             => MENU_NORMAL_ITEM,
   );
   return $items;
+}
+/**
+ * This function is called by the menu system through the %privatemsg_thread wildcard
+ *
+ * TODO: Really load the full thread in here
+ */
+function privatemsg_thread_load($thread_id) {
+  if ((int)$thread_id > 0) {
+    return $thread_id;
+  }
+  return FALSE;
 }
 
 
@@ -359,8 +363,9 @@ function theme_privatemsg_message_row($row) {
     if (!empty($row['recipient'])) {
       $recipients = _privatemsg_generate_user_array($row['recipient']);
       $themedRow[t('Recipients')] = '<span class="privatemsg-list-to' .  $unread.'">' . _privatemsg_format_participants($recipients, 3, true) . '</span>';
+    }
   }
-  }
+//  drupal_set_message('<pre>'. print_r($row, 1) . '</pre>');
   if ($row['last_updated']) {
     $themedRow[t('Last updated')] = '<span class="privatemsg-list-date' .  $unread.'">' . format_date($row['last_updated'], 'small') . '</span>';
   }
@@ -499,7 +504,7 @@ function privatemsg_new(&$form_state, $account = NULL) {
   $subject   = '';
   $body      = '';
 
-  if (isset($account)) {
+  if ((int)$account > 0 && $account = user_load($account)) {
     $recipient  = $account->name .', ';
   }
   if (isset($form_state['values'])) {
@@ -714,8 +719,8 @@ function privatemsg_privatemsg_list_sent_alter(&$fragments, $account) {
 
   }
   $fragments['query_args'][] = $account->uid;
-  
-  $fragments['select'][]      = 'MAX(pm.timestamp) as timestamp';
+
+  $fragments['select'][]      = 'MAX(pm.timestamp) as last_updated';
   $fragments['inner_join'][]  = 'INNER JOIN {pm_index} pmi ON pm.mid = pmi.mid';
   $fragments['where'][]       = 'pmi.uid = %d';
   $fragments['query_args'][]  = $account->uid;
