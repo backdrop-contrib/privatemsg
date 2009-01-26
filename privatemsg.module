@@ -26,6 +26,56 @@ function privatemsg_perm() {
   );
 }
 
+function _privatemsg_generate_user_array($userstring) {
+  static $user_cache = array();
+
+  $users = array_slice(explode(',', $userstring), -4);
+  $participants = array();
+  foreach ($users as $user) {
+    if (isset($user_cache[$user])) {
+      $participants[$user] = $user_cache[$user];
+    }
+    else {
+      $participants[$user] = $user_cache[$user] = user_load($user);
+    }
+  }
+  return $participants;
+}
+
+function _privatemsg_format_participants($partArray, $limit = 20, $noText = false) {
+  if (count($partArray) > 0) {
+    $to = array();
+    $limited = false;
+    foreach ($partArray as $account) {
+      if (count($to) >= $limit) {
+        $limited = true;
+        break;
+      }
+    	$to[]= theme('username', $account);
+    }
+
+    $limit_string = '';
+    if ($limited) {
+      $limit_string = t(' and others');
+    }
+
+
+    if ($noText) {
+      return implode(', ', $to) . $limit_string;
+    }
+
+    $last = array_pop($to);
+    if (count($to) == 0) { // Only one participant
+      return t("From !last", array('!last' => $last));
+    }
+    else { // Multipe participants..
+      $participants = implode(', ', $to);
+      return t('Participants: !participants and !last',array('!participants' => $participants, '!last' => $last));
+    }
+  }
+  return '';
+}
+
 /**
  * Implementation of hook_menu().
  */
@@ -205,19 +255,8 @@ function privatemsg_preprocess_privatemsg_view(&$vars) {
 
 function privatemsg_preprocess_privatemsg_to(&$vars) {
   $vars['participants'] = '';//assign a default empty value
-  if (isset($vars['message']['participants']) && count($vars['message']['participants'])) {
-    $to = array();
-    foreach ($vars['message']['participants'] as $account) {
-    	$to[]= theme('username', $account);
-    }
-    $last = array_pop($to);
-    if (count($to) == 0) { // Only one participant
-      $vars['participants'] = t("From !last", array('!last' => $last));
-    }
-    else { // Multipe participants..
-      $participants = implode(', ', $to);
-      $vars['participants'] = t('Participants: !participants and !last',array('!participants' => $participants, '!last' => $last));
-    }
+  if (isset($vars['message']['participants'])) {
+    $vars['participants'] = _privatemsg_format_participants($vars['message']['participants']);
   }
 }
 
@@ -281,18 +320,11 @@ function privatemsg_list_messages($account) {
   $content = '';
   if (!empty($rows)) {
     $head = array();
-    foreach ($rows[0] as $index => $value) {
-      switch ($index) {
-        case 'subject':
-          $col = t('Subject');
-          break;
-        case 'timestamp':
-          $col = t('Last updated');
-          break;
-        default:
-          continue 2;
+    foreach (array_keys($rows[0]) as $index) {
+      $head[$index] =  array('data' => $index);
+      if ($index == t('Last updated') || $index == t('Subject')) {
+        $head[$index] += array('field' => $index, 'sort'=> 'desc');
       }
-      $head[$index] =  array('data' => $col, 'field' => $index, 'sort'=> 'desc');
     }
 
     $content = theme('table', $head, $rows);
@@ -317,15 +349,20 @@ function theme_privatemsg_message_row($row) {
   if (isset($row['is_new']) && $row['is_new'] ) {
     $unread = ' privatemsg-unread';
   }
-  $themedRow['subject'] = '<span class="privatemsg-list-subject'. $unread.'">' . l($row['subject'], 'messages/view/'. $row['thread_id']) . '</span>';
+  $themedRow[t('Subject')] = '<span class="privatemsg-list-subject'. $unread.'">' . l($row['subject'], 'messages/view/'. $row['thread_id']) . '</span>';
   if (isset($row['author']) && $row['author']) {
-    $themedRow['author'] = '<span class="privatemsg-list-from' .  $unread.'">' . theme('username', user_load($row['author'])) . '</span>';
+    $authors = _privatemsg_generate_user_array($row['author']);
+    $themedRow[t('Authors')] = '<span class="privatemsg-list-from'.  $unread.'">'. _privatemsg_format_participants($authors, 3, true) .'</span>';
   }
-  if (isset($row['recipient']) && $row['recipient']) {
-    $themedRow['recipient'] = '<span class="privatemsg-list-to' .  $unread.'">' . theme('username', user_load($row['recipient'])) . '</span>';
+  if (array_key_exists('recipient', $row)) {
+    $themedRow[t('Recipients')] = '';
+    if (!empty($row['recipient'])) {
+      $recipients = _privatemsg_generate_user_array($row['recipient']);
+      $themedRow[t('Recipients')] = '<span class="privatemsg-list-to' .  $unread.'">' . _privatemsg_format_participants($recipients, 3, true) . '</span>';
   }
-  if ($row['timestamp']) {
-    $themedRow['timestamp'] = '<span class="privatemsg-list-date' .  $unread.'">' . format_date($row['timestamp'], 'small') . '</span>';
+  }
+  if ($row['last_updated']) {
+    $themedRow[t('Last updated')] = '<span class="privatemsg-list-date' .  $unread.'">' . format_date($row['last_updated'], 'small') . '</span>';
   }
   return $themedRow;
 }
@@ -423,7 +460,7 @@ function privatemsg_view($thread_id) {
     // Some tasks only need to be done once - on the first message of a thread.
     if ($message_count == 0) {
       // Set the page title to the message subject.
-      drupal_set_title($message['subject']);
+      drupal_set_title(check_plain($message['subject']));
     }
     $output .= theme('privatemsg_view', $message);
 
@@ -664,6 +701,20 @@ function privatemsg_privatemsg_list_sent_alter(&$fragments, $account) {
 
   $fragments['select'][]      = 'pmi.thread_id';
   $fragments['select'][]      = 'pm.subject';
+  if ($GLOBALS['db_type'] == 'pgsql') {
+    $fragments['select'][]      = "array_to_string(array(SELECT DISTINCT textin(int4out(pmia.uid))
+                                                         FROM {pm_index} pmia
+                                                         WHERE pmia.thread_id = pmi.thread_id AND pmia.uid <> %d), ',') AS recipient";
+
+  }
+  else {
+    $fragments['select'][]      = '(SELECT GROUP_CONCAT(DISTINCT pmia.uid SEPARATOR ",")
+                                                         FROM {pm_index} pmia
+                                                         WHERE pmia.thread_id = pmi.thread_id AND pmia.uid <> %d) AS recipient';
+
+  }
+  $fragments['query_args'][] = $account->uid;
+  
   $fragments['select'][]      = 'MAX(pm.timestamp) as timestamp';
   $fragments['inner_join'][]  = 'INNER JOIN {pm_index} pmi ON pm.mid = pmi.mid';
   $fragments['where'][]       = 'pmi.uid = %d';
@@ -692,7 +743,19 @@ function privatemsg_privatemsg_list_alter(&$fragments, $account) {
 
   $fragments['select'][]      = 'pmi.thread_id';
   $fragments['select'][]      = 'MIN(pm.subject) as subject';
-  $fragments['select'][]      = 'MAX(pm.timestamp) as timestamp';
+  $fragments['select'][]      = 'COUNT(pmi.thread_id) as count';
+
+  if ($GLOBALS['db_type'] == 'pgsql') {
+    $fragments['select'][]      = "array_to_string(array(SELECT DISTINCT textin(int4out(pma.author))
+                                                         FROM {pm_message} pma
+                                                         INNER JOIN pm_index pmia ON pma.mid = pmia.mid
+                                                         WHERE pmia.thread_id = pmi.thread_id),',') AS author";
+  }
+  else {
+    $fragments['select'][]      = 'GROUP_CONCAT(DISTINCT author SEPARATOR ",") as author';
+  }
+  $fragments['select'][]      = 'MAX(pm.timestamp) as last_updated';
+  $fragments['select'][]      = 'MIN(pm.timestamp) as thread_started';
   $fragments['select'][]      = 'MAX(pmi.is_new) as is_new';
   // pm_index needs to be the first join.
   array_unshift($fragments['inner_join'], 'INNER JOIN {pm_index} pmi ON pm.mid = pmi.mid');
