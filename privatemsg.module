@@ -208,6 +208,12 @@ function private_message_settings() {
     '#options' => drupal_map_assoc(array(10, 25, 50, 75, 100)),
     '#description' => t('Choose the number of conversations that should be listed per page.'),
   );
+  $form['privatemsg_display_loginmessage'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Inform the user about new messages on login'),
+    '#default_value' => variable_get('privatemsg_display_loginmessage', TRUE),
+    '#description' => t('This option can safely be disabled if the "New message indication" block is used instead.'),
+  );
   $form['#submit'][] = 'private_message_settings_submit';
   return system_settings_form($form);
 }
@@ -236,6 +242,9 @@ function privatemsg_theme() {
     ),
     'privatemsg_message_row'  => array(
       'arguments'             => array('row'),
+    ),
+    'privatemsg_new_block'  => array(
+      'arguments'             => array('count'),
     ),
   );
 }
@@ -340,6 +349,14 @@ function privatemsg_list_messages($account) {
   }
 
   return $content;
+}
+
+function theme_privatemsg_new_block($count) {
+  $text = format_plural($count, 'You have a new message, click here to read it', 
+                        'You have @count new messages, click here to read them',
+                        array('@count' => $count));
+
+  return l($text, 'messages', array('attributes' => array('id' => 'privatemsg-new-link')));
 }
 
 /**
@@ -898,9 +915,11 @@ function privatemsg_user($op, &$edit, &$account, $category = NULL) {
       }
       break;
     case 'login':
-      $count = privatemsg_unread_count();
-      if ($count) {
-        drupal_set_message(t('You have <a href="@inbox">%unread</a>.', array('@inbox' => url('messages/inbox'), '%unread' => format_plural($count, '1 unread message', '@count unread messages'))));
+      if (variable_get('privatemsg_display_loginmessage', TRUE) && user_access('read privatemsg')) {
+        $count = privatemsg_unread_count();
+        if ($count) {
+          drupal_set_message(t('You have <a href="@inbox">%unread</a>.', array('@inbox' => url('messages/inbox'), '%unread' => format_plural($count, '1 unread message', '@count unread messages'))));
+        }
       }
       break;
   }
@@ -912,6 +931,10 @@ function privatemsg_block($op = 'list', $delta = 0, $edit = array()) {
     $blocks['privatemsg-menu'] = array(
       'info' => t('Privatemsg links'),
     );
+    $blocks['privatemsg-new'] = array(
+      'info' => t('New message indication'),
+      'cache' => BLOCK_CACHE_PER_USER,
+    );
 
     return $blocks;
   }
@@ -920,6 +943,9 @@ function privatemsg_block($op = 'list', $delta = 0, $edit = array()) {
     switch ($delta) {
       case 'privatemsg-menu':
         $block = _privatemsg_block_menu();
+        break;
+      case 'privatemsg-new':
+        $block = _privatemsg_block_new();
         break;
     }
     return $block;
@@ -935,6 +961,24 @@ function privatemsg_title_callback($title) {
   return t('Messages');
 }
 
+
+function _privatemsg_block_new() {
+  $block = array();
+
+  if (!user_access('read privatemsg')) {
+    return $block;
+  }
+
+  $count = privatemsg_unread_count();
+  if ($count) {
+    $block = array(
+      'subject' => format_plural($count, 'New message', 'New messages'),
+      'content' => theme('privatemsg_new_block', $count),
+    );
+    return $block;
+  }
+  return array();
+}
 
 function _privatemsg_block_menu() {
   $block = array();
