@@ -952,11 +952,11 @@ function privatemsg_block($op = 'list', $delta = 0, $edit = array()) {
   }
 }
 
-function privatemsg_title_callback($title) {
+function privatemsg_title_callback($title = NULL) {
   $count = privatemsg_unread_count();
 
   if ($count > 0) {
-    return t('Messages (@count)', array('@count' => $count));
+    return t('Messages (@count new)', array('@count' => $count));
   }
   return t('Messages');
 }
@@ -983,17 +983,12 @@ function _privatemsg_block_new() {
 function _privatemsg_block_menu() {
   $block = array();
 
-  $count = privatemsg_unread_count();
-  $new = '';
-  if ($count) {
-    $new = " ({$count})";
-  }
   $links = array();
   if (user_access('write privatemsg')) {
     $links[] = l(t('Write new message'), 'messages/new');
   }
   if (user_access('read privatemsg') || user_access('read all private messages') ) {
-    $links[] = l(t('All messages@new', array('@new' => $new)), 'messages');
+    $links[] = l(privatemsg_title_callback(), 'messages');
   }
   if (user_access('read privatemsg') || user_access('read all private messages') ) {
     $links[] = l(t('Sent messages'), 'messages/sent');
