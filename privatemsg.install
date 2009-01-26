@@ -1,4 +1,11 @@
 <?php
+// $Id$
+
+/**
+ * @file
+ * Install file for privatemsg.module
+ */
+
 
 function privatemsg_schema() {
   $schema = array();
@@ -43,10 +50,10 @@ function privatemsg_schema() {
       'mid'               => array('mid'),
       'thread_id'         => array('thread_id'),
       'uid'         => array('uid'),
-      'is_new'              => array('mid', 'uid', 'is_new',),
+      'is_new'              => array('mid', 'uid', 'is_new', ),
     ),
   );
-  
+
   $schema['pm_message'] = array(
     'description'       => t('{pm_messages} holds the message information'),
     'fields'        => array(
@@ -88,13 +95,13 @@ function privatemsg_schema() {
       'timestamp'         => array('timestamp'),
     ),
   );
-  
-  
+
+
   return $schema;
 }
 function privatemsg_install() {
   drupal_install_schema('privatemsg');
-  
+
 }
 
 function privatemsg_uninstall() {
@@ -132,7 +139,7 @@ function privatemsg_update_6001() {
 function privatemsg_update_6000() {
   // Give update unlimited time to complete.
   set_time_limit(0);
-  
+
   // Update the database schema and transfer data to new tables.
   $schema = array();
   $schema['pm_index'] = array(
@@ -176,10 +183,10 @@ function privatemsg_update_6000() {
       'mid'               => array('mid'),
       'thread_id'         => array('thread_id'),
       'uid'         => array('uid'),
-      'is_new'              => array('mid','uid','is_new',),
+      'is_new'              => array('mid', 'uid', 'is_new', ),
     ),
   );
-  
+
   $schema['temp_pm_index'] = array(
     'description'       => t('{pm_index} holds indexing information about messages and recepients for fast retrieval'),
     'fields'        => array(
@@ -229,7 +236,7 @@ function privatemsg_update_6000() {
       ),
     ),
   );
-  
+
   $schema['pm_message'] = array(
     'description'       => t('{pm_messages} holds the message information'),
     'fields'        => array(
@@ -272,7 +279,7 @@ function privatemsg_update_6000() {
     ),
   );
   $ret = array();
-  
+
   // Step 1: Create tables.
   if (!(db_table_exists('pm_message'))) {
     db_create_table($ret, 'pm_message', $schema['pm_message']);
@@ -284,18 +291,18 @@ function privatemsg_update_6000() {
     db_create_table($ret, 'temp_pm_index', $schema['temp_pm_index']);
   }
   $modules = array();
-  if(!(module_exists('privatemsg_filter'))) {
+  if (!(module_exists('privatemsg_filter'))) {
     $modules[] = 'privatemsg_filter';
   }
-  if(!(module_exists('pm_block_user'))) {
+  if (!(module_exists('pm_block_user'))) {
     $modules[] = 'pm_block_user';
   }
   if (count($modules) > 0) {
     drupal_install_modules($modules);
   }
-  
+
   // Step 2: Get the data
-  
+
   // Step 2a: get the folder/tagging data first.
   if (db_table_exists('privatemsg_folder')) {
     $data = db_query("SELECT * FROM {privatemsg_folder}");
@@ -305,7 +312,7 @@ function privatemsg_update_6000() {
       }
     }
   }
-  
+
   //Step 2b: Next, copy the user blocking data.
   if (db_table_exists('privatemsg_block_user')) {
     $data = db_query("SELECT * FROM {privatemsg_block_user}");
@@ -313,7 +320,7 @@ function privatemsg_update_6000() {
       db_query("INSERT INTO {pm_block_user} (author, recipient) VALUES ( %d, %d )", $result['author'], $result['recipient']);
     }
   }
-  
+
   //Step 2c: Next the data from the archive table - notice all these messages have been deleted both by the author and the recipient.
   if (db_table_exists('privatemsg_archive')) {
     $data = db_query("SELECT * FROM {privatemsg_archive}");
@@ -349,14 +356,14 @@ function privatemsg_update_6000() {
       db_query("INSERT INTO {temp_pm_index} (mid, thread, folder, thread_id, uid, is_new, deleted) VALUES ( %d, %d, %d, %d, %d, %d, %d )", $result['id'], $result['thread'], 0, $result['thread_id'], $result['author'], 0, $result['author_del']);
     }
   }
-  
+
   // Step 3: Process the Data.
   // Step 3a: Fix the thread data.
   $data = db_query("SELECT thread, MIN(mid) as new_thread FROM {temp_pm_index} WHERE thread_id = %d GROUP BY thread", 0);
   while ($result = db_fetch_array($data)) {
     db_query("UPDATE {temp_pm_index} SET thread_id = %d WHERE thread = %d", $result['new_thread'], $result['thread']);
   }
-  
+
   // Step 3b: Fix and import the tagging data.
   $data = db_query("SELECT thread_id, folder, uid FROM {temp_pm_index} WHERE folder <> %d", 0);
   while ($result = db_fetch_array($data)) {
@@ -365,19 +372,19 @@ function privatemsg_update_6000() {
       db_query("INSERT INTO {pm_tags_index} (uid, tag_id, thread_id) VALUES (%d, %d, %d)", $result->uid, $tag_id, $result->thread_id);
     }
   }
-  
+
   // Step 3c: Copy the index data.
   $data = db_query("SELECT * FROM {temp_pm_index}");
   while ($result = db_fetch_array($data)) {
     db_query("INSERT INTO {pm_index} (mid, thread_id, uid, is_new, deleted) VALUES ( %d, %d, %d, %d, %d )", $result['mid'], $result['thread_id'], $result['uid'], $result['is_new'], $result['deleted']);
   }
-  
+
   // Step 4: Clean up.
   db_drop_table($ret, 'privatemsg');
   db_drop_table($ret, 'privatemsg_archive');
   db_drop_table($ret, 'privatemsg_folder');
   db_drop_table($ret, 'privatemsg_block_user');
   db_drop_table($ret, 'temp_pm_index');
-  
+
   return $ret;
 }

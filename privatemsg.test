@@ -1,12 +1,18 @@
 <?php
-//$Id$
+// $Id$
+/**
+ * @file
+ * Test file for privatemsg.module
+ *
+ */
 
 class PrivatemsgTestCase extends DrupalWebTestCase {
   /**
    * Implementation of getInfo().
    */
   function getInfo() {
-    return array(
+    return array
+    (
       // 'name' should start with what is being tested (menu item) followed by what about it
       // is being tested (creation/deletion).
       'name' => t('Privatemsg functionality.'),

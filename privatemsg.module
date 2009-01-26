@@ -42,16 +42,16 @@ function _privatemsg_generate_user_array($userstring) {
   return $participants;
 }
 
-function _privatemsg_format_participants($partArray, $limit = 20, $noText = false) {
-  if (count($partArray) > 0) {
+function _privatemsg_format_participants($part_array, $limit = 20, $no_text = FALSE) {
+  if (count($part_array) > 0) {
     $to = array();
-    $limited = false;
-    foreach ($partArray as $account) {
+    $limited = FALSE;
+    foreach ($part_array as $account) {
       if (count($to) >= $limit) {
-        $limited = true;
+        $limited = TRUE;
         break;
       }
-    	$to[]= theme('username', $account);
+      $to[] = theme('username', $account);
     }
 
     $limit_string = '';
@@ -60,7 +60,7 @@ function _privatemsg_format_participants($partArray, $limit = 20, $noText = fals
     }
 
 
-    if ($noText) {
+    if ($no_text) {
       return implode(', ', $to) . $limit_string;
     }
 
@@ -70,7 +70,7 @@ function _privatemsg_format_participants($partArray, $limit = 20, $noText = fals
     }
     else { // Multipe participants..
       $participants = implode(', ', $to);
-      return t('Participants: !participants and !last',array('!participants' => $participants, '!last' => $last));
+      return t('Participants: !participants and !last', array('!participants' => $participants, '!last' => $last));
     }
   }
   return '';
@@ -336,13 +336,13 @@ function privatemsg_list_messages($account) {
     foreach (array_keys($rows[0]) as $index) {
       $head[$index] =  array('data' => $index);
       if ($index == t('Last updated') || $index == t('Subject')) {
-        $head[$index] += array('field' => $index, 'sort'=> 'desc');
+        $head[$index] += array('field' => $index, 'sort' => 'desc');
       }
     }
 
     $content = theme('table', $head, $rows);
     $content .= theme('pager');
-    drupal_add_css(drupal_get_path('module', 'privatemsg').'/styles/privatemsg-list.css');
+    drupal_add_css(drupal_get_path('module', 'privatemsg') .'/styles/privatemsg-list.css');
   }
   else {
     drupal_set_message(t('No messages to display.'));
@@ -352,7 +352,7 @@ function privatemsg_list_messages($account) {
 }
 
 function theme_privatemsg_new_block($count) {
-  $text = format_plural($count, 'You have a new message, click here to read it', 
+  $text = format_plural($count, 'You have a new message, click here to read it',
                         'You have @count new messages, click here to read them',
                         array('@count' => $count));
 
@@ -364,29 +364,29 @@ function theme_privatemsg_new_block($count) {
  *
  */
 function theme_privatemsg_message_row($row) {
-  $themedRow = array();
+  $themed_row = array();
 
   $unread = '';
   if (isset($row['is_new']) && $row['is_new'] ) {
     $unread = ' privatemsg-unread';
   }
-  $themedRow[t('Subject')] = '<span class="privatemsg-list-subject'. $unread.'">' . l($row['subject'], 'messages/view/'. $row['thread_id']) . '</span>';
+  $themed_row[t('Subject')] = '<span class="privatemsg-list-subject'. $unread .'">'. l($row['subject'], 'messages/view/'. $row['thread_id']) .'</span>';
   if (isset($row['author']) && $row['author']) {
     $authors = _privatemsg_generate_user_array($row['author']);
-    $themedRow[t('Authors')] = '<span class="privatemsg-list-from'.  $unread.'">'. _privatemsg_format_participants($authors, 3, true) .'</span>';
+    $themed_row[t('Authors')] = '<span class="privatemsg-list-from'.  $unread .'">'. _privatemsg_format_participants($authors, 3, TRUE) .'</span>';
   }
   if (array_key_exists('recipient', $row)) {
-    $themedRow[t('Recipients')] = '';
+    $themed_row[t('Recipients')] = '';
     if (!empty($row['recipient'])) {
       $recipients = _privatemsg_generate_user_array($row['recipient']);
-      $themedRow[t('Recipients')] = '<span class="privatemsg-list-to' .  $unread.'">' . _privatemsg_format_participants($recipients, 3, true) . '</span>';
+      $themed_row[t('Recipients')] = '<span class="privatemsg-list-to'.  $unread .'">'. _privatemsg_format_participants($recipients, 3, TRUE) .'</span>';
     }
   }
 //  drupal_set_message('<pre>'. print_r($row, 1) . '</pre>');
   if ($row['last_updated']) {
-    $themedRow[t('Last updated')] = '<span class="privatemsg-list-date' .  $unread.'">' . format_date($row['last_updated'], 'small') . '</span>';
+    $themed_row[t('Last updated')] = '<span class="privatemsg-list-date'.  $unread .'">'. format_date($row['last_updated'], 'small') .'</span>';
   }
-  return $themedRow;
+  return $themed_row;
 }
 
 /**
@@ -749,7 +749,7 @@ function privatemsg_privatemsg_list_sent_alter(&$fragments, $account) {
   $sort = 'desc';
   if (isset($_GET['order'])) {
     switch ($_GET['order']) {
-      case ('subject'):
+      case 'subject':
         $order = 'subject';
         break;
       default:
@@ -757,7 +757,7 @@ function privatemsg_privatemsg_list_sent_alter(&$fragments, $account) {
     }
     $sort = isset($_GET['sort']) && ($_GET['sort'] == 'asc' || $_GET['sort'] == 'desc') ? $_GET['sort'] : 'desc';
   }
-  $fragments['order_by'][]  = $order . ' ' . $sort;
+  $fragments['order_by'][]  = $order .' '. $sort;
 }
 
 function privatemsg_privatemsg_list_alter(&$fragments, $account) {
@@ -796,7 +796,7 @@ function privatemsg_privatemsg_list_alter(&$fragments, $account) {
     }
     $sort = isset($_GET['sort']) && ($_GET['sort'] == 'asc' || $_GET['sort'] == 'desc') ? $_GET['sort'] : 'desc';
   }
-  $fragments['order_by'][]  = $order . ' ' . $sort . ', timestamp DESC';
+  $fragments['order_by'][]  = $order .' '. $sort .', timestamp DESC';
 
 }
 
@@ -1097,7 +1097,7 @@ function privatemsg_per_message_actions($pmid) {
   $output = '';
   $result = module_invoke_all('privatemsg_pm_controls', $pmid);
 
-  if(count($result)) {
+  if (count($result)) {
     $output = '<ul><li>';
     $output .= implode('</li><li>', $result);
     $output .= '</li></ul>';

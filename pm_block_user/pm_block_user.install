@@ -1,8 +1,14 @@
 <?php
 // $Id$
-
+/**
+ * @file
+ * Install file for pm_block_user.module
+ */
+/**
+ * @return unknown
+ */
 function pm_block_user_schema() {
-  $schema = array();  
+  $schema = array();
 
   $schema['pm_block_user'] = array(
     'description'       => t('{pm_block_user} holds data mapping which authors who cannot messages to which recipients '),
@@ -21,12 +27,12 @@ function pm_block_user_schema() {
       ),
     ),
   );
-  
+
   return $schema;
 }
 function pm_block_user_install() {
   drupal_install_schema('pm_block_user');
-  
+
 }
 
 function pm_block_user_uninstall() {

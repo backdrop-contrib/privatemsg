@@ -1,6 +1,11 @@
 <?php
+// $Id$
 
-
+/**
+ * @file
+ * Contains main API for privatemsg module
+ *
+ */
 
 /**
  * Message sending helper functions
@@ -90,10 +95,10 @@ function _privatemsg_assemble_query($query_id) {
   //we do the merge because we call call_user_func_array and not drupal_alter
   //this is necessary because otherwise we would not be able to use $args correctly (otherwise it doesnt unfold)
   if (!empty($args)) {
-     $alterargs = array_merge(array($query_id, &$fragments,), $args);
+     $alterargs = array_merge(array($query_id, &$fragments, ), $args);
   }
   else {
-     $alterargs = array($query_id, &$fragments,);
+     $alterargs = array($query_id, &$fragments, );
   }
   /**
    * END: Dynamic arguments
@@ -108,7 +113,7 @@ function _privatemsg_assemble_query($query_id) {
   $QUERY_ARGS = $fragments['query_args'];
   $primary_table = $fragments['primary_table'];
 
-  if(empty($primary_table)) {
+  if (empty($primary_table)) {
     $primary_table = '{privatemsg} pm';
   }
 
