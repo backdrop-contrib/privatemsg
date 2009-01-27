@@ -745,15 +745,15 @@ function privatemsg_privatemsg_list_sent_alter(&$fragments, $account) {
   $fragments['query_args'][]  = $account->uid;
   $fragments['where'][]       = 'pmi.deleted = 0';
   $fragments['group_by'][]  = 'pmi.thread_id';
-  $order = 'timestamp';
+  $fragments['group_by'][]  = 'pm.subject';
+
+  $order = 'last_updated';
   $sort = 'desc';
   if (isset($_GET['order'])) {
     switch ($_GET['order']) {
       case 'subject':
         $order = 'subject';
         break;
-      default:
-        $order = 'timestamp';
     }
     $sort = isset($_GET['sort']) && ($_GET['sort'] == 'asc' || $_GET['sort'] == 'desc') ? $_GET['sort'] : 'desc';
   }
@@ -796,7 +796,7 @@ function privatemsg_privatemsg_list_alter(&$fragments, $account) {
     }
     $sort = isset($_GET['sort']) && ($_GET['sort'] == 'asc' || $_GET['sort'] == 'desc') ? $_GET['sort'] : 'desc';
   }
-  $fragments['order_by'][]  = $order .' '. $sort .', timestamp DESC';
+  $fragments['order_by'][]  = $order .' '. $sort .', last_updated DESC';
 
 }
 
