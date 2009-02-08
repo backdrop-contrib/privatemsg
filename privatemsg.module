@@ -317,11 +317,11 @@ function privatemsg_list($uid = NULL) {
 function privatemsg_list_messages($account) {
   switch (arg(1)) {
     case 'sent':
-      $query = _privatemsg_assemble_query('privatemsg_list_sent', $account);
+      $query = _privatemsg_assemble_query('list_sent', $account);
       break;
     case 'inbox':
     default:
-      $query = _privatemsg_assemble_query('privatemsg_list', $account);
+      $query = _privatemsg_assemble_query('list', $account);
   }
   $result = pager_query($query['query'], variable_get('privatemsg_per_page', 25), 0, $query['count']);
 
@@ -412,7 +412,7 @@ function privatemsg_unread_count($account = NULL) {
     $account = $user;
   }
   if ( !isset($counts[$account->uid])) {
-    $query = _privatemsg_assemble_query('privatemsg_unread_count', $account);
+    $query = _privatemsg_assemble_query('unread_count', $account);
     $counts[$account->uid] = db_result(db_query($query['query']));
   }
   return $counts[$account->uid];
@@ -462,7 +462,7 @@ function privatemsg_view($thread_id) {
   $output = '';
 
   // Load the list of participants.
-  $query = _privatemsg_assemble_query('privatemsg_participants', $thread_id);
+  $query = _privatemsg_assemble_query('participants', $thread_id);
   $participants = db_query($query['query']);
   while ($result = db_fetch_object($participants)) {
     $message['participants'][] = user_load($result->uid);
@@ -471,7 +471,7 @@ function privatemsg_view($thread_id) {
   $content['participants']['#weight'] = -5;
 
   // Load the messages.
-  $query = _privatemsg_assemble_query('privatemsg_messages', $thread_id, $user->uid);
+  $query = _privatemsg_assemble_query('messages', $thread_id, $user->uid);
   $conversation = db_query($query['query']);
   $message_count = 0;
   while ($result = db_fetch_array($conversation)) {
@@ -718,7 +718,7 @@ function pm_preview($form, &$form_state) {
   $form_state['rebuild'] = TRUE; //this forces our form to be rebuilt instead of being submitted.
 }
 
-function privatemsg_privatemsg_list_sent_alter(&$fragments, $account) {
+function privatemsg_sql_list_sent(&$fragments, $account) {
   $fragments['primary_table'] = '{pm_message} pm';
 
   $fragments['select'][]      = 'pmi.thread_id';
@@ -760,7 +760,7 @@ function privatemsg_privatemsg_list_sent_alter(&$fragments, $account) {
   $fragments['order_by'][]  = $order .' '. $sort;
 }
 
-function privatemsg_privatemsg_list_alter(&$fragments, $account) {
+function privatemsg_sql_list(&$fragments, $account) {
   $fragments['primary_table'] = '{pm_message} pm';
 
   $fragments['select'][]      = 'pmi.thread_id';
@@ -780,7 +780,7 @@ function privatemsg_privatemsg_list_alter(&$fragments, $account) {
   $fragments['select'][]      = 'MIN(pm.timestamp) as thread_started';
   $fragments['select'][]      = 'MAX(pmi.is_new) as is_new';
   // pm_index needs to be the first join.
-  array_unshift($fragments['inner_join'], 'INNER JOIN {pm_index} pmi ON pm.mid = pmi.mid');
+  $fragments['inner_join'][]  = 'INNER JOIN {pm_index} pmi ON pm.mid = pmi.mid';
   $fragments['where'][]       = 'pmi.uid = %d';
   $fragments['query_args'][]  = $account->uid;
   $fragments['where'][]       = 'pmi.deleted = 0';
@@ -800,7 +800,7 @@ function privatemsg_privatemsg_list_alter(&$fragments, $account) {
 
 }
 
-function privatemsg_privatemsg_load_alter(&$fragments, $pmid, $uid) {
+function privatemsg_sql_load(&$fragments, $pmid, $uid) {
 //  drupal_set_message('<pre>'. print_r(func_get_args(), 1) . '</pre>');
   $fragments['primary_table'] = '{pm_message} pm'; // Our primary table
 
@@ -818,7 +818,7 @@ function privatemsg_privatemsg_load_alter(&$fragments, $pmid, $uid) {
   $fragments['query_args'][]  = $uid;
 }
 
-function privatemsg_privatemsg_messages_alter(&$fragments, $thread_id, $uid) {
+function privatemsg_sql_messages(&$fragments, $thread_id, $uid) {
   $fragments['primary_table'] = '{pm_index} pmi';
 
   $fragments['select'][]      = 'DISTINCT(pmi.mid) as mid';
@@ -830,7 +830,7 @@ function privatemsg_privatemsg_messages_alter(&$fragments, $thread_id, $uid) {
   $fragments['order_by'][]    = 'pmi.mid ASC';
 }
 
-function privatemsg_privatemsg_participants_alter(&$fragments, $thread_id) {
+function privatemsg_sql_participants(&$fragments, $thread_id) {
   $fragments['primary_table'] = '{pm_index} pmi';
 
   $fragments['select'][]      = 'DISTINCT(pmi.uid) as uid';
@@ -839,7 +839,7 @@ function privatemsg_privatemsg_participants_alter(&$fragments, $thread_id) {
 }
 
 
-function privatemsg_privatemsg_unread_count_alter(&$fragments, $account) {
+function privatemsg_sql_unread_count(&$fragments, $account) {
   $fragments['primary_table'] = '{pm_index} pmi';
 
   $fragments['select'][]      = 'COUNT(DISTINCT thread_id) as unread_count';
@@ -1009,7 +1009,7 @@ function privatemsg_form_alter(&$form, $form_state, $form_id) {
         global $user;
         $subject = db_result(db_query('SELECT subject FROM {pm_message} WHERE mid = %d', arg(2)));
         $thread = db_result(db_query('SELECT thread_id FROM {pm_index} WHERE mid = %d', arg(2)));
-        $query = _privatemsg_assemble_query('privatemsg_participants', $thread);
+        $query = _privatemsg_assemble_query('participants', $thread);
         $participants = db_query($query['query']);
         $usercount = 0;
         while ($result = db_fetch_object($participants)) {

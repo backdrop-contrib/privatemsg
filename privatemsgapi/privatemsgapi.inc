@@ -59,7 +59,7 @@ function _save_privatemsg_group_user($gid, $users = array()) {
  *
  */
 function _privatemsg_load($pmid, $uid = NULL) {
-  $query = _privatemsg_assemble_query('privatemsg_load', $pmid, $uid);
+  $query = _privatemsg_assemble_query('load', $pmid, $uid);
 //  drupal_set_message('<pre>'. print_r($query, 1) . '</pre>');
 
   $result = db_query($query['query']);
@@ -67,8 +67,18 @@ function _privatemsg_load($pmid, $uid = NULL) {
   return $message;
 }
 
-function _privatemsg_assemble_query($query_id) {
+function _privatemsg_assemble_query($query) {
 
+  // Modules will be allowed to choose the prefix for the querybuilder, but if there is not one supplied, 'privatemsg' will be taken by default.
+  if (is_array($query)) {
+    $query_id = $query[0];
+    $query_group = $query[1];
+  }
+  else {
+    $query_id = $query;
+    $query_group = 'privatemsg';  
+  }
+  
   $SELECT = array();
   $INNER_JOIN = array();
   $WHERE = array();
@@ -94,15 +104,21 @@ function _privatemsg_assemble_query($query_id) {
   unset($args[0]);
   //we do the merge because we call call_user_func_array and not drupal_alter
   //this is necessary because otherwise we would not be able to use $args correctly (otherwise it doesnt unfold)
+  $alterargs = array(&$fragments);
+  $query_function = $query_group .'_sql_'. $query_id;
   if (!empty($args)) {
-     $alterargs = array_merge(array($query_id, &$fragments, ), $args);
-  }
-  else {
-     $alterargs = array($query_id, &$fragments, );
+    $alterargs = array_merge($alterargs, $args);
   }
   /**
    * END: Dynamic arguments
    */
+  if (!function_exists($query_function)) {
+    drupal_set_message(t('Query function %function does not exist', array('%function' => $query_function)), 'error');
+    return FALSE;
+  }
+  call_user_func_array($query_function, $alterargs);
+
+  array_unshift($alterargs, $query_function);
   call_user_func_array('drupal_alter', $alterargs);
 
   $SELECT = $fragments['select'];
