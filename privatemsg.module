@@ -849,6 +849,19 @@ function privatemsg_sql_unread_count(&$fragments, $account) {
   $fragments['query_args'][]  = $account->uid;
 }
 
+function privatemsg_sql_autocomplete(&$fragments, $search, $names) {
+  $fragments['primary_table'] = '{users} u';
+  $fragments['select'][] = 'u.name';
+  $fragments['where'][] = "u.name LIKE '%s'";
+  $fragments['query_args'][] = $search. '%%';
+  if (!empty($names)) {
+    $fragments['where'][] = "u.name NOT IN (". db_placeholders($names, 'text') .")";
+    $fragments['query_args'] += $names;
+  }
+  $fragments['where'][] = 'u.status <> 0';
+  $fragments['order_by'][] = 'u.name ASC';
+}
+
 /**
  * Return autocomplete results for usernames.
  * Prevents usernames from being used and/or suggested twice.
@@ -871,18 +884,15 @@ function privatemsg_user_name_autocomplete($string) {
   // 2: Find the next user name suggestion.
   $fragment = array_pop($names);
   if (!empty($fragment)) {
-    $query = "SELECT name FROM {users} u WHERE name like '%s%%'";
-    $query .= " AND name NOT IN ('". implode("', '", $names) ."')"; // This will prevent suggesting a name that is already in our list.
-    $query .= " AND status <> 0 ORDER BY name ASC";
-    $result = db_query_range($query, $fragment, 0, 10);
+    $query = _privatemsg_assemble_query('autocomplete', $fragment, $names);
+    $result = db_query_range($query['query'], $fragment, 0, 10);
     $prefix = count($names) ? implode(", ", $names) .", " : '';
     // 3: Build proper suggestions and print.
     $matches = array();
     while ($user = db_fetch_object($result)) {
       $matches[$prefix . $user->name .", "] = $user->name;
     }
-    print drupal_to_js($matches);
-    exit();
+    drupal_json($matches);
   }
 }
 
