@@ -261,9 +261,12 @@ function privatemsg_preprocess_privatemsg_view(&$vars) {
    */
   $vars['message_timestamp'] = format_date($message['timestamp'], 'small');
   $vars['message_body'] = check_markup($message['body']);
-  if ( isset($message['mid']) ) { //safe for message preview
-    $vars ['message_actions'] = privatemsg_per_message_actions($message['mid']);
+  if (isset($vars['mid'])) {
+    $vars['message_actions'][] = l(t('Delete message'), 'messages/delete/'. $vars['mid']);
   }
+
+  // call hook_privatemsg_message_view_alter
+  drupal_alter('privatemsg_message_view', $vars);
 }
 
 function privatemsg_preprocess_privatemsg_to(&$vars) {
@@ -471,12 +474,12 @@ function privatemsg_view($thread_id) {
   $content['participants']['#weight'] = -5;
 
   // Load the messages.
-  $query = _privatemsg_assemble_query('messages', $thread_id, $user->uid);
+  $query = _privatemsg_assemble_query('messages', $thread_id, $user);
   $conversation = db_query($query['query']);
   $message_count = 0;
   while ($result = db_fetch_array($conversation)) {
     $pmid = $result['mid'];
-    $message = _privatemsg_load($pmid, $user->uid);
+    $message = _privatemsg_load($pmid, $user);
     privatemsg_set_new_status($user, $pmid);
     $message['author'] = user_load($message['author']);
     // Some tasks only need to be done once - on the first message of a thread.
@@ -554,6 +557,7 @@ function privatemsg_new(&$form_state, $account = NULL) {
     '#description'        => t('Separate multiple names with commas.'),
     '#default_value'      => $recipient,//populate this later
     '#required'           => TRUE,
+    '#weight'             => -10,
     '#size'               => 50,
     '#autocomplete_path'  => 'messages/user-name-autocomplete',
     // Do not hardcode #maxlength, make it configurable by number of recipients, not their name length.
@@ -564,6 +568,7 @@ function privatemsg_new(&$form_state, $account = NULL) {
     '#size'               => 50,
     '#maxlength'          => 255,
     '#default_value'      => $subject,
+    '#weight'             => -5,
     '#required'           => TRUE,
   );
   $form['privatemsg']['body']       = array(
@@ -571,17 +576,20 @@ function privatemsg_new(&$form_state, $account = NULL) {
     '#title'              => t('Message'),
     '#cols'               => 10,
     '#rows'               => 6,
+    '#weight'             => 0,
     '#default_value'      => $body,
   );
   $form['privatemsg']['preview'] = array(
     '#type'               => 'submit',
     '#value'              => t('Preview message'),
     '#submit'             => array('pm_preview'),
+    '#weight'             => 10,
   );
   $form['privatemsg']['submit'] = array(
     '#type'               => 'submit',
     '#value'              => t('Send message'),
     '#submit'             => array('pm_send'),
+    '#weight'             => 15,
   );
   $url = 'messages';
   if (isset($_REQUEST['destination'])) {
@@ -590,8 +598,16 @@ function privatemsg_new(&$form_state, $account = NULL) {
 
   $form['privatemsg']['cancel'] = array(
     '#value'              => l(t('Cancel'), $url, array('attributes' => array('id' => 'edit-cancel'))),
+    '#weight'             => 20,
   );
   $form['#validate'][]    = 'pm_send_validate';
+
+  //modules can store data here, everything stored here will be available
+  //in $message, similar to #node
+
+
+
+
 
   return $form;
 }
@@ -600,6 +616,7 @@ function pm_send_validate($form, &$form_state) {
 //  drupal_set_message('<pre>'. print_r($form_state['values'], 1) . '</pre>');
   // The actual message that is being sent, we create this during validation and pass to submit to send out.
   $message = array();
+
   $message['body']      = $form_state['values']['body'];
   $message['subject']   = $form_state['values']['subject'];
   $message['author']    = $form_state['values']['author'];
@@ -608,10 +625,7 @@ function pm_send_validate($form, &$form_state) {
     $message['thread_id'] = $form_state['values']['thread_id'];
   }
 
-  // Some editors add tags to the body which will fool the formapi into thinking there is content.
-  if (trim(strip_tags($form_state['values']['body'])) == '' && $form['privatemsg']['body']['#required'] == TRUE) {
-    form_set_error('body', t('Blank messages are not allowed.'));
-  }
+
 
   // Verify that recipient's name syntax is correct.
   $fragments = explode(',', $form_state['values']['recipient']);
@@ -633,17 +647,7 @@ function pm_send_validate($form, &$form_state) {
   // Verify users exist and load their accounts.
   foreach ($valid as $index => $name) {
     if ($recipient = user_load(array('name' => $name))) {
-      // Check for blocked users. Modules blocking the message will return a message if they block, or nothing if they don't.
-      $results = module_invoke_all('privatemsg_block_message', $message['author'], $recipient);
-      if (count($results)) {
-        $invalid[$name] = $name;
-        foreach ($results as $result) {
-          drupal_set_message($result);
-        }
-      }
-      else {
-        $message['recipients'][$recipient->uid] = $recipient;
-      }
+      $message['recipients'][$recipient->uid] = $recipient;
     }
     else {
       // Here we add more invalid names due to the fact that they don't exist.
@@ -664,46 +668,24 @@ function pm_send_validate($form, &$form_state) {
    * 2) Names that remain will be put into a recipients array.
    */
 
+  $errors = _privatemsg_validate_message($message, $message['author'], TRUE);
+  if (!empty($errors)) {
+      foreach ($errors as $error) {
+        form_set_error('body', $error);
+      }
+  }
+
   $form_state['validate_built_message'] = $message;
   if (!empty($invalid)) {
     drupal_set_message(t('The following users will not receive this private message: @invalid', array('@invalid' => implode(", ", $invalid))), 'error');
-  }
-  if (empty($message['recipients'])) {
-    form_set_error('error', t('There are no valid recipients.'));
   }
   $form_state['values']['recipient'] = implode(', ', array_diff($valid, $invalid));
 }
 
 function pm_send($form, &$form_state) {
-  $message = $form_state['validate_built_message'];
-
-  // 1) Save the message body first.
-  $args = array();
-  $args[] = $message['subject'];
-  $args[] = $message['author']->uid;
-  $args[] = $message['body'];
-  $args[] = $message['timestamp'];
-  $query = "INSERT INTO {pm_message} (subject, author, body, timestamp) VALUES ('%s', %d, '%s', %d)";
-  $resuld = db_query($query, $args);
-  $mid = db_last_insert_id('pm_message', 'mid');
-  $message['mid'] = $mid;
-
-  // Thread ID is the same as the mid if it's the first message in the thread.
-  if (!isset($message['thread_id'])) {
-    $message['thread_id'] = $mid;
+  if (_privatemsg_send($form_state['validate_built_message'])) {
+    drupal_set_message(t('A message has been sent to @recipients.', array('@recipients' => $form_state['values']['recipient'])));
   }
-  // 2) Save message to recipients.
-  // Each recipient gets a record in the pm_index table.
-  $query = "INSERT INTO {pm_index} (mid, thread_id, uid, is_new, deleted) VALUES (%d, %d, %d, %d, 0)";
-  foreach ($message['recipients'] as $recipient) {
-    $mid = $message['mid'];
-    $thread_id  = $message['thread_id'];
-    db_query($query, $mid, $thread_id, $recipient->uid, 1);
-  }
-  // Also add a record for tha author to the pm_index table - set  column "new" to 0.
-  db_query($query, $mid, $thread_id, $message['author']->uid, 0);
-
-  drupal_set_message(t('A message has been sent to @recipients.', array('@recipients' => $form_state['values']['recipient'])));
 }
 
 function pm_preview($form, &$form_state) {
@@ -800,7 +782,7 @@ function privatemsg_sql_list(&$fragments, $account) {
 
 }
 
-function privatemsg_sql_load(&$fragments, $pmid, $uid) {
+function privatemsg_sql_load(&$fragments, $pmid, $account) {
 //  drupal_set_message('<pre>'. print_r(func_get_args(), 1) . '</pre>');
   $fragments['primary_table'] = '{pm_message} pm'; // Our primary table
 
@@ -815,17 +797,17 @@ function privatemsg_sql_load(&$fragments, $pmid, $uid) {
   $fragments['where'][]       = 'pmi.mid = %d';
   $fragments['query_args'][]  = $pmid;
   $fragments['where'][]       = 'pmi.uid = %d';
-  $fragments['query_args'][]  = $uid;
+  $fragments['query_args'][]  = $account->uid;
 }
 
-function privatemsg_sql_messages(&$fragments, $thread_id, $uid) {
+function privatemsg_sql_messages(&$fragments, $thread_id, $account) {
   $fragments['primary_table'] = '{pm_index} pmi';
 
   $fragments['select'][]      = 'DISTINCT(pmi.mid) as mid';
   $fragments['where'][]       = 'pmi.thread_id = %d';
   $fragments['query_args'][]  = $thread_id;
   $fragments['where'][]       = 'pmi.uid = %d';
-  $fragments['query_args'][]  = $uid;
+  $fragments['query_args'][]  = $account->uid;
   $fragments['where'][]       = 'pmi.deleted = 0';
   $fragments['order_by'][]    = 'pmi.mid ASC';
 }
@@ -894,6 +876,9 @@ function privatemsg_user_name_autocomplete($string) {
     }
     drupal_json($matches);
   }
+  else {
+    drupal_json(array());   //prevents auto-complete js error on empty
+  }
 }
 
 /**
@@ -916,10 +901,10 @@ function privatemsg_user($op, &$edit, &$account, $category = NULL) {
 
   switch ($op) {
     case 'view':
-      if (user_access('write privatemsg') && $user->uid <> $account->uid) {
+      if ($url = privatemsg_get_link($account)) {
         $account->content['privatemsg_send_new_message'] = array(
           '#type'   => 'markup',
-          '#value'  => l(t('Send this user a message'), 'messages/new/'. $account->uid, array('query' => drupal_get_destination())),
+          '#value'  => l(t('Send this user a message'), $url, array('query' => drupal_get_destination())),
           '#weight' => 10,
         );
       }
@@ -1087,31 +1072,223 @@ function privatemsg_delete($form_state, $pmid) {
   );
 }
 
+function privatemsg_message_delete($pmid, $account = NULL) {
+  if (is_null($account)) {
+    global $user;
+    $account = drupal_clone($user);
+  }
+  $message = _privatemsg_load($pmid, $account);
+
+  db_query('UPDATE {pm_index} SET deleted = %d WHERE mid = %d AND uid = %d', 1, $pmid, $account->uid);
+
+  $result = db_query("SELECT MIN(deleted) AS deleted_by_all FROM {pm_index} WHERE mid = %d", $pmid);
+  $deleted = db_fetch_array($result);
+
+  $deleted_by_all = FALSE;
+  if ($deleted['deleted_by_all'] == 0) {
+    $deleted_by_all = TRUE;
+  }
+
+  module_invoke_all('privatemsg_message_delete', $message, $deleted_by_all);
+}
+
 function privatemsg_delete_submit($form, &$form_state) {
-  global $user;
   $deleted = 1;
 
   if ($form_state['values']['confirm']) {
-    db_query('UPDATE {pm_index} SET deleted = %d WHERE mid = %d AND uid = %d', $deleted, $form_state['values']['pmid'], $user->uid);
+    privatemsg_message_delete($form_state['values']['pmid']);
     drupal_set_message(t('Message has been deleted'));
   }
   $form_state['redirect'] = 'messages';
 }
-
-function privatemsg_per_message_actions($pmid) {
-  $output = '';
-  $result = module_invoke_all('privatemsg_pm_controls', $pmid);
-
-  if (count($result)) {
-    $output = '<ul><li>';
-    $output .= implode('</li><li>', $result);
-    $output .= '</li></ul>';
+/**
+ * Send a new message
+ *
+ * This functions does send a message in a new thread.
+ *
+ * @param string $subject    The subject of the new message
+ * @param string $body       The body text of the new message
+ * @param array  $recipients Array of recipients (user objects)
+ * @param object $author     The author (user object, defaults to the current user)
+ *
+ * @return boolean|array Either true or an array with validation errors
+ */
+function privatemsg_new_thread($subject, $body, $recipients, $author = NULL) {
+  if ($author == NULL) {
+    global $user;
+    $author = drupal_clone($user);
   }
 
-  return $output;
+  $message = array();
+  $message['subject'] = $subject;
+  $message['author'] = $author;
+  $message['body'] = $body;
+  $message['timestamp'] = time();
+  $message['recipients'] = $recipients;
+
+  $errors = _privatemsg_validate_message($message, $author);
+  if (!empty($errors)) {
+    return $errors;
+  }
+  else {
+    return _privatemsg_send($message);
+  }
+}
+/**
+ * Send a reply message
+ *
+ * This functions replies on an existing thread.
+ *
+ * @param int    $thread_id Thread id
+ * @param string $body      The body text of the new message
+ * @param string $author    The author (user object, defaults to the current user)
+ *
+ * @return boolean|array Either true or an array with validation errors
+ */
+function privatemsg_reply($thread_id, $body, $author = NULL) {
+  if ($author == NULL) {
+    global $user;
+    $author = drupal_clone($user);
+  }
+
+  $message = array();
+  $message['author'] = $author;
+  $message['body'] = $body;
+  $message['timestamp'] = time();
+  $message['thread_id'] = $thread_id;
+
+  // We don't know the subject and the recipients, so we need to load them..
+  // thread_id == mid on the first message of the thread
+  $first_message = _privatemsg_load($thread_id, $author);
+  if (!$first_message) {
+    return array(t('Thread %thread_id not found, unable to answer', array('%thread_id' => $thread_id)));
+  }
+
+
+  $query = _privatemsg_assemble_query('participants', $thread_id);
+  $participants = db_query($query['query']);
+  while ($result = db_fetch_object($participants)) {
+    $recipient = user_load($result->uid);
+      $message['recipients'][$recipient->uid] = $recipient;
+  }
+
+  $message['subject'] = $first_message['subject'];
+
+  $errors = _privatemsg_validate_message($message, $author);
+  if (!empty($errors)) {
+    return $errors;
+  }
+  else {
+    return _privatemsg_send($message);
+  }
 }
 
-function privatemsg_privatemsg_pm_controls($pmid) {
-  return l(t('Delete message'), 'messages/delete/'. $pmid, array('attributes' => array('class' => 'message-delete')));
+function _privatemsg_validate_message($message, $author, $show_warnings = FALSE) {
+
+  $errors = array();
+  if (!user_access('write privatemsg', $author)) {
+    // no need to do further checks in this case...
+    return array(t('User @user is not allowed to write messages', array('@user' => $author->name)));
+  }
+
+  if (empty($message['subject'])) {
+    $errors[] = t('Disallowed to send a message without subject');
+  }
+
+  $trimmed = trim(strip_tags($message['body']));
+  if (empty($trimmed)) {
+    $errors[] = t('Blank messages are not allowed');
+  }
+
+  if (empty($message['recipients']) || !is_array($message['recipients'])) {
+    $errors[] = t('Disallowed to send a message without atleast one recipient');
+  }
+
+  if (!empty($message['recipients']) && is_array($message['recipients'])) {
+    foreach ($message['recipients'] as $uid => $recipient) {
+      $block_results = module_invoke_all('privatemsg_block_message', $author, $recipient);
+      if (count($block_results) > 0) {
+        unset($message['recipients'][$uid]);
+        if ($show_warnings) {
+          foreach ($block_results as $block_result) {
+            drupal_set_message($block_result);
+          }
+        }
+      }
+    }
+  }
+
+  // Check again, give another error message if all recipients are blocked
+  if (empty($message['recipients'])) {
+    $errors[] = t('Disallowed to send message because all recipients are blocked');
+  }
+
+  return $errors += module_invoke_all('privatemsg_message_validate', $message);
 }
 
+function _privatemsg_send($message) {
+
+  drupal_alter('privatemsg_message_presave', $message);
+
+  // 1) Save the message body first.
+  $args = array();
+  $args[] = $message['subject'];
+  $args[] = $message['author']->uid;
+  $args[] = $message['body'];
+  $args[] = $message['timestamp'];
+  $query = "INSERT INTO {pm_message} (subject, author, body, timestamp) VALUES ('%s', %d, '%s', %d)";
+  $resuld = db_query($query, $args);
+  $mid = db_last_insert_id('pm_message', 'mid');
+  $message['mid'] = $mid;
+
+  // Thread ID is the same as the mid if it's the first message in the thread.
+  if (!isset($message['thread_id'])) {
+    $message['thread_id'] = $mid;
+  }
+
+  // 2) Save message to recipients.
+  // Each recipient gets a record in the pm_index table.
+
+  $query = "INSERT INTO {pm_index} (mid, thread_id, uid, is_new, deleted) VALUES (%d, %d, %d, %d, 0)";
+  foreach ($message['recipients'] as $recipient) {
+
+    db_query($query, $mid, $message['thread_id'], $recipient->uid, 1);
+  }
+  // Also add a record for tha author to the pm_index table - set  column "new" to 0.
+  db_query($query, $mid, $message['thread_id'], $message['author']->uid, 0);
+
+  module_invoke_all('privatemsg_message_insert', $message);
+
+  return TRUE;
+}
+
+/**
+ * Returns a link to send message form for a specific users.
+ *
+ * Contains permission checks of author/recipient, blocking and
+ * if a anonymous user is involved.
+ *
+ * @param object $recipient Recipient of the message
+ * @param object $account   Sender of the message, defaults to the current user
+ *
+ * @return string|boolean   Either FALSE or a URL string
+ */
+function privatemsg_get_link($recipient, $account = NULL) {
+  if ($account == NULL) {
+    global $user;
+    $account = $user;
+  }
+
+  if (!user_access('write privatemsg', $account)
+      || !user_access('read privatemsg', $recipient)
+      || $recipient->uid == 0
+      || $account->uid == 0) {
+    return FALSE;
+  }
+
+  if (count(module_invoke_all('privatemsg_block_message', $account, $recipient)) > 0) {
+    return FALSE;
+  }
+
+  return 'messages/new/'. $recipient->uid;
+}

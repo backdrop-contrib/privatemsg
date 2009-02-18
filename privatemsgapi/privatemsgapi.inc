@@ -8,7 +8,7 @@
  */
 
 /**
- * Message sending helper functions
+ * @file Message sending helper functions
  */
 /**
  * Saves message to group association
@@ -58,12 +58,21 @@ function _save_privatemsg_group_user($gid, $users = array()) {
  * Privatemsg load single msg api
  *
  */
-function _privatemsg_load($pmid, $uid = NULL) {
-  $query = _privatemsg_assemble_query('load', $pmid, $uid);
-//  drupal_set_message('<pre>'. print_r($query, 1) . '</pre>');
+function _privatemsg_load($pmid, $account = NULL) {
+  if (empty($account)) {
+    global $user;
+    $account = drupal_clone($user);
+  }
+
+  $query = _privatemsg_assemble_query('load', $pmid, $account);
 
   $result = db_query($query['query']);
   $message = db_fetch_array($result);
+  $message['user'] = $account;
+  $returned = module_invoke_all('privatemsg_message_load', $message);
+  if (!empty($returned)) {
+    $message = array_merge_recursive($returned, $message);
+  }
   return $message;
 }
 

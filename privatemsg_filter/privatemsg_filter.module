@@ -392,9 +392,9 @@ function privatemsg_filter_privatemsg_list_messages_alter(&$content, $account) {
 /**
  * Hook into the query builder to add the tagging info to the correct query
  */
-function privatemsg_filter_privatemsg_sql_list_alter(&$fragments) {
+function privatemsg_filter_privatemsg_sql_list_alter(&$fragments, $account) {
   // Filter the message listing by any set tags.
-  if ($filter = privatemsg_filter_get_filter(user_load($fragments['query_args'][0]))) {
+  if ($filter = privatemsg_filter_get_filter($account)) {
 
     if (isset($filter['tags']) && !empty($filter['tags'])) {
       $count = 0;

@@ -97,23 +97,32 @@ function pm_block_user_form_submit($form, &$form_state) {
   }
 }
 
+function pm_block_user_privatemsg_sql_load_alter(&$fragments, $pmid, $uid) {
+  $fragments['select'][] = 'pmbu.recipient AS is_blocked';
+  $fragments['select'][] = 'pmi.thread_id';
+
+  $fragments['inner_join'][] = 'LEFT JOIN {pm_block_user} pmbu ON (pm.author = pmbu.author AND pmi.uid = pmbu.recipient)';
+}
+
 /**
- * Implementation of hook_privatemsg_pm_controls.
+ * Implementation of hook_privatemsg_message_view_alter.
  */
- function pm_block_user_privatemsg_pm_controls($pmid) {
+ function pm_block_user_privatemsg_message_view_alter(&$vars) {
   global $user;
-  $author_id = db_result(db_query('SELECT author FROM {pm_message} WHERE mid = %d', $pmid));
-  $thread = db_result(db_query('SELECT thread_id FROM {pm_index} WHERE mid = %d', $pmid));
+
+  $author_id = $vars['message']['author']->uid;
+  if (!isset($vars['message']['thread_id'])) {
+    // No thread id, this is probably only a preview
+    return;
+  }
+  $thread_id = $vars['message']['thread_id'];
 
   if ($user->uid <> $author_id) {
-    if (db_result(db_query('SELECT COUNT(recipient) FROM {pm_block_user} WHERE author = %d AND recipient = %d', $author_id, $user->uid))) {
-      $output = l(t('Unblock author'), 'messages/block/'. $author_id, array('query' => 'destination=messages/view/' . $thread));
+    if ($vars['message']['is_blocked']) {
+      $vars['message_actions'][] = l(t('Unblock author'), 'messages/block/'. $author_id, array('query' => 'destination=messages/view/' . $thread_id));
     }
     else {
-      $output = l(t('Block author'), 'messages/block/'. $author_id, array('query' => 'destination=messages/view/' . $thread));
+      $vars['message_actions'][] = l(t('Block author'), 'messages/block/'. $author_id, array('query' => 'destination=messages/view/' . $thread_id));
     }
-  }
-  if (isset($output)) {
-    return $output;
   }
 }

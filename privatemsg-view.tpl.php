@@ -23,7 +23,11 @@
     </div>
     <?php if ( isset($message_actions) ) : ?>
       <div class="message-actions">
-        <?php print $message_actions; ?>
+        <ul>
+          <?php foreach ($message_actions as $action): ?>
+            <li><?php print $action ?></li>
+          <?php endforeach; ?>
+        </ul>
       </div>
     <?php endif ?>
   </div>
