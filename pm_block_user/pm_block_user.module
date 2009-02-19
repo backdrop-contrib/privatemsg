@@ -119,10 +119,10 @@ function pm_block_user_privatemsg_sql_load_alter(&$fragments, $pmid, $uid) {
 
   if ($user->uid <> $author_id) {
     if ($vars['message']['is_blocked']) {
-      $vars['message_actions'][] = l(t('Unblock author'), 'messages/block/'. $author_id, array('query' => 'destination=messages/view/' . $thread_id));
+      $vars['message_actions'][] = array('title' => t('Unblock author'), 'href' => 'messages/block/'. $author_id, array('query' => 'destination=messages/view/' . $thread_id));
     }
     else {
-      $vars['message_actions'][] = l(t('Block author'), 'messages/block/'. $author_id, array('query' => 'destination=messages/view/' . $thread_id));
+      $vars['message_actions'][] = array('title' => t('Block author'), 'href' => 'messages/block/'. $author_id, array('query' => 'destination=messages/view/' . $thread_id));
     }
   }
 }

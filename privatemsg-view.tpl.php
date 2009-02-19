@@ -22,13 +22,7 @@
       <?php print $message_body; ?>
     </div>
     <?php if ( isset($message_actions) ) : ?>
-      <div class="message-actions">
-        <ul>
-          <?php foreach ($message_actions as $action): ?>
-            <li><?php print $action ?></li>
-          <?php endforeach; ?>
-        </ul>
-      </div>
+       <?php print $message_actions ?>
     <?php endif ?>
   </div>
   <div class="clear-both bottom-border"></div>

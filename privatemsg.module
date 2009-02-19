@@ -262,11 +262,13 @@ function privatemsg_preprocess_privatemsg_view(&$vars) {
   $vars['message_timestamp'] = format_date($message['timestamp'], 'small');
   $vars['message_body'] = check_markup($message['body']);
   if (isset($vars['mid'])) {
-    $vars['message_actions'][] = l(t('Delete message'), 'messages/delete/'. $vars['mid']);
+    $vars['message_actions'][] = array('title' => t('Delete message'), 'href' => 'messages/delete/'. $vars['mid']);
   }
 
   // call hook_privatemsg_message_view_alter
   drupal_alter('privatemsg_message_view', $vars);
+
+  $vars['message_actions'] = theme('links', $vars['message_actions'], array('class' => 'message-actions'));
 }
 
 function privatemsg_preprocess_privatemsg_to(&$vars) {
