@@ -433,7 +433,7 @@ function privatemsg_set_new_status($account = NULL, $mid = NULL, $new = 0, $verb
     global $user;
     $account = $user;
   }
-  $query = "UPDATE {pm_index} pmi SET is_new = %d WHERE uid = %d AND is_new = %d";
+  $query = "UPDATE {pm_index} SET is_new = %d WHERE uid = %d AND is_new = %d";
   $arg[] = $new;
   $arg[] = $account->uid;
   $arg[] = ($new == 0) ? 1 : 0;
