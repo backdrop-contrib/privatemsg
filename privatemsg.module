@@ -948,7 +948,7 @@ function privatemsg_title_callback($title = NULL) {
   $count = privatemsg_unread_count();
 
   if ($count > 0) {
-    return t('Messages (@count new)', array('@count' => $count));
+    return format_plural($count, 'Messages (@count new)', 'Messages (@count new)');
   }
   return t('Messages');
 }
