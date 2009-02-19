@@ -571,7 +571,6 @@ function privatemsg_new(&$form_state, $account = NULL) {
     '#maxlength'          => 255,
     '#default_value'      => $subject,
     '#weight'             => -5,
-    '#required'           => TRUE,
   );
   $form['privatemsg']['body']       = array(
     '#type'               => 'textarea',
@@ -627,7 +626,10 @@ function pm_send_validate($form, &$form_state) {
     $message['thread_id'] = $form_state['values']['thread_id'];
   }
 
-
+  $trimed_body = trim(truncate_utf8(strip_tags($message['body']), 50, TRUE, TRUE));
+  if (empty($message['subject']) && !empty($trimed_body)) {
+    $message['subject'] = $trimed_body;
+  }
 
   // Verify that recipient's name syntax is correct.
   $fragments = explode(',', $form_state['values']['recipient']);
@@ -1195,11 +1197,6 @@ function _privatemsg_validate_message($message, $author, $show_warnings = FALSE)
 
   if (empty($message['subject'])) {
     $errors[] = t('Disallowed to send a message without subject');
-  }
-
-  $trimmed = trim(strip_tags($message['body']));
-  if (empty($trimmed)) {
-    $errors[] = t('Blank messages are not allowed');
   }
 
   if (empty($message['recipients']) || !is_array($message['recipients'])) {
