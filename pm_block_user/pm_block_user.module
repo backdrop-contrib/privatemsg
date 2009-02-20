@@ -14,7 +14,7 @@ function pm_block_user_menu() {
     'title'            => 'Block user messages',
     'page callback'    => 'drupal_get_form',
     'page arguments'   => array('pm_block_user_form', 2),
-    'access arguments' => array('read privatemsg'),
+    'access callback'  => 'privatemsg_user_access',
     'type'             => MENU_CALLBACK,
     'weight'           => -10,
   );

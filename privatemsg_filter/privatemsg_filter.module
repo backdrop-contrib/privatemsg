@@ -24,6 +24,7 @@ function privatemsg_filter_menu() {
   $items['messages/tags'] = array(
     'title'            => 'Tags',
     'page callback'    => 'privatemsg_filter_page',
+    'access callback'  => 'privatemsg_user_access',
     'access arguments' => array('use privatemsg_filter'),
     'type'             => MENU_LOCAL_TASK,
   );
@@ -46,10 +47,10 @@ function privatemsg_filter_page() {
     $content .= implode(', ', $tag_array) .'.';
   }
 
-  if (user_access('create privatemsg_filter')) {
+  if (privatemsg_user_access('create privatemsg_filter')) {
     $content .= drupal_get_form('privatemsg_filter_add_tags');
   }
-  if (user_access('delete privatemsg_filter')) {
+  if (privatemsg_user_access('delete privatemsg_filter')) {
     $content .= drupal_get_form('privatemsg_filter_delete_tags');
   }
 

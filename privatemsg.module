@@ -78,13 +78,13 @@ function privatemsg_menu() {
     'title'            => 'Messages',
     'title callback'  => 'privatemsg_title_callback',
     'page callback'    => 'privatemsg_list',
-    'access arguments' => array('read privatemsg'),
+    'access callback'  => 'privatemsg_user_access',
     'type'             => MENU_NORMAL_ITEM,
   );
   $items['messages/inbox'] = array(
     'title'            => 'All messages',
     'page callback'    => 'privatemsg_list',
-    'access arguments' => array('read privatemsg'),
+    'access callback'  => 'privatemsg_user_access',
     'type'             => MENU_DEFAULT_LOCAL_TASK,
     'weight'           => -10,
   );
@@ -99,7 +99,7 @@ function privatemsg_menu() {
   $items['messages/sent'] = array(
     'title'            => 'Sent messages',
     'page callback'    => 'privatemsg_list',
-    'access arguments' => array('read privatemsg'),
+    'access callback'  => 'privatemsg_user_access',
     'type'             => MENU_LOCAL_TASK,
     'weight'           => -5,
   );
@@ -107,7 +107,7 @@ function privatemsg_menu() {
     'title'            => 'Read message',
     'page callback'    => 'privatemsg_view',
     'page arguments'   => array(2),
-    'access arguments' => array('read privatemsg'),
+    'access callback'  => 'privatemsg_view_access',
     'type'             => MENU_LOCAL_TASK,
     'weight'           => -10,
   );
@@ -115,7 +115,7 @@ function privatemsg_menu() {
     'title'            => 'Delete message',
     'page callback'    => 'drupal_get_form',
     'page arguments'   => array('privatemsg_delete', 2),
-    'access arguments' => array('read privatemsg'),
+    'access callback'  => 'privatemsg_user_access',
     'type'             => MENU_CALLBACK,
     'weight'           => -10,
   );
@@ -123,6 +123,7 @@ function privatemsg_menu() {
     'title'            => 'Write new message',
     'page callback'    => 'drupal_get_form',
     'page arguments'   => array('privatemsg_new', 2),
+    'access callback'  => 'privatemsg_user_access',
     'access arguments' => array('write privatemsg'),
     'type'             => MENU_LOCAL_TASK,
     'weight'           => -7,
@@ -130,6 +131,7 @@ function privatemsg_menu() {
   // Auto-completes available user names & removes duplicates.
   $items['messages/user-name-autocomplete'] = array(
     'page callback'    => 'privatemsg_user_name_autocomplete',
+    'access callback'  => 'privatemsg_user_access',
     'access arguments' => array('write privatemsg'),
     'type'             => MENU_CALLBACK,
     'weight'           => -10,
@@ -144,6 +146,43 @@ function privatemsg_menu() {
   );
   return $items;
 }
+
+/**
+ * Privatemsg access wrapper for user_callback
+ *
+ * Never allows anonymous user access as that doesn't makes sense
+ *
+ * @param string $permission Permission string, defaults to read privatemsg
+ *
+ * @return boolean TRUE if user has access, FALSE if not
+ */
+function privatemsg_user_access($permission = 'read privatemsg', $account = NULL) {
+  if ( $account === NULL ) {
+    global $user;
+    $account = $user;
+  }
+  if (!$account->uid) { // Disallow anonymous access, regardless of permissions
+    return FALSE;
+  }
+  if (!user_access($permission, $account)) {
+    return FALSE;
+  }
+  return TRUE;
+}
+
+
+/**
+ * Function to restrict the access of the view messages page to just the messages/view/%
+ * pages and not to leave tabs artifact on other lower level pages
+ * such as the messages/new/%
+ */
+function privatemsg_view_access() {
+  if (privatemsg_user_access('read privatemsg') && arg(1) == 'view') {
+    return TRUE;
+  }
+  return FALSE;
+}
+
 /**
  * This function is called by the menu system through the %privatemsg_thread wildcard
  *
@@ -279,13 +318,12 @@ function privatemsg_preprocess_privatemsg_to(&$vars) {
  */
 function privatemsg_list($uid = NULL) {
   global $user;
-  disallow_anon_access();
 
   // Setting default behavior...
   $account = $user;
   if (is_int($uid) && $uid != $user->uid) {
     // Trying to view someone else's messages...
-    if (!user_access('read all private messages')) {
+    if (!privatemsg_user_access('read all private messages')) {
       drupal_set_message(t("You do not have sufficient rights to view someone else's messages"), 'warning');
     }
     elseif ($account_check = user_load(array('uid' => $uid))) {
@@ -540,7 +578,7 @@ function privatemsg_new(&$form_state, $account = NULL) {
   }
   $form['privatemsg'] = array(
     '#type'               => 'fieldset',
-    '#access'             => user_access('write privatemsg'),
+    '#access'             => privatemsg_user_access('write privatemsg'),
   );
   $form['privatemsg']['author'] = array(
     '#type' => 'value',
@@ -878,20 +916,6 @@ function privatemsg_user_name_autocomplete($string) {
   }
 }
 
-/**
- * Use this function at the top of your own function to block anon user access.
- */
-function disallow_anon_access() {
-  global $user;
-  if (!$user->uid) {
-    // Even though admin/user/permissions may allow anonymous users
-    // to access privatemsg, it still doesn't make sense for that to
-    // happen. Therefore, we disallow this here so there's no way to bypass it.
-    drupal_access_denied();
-    exit;
-  }
-}
-
 function privatemsg_user($op, &$edit, &$account, $category = NULL) {
   global $user;
 
@@ -907,7 +931,7 @@ function privatemsg_user($op, &$edit, &$account, $category = NULL) {
       }
       break;
     case 'login':
-      if (variable_get('privatemsg_display_loginmessage', TRUE) && user_access('read privatemsg')) {
+      if (variable_get('privatemsg_display_loginmessage', TRUE) && privatemsg_user_access()) {
         $count = privatemsg_unread_count();
         if ($count) {
           drupal_set_message(t('You have <a href="@inbox">%unread</a>.', array('@inbox' => url('messages/inbox'), '%unread' => format_plural($count, '1 unread message', '@count unread messages'))));
@@ -957,7 +981,7 @@ function privatemsg_title_callback($title = NULL) {
 function _privatemsg_block_new() {
   $block = array();
 
-  if (!user_access('read privatemsg')) {
+  if (!privatemsg_user_access()) {
     return $block;
   }
 
@@ -976,13 +1000,11 @@ function _privatemsg_block_menu() {
   $block = array();
 
   $links = array();
-  if (user_access('write privatemsg')) {
+  if (privatemsg_user_access('write privatemsg')) {
     $links[] = l(t('Write new message'), 'messages/new');
   }
-  if (user_access('read privatemsg') || user_access('read all private messages') ) {
+  if (privatemsg_user_access('read privatemsg') || privatemsg_user_access('read all private messages') ) {
     $links[] = l(privatemsg_title_callback(), 'messages');
-  }
-  if (user_access('read privatemsg') || user_access('read all private messages') ) {
     $links[] = l(t('Sent messages'), 'messages/sent');
   }
   if ( count( $links ) ) {
@@ -1183,7 +1205,7 @@ function privatemsg_reply($thread_id, $body, $author = NULL) {
 function _privatemsg_validate_message($message, $author, $show_warnings = FALSE) {
 
   $errors = array();
-  if (!user_access('write privatemsg', $author)) {
+  if (!privatemsg_user_access('write privatemsg', $author)) {
     // no need to do further checks in this case...
     return array(t('User @user is not allowed to write messages', array('@user' => $author->name)));
   }
@@ -1271,9 +1293,9 @@ function privatemsg_get_link($recipient, $account = NULL) {
     $account = $user;
   }
 
-  if (!user_access('write privatemsg', $account)
-      || !user_access('read privatemsg', $recipient)
-      || $recipient->uid == 0
+  if (!privatemsg_user_access('write privatemsg', $account)
+      || !privatemsg_user_access('read privatemsg', $recipient)
+      || $recipient->uid == 0   /* << These two are redundant because privatemsg_user_access checks for ->uid == 0 */
       || $account->uid == 0) {
     return FALSE;
   }
