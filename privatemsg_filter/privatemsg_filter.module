@@ -28,7 +28,28 @@ function privatemsg_filter_menu() {
     'access arguments' => array('use privatemsg_filter'),
     'type'             => MENU_LOCAL_TASK,
   );
+  $items['admin/settings/messages/filter'] = array(
+    'title'            => 'Filter',
+    'description'      => 'Configure filter settings.',
+    'page callback'    => 'drupal_get_form',
+    'page arguments'   => array('privatemsg_filter_admin'),
+    'access arguments' => array('administer privatemsg settings'),
+    'type'             => MENU_LOCAL_TASK,
+  );
   return $items;
+}
+
+function privatemsg_filter_admin() {
+  $form = array();
+
+  $form['privatemsg_filter_searchbody'] = array(
+    '#type'          => 'checkbox',
+    '#title'         => t('Search message body'),
+    '#description'   => t('WARNING: turning on this feature will slow down search performance by a large factor. Gets worse as your messages database increases.'),
+    '#default_value' => variable_get('privatemsg_filter_searchbody', FALSE),
+  );
+
+  return system_settings_form($form);
 }
 
 function privatemsg_filter_page() {
@@ -212,7 +233,7 @@ function privatemsg_filter_get_author_data($account) {
 
 function privatemsg_filter_get_tags_data($account) {
  static $tag_data;
- 
+
   if (is_array($tag_data)) {
     return $tag_data;
   }
@@ -233,15 +254,15 @@ function privatemsg_filter_dropdown(&$form_state, $account) {
   drupal_add_css(drupal_get_path('module', 'privatemsg_filter') .'/privatemsg_filter.css');
 
   $form['filter'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Filter Messages'),
-      '#collapsible' => TRUE,
-      '#collapsed' => TRUE,
+    '#type' => 'fieldset',
+    '#title' => t('Filter Messages'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
   );
   $form['filter']['search'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Search Subjects'),
-      '#weight' => -20
+    '#type' => 'textfield',
+    '#title' => variable_get('privatemsg_filter_searchbody', FALSE) ? t('Search messages') : t('Search subjects'),
+    '#weight' => -20
   );
 
   $form['filter']['author'] = array(
@@ -298,7 +319,7 @@ function privatemsg_filter_dropdown_set_active(&$form, $filter) {
   if (isset($filter['search'])) {
     $form['filter']['search']['#default_value'] = $filter['search'];
   }
-  
+
   $form['filter']['reset'] = array(
       '#type'     => 'submit',
       '#value'    => t('Reset'),
@@ -418,8 +439,15 @@ function privatemsg_filter_privatemsg_sql_list_alter(&$fragments, $account) {
     }
 
     if (isset($filter['search']) && !empty($filter['search'])) {
-      $fragments['where'][]       = "pm.subject LIKE '%s'";
-      $fragments['query_args'][]    = '%%'. $filter['search'] .'%%';
+      if (variable_get('privatemsg_filter_searchbody', FALSE)) {
+        $fragments['where'][]       = "pm.subject LIKE '%s' OR pm.body LIKE '%s'";
+        $fragments['query_args'][]    = '%%'. $filter['search'] .'%%';
+        $fragments['query_args'][]    = '%%'. $filter['search'] .'%%';
+      }
+      else {
+        $fragments['where'][]       = "pm.subject LIKE '%s'";
+        $fragments['query_args'][]    = '%%'. $filter['search'] .'%%';
+      }
     }
   }
 }

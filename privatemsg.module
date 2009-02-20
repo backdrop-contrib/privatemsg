@@ -144,6 +144,15 @@ function privatemsg_menu() {
     'access arguments' => array('administer privatemsg settings'),
     'type'             => MENU_NORMAL_ITEM,
   );
+  $items['admin/settings/messages/default'] = array(
+    'title'            => 'Private messages',
+    'description'      => 'Configure private messaging settings.',
+    'page callback'    => 'drupal_get_form',
+    'page arguments'   => array('private_message_settings'),
+    'access arguments' => array('administer privatemsg settings'),
+    'type'             => MENU_DEFAULT_LOCAL_TASK,
+    'weight'           => -10,
+  );
   return $items;
 }
 
