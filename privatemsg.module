@@ -972,7 +972,7 @@ function privatemsg_title_callback($title = NULL) {
   $count = privatemsg_unread_count();
 
   if ($count > 0) {
-    return format_plural($count, 'Messages (@count new)', 'Messages (@count new)');
+    return format_plural($count, 'Messages (1 new)', 'Messages (@count new)');
   }
   return t('Messages');
 }
