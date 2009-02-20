@@ -10,35 +10,35 @@
 function privatemsg_schema() {
   $schema = array();
   $schema['pm_index'] = array(
-    'description'       => t('{pm_index} holds indexing information about messages and recepients for fast retrieval'),
+    'description'       => '{pm_index} holds indexing information about messages and recepients for fast retrieval',
     'fields'        => array(
       'mid'    => array(
-        'description'   => t('Private Message ID'),
+        'description'   => 'Private Message ID',
         'type'          => 'int',
         'not null'      => TRUE,
         'unsigned'      => TRUE,
       ),
       'thread_id'     => array(
-        'description'   => t('Messages thread ID'),
+        'description'   => 'Messages thread ID',
         'type'          => 'int',
         'not null'      => TRUE,
         'unsigned'      => TRUE,
       ),
       'uid'     => array(
-        'description'   => t('UID of either the author or the recipient'),
+        'description'   => 'UID of either the author or the recipient',
         'type'          => 'int',
         'not null'      => TRUE,
         'unsigned'      => TRUE,
       ),
       'is_new'     => array(
-        'description'   => t('Whether the user has read this message'),
+        'description'   => 'Whether the user has read this message',
         'type'          => 'int',
         'default'       => 1,
         'not null'      => TRUE,
         'unsigned'      => TRUE,
       ),
       'deleted' => array(
-        'description'   => t('Whether the user has deleted this message'),
+        'description'   => 'Whether the user has deleted this message',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
@@ -55,34 +55,34 @@ function privatemsg_schema() {
   );
 
   $schema['pm_message'] = array(
-    'description'       => t('{pm_messages} holds the message information'),
+    'description'       => '{pm_messages} holds the message information',
     'fields'        => array(
       'mid'    => array(
-        'description'   => t('Private Message ID'),
+        'description'   => 'Private Message ID',
         'type'          => 'serial',
         'not null'      => TRUE,
         'unsigned'      => TRUE,
       ),
       'author'     => array(
-        'description'   => t('UID of the author'),
+        'description'   => 'UID of the author',
         'type'          => 'int',
         'not null'      => TRUE,
         'unsigned'      => TRUE,
       ),
       'subject'     => array(
-        'description'   => t('Subject text of the message'),
+        'description'   => 'Subject text of the message',
         'type'          => 'varchar',
         'length'        => 255,
         'not null'      => TRUE,
       ),
       'body'     => array(
-        'description'   => t('Body of the message'),
+        'description'   => 'Body of the message',
         'type'          => 'text',
         'not null'      => TRUE,
         'size'          => 'big',
       ),
       'timestamp'     => array(
-        'description'   => t('Time when the message was sent'),
+        'description'   => 'Time when the message was sent',
         'type'          => 'int',
         'not null'      => TRUE,
         'unsigned'      => TRUE,
@@ -125,7 +125,7 @@ function privatemsg_update_6001() {
 
     db_drop_index($ret, 'pm_index', $old_column);
     db_change_field($ret, 'pm_index', $old_column, 'is_new', array(
-          'description'   => t('Whether the user has read this message'),
+          'description'   => 'Whether the user has read this message',
           'type'          => 'int',
           'default'       => 1,
           'not null'      => TRUE,
@@ -143,35 +143,35 @@ function privatemsg_update_6000() {
   // Update the database schema and transfer data to new tables.
   $schema = array();
   $schema['pm_index'] = array(
-    'description'       => t('{pm_index} holds indexing information about messages and recepients for fast retrieval'),
+    'description'       => '{pm_index} holds indexing information about messages and recepients for fast retrieval',
     'fields'        => array(
       'mid'    => array(
-        'description'   => t('Private Message ID'),
+        'description'   => 'Private Message ID',
         'type'          => 'int',
         'not null'      => TRUE,
         'unsigned'      => TRUE,
       ),
       'thread_id'     => array(
-        'description'   => t('Messages thread ID'),
+        'description'   => 'Messages thread ID',
         'type'          => 'int',
         'not null'      => TRUE,
         'unsigned'      => TRUE,
       ),
       'uid'     => array(
-        'description'   => t('UID of either the author or the recipient'),
+        'description'   => 'UID of either the author or the recipient',
         'type'          => 'int',
         'not null'      => TRUE,
         'unsigned'      => TRUE,
       ),
       'is_new'     => array(
-        'description'   => t('Whether the user has read this message'),
+        'description'   => 'Whether the user has read this message',
         'type'          => 'int',
         'default'       => 1,
         'not null'      => TRUE,
         'unsigned'      => TRUE,
       ),
       'deleted' => array(
-        'description'   => t('Whether the user has deleted this message'),
+        'description'   => 'Whether the user has deleted this message',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
@@ -188,47 +188,47 @@ function privatemsg_update_6000() {
   );
 
   $schema['temp_pm_index'] = array(
-    'description'       => t('{pm_index} holds indexing information about messages and recepients for fast retrieval'),
+    'description'       => '{pm_index} holds indexing information about messages and recepients for fast retrieval',
     'fields'        => array(
       'mid'    => array(
-        'description'   => t('Private Message ID'),
+        'description'   => 'Private Message ID',
         'type'          => 'int',
         'not null'      => TRUE,
         'unsigned'      => TRUE,
       ),
       'folder'     => array(
-        'description'   => t('ID of drupal 5 folder'),
+        'description'   => 'ID of drupal 5 folder',
         'type'          => 'int',
         'not null'      => TRUE,
         'unsigned'      => TRUE,
       ),
       'thread'     => array(
-        'description'   => t('Messages old thread ID'),
+        'description'   => 'Messages old thread ID',
         'type'          => 'int',
         'not null'      => TRUE,
         'unsigned'      => TRUE,
       ),
       'thread_id'     => array(
-        'description'   => t('Messages new thread ID'),
+        'description'   => 'Messages new thread ID',
         'type'          => 'int',
         'not null'      => TRUE,
         'unsigned'      => TRUE,
       ),
       'uid'     => array(
-        'description'   => t('UID of either the author or the recipient'),
+        'description'   => 'UID of either the author or the recipient',
         'type'          => 'int',
         'not null'      => TRUE,
         'unsigned'      => TRUE,
       ),
       'is_new'     => array(
-        'description'   => t('Whether the user has read this message'),
+        'description'   => 'Whether the user has read this message',
         'type'          => 'int',
         'default'       => 1,
         'not null'      => TRUE,
         'unsigned'      => TRUE,
       ),
       'deleted' => array(
-        'description'   => t('Whether the user has deleted this message'),
+        'description'   => 'Whether the user has deleted this message',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
@@ -238,34 +238,34 @@ function privatemsg_update_6000() {
   );
 
   $schema['pm_message'] = array(
-    'description'       => t('{pm_messages} holds the message information'),
+    'description'       => '{pm_messages} holds the message information',
     'fields'        => array(
       'mid'    => array(
-        'description'   => t('Private Message ID'),
+        'description'   => 'Private Message ID',
         'type'          => 'serial',
         'not null'      => TRUE,
         'unsigned'      => TRUE,
       ),
       'author'     => array(
-        'description'   => t('UID of the author'),
+        'description'   => 'UID of the author',
         'type'          => 'int',
         'not null'      => TRUE,
         'unsigned'      => TRUE,
       ),
       'subject'     => array(
-        'description'   => t('Subject text of the message'),
+        'description'   => 'Subject text of the message',
         'type'          => 'varchar',
         'length'        => 255,
         'not null'      => TRUE,
       ),
       'body'     => array(
-        'description'   => t('Body of the message'),
+        'description'   => 'Body of the message',
         'type'          => 'text',
         'not null'      => TRUE,
         'size'          => 'big',
       ),
       'timestamp'     => array(
-        'description'   => t('Time when the message was sent'),
+        'description'   => 'Time when the message was sent',
         'type'          => 'int',
         'not null'      => TRUE,
         'unsigned'      => TRUE,

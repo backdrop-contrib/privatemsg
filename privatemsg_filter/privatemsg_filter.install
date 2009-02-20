@@ -11,16 +11,16 @@ function privatemsg_filter_schema() {
   $schema = array();
 
   $schema['pm_tags'] = array(
-    'description'       => t('{pm_tags} holds the names of tags and their id.'),
+    'description'       => '{pm_tags} holds the names of tags and their id.',
     'fields'        => array(
       'tag_id'    => array(
-        'description'   => t('Tag ID'),
+        'description'   => 'Tag ID',
         'type'          => 'serial',
         'not null'      => TRUE,
         'unsigned'      => TRUE,
       ),
       'tag'     => array(
-        'description'   => t('The name of the tag'),
+        'description'   => 'The name of the tag',
         'type'          => 'varchar',
         'length'        => 255,
         'not null'      => TRUE,
@@ -30,22 +30,22 @@ function privatemsg_filter_schema() {
   );
 
   $schema['pm_tags_index'] = array(
-    'description'       => t('{pm_tags_index} holds mapping information between tags, threads the users.'),
+    'description'       => '{pm_tags_index} holds mapping information between tags, threads the users.',
     'fields'        => array(
       'tag_id'    => array(
-        'description'   => t('Tag ID'),
+        'description'   => 'Tag ID',
         'type'          => 'int',
         'not null'      => TRUE,
         'unsigned'      => TRUE,
       ),
       'uid'    => array(
-        'description'   => t('ID of the user'),
+        'description'   => 'ID of the user',
         'type'          => 'int',
         'not null'      => TRUE,
         'unsigned'      => TRUE,
       ),
       'thread_id'    => array(
-        'description'   => t('id of the thread'),
+        'description'   => 'id of the thread',
         'type'          => 'int',
         'not null'      => TRUE,
         'unsigned'      => TRUE,
