@@ -1,0 +1,481 @@
+# Hungarian translation of privatemsg (6.x-1.x-dev)
+# Copyright (c) 2009 by the Hungarian translation team
+# Generated from files:
+#  privatemsg.module,v 1.70.2.30.2.91.2.24 2009/02/20 21:38:28 litwol
+#  pm_block_user.module,v 1.1.2.3 2009/02/20 00:34:27 litwol
+#  privatemsg_filter.module,v 1.1.2.7 2009/02/20 21:38:29 litwol
+#  privatemsg.info,v 1.1.2.1.2.3.2.4 2009/01/25 23:25:18 litwol
+#  pm_block_user.info,v 1.2 2008/11/14 19:48:45 litwol
+#  privatemsg_filter.info,v 1.1.2.1 2009/01/25 23:25:18 litwol
+#  privatemsg.author-pane.inc,v 1.1.2.2 2009/02/18 01:36:46 litwol
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: privatemsg (6.x-1.x-dev)\n"
+"POT-Creation-Date: 2009-02-22 14:49-0600\n"
+"PO-Revision-Date: 2009-02-22 14:09-0600\n"
+"Last-Translator: Balogh Zoltán\n"
+"Language-Team: Hungarian http://forditas.mindworks.hu\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n!=1);\n"
+
+#: privatemsg.module:1098
+msgid "Delete"
+msgstr "Törlés"
+
+#: privatemsg.module:641,1099; pm_block_user/pm_block_user.module:54,67
+msgid "Cancel"
+msgstr "Mégsem"
+
+#: privatemsg.module:1097; pm_block_user/pm_block_user.module:52,65
+msgid "This action cannot be undone."
+msgstr "A művelet nem visszavonható."
+
+#: privatemsg.module:384,419,609,818
+msgid "Subject"
+msgstr "Tárgy"
+
+#: privatemsg.module:425,428
+msgid "Recipients"
+msgstr "Címzettek"
+
+#: privatemsg.module:617
+msgid "Message"
+msgstr "Üzenet"
+
+#: privatemsg.module:598
+msgid "To"
+msgstr "Hova"
+
+#: privatemsg_filter/privatemsg_filter.module:290,347,32
+msgid "Filter"
+msgstr "Szűrő"
+
+#: privatemsg_filter/privatemsg_filter.module:325,351
+msgid "Reset"
+msgstr "Alaphelyzet"
+
+#: privatemsg_filter/privatemsg_filter.module:281,468,25
+msgid "Tags"
+msgstr "Jelölők"
+
+#: privatemsg.module:384,433
+msgid "Last updated"
+msgstr "Legutóbbi beküldés"
+
+#: privatemsg.info:0; pm_block_user/pm_block_user.info:0; privatemsg_filter/privatemsg_filter.info:0
+msgid "Mail"
+msgstr "Levél"
+
+#: privatemsg.module:986,78
+msgid "Messages"
+msgstr "Üzenetek"
+
+#: privatemsg.module:238
+msgid "Theming settings"
+msgstr "Smikelési beállítások"
+
+#: privatemsg.module:242
+msgid "Private message display template"
+msgstr "Személyes üzenet megjelenítési sablon"
+
+#: privatemsg.module:248
+msgid "Messages per page"
+msgstr "Üzenetek száma oldalanként"
+
+#: privatemsg.module:251
+msgid "Choose the number of conversations that should be listed per page."
+msgstr "Az egy oldalon felsorolandó társalgások számának kiválasztása."
+
+#: privatemsg.module:63
+msgid "From !last"
+msgstr "Kitől: !last"
+
+#: privatemsg.module:67
+msgid "Participants: !participants and !last"
+msgstr "Résztvevők: !participants és !last"
+
+#: privatemsg.module:336
+msgid "You do not have sufficient rights to view someone else's messages"
+msgstr ""
+"Nincs megfelelő jogosultság valaki más üzeneteinek "
+"megtekintéséhez"
+
+#: privatemsg.module:394
+msgid "No messages to display."
+msgstr "Nincs megjeleníthető üzenet."
+
+#: privatemsg.module:490
+msgid "unread"
+msgstr "olvasatlan"
+
+#: privatemsg.module:493
+msgid "read"
+msgstr "olvasott"
+
+#: privatemsg.module:499
+msgid "An error has occured, please contact the site administrator."
+msgstr ""
+"Egy hiba történt. Fel kell venni a kapcsolatot a webhely "
+"adminisztrátorával."
+
+#: privatemsg.module:538
+msgid "There are no messages available to display."
+msgstr "Nincs megjeleníthető üzenet."
+
+#: privatemsg.module:599
+msgid "Separate multiple names with commas."
+msgstr "Vesszőkkel elválasztva több név is megadható."
+
+#: privatemsg.module:625
+msgid "Preview message"
+msgstr "Üzenet előnézete"
+
+#: privatemsg.module:631
+msgid "Send message"
+msgstr "Üzenet küldése"
+
+#: privatemsg.module:724
+msgid "The following users will not receive this private message: @invalid"
+msgstr ""
+"A következő felhasználók nem fogják megkapni ezt az üzenetet: "
+"@invalid"
+
+#: privatemsg.module:731
+msgid "A message has been sent to @recipients."
+msgstr "@recipients számára az üzenet el lett küldve."
+
+#: privatemsg.module:937
+msgid "Send this user a message"
+msgstr "Üzenet küldése a felhasználónak"
+
+#: privatemsg.module:946
+msgid "You have <a href=\"@inbox\">%unread</a>."
+msgstr "<a href=\"@inbox\">%unread</a> van."
+
+#: privatemsg.module:957
+msgid "Privatemsg links"
+msgstr "Privatemsg hivatkozások"
+
+#: privatemsg.module:1013,123
+msgid "Write new message"
+msgstr "Új üzenet írása"
+
+#: privatemsg.module:1017,100
+msgid "Sent messages"
+msgstr "Elküldött üzenetek"
+
+#: privatemsg.module:1071
+msgid "Send reply to %recipient"
+msgstr "Válasz küldése %recipient felhasználónak"
+
+#: privatemsg.module:1095
+msgid "Are you sure you want to delete"
+msgstr "Az üzenet valóban törölhető?"
+
+#: privatemsg.module:307,115
+msgid "Delete message"
+msgstr "Üzenet törlése"
+
+#: privatemsg.module:496
+msgid "1 message marked as %status"
+msgid_plural "@count messages marked as %status"
+msgstr[0] "1 üzenet megjelölve, mint %status"
+msgstr[1] "@count üzenet megjelölve, mint %status"
+
+#: privatemsg.module:946
+msgid "1 unread message"
+msgid_plural "@count unread messages"
+msgstr[0] "1 olvasatlan üzenet"
+msgstr[1] "@count olvasatlan üzenet"
+
+#: privatemsg.module:16
+msgid "read privatemsg"
+msgstr "privatemsg olvasása"
+
+#: privatemsg.module:17
+msgid "read all private messages"
+msgstr "minden privatemsg olvasása"
+
+#: privatemsg.module:18
+msgid "administer privatemsg settings"
+msgstr "privatemsg adminisztrációja"
+
+#: privatemsg.module:19
+msgid "write privatemsg"
+msgstr "privatemsg írása"
+
+#: privatemsg.module:85
+msgid "All messages"
+msgstr "Minden üzenet"
+
+#: privatemsg.module:92
+msgid "Mark all as read"
+msgstr "Az összes megjelölése olvasottnak"
+
+#: privatemsg.module:140,148; privatemsg.info:0
+msgid "Private messages"
+msgstr "Személyes üzenetek"
+
+#: privatemsg.module:141,149
+msgid "Configure private messaging settings."
+msgstr "Személyes üzenetküldés beállítása."
+
+#: privatemsg.module:0
+msgid "privatemsg"
+msgstr "privatemsg"
+
+#: privatemsg.info:0
+msgid "Allow private messages between users."
+msgstr "Személyes üzeneteket engedélyez a felhasználók között."
+
+#: pm_block_user/pm_block_user.module:50
+msgid ""
+"You have previously blocked \"@author\" from sending you any more "
+"messages. Are you sure you want to unblock this user?"
+msgstr ""
+"„@author” felhasználó üzenetküldése előzőleg blokkolva "
+"lett. Valóban feloldható a felhasználó blokkolása?"
+
+#: pm_block_user/pm_block_user.module:53
+msgid "Unblock @author"
+msgstr "@author blokkolásának feloldása"
+
+#: pm_block_user/pm_block_user.module:63
+msgid ""
+"Are you sure you want to block \"@author\" from sending you any more "
+"messages?"
+msgstr "„@author” felhasználó üzenetküldése valóban blokkolható?"
+
+#: pm_block_user/pm_block_user.module:66
+msgid "Block @author"
+msgstr "@author blokkolása"
+
+#: pm_block_user/pm_block_user.module:78
+msgid "@author has been blocked from sending you any further messages."
+msgstr "@author felhasználó blokkolva a további üzenetküldéstől."
+
+#: pm_block_user/pm_block_user.module:82
+msgid "@author is now allowed to send you new messages."
+msgstr "@author felhasználó most küldhet üzeneteket."
+
+#: pm_block_user/pm_block_user.module:96
+msgid "!name has chosen to not recieve any more messages from you."
+msgstr ""
+"!name azt választotta, hogy nem kíván további üzeneteket kapni "
+"innen."
+
+#: pm_block_user/pm_block_user.module:122
+msgid "Unblock author"
+msgstr "Író blokkolásának feloldása"
+
+#: pm_block_user/pm_block_user.module:125
+msgid "Block author"
+msgstr "Író blokkolása"
+
+#: pm_block_user/pm_block_user.module:14; pm_block_user/pm_block_user.info:0
+msgid "Block user messages"
+msgstr "Felhasználói üzenetek blokkolása"
+
+#: pm_block_user/pm_block_user.module:0
+msgid "pm_block_user"
+msgstr "pm_block_user"
+
+#: pm_block_user/pm_block_user.info:0
+msgid "Allows users to block other users from sending them messages."
+msgstr ""
+"Lehetővé teszi a felhasználók számára, hogy blokkolják mások "
+"üzeneteit."
+
+#: privatemsg_filter/privatemsg_filter.module:67
+msgid "Current tags:"
+msgstr "Aktuális jelölők:"
+
+#: privatemsg_filter/privatemsg_filter.module:87,102
+msgid "Add tags"
+msgstr "Jelölők hozzáadása"
+
+#: privatemsg_filter/privatemsg_filter.module:94
+msgid "What tags would you like to add?"
+msgstr "A hozzáadandó jelölők"
+
+#: privatemsg_filter/privatemsg_filter.module:95
+msgid ""
+"Please insert a comma separated list of new tags in the form of "
+"\"tag1, tag2, tag3...\". All spaces will be replaced by hyphens."
+msgstr ""
+"Az új jelölők vesszővel elválasztott listája az alábbi "
+"formában: „címke1, címke2, címke3, ...”. Minden szóköz ki "
+"lesz cserélve kötőjelekre."
+
+#: privatemsg_filter/privatemsg_filter.module:125
+msgid "!count tags have been saved: !tags."
+msgstr "!count jelölő elmentve: !tags."
+
+#: privatemsg_filter/privatemsg_filter.module:136
+msgid "Delete tags"
+msgstr "Jelölők törlése"
+
+#: privatemsg_filter/privatemsg_filter.module:153
+msgid "Delete selected tags"
+msgstr "Kiválasztott jelölők törlése"
+
+#: privatemsg_filter/privatemsg_filter.module:174
+msgid "!count tags have been deleted: !tags."
+msgstr "!count jelölő törölve: !tags."
+
+#: privatemsg_filter/privatemsg_filter.module:258
+msgid "Filter Messages"
+msgstr "Üzenetek szűrése"
+
+#: privatemsg.module:422; privatemsg_filter/privatemsg_filter.module:270
+msgid "Authors"
+msgstr "Írók"
+
+#: privatemsg_filter/privatemsg_filter.module:297,334
+msgid "Save Filter"
+msgstr "Szűrő mentése"
+
+#: privatemsg_filter/privatemsg_filter.module:310
+msgid "Filter Messages (Active)"
+msgstr "Üzenetek szűrése (Aktív)"
+
+#: privatemsg_filter/privatemsg_filter.module:496
+msgid "Tag this message"
+msgstr "Üzenet jelölése"
+
+#: privatemsg_filter/privatemsg_filter.module:516
+msgid "Tagging information has been saved."
+msgstr "A jelölési információ elmentve."
+
+#: privatemsg_filter/privatemsg_filter.module:14
+msgid "use privatemsg_filter"
+msgstr "privatemsg_filter használata"
+
+#: privatemsg_filter/privatemsg_filter.module:15
+msgid "create privatemsg_filter"
+msgstr "privatemsg_filter létrehozása"
+
+#: privatemsg_filter/privatemsg_filter.module:16
+msgid "delete privatemsg_filter"
+msgstr "privatemsg_filter törlése"
+
+#: privatemsg_filter/privatemsg_filter.module:0
+msgid "privatemsg_filter"
+msgstr "privatemsg_filter"
+
+#: privatemsg_filter/privatemsg_filter.info:0
+msgid "Privatemsg filter"
+msgstr "Privatemsg filter"
+
+#: privatemsg_filter/privatemsg_filter.info:0
+msgid "Allow users to filter messages using tags or other criteria."
+msgstr ""
+"Lehetővé teszi a felhasználók számára az üzenetek szűrését "
+"jelölőkkel vagy egyéb feltételek alapján."
+
+#: privatemsg.author-pane.inc:16
+msgid "Send private message"
+msgstr "Személyes üzenet küldése"
+
+#: privatemsg.author-pane.inc:18
+msgid "Send PM"
+msgstr "Személyes üzenet küldése"
+
+#: privatemsg.module:53
+msgid " and others"
+msgstr " és egyebek"
+
+#: privatemsg.module:255
+msgid "Inform the user about new messages on login"
+msgstr "Értesítse a felhasználót az új üzenetekről belépéskor"
+
+#: privatemsg.module:257
+msgid ""
+"This option can safely be disabled if the \"New message indication\" "
+"block is used instead."
+msgstr ""
+"Ez a lehetőség biztonságosan kikapcsolható, ha az „Új üzenet "
+"jelzése” blokk van használatban helyette."
+
+#: privatemsg.module:960
+msgid "New message indication"
+msgstr "Új üzenet jelzése"
+
+#: privatemsg.module:1128
+msgid "Message has been deleted"
+msgstr "Az üzenet törölve"
+
+#: privatemsg.module:1192
+msgid "Thread %thread_id not found, unable to answer"
+msgstr "%thread_id szál nem található, nem lehet válaszolni"
+
+#: privatemsg.module:1219
+msgid "User @user is not allowed to write messages"
+msgstr "@user felhasználó számára nem engedélyezett az üzenetírás"
+
+#: privatemsg.module:1223
+msgid "Disallowed to send a message without subject"
+msgstr "Cím nélkül nem engedélyezett az üzenetküldés"
+
+#: privatemsg.module:1227
+msgid "Disallowed to send a message without atleast one recipient"
+msgstr "Legalább egy címzett nélkül nem engedélyezett az üzenetküldés"
+
+#: privatemsg.module:1246
+msgid "Disallowed to send message because all recipients are blocked"
+msgstr "Nem engedélyezett az üzenetküldés, mert minden címzett blokkolt"
+
+#: privatemsg.module:1387
+msgid "Query function %function does not exist"
+msgstr "%function lekérdezési függvény nem létezik"
+
+#: privatemsg.module:401
+msgid "You have a new message, click here to read it"
+msgid_plural "You have @count new messages, click here to read them"
+msgstr[0] "1 új üzenet érkezett, ide kattintva elolvasható"
+msgstr[1] "@count új üzenet érkezett, ide kattintva elolvasható"
+
+#: privatemsg.module:984
+msgid "Messages (1 new)"
+msgid_plural "Messages (@count new)"
+msgstr[0] "Üzenet (1 új)"
+msgstr[1] "Üzenet (@count új)"
+
+#: privatemsg.module:1000
+msgid "New message"
+msgid_plural "New messages"
+msgstr[0] "Új üzenet"
+msgstr[1] "Új üzenetek"
+
+#: privatemsg.module:107
+msgid "Read message"
+msgstr "Üzenet olvasása"
+
+#: privatemsg_filter/privatemsg_filter.module:47
+msgid "Search message body"
+msgstr "Keresés az üzenet törzsében"
+
+#: privatemsg_filter/privatemsg_filter.module:48
+msgid ""
+"WARNING: turning on this feature will slow down search performance by "
+"a large factor. Gets worse as your messages database increases."
+msgstr ""
+"FIGYELEM: Ennek a lehetőségnek a bekapcsolása jelentősen "
+"lelassítja a keresés hatékonyságát. Egyre rosszabb lesz, ahogy "
+"növekszik az üzenet adatbázis."
+
+#: privatemsg_filter/privatemsg_filter.module:264
+msgid "Search messages"
+msgstr "Üzenetek keresése"
+
+#: privatemsg_filter/privatemsg_filter.module:264
+msgid "Search subjects"
+msgstr "Keresés a címekben"
+
+#: privatemsg_filter/privatemsg_filter.module:33
+msgid "Configure filter settings."
+msgstr "Szűrők beállítása."
+
