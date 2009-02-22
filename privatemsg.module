@@ -723,12 +723,15 @@ function pm_send_validate($form, &$form_state) {
   if (!empty($invalid)) {
     drupal_set_message(t('The following users will not receive this private message: @invalid', array('@invalid' => implode(", ", $invalid))), 'error');
   }
-  $form_state['values']['recipient'] = implode(', ', array_diff($valid, $invalid));
 }
 
 function pm_send($form, &$form_state) {
-  if (_privatemsg_send($form_state['validate_built_message'])) {
-    drupal_set_message(t('A message has been sent to @recipients.', array('@recipients' => $form_state['values']['recipient'])));
+  if (_privatemsg_send($form_state['validate_built_message'])) {    // Load usernames to which the message was sent to
+    $recipient_names = array();
+    foreach ($form_state['validate_built_message']['recipients'] as $recipient) {
+      $recipient_names[] = theme('username', $recipient);
+    }
+    drupal_set_message(t('A message has been sent to !recipients.', array('!recipients' => implode(', ', $recipient_names))));
   }
 }
 
@@ -1211,7 +1214,7 @@ function privatemsg_reply($thread_id, $body, $author = NULL) {
   }
 }
 
-function _privatemsg_validate_message($message, $author, $show_warnings = FALSE) {
+function _privatemsg_validate_message(&$message, $author, $show_warnings = FALSE) {
 
   $errors = array();
   if (!privatemsg_user_access('write privatemsg', $author)) {
