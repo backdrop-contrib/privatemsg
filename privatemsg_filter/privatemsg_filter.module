@@ -404,7 +404,7 @@ function privatemsg_filter_create_get_query($filter)
  * Implementation of hook_privatemsg_list_messages_alter().
  */
 function privatemsg_filter_privatemsg_list_messages_alter(&$content, $account) {
-  if (!empty($content['list']['content']) || privatemsg_filter_get_filter($account)) {
+  if ((!empty($content['list']['content']) || privatemsg_filter_get_filter($account)) && privatemsg_user_access('use privatemsg_filter')) {
     $content['tags']['content'] = drupal_get_form('privatemsg_filter_dropdown', $account);
     $content['tags']['#weight'] = -5;
   }
@@ -453,7 +453,7 @@ function privatemsg_filter_privatemsg_sql_list_alter(&$fragments, $account) {
 }
 
 function privatemsg_filter_privatemsg_view_messages_alter(&$content, $count) {
-  if ($count > 0) {
+  if ($count > 0 && db_result(db_query('SELECT COUNT(*) FROM {pm_tags}')) > 0) {
     $content['tags']['content'] = drupal_get_form('privatemsg_filter_form');
     $content['tags']['#weight'] = 10;
   }
@@ -462,7 +462,7 @@ function privatemsg_filter_privatemsg_view_messages_alter(&$content, $count) {
 function privatemsg_filter_form(&$form_state) {
   global $user;
   $thread_id = arg(2);
-
+  
   $form['tags'] = array(
     '#type' => 'fieldset',
     '#title' => t('Tags'),
