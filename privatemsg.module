@@ -912,20 +912,18 @@ function privatemsg_user_name_autocomplete($string) {
   // By using user_validate_user we can ensure that names included in $names are at least logisticaly possible.
   // 2: Find the next user name suggestion.
   $fragment = array_pop($names);
+  $matches = array();
   if (!empty($fragment)) {
     $query = _privatemsg_assemble_query('autocomplete', $fragment, $names);
     $result = db_query_range($query['query'], $fragment, 0, 10);
     $prefix = count($names) ? implode(", ", $names) .", " : '';
     // 3: Build proper suggestions and print.
-    $matches = array();
     while ($user = db_fetch_object($result)) {
       $matches[$prefix . $user->name .", "] = $user->name;
     }
-    drupal_json($matches);
   }
-  else {
-    drupal_json(array());   //prevents auto-complete js error on empty
-  }
+  // convert to object to prevent drupal bug, see http://drupal.org/node/175361
+  drupal_json((object)$matches);
 }
 
 function privatemsg_user($op, &$edit, &$account, $category = NULL) {
