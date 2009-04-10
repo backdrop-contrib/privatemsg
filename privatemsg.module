@@ -6,7 +6,14 @@
  * Allows users to send private messages to other users.
  */
 
-define('THREADED', 0);
+/**
+ * Status constant for read messages.
+ */
+define('PRIVATEMSG_READ', 0);
+/**
+ * Status constant for unread messages.
+ */
+define('PRIVATEMSG_UNREAD', 1);
 
 /**
  * Implementation of hook_perm().
@@ -23,6 +30,7 @@ function privatemsg_perm() {
 function _privatemsg_generate_user_array($userstring) {
   static $user_cache = array();
 
+  // convert user uid list (uid1,uid2,uid3) into an array and only load the last 4 uids.
   $users = array_slice(explode(',', $userstring), -4);
   $participants = array();
   foreach ($users as $user) {
@@ -77,28 +85,23 @@ function privatemsg_menu() {
   $items['messages'] = array(
     'title'            => 'Messages',
     'title callback'  => 'privatemsg_title_callback',
-    'page callback'    => 'privatemsg_list',
+    'page callback'    => 'drupal_get_form',
+    'page arguments'   => array('privatemsg_list'),
     'access callback'  => 'privatemsg_user_access',
     'type'             => MENU_NORMAL_ITEM,
   );
   $items['messages/inbox'] = array(
     'title'            => 'All messages',
-    'page callback'    => 'privatemsg_list',
+    'page callback'    => 'drupal_get_form',
+    'page arguments'   => array('privatemsg_list'),
     'access callback'  => 'privatemsg_user_access',
     'type'             => MENU_DEFAULT_LOCAL_TASK,
     'weight'           => -10,
   );
-  $items['messages/mark-read'] = array(
-    'title'            => 'Mark all as read',
-    'page callback'    => 'privatemsg_set_new_status',
-    'page arguments'   => array(NULL, NULL, 0, TRUE),
-    'access callback'  => 'privatemsg_unread_count',
-    'type'             => MENU_NORMAL_ITEM,
-    'weight'           => -9,
-  );
   $items['messages/sent'] = array(
     'title'            => 'Sent messages',
-    'page callback'    => 'privatemsg_list',
+    'page callback'    => 'drupal_get_form',
+    'page arguments'   => array('privatemsg_list'),
     'access callback'  => 'privatemsg_user_access',
     'type'             => MENU_LOCAL_TASK,
     'weight'           => -5,
@@ -152,6 +155,13 @@ function privatemsg_menu() {
     'access arguments' => array('administer privatemsg settings'),
     'type'             => MENU_DEFAULT_LOCAL_TASK,
     'weight'           => -10,
+  );
+  $items['messages/undo/action'] = array(
+    'title'            => 'Private messages',
+    'description'      => 'Undo last thread action',
+    'page callback'    => 'privatemsg_undo_action',
+    'access arguments' => array('read privatemsg'),
+    'type'             => MENU_CALLBACK,
   );
   return $items;
 }
@@ -256,6 +266,25 @@ function private_message_settings() {
     '#default_value' => variable_get('privatemsg_display_loginmessage', TRUE),
     '#description' => t('This option can safely be disabled if the "New message indication" block is used instead.'),
   );
+  $form['privatemsg_listing'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Configure listings'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+
+  $form['privatemsg_listing']['privatemsg_display_fields'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Configure fields'),
+    '#description' => t('Select which columns/fields should be displayed in the message listings. Subject and Last updated cannot be disabled.'),
+    '#options' => array(
+      'author'          => t('Author'),
+      'thread_started'  => t('Started'),
+      'count'           => t('Answers'),
+    ),
+    '#default_value' => variable_get('privatemsg_display_fields', array('author')),
+  );
+
   $form['#submit'][] = 'private_message_settings_submit';
   return system_settings_form($form);
 }
@@ -282,10 +311,28 @@ function privatemsg_theme() {
       'arguments'        => array('recipients' => NULL),
       'template'         => 'privatemsg-between',
     ),
-    'privatemsg_message_row'  => array(
-      'arguments'             => array('row'),
+    'privatemsg_list'    => array(
+      'file'                  => 'privatemsg.theme.inc',
+      'path'                  => drupal_get_path('module', 'privatemsg'),
+      'arguments'        => array('form'),
+    ),
+    // Define pattern for header/field templates. The theme system will register all
+    // theme functions that start with the defined pattern.
+    'privatemsg_list_header'  => array(
+      'file'                  => 'privatemsg.theme.inc',
+      'path'                  => drupal_get_path('module', 'privatemsg'),
+      'pattern'               => 'privatemsg_list_header__',
+      'arguments'             => array(),
+    ),
+    'privatemsg_list_field'   => array(
+      'file'                  => 'privatemsg.theme.inc',
+      'path'                  => drupal_get_path('module', 'privatemsg'),
+      'pattern'               => 'privatemsg_list_field__',
+      'arguments'             => array('thread'),
     ),
     'privatemsg_new_block'  => array(
+      'file'                  => 'privatemsg.theme.inc',
+      'path'                  => drupal_get_path('module', 'privatemsg'),
       'arguments'             => array('count'),
     ),
   );
@@ -325,12 +372,13 @@ function privatemsg_preprocess_privatemsg_to(&$vars) {
  *
  * @param $uid - user id for whom to load messages.
  */
-function privatemsg_list($uid = NULL) {
+function privatemsg_list(&$form_state, $uid = NULL) {
   global $user;
 
   // Setting default behavior...
   $account = $user;
-  if (is_int($uid) && $uid != $user->uid) {
+  // Because uid is submitted by the menu system, it's a string not a integer.
+  if ((int)$uid > 0 && $uid != $user->uid) {
     // Trying to view someone else's messages...
     if (!privatemsg_user_access('read all private messages')) {
       drupal_set_message(t("You do not have sufficient rights to view someone else's messages"), 'warning');
@@ -341,26 +389,6 @@ function privatemsg_list($uid = NULL) {
     }
   }
   // By this point we have figured out for which user we are listing messages and now it is safe to use $account->uid in the listing query.
-
-  $content = array();
-  $content['list']['content'] = privatemsg_list_messages($account);
-  $content['list']['#weight'] = 0;
-
-  drupal_alter('privatemsg_list_messages', $content, $account);
-
-  uasort($content, 'element_sort');
-
-  $expand = '';
-  foreach ($content as $element) {
-    $expand .= $element['content'];
-  }
-  return $expand;
-}
-
-/**
- * Display the list of messages for a given user, called by privatemsg_privatemsg_alter
- */
-function privatemsg_list_messages($account) {
   switch (arg(1)) {
     case 'sent':
       $query = _privatemsg_assemble_query('list_sent', $account);
@@ -371,78 +399,52 @@ function privatemsg_list_messages($account) {
   }
   $result = pager_query($query['query'], variable_get('privatemsg_per_page', 25), 0, $query['count']);
 
-  $rows = array();
-  while ($thread = db_fetch_array($result)) {
-    $rows[] = theme('privatemsg_message_row', $thread);
+  $threads = array();
+  $form['#data'] = array();
+  while ($row = db_fetch_array($result)) {
+    // Store the raw row data.
+    $form['#data'][$row['thread_id']] = $row;
+    // Store the themed row data.
+    $form['#rows'][$row['thread_id']] = _privatemsg_list_thread($row);
+    // store thread id for the checkboxes array
+    $threads[$row['thread_id']] = '';
   }
-
-  $content = '';
-  if (!empty($rows)) {
-    $head = array();
-    foreach (array_keys($rows[0]) as $index) {
-      $head[$index] =  array('data' => $index);
-      if ($index == t('Last updated') || $index == t('Subject')) {
-        $head[$index] += array('field' => $index, 'sort' => 'desc');
-      }
-    }
-
-    $content = theme('table', $head, $rows);
-    $content .= theme('pager');
-    drupal_add_css(drupal_get_path('module', 'privatemsg') .'/styles/privatemsg-list.css');
+  if (empty($form['#data'])) {
+    // If no threads are displayed, use these default columns.
+    $keys = array('subject', 'author', 'last_updated');
   }
   else {
-    drupal_set_message(t('No messages to display.'));
+    // Load the keys of the first row in data, we don't know the key
+    $keys = array_keys($form['#data'][key($form['#data'])]);
+    $form['actions'] = _privatemsg_action_form();
   }
+  // Load the themed list headers based on the available data
+  $form['#headers'] = _privatemsg_list_headers(!empty($form['#data']), $keys);
 
-  return $content;
-}
+  // Define checkboxes, pager and theme
+  $form['threads'] = array('#type' => 'checkboxes', '#options' => $threads);
+  $form['pager'] = array('#value' => theme('pager'), '#weight' => 20);
+  $form['#theme'] = 'privatemsg_list';
 
-function theme_privatemsg_new_block($count) {
-  $text = format_plural($count, 'You have a new message, click here to read it',
-                        'You have @count new messages, click here to read them',
-                        array('@count' => $count));
-
-  return l($text, 'messages', array('attributes' => array('id' => 'privatemsg-new-link')));
-}
-
-/**
- * Theme a row of messages
- *
- */
-function theme_privatemsg_message_row($row) {
-  $themed_row = array();
-
-  $unread = '';
-  if (isset($row['is_new']) && $row['is_new'] ) {
-    $unread = ' privatemsg-unread';
-  }
-  $themed_row[t('Subject')] = '<span class="privatemsg-list-subject'. $unread .'">'. l($row['subject'], 'messages/view/'. $row['thread_id']) .'</span>';
-  if (isset($row['author']) && $row['author']) {
-    $authors = _privatemsg_generate_user_array($row['author']);
-    $themed_row[t('Authors')] = '<span class="privatemsg-list-from'.  $unread .'">'. _privatemsg_format_participants($authors, 3, TRUE) .'</span>';
-  }
-  if (array_key_exists('recipient', $row)) {
-    $themed_row[t('Recipients')] = '';
-    if (!empty($row['recipient'])) {
-      $recipients = _privatemsg_generate_user_array($row['recipient']);
-      $themed_row[t('Recipients')] = '<span class="privatemsg-list-to'.  $unread .'">'. _privatemsg_format_participants($recipients, 3, TRUE) .'</span>';
-    }
-  }
-//  drupal_set_message('<pre>'. print_r($row, 1) . '</pre>');
-  if ($row['last_updated']) {
-    $themed_row[t('Last updated')] = '<span class="privatemsg-list-date'.  $unread .'">'. format_date($row['last_updated'], 'small') .'</span>';
-  }
-  return $themed_row;
+  // Store the account for which the threads are displayed.
+  $form['#account'] = $account;
+  return $form;
 }
 
 /**
- * API function
+ * Changes the read/new status of a single message.
  *
- * Sets a single message as read for a user.
+ * @param int    $status  Either PRIVATEMSG_READ or PRIVATEMSG_UNREAD
+ * @param int    $pmid    Message id, mid
+ * @param object $account User object, defaults to the current user
  */
-function privatemsg_mark_as_read($pmid, $account) {
-  $query = "UPDATE {pm_index} SET is_new = 0 WHERE mid = %d AND recipient = %d";
-  db_query($query, $pmid, $account->uid);
+function privatemsg_message_change_status($pmid, $status, $account = NULL) {
+  if (!$account) {
+    global $user;
+    $account = $user;
+  }
+  $query = "UPDATE {pm_index} SET is_new = %d WHERE mid = %d AND uid = %d";
+  db_query($query, $status, $pmid, $account->uid);
 }
 
 /**
@@ -463,45 +465,6 @@ function privatemsg_unread_count($account = NULL) {
   return $counts[$account->uid];
 }
 
-/**
- * API function
- *
- * Change status of one or ALL messages to read / unread.
- */
-function privatemsg_set_new_status($account = NULL, $mid = NULL, $new = 0, $verbose = FALSE) {
-  if (!$account || 0 == $account->uid) {
-    global $user;
-    $account = $user;
-  }
-  $query = "UPDATE {pm_index} SET is_new = %d WHERE uid = %d AND is_new = %d";
-  $arg[] = $new;
-  $arg[] = $account->uid;
-  $arg[] = ($new == 0) ? 1 : 0;
-  if ($mid) {
-    $query .= " AND mid = %d";
-    $arg[] = $mid;
-  }
-
-  $result = db_query($query, $arg) ;
-
-  if ($verbose) {
-    if ($result) {
-      if ($new == 1) {
-        $status = t('unread');
-      }
-      else {
-        $status = t('read');
-      }
-      $total_marked = db_affected_rows();
-      drupal_set_message(format_plural($total_marked, "1 message marked as %status", '@count messages marked as %status', array('%status' => $status)));
-    }
-    else {
-      drupal_set_message(t('An error has occured, please contact the site administrator.'), 'error');
-    }
-    return '';
-  }
-}
-
 function privatemsg_view($thread_id) {
   global $user;
   $output = '';
@@ -515,14 +478,14 @@ function privatemsg_view($thread_id) {
   $content['participants']['content'] = theme('privatemsg_to', $message);
   $content['participants']['#weight'] = -5;
 
-  // Load the messages.
-  $query = _privatemsg_assemble_query('messages', $thread_id, $user);
+  // Load the messages. The query expects an array of thread id's.
+  $query = _privatemsg_assemble_query('messages', array($thread_id), $user);
   $conversation = db_query($query['query']);
   $message_count = 0;
   while ($result = db_fetch_array($conversation)) {
     $pmid = $result['mid'];
     $message = _privatemsg_load($pmid, $user);
-    privatemsg_set_new_status($user, $pmid);
+    privatemsg_message_change_status($pmid, PRIVATEMSG_READ, $user);
     $message['author'] = user_load($message['author']);
     // Some tasks only need to be done once - on the first message of a thread.
     if ($message_count == 0) {
@@ -776,57 +739,53 @@ function privatemsg_sql_list_sent(&$fragments, $account) {
   $fragments['group_by'][]  = 'pmi.thread_id';
   $fragments['group_by'][]  = 'pm.subject';
 
-  $order = 'last_updated';
-  $sort = 'desc';
-  if (isset($_GET['order'])) {
-    switch ($_GET['order']) {
-      case 'subject':
-        $order = 'subject';
-        break;
-    }
-    $sort = isset($_GET['sort']) && ($_GET['sort'] == 'asc' || $_GET['sort'] == 'desc') ? $_GET['sort'] : 'desc';
-  }
-  $fragments['order_by'][]  = $order .' '. $sort;
+  // We can use tablesort_sql now, but we don't need the ORDER BY part of the query.
+  // Because of that, we need to cut off the first 9 characters of the generated string.
+  $order_by = drupal_substr(tablesort_sql(_privatemsg_list_headers( FALSE, array('subject', 'recipient', 'last_updated'))), 9);
+  $fragments['order_by'][]  = $order_by;
 }
 
 function privatemsg_sql_list(&$fragments, $account) {
   $fragments['primary_table'] = '{pm_message} pm';
 
+  // Load enabled columns
+  $fields = array_filter(variable_get('privatemsg_display_fields', array('author')));
+
+  // Required columns
   $fragments['select'][]      = 'pmi.thread_id';
   $fragments['select'][]      = 'MIN(pm.subject) as subject';
-  $fragments['select'][]      = 'COUNT(pmi.thread_id) as count';
-
-  if ($GLOBALS['db_type'] == 'pgsql') {
-    $fragments['select'][]      = "array_to_string(array(SELECT DISTINCT textin(int4out(pma.author))
-                                                         FROM {pm_message} pma
-                                                         INNER JOIN pm_index pmia ON pma.mid = pmia.mid
-                                                         WHERE pmia.thread_id = pmi.thread_id),',') AS author";
-  }
-  else {
-    $fragments['select'][]      = 'GROUP_CONCAT(DISTINCT author SEPARATOR ",") as author';
-  }
   $fragments['select'][]      = 'MAX(pm.timestamp) as last_updated';
-  $fragments['select'][]      = 'MIN(pm.timestamp) as thread_started';
   $fragments['select'][]      = 'MAX(pmi.is_new) as is_new';
+  
+  if (in_array('count', $fields)) {
+    $fragments['select'][]      = 'COUNT(pmi.thread_id) as count';
+  }
+  if (in_array('author', $fields)) {
+    // Query for a string with uid's, for example "1,6,7". This needs a subquery on PostgreSQL.
+    if ($GLOBALS['db_type'] == 'pgsql') {
+      $fragments['select'][]      = "array_to_string(array(SELECT DISTINCT textin(int4out(pma.author))
+                                                           FROM {pm_message} pma
+                                                           INNER JOIN pm_index pmia ON pma.mid = pmia.mid
+                                                           WHERE pmia.thread_id = pmi.thread_id),',') AS author";
+    }
+    else {
+      $fragments['select'][]      = 'GROUP_CONCAT(DISTINCT author SEPARATOR ",") as author';
+    }
+  }
+  if (in_array('thread_started', $fields)) {
+    $fragments['select'][]      = 'MIN(pm.timestamp) as thread_started';
+  }
   // pm_index needs to be the first join.
   $fragments['inner_join'][]  = 'INNER JOIN {pm_index} pmi ON pm.mid = pmi.mid';
   $fragments['where'][]       = 'pmi.uid = %d';
   $fragments['query_args'][]  = $account->uid;
   $fragments['where'][]       = 'pmi.deleted = 0';
   $fragments['group_by'][]    = 'pmi.thread_id';
-  $order = 'is_new';
-  $sort = 'desc';
-  if (isset($_GET['order'])) {
-    switch ($_GET['order']) {
-      case t('Subject'): // Allows translated headers to be sorted
-        $order = 'subject';
-        break;
-      default:
-    }
-    $sort = isset($_GET['sort']) && ($_GET['sort'] == 'asc' || $_GET['sort'] == 'desc') ? $_GET['sort'] : 'desc';
-  }
-  $fragments['order_by'][]  = $order .' '. $sort .', last_updated DESC';
 
+  // We can use tablesort_sql now, but we don't need the ORDER BY part of the query.
+  // Because of that, we need to cut off the first 9 characters of the generated string
+  $order_by = drupal_substr(tablesort_sql(_privatemsg_list_headers( FALSE, array('subject', 'last_updated') + $fields), 'is_new DESC,'), 9);
+  $fragments['order_by'][]  = $order_by;
 }
 
 function privatemsg_sql_load(&$fragments, $pmid, $account) {
@@ -846,16 +805,29 @@ function privatemsg_sql_load(&$fragments, $pmid, $account) {
   $fragments['where'][]       = 'pmi.uid = %d';
   $fragments['query_args'][]  = $account->uid;
 }
-
-function privatemsg_sql_messages(&$fragments, $thread_id, $account) {
+/**
+ * Query definition to load messages of one or multiple threads.
+ *
+ * @param $fragments
+ *  Query fragments array.
+ * @param $threads
+ *  Array with one or multiple thread id's.
+ * @param $account
+ *  User object for which the messages are loaded.
+ * @param $load_all
+ *  Deleted messages are only loaded if this is set to TRUE
+ */
+function privatemsg_sql_messages(&$fragments, $threads, $account, $load_all = FALSE) {
   $fragments['primary_table'] = '{pm_index} pmi';
 
   $fragments['select'][]      = 'DISTINCT(pmi.mid) as mid';
-  $fragments['where'][]       = 'pmi.thread_id = %d';
-  $fragments['query_args'][]  = $thread_id;
+  $fragments['where'][]       = 'pmi.thread_id IN ('. db_placeholders($threads) .')';
+  $fragments['query_args']   += $threads;
   $fragments['where'][]       = 'pmi.uid = %d';
   $fragments['query_args'][]  = $account->uid;
-  $fragments['where'][]       = 'pmi.deleted = 0';
+  if (!$load_all) {
+    $fragments['where'][]       = 'pmi.deleted = 0';
+  }
   $fragments['order_by'][]    = 'pmi.mid ASC';
 }
 
@@ -1101,14 +1073,14 @@ function privatemsg_delete($form_state, $pmid) {
   );
 }
 
-function privatemsg_message_delete($pmid, $account = NULL) {
+function privatemsg_message_change_delete($pmid, $delete, $account = NULL) {
   if (is_null($account)) {
     global $user;
     $account = drupal_clone($user);
   }
   $message = _privatemsg_load($pmid, $account);
 
-  db_query('UPDATE {pm_index} SET deleted = %d WHERE mid = %d AND uid = %d', 1, $pmid, $account->uid);
+  db_query('UPDATE {pm_index} SET deleted = %d WHERE mid = %d AND uid = %d', $delete, $pmid, $account->uid);
 
   $result = db_query("SELECT MIN(deleted) AS deleted_by_all FROM {pm_index} WHERE mid = %d", $pmid);
   $deleted = db_fetch_array($result);
@@ -1122,10 +1094,8 @@ function privatemsg_message_delete($pmid, $account = NULL) {
 }
 
 function privatemsg_delete_submit($form, &$form_state) {
-  $deleted = 1;
-
   if ($form_state['values']['confirm']) {
-    privatemsg_message_delete($form_state['values']['pmid']);
+    privatemsg_message_change_delete($form_state['values']['pmid'], 1);
     drupal_set_message(t('Message has been deleted'));
   }
   $form_state['redirect'] = 'messages';
@@ -1450,4 +1420,273 @@ function _privatemsg_assemble_query($query) {
     return array('query' => $query, 'count' => $count);
   }
   return FALSE;
+}
+
+function _privatemsg_action_form() {
+  $form = array(
+      '#type'        => 'fieldset',
+      '#title'       => t('Actions'),
+      '#prefix'      => '<div class="container-inline">',
+      '#suffix'      => '</div>',
+      '#collapsible' => TRUE,
+      '#collapsed'   => FALSE,
+      '#weight'      => 15,
+  );
+  $form['delete'] = array(
+      '#type'   => 'submit',
+      '#value'  => t('Delete'),
+  );
+  // Display all operations which have a label.
+  $options = array(0 => t('More actions..'));
+  foreach (module_invoke_all('privatemsg_thread_operations') as $operation => $array) {
+    if (isset($array['label'])) {
+      $options[$operation] = $array['label'];
+    }
+  }
+  $form['operation'] = array(
+      '#type'          => 'select',
+      '#options'       => $options,
+      '#default_value' => 0,
+      // Execute the submit button if a operation has been selected.
+      '#attributes'    => array('onchange' => "$('#edit-submit').click()"),
+  );
+  $form['submit'] = array(
+      '#type'       => 'submit',
+      '#value'      => t('Execute'),
+      '#submit'     => array('privatemsg_list_submit'),
+      '#attributes' => array('class' => 'privatemsg-action-button'),
+  );
+  // JS for hiding the execute button(s)
+  drupal_add_js(drupal_get_path('module', 'privatemsg') .'/privatemsg-list.js');
+  return $form;
+}
+
+/**
+ * Marks one or multiple threads as (un)read
+ *
+ * @param $threads
+ *   Array with id's, a single int value will be converted to int
+ * @param $status
+ *   Either PRIVATEMSG_READ or PRIVATEMSG_UNREAD, sets the new status
+ * @param $account
+ *   User object for which the threads should be deleted, defaults to the current user
+ */
+function privatemsg_thread_change_status($threads, $status, $account = NULL) {
+  if (!is_array($threads)) {
+    $threads = array($threads);
+  }
+  if (empty($account)) {
+    global $user;
+    $account = drupal_clone($user);
+  }
+  // Merge status and uid with the threads list. array_merge() will not overwrite/ignore thread_id 1.
+  $params = array_merge(array($status, $account->uid), $threads);
+  db_query('UPDATE {pm_index} SET is_new = %d WHERE uid = %d AND thread_id IN ('. db_placeholders($threads) .')', $params);
+
+  if ($status == PRIVATEMSG_UNREAD) {
+    drupal_set_message(t('Marked %count threads as unread.', array('%count' => count($threads))));
+  }
+  else {
+    drupal_set_message(t('Marked %count threads as read.', array('%count' => count($threads))));
+  }
+}
+/**
+ * Returns a table header definition based on the submitted keys.
+ *
+ * @param $has_posts
+ *   TRUE when there is atleast one row. decides if the select all checkbox should be displayed.
+ * @param
+ *   Array with the keys which are present in the query/should be displayed.
+ * @return
+ *   Array with header defintions for tablesort_sql and theme('table').
+ */
+function _privatemsg_list_headers($has_posts, $keys) {
+  $select_header = $has_posts ? theme('table_select_header_cell') : '';
+  $select_header['#weight'] = -50;
+
+  // theme() doesn't include the theme file for patterns, we need to do it manually.
+  include_once drupal_get_path('module', 'privatemsg') .'/privatemsg.theme.inc';
+
+  $header = array($select_header);
+  foreach ($keys as $key) {
+    // First, try to load a specific theme for that header, if not present, use the default.
+    if ($return = theme(array('privatemsg_list_header__'. $key, 'privatemsg_list_header'))) {
+      // The default theme returns nothing, only store the value if we have something.
+      $header[$key] = $return;
+    }
+  }
+  return $header;
+}
+
+/**
+ * Formats a row in the message list.
+ *
+ * Does use theme patterns to display the single fields.
+ * 
+ * @param $thread
+ *   Array with the row data returned by the database.
+ * @return
+ *   Row definition for use with theme('table')
+ */
+function _privatemsg_list_thread($thread) {
+  $row = array('data' => array());
+
+  if (!empty($thread['is_new'])) {
+    // Set the css class in the tr tag.
+    $row['class'] = 'privatemsg-unread';
+  }
+  foreach ($thread as $key => $data) {
+    // First, try to load a specific theme for that field, if not present, use the default.
+    if ($return = theme(array('privatemsg_list_field__'. $key, 'privatemsg_list_field'), $thread)) {
+      // The default theme returns nothing, only store the value if we have something.
+      $row['data'][$key] = $return;
+    }
+  }
+  return $row;
+}
+
+/**
+ * Menu callback for messages/undo/action.
+ *
+ * This function will test if a undo callback is stored in SESSION and execute it.
+ */
+function privatemsg_undo_action() {
+  // Check if a undo callback for that user exists.
+  if (isset($_SESSION['privatemsg']['undo callback']) && is_array($_SESSION['privatemsg']['undo callback'])) {
+    $undo = $_SESSION['privatemsg']['undo callback'];
+    // If the defined undo callback exists, execute it
+    if (isset($undo['function']) && isset($undo['args'])) {
+      call_user_func_array($undo['function'], $undo['args']);
+    }
+    // Return back to the site defined by the destination GET param.
+    drupal_goto();
+  }
+}
+
+/**
+ * Process privatemsg_list form submissions.
+ *
+ * Execute the chosen action on the selected messages. This function is
+ * based on node_admin_nodes_submit().
+ */
+function privatemsg_list_submit($form, &$form_state) {
+  // Load all available operation definitions.
+  $operations = module_invoke_all('privatemsg_thread_operations');
+
+  // Default "default" operation, which won't do anything.
+  $operation = array('callback' => 0);
+
+  // Check if a valid operation has been submitted.
+  if (isset($form_state['values']['operation']) && isset($operations[$form_state['values']['operation']])) {
+    $operation = $operations[$form_state['values']['operation']];
+  }
+
+  // Load all keys where the value is the current op.
+  $keys = array_keys($form_state['values'], $form_state['values']['op']);
+
+  // The first one is op itself, we need to use the second.
+  if (isset($keys[1]) && isset($operations[$keys[1]])) {
+    $operation = $operations[$keys[1]];
+  }
+
+  // Filter out unchecked nodes, this gives us an array of "checked" threads.
+  $threads = array_filter($form_state['values']['threads']);
+
+  // Only execute something if we have a valid callback and atleast one checked thread.
+  if (!empty($operation['callback']) && !empty($threads)) {
+    // Add in callback arguments if present.
+    if (isset($operation['callback arguments'])) {
+      $args = array_merge(array($threads), $operation['callback arguments']);
+    }
+    else {
+      $args = array($threads);
+    }
+    // Execute the chosen action and pass the defined arguments.
+    call_user_func_array($operation['callback'], $args);
+
+    // Check if that operation has defined a undo callback
+    if (isset($operation['undo callback']) && $undo_function = $operation['undo callback']) {
+      // Add in callback arguments if present.
+      if (isset($operation['undo callback arguments'])) {
+        $undo_args = array_merge(array($threads), $operation['undo callback arguments']);
+      }
+      else {
+        $undo_args = array($threads);
+      }
+      // Store the undo callback in the session and display a "Undo" link.
+      // @todo: Provide a more flexible solution for such an undo action, operation defined string for example.
+      $_SESSION['privatemsg']['undo callback'] = array('function' => $undo_function, 'args' => $undo_args);
+      $undo = l(t('undone'), 'messages/undo/action', array('query' => drupal_get_destination()));
+
+      drupal_set_message(t('The previous action can be !undo.', array('!undo' => $undo)));
+    }
+  }
+}
+
+/**
+ * Delete or restore one or multiple threads
+ *
+ * @param $threads
+ *   Array with id's, a single int value will be converted to int
+ * @param $delete
+ *   Indiciates if the threads should be deleted or restored. 1 = delete, 0 => restore.
+ * @param $account
+ *   User object for which the threads should be deleted, defaults to the current user.
+ */
+function privatemsg_thread_change_delete($threads, $delete, $account = NULL) {
+  if (!is_array($threads)) {
+    $threads = array($threads);
+  }
+  if (empty($account)) {
+    global $user;
+    $account = drupal_clone($user);
+  }
+
+  // Merge status and uid with the threads list. array_merge() will not overwrite/ignore thread_id 1.
+  $params = array_merge(array($delete, $account->uid), $threads);
+
+  // Load all messages of those threads including the deleted.
+  $query = _privatemsg_assemble_query('messages', $threads, $account, TRUE);
+  $result = db_query($query['query']);
+
+  // Delete each message. We need to do that to trigger the delete hook.
+  while ($row = db_fetch_array($result)) {
+    privatemsg_message_change_delete($row['mid'], $delete, $account);
+  }
+
+  if ($delete) {
+    drupal_set_message(t('Deleted %count threads.', array('%count' => count($threads))));
+  }
+  else {
+    drupal_set_message(t('Restored %count threads.', array('%count' => count($threads))));
+  }
+}
+
+/**
+ * Implementation of hook_privatemsg_thread_operations().
+ */
+function privatemsg_privatemsg_thread_operations() {
+  $operations = array(
+    'mark as read' => array(
+      'label' => t('Mark as read'),
+      'callback' => 'privatemsg_thread_change_status',
+      'callback arguments' => array('status' => PRIVATEMSG_READ),
+      'undo callback' => 'privatemsg_thread_change_status',
+      'undo callback arguments' => array('status' => PRIVATEMSG_UNREAD),
+    ),
+    'mark as unread' => array(
+      'label' => t('Mark as unread'),
+      'callback' => 'privatemsg_thread_change_status',
+      'callback arguments' => array('status' => PRIVATEMSG_UNREAD),
+      'undo callback' => 'privatemsg_thread_change_status',
+      'undo callback arguments' => array('status' => PRIVATEMSG_READ),
+    ),
+    'delete' => array(
+      'callback' => 'privatemsg_thread_change_delete',
+      'callback arguments' => array('delete' => 1),
+      'undo callback' => 'privatemsg_thread_change_delete',
+      'undo callback arguments' => array('delete' => 0),
+    ),
+  );
+  return $operations;
 }
