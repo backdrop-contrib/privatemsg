@@ -27,6 +27,16 @@ function privatemsg_perm() {
   );
 }
 
+/**
+ * Generate aray of user objects based on a string.
+ *
+ *
+ * @param $userstring
+ *   A string with user id, for example 1,2,4. Returned by the list query
+ *
+ * @return
+ *   Array with user objects.
+ */
 function _privatemsg_generate_user_array($userstring) {
   static $user_cache = array();
 
@@ -44,6 +54,20 @@ function _privatemsg_generate_user_array($userstring) {
   return $participants;
 }
 
+/**
+ * Format an array of user objects.
+ *
+ * @param $part_array
+ *   Array with user objects, for example the one returnd by
+ *   _privatemsg_generate_user_array.
+ *
+ * @param $limit
+ *   Limit the number of user objects which should be displayed.
+ * @param $no_text
+ *   When TRUE, don't display the Participants/From text.
+ * @return
+ *   String with formated user objects, like user1, user2.
+ */
 function _privatemsg_format_participants($part_array, $limit = 20, $no_text = FALSE) {
   if (count($part_array) > 0) {
     $to = array();
@@ -167,13 +191,17 @@ function privatemsg_menu() {
 }
 
 /**
- * Privatemsg access wrapper for user_callback
+ * Privatemsg  wrapper for user_access.
  *
- * Never allows anonymous user access as that doesn't makes sense
+ * Never allows anonymous user access as that doesn't makes sense.
  *
- * @param string $permission Permission string, defaults to read privatemsg
+ * @param $permission
+ *   Permission string, defaults to read privatemsg
  *
- * @return boolean TRUE if user has access, FALSE if not
+ * @return
+ *   TRUE if user has access, FALSE if not
+ *
+ * @ingroup api
  */
 function privatemsg_user_access($permission = 'read privatemsg', $account = NULL) {
   if ( $account === NULL ) {
@@ -191,9 +219,13 @@ function privatemsg_user_access($permission = 'read privatemsg', $account = NULL
 
 
 /**
- * Function to restrict the access of the view messages page to just the messages/view/%
- * pages and not to leave tabs artifact on other lower level pages
- * such as the messages/new/%
+ * Check access to the view messages page.
+ *
+ * Function to restrict the access of the view messages page to just the
+ * messages/view/% pages and not to leave tabs artifact on other lower
+ * level pages such as the messages/new/%.
+ *
+ * @ingroup api
  */
 function privatemsg_view_access() {
   if (privatemsg_user_access('read privatemsg') && arg(1) == 'view') {
@@ -203,9 +235,17 @@ function privatemsg_view_access() {
 }
 
 /**
- * This function is called by the menu system through the %privatemsg_thread wildcard
+ * Load a thread with all the messages and participants.
  *
- * TODO: Really load the full thread in here
+ * This function is called by the menu system through the %privatemsg_thread
+ * wildcard.
+ *
+ * @todo Really load the full thread in here
+ *
+ * @param $thread_id
+ *   Thread id, pmi.thread_id or pm.mid of the first message in that thread.
+ *
+ * @ingroup api
  */
 function privatemsg_thread_load($thread_id) {
   if ((int)$thread_id > 0) {
@@ -297,7 +337,7 @@ function privatemsg_theme() {
   return array(
     'privatemsg_view'    => array(
       'arguments'        => array('message' => NULL),
-      'template'         => variable_get('private_message_view_template', 'privatemsg-view'),//'privatemsg',
+      'template'         => variable_get('private_message_view_template', 'privatemsg-view'), // 'privatemsg',
     ),
     'privatemsg_from'    => array(
       'arguments'        => array('author' => NULL),
@@ -361,7 +401,7 @@ function privatemsg_preprocess_privatemsg_view(&$vars) {
 }
 
 function privatemsg_preprocess_privatemsg_to(&$vars) {
-  $vars['participants'] = '';//assign a default empty value
+  $vars['participants'] = ''; // assign a default empty value
   if (isset($vars['message']['participants'])) {
     $vars['participants'] = _privatemsg_format_participants($vars['message']['participants']);
   }
@@ -370,7 +410,8 @@ function privatemsg_preprocess_privatemsg_to(&$vars) {
 /**
  * List messages.
  *
- * @param $uid - user id for whom to load messages.
+ * @param $uid
+ *   user id for whom to load messages.
  */
 function privatemsg_list(&$form_state, $uid = NULL) {
   global $user;
@@ -434,9 +475,12 @@ function privatemsg_list(&$form_state, $uid = NULL) {
 /**
  * Changes the read/new status of a single message.
  *
- * @param int    $status  Either PRIVATEMSG_READ or PRIVATEMSG_UNREAD
- * @param int    $pmid    Message id, mid
- * @param object $account User object, defaults to the current user
+ * @param $pmid
+ *   Message id
+ * @param $status
+ *   Either PRIVATEMSG_READ or PRIVATEMSG_UNREAD
+ * @param $account
+ *   User object, defaults to the current user
  */
 function privatemsg_message_change_status($pmid, $status, $account = NULL) {
   if (!$account) {
@@ -448,9 +492,12 @@ function privatemsg_message_change_status($pmid, $status, $account = NULL) {
 }
 
 /**
- * API function
- *
  * Return number of unread messages for an account.
+ *
+ * @param $account
+ *   Specifiy the user for which the unread count should be loaded.
+ *
+ * @ingroup api
  */
 function privatemsg_unread_count($account = NULL) {
   static $counts = array();
@@ -509,7 +556,7 @@ function privatemsg_view($thread_id) {
     $content['reply']['#weight'] = 5;
   }
 
-  //allow other modules to hook into the $content array and alter it
+  // allow other modules to hook into the $content array and alter it
   drupal_alter('privatemsg_view_messages', $content, $message_count);
 
   uasort($content, 'element_sort');
@@ -560,7 +607,7 @@ function privatemsg_new(&$form_state, $account = NULL) {
     '#type'               => 'textfield',
     '#title'              => t('To'),
     '#description'        => t('Separate multiple names with commas.'),
-    '#default_value'      => $recipient,//populate this later
+    '#default_value'      => $recipient, // populate this later
     '#required'           => TRUE,
     '#weight'             => -10,
     '#size'               => 50,
@@ -605,14 +652,6 @@ function privatemsg_new(&$form_state, $account = NULL) {
     '#weight'             => 20,
   );
   $form['#validate'][]    = 'pm_send_validate';
-
-  //modules can store data here, everything stored here will be available
-  //in $message, similar to #node
-
-
-
-
-
   return $form;
 }
 
@@ -702,12 +741,10 @@ function pm_preview($form, &$form_state) {
 
     drupal_validate_form($form['form_id']['#value'], $form, $form_state);
     if (!form_get_errors()) {
-//  drupal_set_message('<pre>'. print_r($form, 1) .' </pre>');;
-      //TODO: Generate message preview here.
       $form_state['privatemsg_preview'] = theme('privatemsg_view', $form_state['validate_built_message']);
     }
 
-  $form_state['rebuild'] = TRUE; //this forces our form to be rebuilt instead of being submitted.
+  $form_state['rebuild'] = TRUE; // this forces our form to be rebuilt instead of being submitted.
 }
 
 function privatemsg_sql_list_sent(&$fragments, $account) {
@@ -788,6 +825,14 @@ function privatemsg_sql_list(&$fragments, $account) {
   $fragments['order_by'][]  = $order_by;
 }
 
+/**
+ * @addtogroup sql
+ * @{
+ */
+
+/**
+ * Query function for load.
+ */
 function privatemsg_sql_load(&$fragments, $pmid, $account) {
 //  drupal_set_message('<pre>'. print_r(func_get_args(), 1) . '</pre>');
   $fragments['primary_table'] = '{pm_message} pm'; // Our primary table
@@ -854,7 +899,7 @@ function privatemsg_sql_autocomplete(&$fragments, $search, $names) {
   $fragments['primary_table'] = '{users} u';
   $fragments['select'][] = 'u.name';
   $fragments['where'][] = "u.name LIKE '%s'";
-  $fragments['query_args'][] = $search. '%%';
+  $fragments['query_args'][] = $search .'%%';
   if (!empty($names)) {
     $fragments['where'][] = "u.name NOT IN (". db_placeholders($names, 'text') .")";
     $fragments['query_args'] += $names;
@@ -864,7 +909,12 @@ function privatemsg_sql_autocomplete(&$fragments, $search, $names) {
 }
 
 /**
+ * @}
+ */
+
+/**
  * Return autocomplete results for usernames.
+ *
  * Prevents usernames from being used and/or suggested twice.
  */
 function privatemsg_user_name_autocomplete($string) {
@@ -936,7 +986,7 @@ function privatemsg_block($op = 'list', $delta = 0, $edit = array()) {
 
     return $blocks;
   }
-  else if ('view' == $op) {
+  elseif ('view' == $op) {
     $block = array();
     switch ($delta) {
       case 'privatemsg-menu':
@@ -1073,6 +1123,18 @@ function privatemsg_delete($form_state, $pmid) {
   );
 }
 
+/**
+ * Delete or restore a message.
+ *
+ * @param $pmid
+ *   Message id, pm.mid field.
+ * @param $delete
+ *   Either deletes or restores the thread (1 => delete, 0 => restore)
+ * @param $account
+ *   User acccount for which the message should be deleted.
+ *
+ * @ingroup api
+ */
 function privatemsg_message_change_delete($pmid, $delete, $account = NULL) {
   if (is_null($account)) {
     global $user;
@@ -1101,16 +1163,28 @@ function privatemsg_delete_submit($form, &$form_state) {
   $form_state['redirect'] = 'messages';
 }
 /**
- * Send a new message
+ * Send a new message.
  *
  * This functions does send a message in a new thread.
+ * Example:
+ * @code
+ * privatemsg_new_thread('The subject', 'The body text', array(user_load(5)));
+ * @endcode
  *
- * @param string $subject    The subject of the new message
- * @param string $body       The body text of the new message
- * @param array  $recipients Array of recipients (user objects)
- * @param object $author     The author (user object, defaults to the current user)
  *
- * @return boolean|array Either true or an array with validation errors
+ * @param $subject
+ *   The subject of the new message
+ * @param $body
+ *   The body text of the new message
+ * @param $recipients
+ *   Array of recipients (user objects)
+ * @param $author
+ *   The author (user object, defaults to the current user)
+ *
+ * @return
+ *   Either true or an array with validation errors
+ *
+ * @ingroup api
  */
 function privatemsg_new_thread($subject, $body, $recipients, $author = NULL) {
   if ($author == NULL) {
@@ -1138,11 +1212,17 @@ function privatemsg_new_thread($subject, $body, $recipients, $author = NULL) {
  *
  * This functions replies on an existing thread.
  *
- * @param int    $thread_id Thread id
- * @param string $body      The body text of the new message
- * @param string $author    The author (user object, defaults to the current user)
+ * @param $thread_id
+ *   Thread id
+ * @param $body
+ *   The body text of the new message
+ * @param $author
+ *   The author (user object, defaults to the current user)
  *
- * @return boolean|array Either true or an array with validation errors
+ * @return
+ *   Either true or an array with validation errors
+ *
+ * @ingroup api
  */
 function privatemsg_reply($thread_id, $body, $author = NULL) {
   if ($author == NULL) {
@@ -1262,10 +1342,15 @@ function _privatemsg_send($message) {
  * Contains permission checks of author/recipient, blocking and
  * if a anonymous user is involved.
  *
- * @param object $recipient Recipient of the message
- * @param object $account   Sender of the message, defaults to the current user
+ * @param $recipient
+ *   Recipient of the message
+ * @param $account
+ *   Sender of the message, defaults to the current user
  *
- * @return string|boolean   Either FALSE or a URL string
+ * @return
+ *   Either FALSE or a URL string
+ *
+ * @ingroup api
  */
 function privatemsg_get_link($recipient, $account = NULL) {
   if ($account == NULL) {
@@ -1288,8 +1373,15 @@ function privatemsg_get_link($recipient, $account = NULL) {
 }
 
 /**
- * Privatemsg load single msg api
+ * Load a single message.
  *
+ * @param $pmid
+ *   Message id, pm.mid field
+ * @param $account
+ *   For which account the message should be loaded.
+ *   Defaults to the current user.
+ *
+ * @ingroup api
  */
 function _privatemsg_load($pmid, $account = NULL) {
   if (empty($account)) {
@@ -1309,6 +1401,20 @@ function _privatemsg_load($pmid, $account = NULL) {
   return $message;
 }
 
+/**
+ * Generates a query based on a query id.
+ *
+ * @param $query
+ *   Either be a string ('some_id') or an array('group_name', 'query_id'),
+ *   if a string is supplied, group_name defaults to 'privatemsg'.
+ *
+ * @return
+ *    Array with the keys query and count. count can be used to count the
+ *    elements which would be returned by query. count can be used together
+ *    with pager_query().
+ *
+ * @ingroup sql
+ */
 function _privatemsg_assemble_query($query) {
 
   // Modules will be allowed to choose the prefix for the querybuilder, but if there is not one supplied, 'privatemsg' will be taken by default.
@@ -1344,8 +1450,8 @@ function _privatemsg_assemble_query($query) {
    */
   $args = func_get_args();
   unset($args[0]);
-  //we do the merge because we call call_user_func_array and not drupal_alter
-  //this is necessary because otherwise we would not be able to use $args correctly (otherwise it doesnt unfold)
+  // we do the merge because we call call_user_func_array and not drupal_alter
+  // this is necessary because otherwise we would not be able to use $args correctly (otherwise it doesnt unfold)
   $alterargs = array(&$fragments);
   $query_function = $query_group .'_sql_'. $query_id;
   if (!empty($args)) {
