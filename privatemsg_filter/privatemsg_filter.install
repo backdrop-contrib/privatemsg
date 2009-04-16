@@ -65,5 +65,6 @@ function privatemsg_filter_install() {
 }
 
 function privatemsg_filter_uninstall() {
+  variable_del('privatemsg_filter_searchbody');
   drupal_uninstall_schema('privatemsg_filter');
 }

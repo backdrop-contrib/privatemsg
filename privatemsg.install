@@ -105,6 +105,10 @@ function privatemsg_install() {
 }
 
 function privatemsg_uninstall() {
+  variable_del('private_message_view_template');
+  variable_del('privatemsg_per_page');
+  variable_del('privatemsg_display_loginmessage');
+  variable_del('privatemsg_display_fields');
   drupal_uninstall_schema('privatemsg');
 }
 
