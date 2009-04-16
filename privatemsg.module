@@ -1654,7 +1654,7 @@ function _privatemsg_list_thread($thread) {
 /**
  * Menu callback for messages/undo/action.
  *
- * This function will test if a undo callback is stored in SESSION and execute it.
+ * This function will test if an undo callback is stored in SESSION and execute it.
  */
 function privatemsg_undo_action() {
   // Check if a undo callback for that user exists.
@@ -1695,7 +1695,7 @@ function privatemsg_list_submit($form, &$form_state) {
     $operation = $operations[$keys[1]];
   }
 
-  // Filter out unchecked nodes, this gives us an array of "checked" threads.
+  // Filter out unchecked threads, this gives us an array of "checked" threads.
   $threads = array_filter($form_state['values']['threads']);
 
   // Only execute something if we have a valid callback and atleast one checked thread.
