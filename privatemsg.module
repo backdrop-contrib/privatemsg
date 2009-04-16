@@ -110,25 +110,17 @@ function privatemsg_menu() {
     'title'            => 'Messages',
     'title callback'  => 'privatemsg_title_callback',
     'page callback'    => 'drupal_get_form',
-    'page arguments'   => array('privatemsg_list'),
+    'page arguments'   => array('privatemsg_list', 'list'),
     'access callback'  => 'privatemsg_user_access',
     'type'             => MENU_NORMAL_ITEM,
   );
-  $items['messages/inbox'] = array(
-    'title'            => 'All messages',
+  $items['messages/list'] = array(
+    'title'            => 'Messages',
     'page callback'    => 'drupal_get_form',
-    'page arguments'   => array('privatemsg_list'),
+    'page arguments'   => array('privatemsg_list', 'list'),
     'access callback'  => 'privatemsg_user_access',
     'type'             => MENU_DEFAULT_LOCAL_TASK,
     'weight'           => -10,
-  );
-  $items['messages/sent'] = array(
-    'title'            => 'Sent messages',
-    'page callback'    => 'drupal_get_form',
-    'page arguments'   => array('privatemsg_list'),
-    'access callback'  => 'privatemsg_user_access',
-    'type'             => MENU_LOCAL_TASK,
-    'weight'           => -5,
   );
   $items['messages/view/%privatemsg_thread'] = array(
     'title'            => 'Read message',
@@ -318,11 +310,11 @@ function private_message_settings() {
     '#title' => t('Configure fields'),
     '#description' => t('Select which columns/fields should be displayed in the message listings. Subject and Last updated cannot be disabled.'),
     '#options' => array(
-      'author'          => t('Author'),
+      'participants'    => t('Participants'),
       'thread_started'  => t('Started'),
       'count'           => t('Answers'),
     ),
-    '#default_value' => variable_get('privatemsg_display_fields', array('author')),
+    '#default_value' => variable_get('privatemsg_display_fields', array('participants')),
   );
 
   $form['#submit'][] = 'private_message_settings_submit';
@@ -410,10 +402,17 @@ function privatemsg_preprocess_privatemsg_to(&$vars) {
 /**
  * List messages.
  *
+ * @param $form_state
+ *   Form state array
+ * @param $argument
+ *   An argument to pass through to the query builder.
  * @param $uid
- *   user id for whom to load messages.
+ *   User id messages of another user should be displayed
+ *
+ * @return 
+ *   Form array
  */
-function privatemsg_list(&$form_state, $uid = NULL) {
+function privatemsg_list(&$form_state, $argument = 'list', $uid = NULL) {
   global $user;
 
   // Setting default behavior...
@@ -430,14 +429,8 @@ function privatemsg_list(&$form_state, $uid = NULL) {
     }
   }
   // By this point we have figured out for which user we are listing messages and now it is safe to use $account->uid in the listing query.
-  switch (arg(1)) {
-    case 'sent':
-      $query = _privatemsg_assemble_query('list_sent', $account);
-      break;
-    case 'inbox':
-    default:
-      $query = _privatemsg_assemble_query('list', $account);
-  }
+
+  $query = _privatemsg_assemble_query('list', $account, $argument);
   $result = pager_query($query['query'], variable_get('privatemsg_per_page', 25), 0, $query['count']);
 
   $threads = array();
@@ -747,46 +740,11 @@ function pm_preview($form, &$form_state) {
   $form_state['rebuild'] = TRUE; // this forces our form to be rebuilt instead of being submitted.
 }
 
-function privatemsg_sql_list_sent(&$fragments, $account) {
-  $fragments['primary_table'] = '{pm_message} pm';
-
-  $fragments['select'][]      = 'pmi.thread_id';
-  $fragments['select'][]      = 'pm.subject';
-  if ($GLOBALS['db_type'] == 'pgsql') {
-    $fragments['select'][]      = "array_to_string(array(SELECT DISTINCT textin(int4out(pmia.uid))
-                                                         FROM {pm_index} pmia
-                                                         WHERE pmia.thread_id = pmi.thread_id AND pmia.uid <> %d), ',') AS recipient";
-
-  }
-  else {
-    $fragments['select'][]      = '(SELECT GROUP_CONCAT(DISTINCT pmia.uid SEPARATOR ",")
-                                                         FROM {pm_index} pmia
-                                                         WHERE pmia.thread_id = pmi.thread_id AND pmia.uid <> %d) AS recipient';
-
-  }
-  $fragments['query_args'][] = $account->uid;
-
-  $fragments['select'][]      = 'MAX(pm.timestamp) as last_updated';
-  $fragments['inner_join'][]  = 'INNER JOIN {pm_index} pmi ON pm.mid = pmi.mid';
-  $fragments['where'][]       = 'pmi.uid = %d';
-  $fragments['query_args'][]  = $account->uid;
-  $fragments['where'][]       = 'pm.author = %d';
-  $fragments['query_args'][]  = $account->uid;
-  $fragments['where'][]       = 'pmi.deleted = 0';
-  $fragments['group_by'][]  = 'pmi.thread_id';
-  $fragments['group_by'][]  = 'pm.subject';
-
-  // We can use tablesort_sql now, but we don't need the ORDER BY part of the query.
-  // Because of that, we need to cut off the first 9 characters of the generated string.
-  $order_by = drupal_substr(tablesort_sql(_privatemsg_list_headers( FALSE, array('subject', 'recipient', 'last_updated'))), 9);
-  $fragments['order_by'][]  = $order_by;
-}
-
-function privatemsg_sql_list(&$fragments, $account) {
+function privatemsg_sql_list(&$fragments, $account, $argument = 'list') {
   $fragments['primary_table'] = '{pm_message} pm';
 
   // Load enabled columns
-  $fields = array_filter(variable_get('privatemsg_display_fields', array('author')));
+  $fields = array_filter(variable_get('privatemsg_display_fields', array('participants')));
 
   // Required columns
   $fragments['select'][]      = 'pmi.thread_id';
@@ -797,16 +755,17 @@ function privatemsg_sql_list(&$fragments, $account) {
   if (in_array('count', $fields)) {
     $fragments['select'][]      = 'COUNT(pmi.thread_id) as count';
   }
-  if (in_array('author', $fields)) {
+  if (in_array('participants', $fields)) {
     // Query for a string with uid's, for example "1,6,7". This needs a subquery on PostgreSQL.
     if ($GLOBALS['db_type'] == 'pgsql') {
-      $fragments['select'][]      = "array_to_string(array(SELECT DISTINCT textin(int4out(pma.author))
-                                                           FROM {pm_message} pma
-                                                           INNER JOIN pm_index pmia ON pma.mid = pmia.mid
-                                                           WHERE pmia.thread_id = pmi.thread_id),',') AS author";
+       $fragments['select'][]      = "array_to_string(array(SELECT DISTINCT textin(int4out(pmia.uid))
+                                                            FROM {pm_index} pmia
+                                                            WHERE pmia.thread_id = pmi.thread_id), ',') AS participants";
     }
     else {
-      $fragments['select'][]      = 'GROUP_CONCAT(DISTINCT author SEPARATOR ",") as author';
+       $fragments['select'][]      = '(SELECT GROUP_CONCAT(DISTINCT pmia.uid SEPARATOR ",")
+                                                            FROM {pm_index} pmia
+                                                            WHERE pmia.thread_id = pmi.thread_id) AS participants';
     }
   }
   if (in_array('thread_started', $fields)) {
@@ -1037,7 +996,6 @@ function _privatemsg_block_menu() {
   }
   if (privatemsg_user_access('read privatemsg') || privatemsg_user_access('read all private messages') ) {
     $links[] = l(privatemsg_title_callback(), 'messages');
-    $links[] = l(t('Sent messages'), 'messages/sent');
   }
   if ( count( $links ) ) {
     $block = array(
@@ -1427,6 +1385,7 @@ function _privatemsg_assemble_query($query) {
   $INNER_JOIN = array();
   $WHERE = array();
   $GROUP_BY = array();
+  $HAVING   = array();
   $ORDER_BY = array();
   $QUERY_ARGS = array();
   $primary_table = '';
@@ -1436,6 +1395,7 @@ function _privatemsg_assemble_query($query) {
     'inner_join'  => $INNER_JOIN,
     'where'       => $WHERE,
     'group_by'    => $GROUP_BY,
+    'having'      => $HAVING,
     'order_by'    => $ORDER_BY,
     'query_args'  => $QUERY_ARGS,
     'primary_table'  => $primary_table,
@@ -1469,6 +1429,7 @@ function _privatemsg_assemble_query($query) {
   $INNER_JOIN = $fragments['inner_join'];
   $WHERE = $fragments['where'];
   $GROUP_BY = $fragments['group_by'];
+  $HAVING   = $fragments['having'];
   $ORDER_BY = $fragments['order_by'];
   $QUERY_ARGS = $fragments['query_args'];
   $primary_table = $fragments['primary_table'];
@@ -1508,6 +1469,14 @@ function _privatemsg_assemble_query($query) {
     if (!empty($GROUP_BY)) {
       $str_group_by = ' GROUP BY '. implode(", ", $GROUP_BY) ;
       $query .= " {$str_group_by}";
+    }
+    if (!empty($HAVING)) {
+      $str_having = '('. implode(') AND (', $HAVING) .')';
+      $query .= " HAVING {$str_having}";
+      // queries containing a HAVING break the count query on pgsql.
+      // In this case, use the subquery method as outlined in http://drupal.org/node/303087#comment-1370752 .
+      // The subquery method will work for all COUNT queries, but it is thought to be much slower, so we are only using it where other cross database approaches fail.
+      $count = 'SELECT COUNT(*) FROM ('. $query .') as count';
     }
     if (!empty($ORDER_BY)) {
       $str_order_by = ' ORDER BY '. implode(", ", $ORDER_BY) ;

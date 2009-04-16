@@ -36,6 +36,30 @@ function privatemsg_filter_menu() {
     'access arguments' => array('administer privatemsg settings'),
     'type'             => MENU_LOCAL_TASK,
   );
+  $items['messages/list/all'] = array(
+    'title'            => 'All messages',
+    'page callback'    => 'drupal_get_form',
+    'page arguments'   => array('privatemsg_list', 'list'),
+    'access callback'  => 'privatemsg_user_access',
+    'type'             => MENU_DEFAULT_LOCAL_TASK,
+    'weight'           => -10,
+  );
+  $items['messages/list/inbox'] = array(
+    'title'            => 'Inbox',
+    'page callback'    => 'drupal_get_form',
+    'page arguments'   => array('privatemsg_list', 'inbox'),
+    'access callback'  => 'privatemsg_user_access',
+    'type'             => MENU_LOCAL_TASK,
+    'weight'           => -10,
+  );
+  $items['messages/list/sent'] = array(
+    'title'            => 'Sent Messages',
+    'page callback'    => 'drupal_get_form',
+    'page arguments'   => array('privatemsg_list', 'sent'),
+    'access callback'  => 'privatemsg_user_access',
+    'type'             => MENU_LOCAL_TASK,
+    'weight'           => -10,
+  );
   return $items;
 }
 
@@ -267,7 +291,7 @@ function privatemsg_filter_dropdown(&$form_state, $account) {
 
   $form['filter']['author'] = array(
       '#type' => 'select',
-      '#title' => t('Authors'),
+      '#title' => t('Users'),
       '#options' => privatemsg_filter_get_author_data($account),
       '#multiple' => TRUE,
       '#size' => 5,
@@ -348,14 +372,14 @@ function privatemsg_filter_dropdown_submit($form, &$form_state) {
       $_SESSION['privatemsg_filter'] = $filter;
       break;
     case t('Filter'):
-      drupal_goto('messages', privatemsg_filter_create_get_query($form_state['values']));
+      drupal_goto($_GET['q'], privatemsg_filter_create_get_query($form_state['values']));
       return;
       break;
     case t('Reset'):
       $_SESSION['privatemsg_filter'] = array();
       break;
   }
-  $form_state['redirect'] = 'messages';
+  $form_state['redirect'] = $_GET['q'];
 }
 
 function privatemsg_filter_create_get_query($filter)
@@ -416,12 +440,24 @@ function privatemsg_filter_form_privatemsg_list_alter(&$form, $form_state) {
 /**
  * Hook into the query builder to add the tagging info to the correct query
  */
-function privatemsg_filter_privatemsg_sql_list_alter(&$fragments, $account) {
+function privatemsg_filter_privatemsg_sql_list_alter(&$fragments, $account, $argument) {
+
+  // Check if its a filtered view.
+  if ($argument == 'sent') {
+    $fragments['where'][]       = "pm.author = %d";
+    $fragments['query_args'][]   = $account->uid;
+  }
+  if ($argument == 'inbox') {
+    $fragments['select'][]      = '(SELECT pmf.author FROM {pm_message} pmf WHERE pmf.mid = pmi.thread_id) AS first_author';
+    $fragments['having'][]       = '(first_author = %d AND COUNT(pmi.thread_id) > 1) OR first_author <> %d';
+    $fragments['query_args'][]   = $account->uid;
+    $fragments['query_args'][]   = $account->uid;
+  }
+
   // Filter the message listing by any set tags.
   if ($filter = privatemsg_filter_get_filter($account)) {
-
+    $count = 0;
     if (isset($filter['tags']) && !empty($filter['tags'])) {
-      $count = 0;
       foreach ($filter['tags'] as $tag) {
         $fragments['inner_join'][]  = "INNER JOIN {pm_tags_index} pmti$count ON (pmti$count.thread_id = pmi.thread_id AND pmti$count.uid = pmi.uid)";
         $fragments['where'][]       = "pmti$count.tag_id = %d";
@@ -431,10 +467,9 @@ function privatemsg_filter_privatemsg_sql_list_alter(&$fragments, $account) {
     }
 
     if (isset($filter['author']) && !empty($filter['author'])) {
-      $count = 0;
       foreach ($filter['author'] as $author) {
-        $fragments['inner_join'][]  = "INNER JOIN {users} u$count ON (u$count.uid = pm.author)";
-        $fragments['where'][]       = "u$count.uid = %d";
+        $fragments['inner_join'][]  = "INNER JOIN {pm_index} pmi$count ON (pmi$count.mid = pm.mid)";
+        $fragments['where'][]       = "pmi$count.uid = %d";
         $fragments['query_args'][]   = $author;
         $count++;
       }

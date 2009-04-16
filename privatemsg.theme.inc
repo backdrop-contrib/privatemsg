@@ -9,25 +9,14 @@
 function theme_privatemsg_list_field($thread) {
 }
 
-function phptemplate_privatemsg_list_field__author($thread) {
-  if (empty($thread['author'])) {
+function phptemplate_privatemsg_list_field__participants($thread) {
+  if (empty($thread['participants'])) {
     return;
   }
-  $authors = _privatemsg_generate_user_array($thread['author']);
+  $participants = _privatemsg_generate_user_array($thread['participants']);
   $field = array();
-  $field['data'] = _privatemsg_format_participants($authors, 3, TRUE);
-  $field['class'] = 'privatemsg-list-author';
-  return $field;
-}
-
-function phptemplate_privatemsg_list_field__recipient($thread) {
-  if (empty($thread['recipient'])) {
-    return;
-  }
-  $recipients = _privatemsg_generate_user_array($thread['recipient']);
-  $field = array();
-  $field['data'] = _privatemsg_format_participants($recipients, 3, TRUE);
-  $field['class'] = 'privatemsg-list-recipient';
+  $field['data'] = _privatemsg_format_participants($participants, 3, TRUE);
+  $field['class'] = 'privatemsg-list-participants';
   return $field;
 }
 
@@ -82,20 +71,11 @@ function phptemplate_privatemsg_list_header__count() {
   );
 }
 
-function phptemplate_privatemsg_list_header__author() {
+function phptemplate_privatemsg_list_header__participants() {
   return array(
-    'data'    => t('Authors'),
-    'key'     => 'author',
-    'class'   => 'privatemsg-header-authors',
-    '#weight' => -30,
-  );
-}
-
-function phptemplate_privatemsg_list_header__recipient() {
-  return array(
-    'data'    => t('Recipients'),
-    'key'     => 'recipient',
-    'class'   => 'privatemsg-header-recipients',
+    'data'    => t('Participants'),
+    'key'     => 'participants',
+    'class'   => 'privatemsg-header-participants',
     '#weight' => -30,
   );
 }
