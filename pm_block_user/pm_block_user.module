@@ -89,12 +89,18 @@ function pm_block_user_form_submit($form, &$form_state) {
 /**
  * Implementation of hook_privatemsg_block_message.
  */
- function pm_block_user_privatemsg_block_message($author, $recipient) {
+ function pm_block_user_privatemsg_block_message($author, $recipients) {
   global $user;
-  $result = db_result(db_query('SELECT COUNT(*) FROM {pm_block_user} WHERE author = %d AND recipient = %d', $author->uid, $recipient->uid));
-  if ($result <> 0) {
-    return t('!name has chosen to not recieve any more messages from you.', array('!name' => $recipient->name));
+  $args = array_merge(array($author->uid), array_keys($recipients));
+  $result = db_query('SELECT recipient FROM {pm_block_user} WHERE author = %d AND recipient IN ('. db_placeholders($recipients) .') GROUP BY recipient', $args);
+  $blocked = array();
+  while ($row = db_fetch_array($result)) {
+    $blocked[] = array(
+      'uid' => $row['recipient'],
+      'message' => t('!name has chosen to not recieve any more messages from you.', array('!name' => $recipients[$row['recipient']]->name))
+    );
   }
+  return $blocked;
 }
 
 function pm_block_user_privatemsg_sql_load_alter(&$fragments, $pmid, $uid) {

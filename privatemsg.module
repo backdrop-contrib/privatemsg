@@ -723,7 +723,7 @@ function pm_send_validate($form, &$form_state) {
 
   $form_state['validate_built_message'] = $message;
   if (!empty($invalid)) {
-    drupal_set_message(t('The following users will not receive this private message: @invalid', array('@invalid' => implode(", ", $invalid))), 'error');
+    drupal_set_message(t('The following users will not receive this private message: !invalid', array('!invalid' => implode(", ", $invalid))), 'error');
   }
 }
 
@@ -793,7 +793,7 @@ function privatemsg_sql_list(&$fragments, $account) {
   $fragments['select'][]      = 'MIN(pm.subject) as subject';
   $fragments['select'][]      = 'MAX(pm.timestamp) as last_updated';
   $fragments['select'][]      = 'MAX(pmi.is_new) as is_new';
-  
+
   if (in_array('count', $fields)) {
     $fragments['select'][]      = 'COUNT(pmi.thread_id) as count';
   }
@@ -1064,19 +1064,20 @@ function privatemsg_form_alter(&$form, $form_state, $form_id) {
             // Skip putting author in the recipients list for now.
             continue;
           }
-          // Check if another module is blocking the sending of messages to the recipient by current user.
-          $recipient = user_load(array('uid' => $result->uid));
-          $user_blocked = module_invoke_all('privatemsg_block_message', $user, $recipient);
-          if (!count($user_blocked) <> 0 && $recipient->uid) {
-            $to[] = $recipient->name;
-          }
+          $to[$result->uid] = user_load($result->uid);
         }
         if (empty($to) && $usercount >= 1) {
           // Assume the user sent message to own account as if the usercount is one or less, then the user sent a message but not to self.
-          $to[] = $user->name;
+          $to[$user->uid] = $user->name;
         }
+        // Check if another module is blocking the sending of messages to the recipient by current user.
+        foreach(module_invoke_all('privatemsg_block_message', $user, $to) as $blocked) {
+          unset($to[$blocked['uid']]);
+        }
+
+        $recipients = '';
         if ($to) {
-          $recipients = implode(', ', $to);
+          $recipients = _privatemsg_format_participants($to, 20, TRUE);
         }
 
         $form['privatemsg']['thread_id'] = array(
@@ -1091,7 +1092,7 @@ function privatemsg_form_alter(&$form, $form_state, $form_id) {
           '#type' => 'value',
           '#default_value' => $recipients,
         );
-        $form['privatemsg']['body']['#title'] = t('Send reply to %recipient', array('%recipient' => $recipients));
+        $form['privatemsg']['body']['#title'] = t('Send reply to !recipient', array('!recipient' => $recipients));
         $form['privatemsg']['body']['#required'] = TRUE;
 
         if (empty($to)) {
@@ -1279,15 +1280,10 @@ function _privatemsg_validate_message(&$message, $author, $show_warnings = FALSE
   }
 
   if (!empty($message['recipients']) && is_array($message['recipients'])) {
-    foreach ($message['recipients'] as $uid => $recipient) {
-      $block_results = module_invoke_all('privatemsg_block_message', $author, $recipient);
-      if (count($block_results) > 0) {
-        unset($message['recipients'][$uid]);
-        if ($show_warnings) {
-          foreach ($block_results as $block_result) {
-            drupal_set_message($block_result);
-          }
-        }
+    foreach(module_invoke_all('privatemsg_block_message', $author, $message['recipients']) as $blocked) {
+      unset($message['recipients'][$blocked['uid']]);
+      if ($show_warnings) {
+        drupal_set_message($blocked['message']);
       }
     }
   }
@@ -1365,7 +1361,7 @@ function privatemsg_get_link($recipient, $account = NULL) {
     return FALSE;
   }
 
-  if (count(module_invoke_all('privatemsg_block_message', $account, $recipient)) > 0) {
+  if (count(module_invoke_all('privatemsg_block_message', $account, array($recipient))) > 0) {
     return FALSE;
   }
 
@@ -1628,7 +1624,7 @@ function _privatemsg_list_headers($has_posts, $keys) {
  * Formats a row in the message list.
  *
  * Does use theme patterns to display the single fields.
- * 
+ *
  * @param $thread
  *   Array with the row data returned by the database.
  * @return
