@@ -1568,14 +1568,14 @@ function _privatemsg_action_form() {
 }
 
 /**
- * Marks one or multiple threads as (un)read
+ * Marks one or multiple threads as (un)read.
  *
  * @param $threads
- *   Array with id's, a single int value will be converted to int
+ *   Array with thread id's or a single thread id.
  * @param $status
- *   Either PRIVATEMSG_READ or PRIVATEMSG_UNREAD, sets the new status
+ *   Either PRIVATEMSG_READ or PRIVATEMSG_UNREAD, sets the new status.
  * @param $account
- *   User object for which the threads should be deleted, defaults to the current user
+ *   User object for which the threads should be deleted, defaults to the current user.
  */
 function privatemsg_thread_change_status($threads, $status, $account = NULL) {
   if (!is_array($threads)) {
@@ -1600,8 +1600,8 @@ function privatemsg_thread_change_status($threads, $status, $account = NULL) {
  * Returns a table header definition based on the submitted keys.
  *
  * @param $has_posts
- *   TRUE when there is atleast one row. decides if the select all checkbox should be displayed.
- * @param
+ *   TRUE when there is at least one row. Decides if the select all checkbox should be displayed.
+ * @param $keys
  *   Array with the keys which are present in the query/should be displayed.
  * @return
  *   Array with header defintions for tablesort_sql and theme('table').
