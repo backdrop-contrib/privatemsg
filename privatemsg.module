@@ -409,7 +409,7 @@ function privatemsg_preprocess_privatemsg_to(&$vars) {
  * @param $uid
  *   User id messages of another user should be displayed
  *
- * @return 
+ * @return
  *   Form array
  */
 function privatemsg_list(&$form_state, $argument = 'list', $uid = NULL) {
@@ -1022,7 +1022,7 @@ function privatemsg_form_alter(&$form, $form_state, $form_id) {
             // Skip putting author in the recipients list for now.
             continue;
           }
-          $to[$result->uid] = user_load($result->uid);
+          $to[$result->uid] = user_load($result->uid)->name;
         }
         if (empty($to) && $usercount >= 1) {
           // Assume the user sent message to own account as if the usercount is one or less, then the user sent a message but not to self.
@@ -1031,11 +1031,6 @@ function privatemsg_form_alter(&$form, $form_state, $form_id) {
         // Check if another module is blocking the sending of messages to the recipient by current user.
         foreach(module_invoke_all('privatemsg_block_message', $user, $to) as $blocked) {
           unset($to[$blocked['uid']]);
-        }
-
-        $recipients = '';
-        if ($to) {
-          $recipients = _privatemsg_format_participants($to, 20, TRUE);
         }
 
         $form['privatemsg']['thread_id'] = array(
@@ -1048,9 +1043,8 @@ function privatemsg_form_alter(&$form, $form_state, $form_id) {
         );
         $form['privatemsg']['recipient']  = array(
           '#type' => 'value',
-          '#default_value' => $recipients,
+          '#default_value' => implode(', ', $to),
         );
-        $form['privatemsg']['body']['#title'] = t('Send reply to !recipient', array('!recipient' => $recipients));
         $form['privatemsg']['body']['#required'] = TRUE;
 
         if (empty($to)) {
