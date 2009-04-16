@@ -84,19 +84,19 @@ function phptemplate_privatemsg_list_header__count() {
 
 function phptemplate_privatemsg_list_header__author() {
   return array(
-      'data'    => t('Authors'),
-      'key'     => 'author',
-      'class'   => 'privatemsg-header-authors',
-      '#weight' => -30,
+    'data'    => t('Authors'),
+    'key'     => 'author',
+    'class'   => 'privatemsg-header-authors',
+    '#weight' => -30,
   );
 }
 
 function phptemplate_privatemsg_list_header__recipient() {
   return array(
-      'data'    => t('Recipients'),
-      'key'     => 'recipient',
-      'class'   => 'privatemsg-header-recipients',
-      '#weight' => -30,
+    'data'    => t('Recipients'),
+    'key'     => 'recipient',
+    'class'   => 'privatemsg-header-recipients',
+    '#weight' => -30,
   );
 }
 

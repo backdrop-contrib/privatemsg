@@ -1730,12 +1730,12 @@ function privatemsg_list_submit($form, &$form_state) {
 }
 
 /**
- * Delete or restore one or multiple threads
+ * Delete or restore one or multiple threads.
  *
  * @param $threads
- *   Array with id's, a single int value will be converted to int
+ *   Array with thread id's or a single thread id.
  * @param $delete
- *   Indiciates if the threads should be deleted or restored. 1 = delete, 0 => restore.
+ *   Indicates if the threads should be deleted or restored. 1 => delete, 0 => restore.
  * @param $account
  *   User object for which the threads should be deleted, defaults to the current user.
  */
