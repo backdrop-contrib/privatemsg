@@ -1045,6 +1045,7 @@ function privatemsg_form_alter(&$form, $form_state, $form_id) {
           '#type' => 'value',
           '#default_value' => implode(', ', $to),
         );
+        $form['privatemsg']['body']['#title'] = t('Send reply to %recipient', array('%recipient' => implode(', ', $to)));
         $form['privatemsg']['body']['#required'] = TRUE;
 
         if (empty($to)) {

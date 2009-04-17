@@ -448,8 +448,7 @@ function privatemsg_filter_privatemsg_sql_list_alter(&$fragments, $account, $arg
     $fragments['query_args'][]   = $account->uid;
   }
   if ($argument == 'inbox') {
-    $fragments['select'][]      = '(SELECT pmf.author FROM {pm_message} pmf WHERE pmf.mid = pmi.thread_id) AS first_author';
-    $fragments['having'][]       = '(first_author = %d AND COUNT(pmi.thread_id) > 1) OR first_author <> %d';
+    $fragments['having'][]       = '((SELECT pmf.author FROM {pm_message} pmf WHERE pmf.mid = pmi.thread_id) = %d AND COUNT(pmi.thread_id) > 1) OR (SELECT pmf.author FROM {pm_message} pmf WHERE pmf.mid = pmi.thread_id) <> %d';
     $fragments['query_args'][]   = $account->uid;
     $fragments['query_args'][]   = $account->uid;
   }
