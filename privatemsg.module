@@ -649,7 +649,6 @@ function privatemsg_new(&$form_state, $account = NULL) {
 }
 
 function pm_send_validate($form, &$form_state) {
-//  drupal_set_message('<pre>'. print_r($form_state['values'], 1) . '</pre>');
   // The actual message that is being sent, we create this during validation and pass to submit to send out.
   $message = array();
 
@@ -694,26 +693,10 @@ function pm_send_validate($form, &$form_state) {
     }
   }
 
-  // Verify that our recipients are valid.
-  /**
-   * VALIDATE NAMES
-   * 1) Make sure the name exists.
-   * 2) Make sure he accepts private messages.
-   * 3) Make sure the sender is not on block list of the recipient.
-   */
-  /**
-   * BUILD VALID RECIPIENT LIST
-   * 1) Names that were not valid from previous step will be stripped out.
-   * 2) Names that remain will be put into a recipients array.
-   */
-
-  $errors = _privatemsg_validate_message($message, $message['author'], TRUE);
-  if (!empty($errors)) {
-      foreach ($errors as $error) {
-        form_set_error('body', $error);
-      }
+  $validated = _privatemsg_validate_message($message, TRUE);
+  foreach ($validated['messages'] as $type => $text) {
+    drupal_set_message($text, $type);
   }
-
   $form_state['validate_built_message'] = $message;
   if (!empty($invalid)) {
     drupal_set_message(t('The following users will not receive this private message: !invalid', array('!invalid' => implode(", ", $invalid))), 'error');
@@ -1125,41 +1108,47 @@ function privatemsg_delete_submit($form, &$form_state) {
  * privatemsg_new_thread('The subject', 'The body text', array(user_load(5)));
  * @endcode
  *
- *
+ * @param $recipients
+ *   Array of recipients (user objects)
  * @param $subject
  *   The subject of the new message
  * @param $body
  *   The body text of the new message
- * @param $recipients
- *   Array of recipients (user objects)
- * @param $author
- *   The author (user object, defaults to the current user)
+ * @param $options
+ *   Additional options, possible keys:
+ *     author => User object of the author
+ *     timestamp => Time when the message was sent
  *
  * @return
  *   Either true or an array with validation errors
  *
  * @ingroup api
  */
-function privatemsg_new_thread($subject, $body, $recipients, $author = NULL) {
-  if ($author == NULL) {
-    global $user;
-    $author = drupal_clone($user);
-  }
+function privatemsg_new_thread($recipients, $subject, $body = NULL, $options = array()) {
+  global $user;
+  $author = drupal_clone($user);
 
   $message = array();
   $message['subject'] = $subject;
-  $message['author'] = $author;
   $message['body'] = $body;
-  $message['timestamp'] = time();
   $message['recipients'] = $recipients;
 
-  $errors = _privatemsg_validate_message($message, $author);
-  if (!empty($errors)) {
-    return $errors;
+  // set custom options, if any
+  if (!empty($options)) {
+    $message += $options;
   }
-  else {
-    return _privatemsg_send($message);
+  // apply defaults
+  $message += array(
+    'author' => $author,
+    'timestamp' => time(),
+  );
+
+  $validated = _privatemsg_validate_message($message);
+  if ($validated['success']) {
+    $validated['success'] = _privatemsg_send($message);
   }
+
+  return $validated;
 }
 /**
  * Send a reply message
@@ -1170,29 +1159,36 @@ function privatemsg_new_thread($subject, $body, $recipients, $author = NULL) {
  *   Thread id
  * @param $body
  *   The body text of the new message
- * @param $author
- *   The author (user object, defaults to the current user)
+ * @param $options
+ *   Additional options, possible keys:
+ *     author => User object of the author
+ *     timestamp => Time when the message was sent
  *
  * @return
  *   Either true or an array with validation errors
  *
  * @ingroup api
  */
-function privatemsg_reply($thread_id, $body, $author = NULL) {
-  if ($author == NULL) {
-    global $user;
-    $author = drupal_clone($user);
-  }
+function privatemsg_reply($thread_id, $body = NULL, $options = array()) {
+  global $user;
+  $author = drupal_clone($user);
 
   $message = array();
-  $message['author'] = $author;
   $message['body'] = $body;
-  $message['timestamp'] = time();
-  $message['thread_id'] = $thread_id;
+
+  // set custom options, if any
+  if (!empty($options)) {
+    $message += $options;
+  }
+  // apply defaults
+  $message += array(
+    'author' => $author,
+    'timestamp' => time(),
+  );
 
   // We don't know the subject and the recipients, so we need to load them..
   // thread_id == mid on the first message of the thread
-  $first_message = _privatemsg_load($thread_id, $author);
+  $first_message = _privatemsg_load($thread_id, $message['author']);
   if (!$first_message) {
     return array(t('Thread %thread_id not found, unable to answer', array('%thread_id' => $thread_id)));
   }
@@ -1207,46 +1203,74 @@ function privatemsg_reply($thread_id, $body, $author = NULL) {
 
   $message['subject'] = $first_message['subject'];
 
-  $errors = _privatemsg_validate_message($message, $author);
-  if (!empty($errors)) {
-    return $errors;
+  $validated = _privatemsg_validate_message($message);
+  if ($validated['success']) {
+    $validated['success'] = _privatemsg_send($message);
   }
-  else {
-    return _privatemsg_send($message);
-  }
+  return $validated;
 }
 
-function _privatemsg_validate_message(&$message, $author, $show_warnings = FALSE) {
-
-  $errors = array();
-  if (!privatemsg_user_access('write privatemsg', $author)) {
+function _privatemsg_validate_message(&$message, $form = FALSE) {
+  $messages = array('error' => array(), 'warning' => array());
+  if (!privatemsg_user_access('write privatemsg', $message['author'])) {
     // no need to do further checks in this case...
-    return array(t('User @user is not allowed to write messages', array('@user' => $author->name)));
+    if ($form) {
+      form_set_error('author', t('User @user is not allowed to write messages', array('@user' => $message['author']->name)));
+      return array(
+        'success'  => FALSE,
+        'messages'   => $messages,
+      );
+    }
+    else {
+      $messages['error'][] = t('User @user is not allowed to write messages', array('@user' => $message['author']->name));
+      return array(
+         'success'  => FALSE,
+         'messages'   => $messages,
+      );
+    }
   }
 
   if (empty($message['subject'])) {
-    $errors[] = t('Disallowed to send a message without subject');
+    if ($form) {
+      form_set_error('subject', t('Disallowed to send a message without subject'));
+    }
+    else {
+      $messages['error'][] = t('Disallowed to send a message without subject');
+    }
   }
 
   if (empty($message['recipients']) || !is_array($message['recipients'])) {
-    $errors[] = t('Disallowed to send a message without atleast one recipient');
+    if ($form) {
+      form_set_error('to', t('Disallowed to send a message without atleast one valid recipient'));
+    }
+    else {
+      $messages['error'][] = t('Disallowed to send a message without atleast one valid recipient');
+    }
   }
 
   if (!empty($message['recipients']) && is_array($message['recipients'])) {
-    foreach(module_invoke_all('privatemsg_block_message', $author, $message['recipients']) as $blocked) {
+    foreach(module_invoke_all('privatemsg_block_message', $message['author'], $message['recipients']) as $blocked) {
       unset($message['recipients'][$blocked['uid']]);
-      if ($show_warnings) {
-        drupal_set_message($blocked['message']);
-      }
+      $messages['warning'] += $block_results;
     }
   }
 
   // Check again, give another error message if all recipients are blocked
   if (empty($message['recipients'])) {
-    $errors[] = t('Disallowed to send message because all recipients are blocked');
+    if ($form) {
+      form_set_error('to', t('Disallowed to send message because all recipients are blocked'));
+    }
+    else {
+      $messages['error'][] = t('Disallowed to send message because all recipients are blocked');
+    }
   }
 
-  return $errors += module_invoke_all('privatemsg_message_validate', $message);
+  $messages += module_invoke_all('privatemsg_message_validate', $message, $form);
+  $success = empty($messages['error']);
+  return array(
+    'success'  => $success,
+    'messages'   => $messages,
+  );
 }
 
 function _privatemsg_send($message) {
