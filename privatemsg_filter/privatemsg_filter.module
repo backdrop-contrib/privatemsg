@@ -240,7 +240,6 @@ function privatemsg_filter_get_filter($account) {
 }
 
 function privatemsg_filter_get_author_data($account) {
-  return array();
  static $author_data;
 
   if (is_array($author_data)) {
