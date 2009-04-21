@@ -429,5 +429,26 @@ function hook_privatemsg_view_template() {
 }
 
 /**
+ * Expose operations/actions which can be executed on threads.
+ *
+ * Return an array of operations to privatemsg, the key of each operation is the
+ * operation key or name.
+ *
+ * @see _privatemsg_action_form()
+ * @see privatemsg_list_submit()
+ */
+function hook_privatemsg_thread_operations() {
+  return array(
+    'operation key' => array(
+      'label' => 'Label of the operation. Only use this if the operation
+                  should be displayed automatically in the action form',
+      'callback' => 'privatemsg_thread_change_status', // Function callback that will be executed.
+      'callback arguments' => array('status' => PRIVATEMSG_READ), // Additional arguments to above function
+      'undo callback' => 'privatemsg_thread_change_status',  // Provide a function which can "undo" the operation. Optional.
+      'undo callback arguments' => array('status' => PRIVATEMSG_UNREAD), // Additional arguments to above function.
+    ),
+  );
+}
+/**
  * @}
  */

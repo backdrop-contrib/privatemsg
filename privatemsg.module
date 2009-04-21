@@ -1513,6 +1513,19 @@ function _privatemsg_assemble_query($query) {
   return FALSE;
 }
 
+/**
+ * Returns a form which handles and displays thread actions.
+ *
+ * Additional actions can be added with the privatemsg_thread_operations hook.
+ * It is also possible to extend this form with additional buttons or other
+ * elements, in that case, the definitions in the above hook need no label tag,
+ * instead, the submit button key needs to match with the key of the operation.
+ *
+ * @see hook_privatemsg_thread_operations()
+ *
+ * @return
+ *   The FAPI definitions for the thread action form.
+ */
 function _privatemsg_action_form() {
   $form = array(
       '#type'        => 'fieldset',
