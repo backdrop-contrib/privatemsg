@@ -800,9 +800,9 @@ function privatemsg_sql_load(&$fragments, $pmid, $account) {
  * @param $threads
  *  Array with one or multiple thread id's.
  * @param $account
- *  User object for which the messages are loaded.
+ *  User object for which the messages are being loaded.
  * @param $load_all
- *  Deleted messages are only loaded if this is set to TRUE
+ *  Deleted messages are only loaded if this is set to TRUE.
  */
 function privatemsg_sql_messages(&$fragments, $threads, $account, $load_all = FALSE) {
   $fragments['primary_table'] = '{pm_index} pmi';
