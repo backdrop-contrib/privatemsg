@@ -774,7 +774,7 @@ function privatemsg_sql_list(&$fragments, $account, $argument = 'list') {
   // pm_index needs to be the first join.
   $fragments['inner_join'][]  = 'INNER JOIN {pm_index} pmi ON pm.mid = pmi.mid';
   $fragments['where'][]       = 'pmi.uid = %d';
-  $fragments['query_args'][]  = $account->uid;
+  $fragments['query_args']['where'][]  = $account->uid;
   $fragments['where'][]       = 'pmi.deleted = 0';
   $fragments['group_by'][]    = 'pmi.thread_id';
 
@@ -805,9 +805,9 @@ function privatemsg_sql_load(&$fragments, $pmid, $account) {
 
   $fragments['inner_join'][]  = 'INNER JOIN {pm_index} pmi ON pm.mid = pmi.mid';
   $fragments['where'][]       = 'pmi.mid = %d';
-  $fragments['query_args'][]  = $pmid;
+  $fragments['query_args']['where'][]  = $pmid;
   $fragments['where'][]       = 'pmi.uid = %d';
-  $fragments['query_args'][]  = $account->uid;
+  $fragments['query_args']['where'][]  = $account->uid;
 }
 /**
  * Query definition to load messages of one or multiple threads.
@@ -826,9 +826,9 @@ function privatemsg_sql_messages(&$fragments, $threads, $account, $load_all = FA
 
   $fragments['select'][]      = 'DISTINCT(pmi.mid) as mid';
   $fragments['where'][]       = 'pmi.thread_id IN ('. db_placeholders($threads) .')';
-  $fragments['query_args']   += $threads;
+  $fragments['query_args']['where']   += $threads;
   $fragments['where'][]       = 'pmi.uid = %d';
-  $fragments['query_args'][]  = $account->uid;
+  $fragments['query_args']['where'][]  = $account->uid;
   if (!$load_all) {
     $fragments['where'][]       = 'pmi.deleted = 0';
   }
@@ -840,7 +840,7 @@ function privatemsg_sql_participants(&$fragments, $thread_id) {
 
   $fragments['select'][]      = 'DISTINCT(pmi.uid) as uid';
   $fragments['where'][]       = 'pmi.thread_id = %d';
-  $fragments['query_args'][]  = $thread_id;
+  $fragments['query_args']['where'][]  = $thread_id;
 }
 
 
@@ -851,17 +851,17 @@ function privatemsg_sql_unread_count(&$fragments, $account) {
   $fragments['where'][]       = 'pmi.deleted = 0';
   $fragments['where'][]       = 'pmi.is_new = 1';
   $fragments['where'][]       = 'pmi.uid = %d';
-  $fragments['query_args'][]  = $account->uid;
+  $fragments['query_args']['where'][]  = $account->uid;
 }
 
 function privatemsg_sql_autocomplete(&$fragments, $search, $names) {
   $fragments['primary_table'] = '{users} u';
   $fragments['select'][] = 'u.name';
   $fragments['where'][] = "u.name LIKE '%s'";
-  $fragments['query_args'][] = $search .'%%';
+  $fragments['query_args']['where'][] = $search .'%%';
   if (!empty($names)) {
     $fragments['where'][] = "u.name NOT IN (". db_placeholders($names, 'text') .")";
-    $fragments['query_args'] += $names;
+    $fragments['query_args']['where'] += $names;
   }
   $fragments['where'][] = 'u.status <> 0';
   $fragments['order_by'][] = 'u.name ASC';
@@ -1382,7 +1382,7 @@ function _privatemsg_assemble_query($query) {
   $GROUP_BY = array();
   $HAVING   = array();
   $ORDER_BY = array();
-  $QUERY_ARGS = array();
+  $QUERY_ARGS = array('where' => array(), 'join' => array(), 'having' => array());
   $primary_table = '';
 
   $fragments = array(
@@ -1477,6 +1477,7 @@ function _privatemsg_assemble_query($query) {
       $str_order_by = ' ORDER BY '. implode(", ", $ORDER_BY) ;
       $query .= " {$str_order_by}";
     }
+    $QUERY_ARGS = array_merge($QUERY_ARGS['join'], $QUERY_ARGS['where'], $QUERY_ARGS['having']);
     if (!empty($QUERY_ARGS)) {
       _db_query_callback($QUERY_ARGS, TRUE);
       $query = preg_replace_callback(DB_QUERY_REGEXP, '_db_query_callback', $query);

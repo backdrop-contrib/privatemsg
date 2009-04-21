@@ -240,6 +240,7 @@ function privatemsg_filter_get_filter($account) {
 }
 
 function privatemsg_filter_get_author_data($account) {
+  return array();
  static $author_data;
 
   if (is_array($author_data)) {
@@ -445,12 +446,12 @@ function privatemsg_filter_privatemsg_sql_list_alter(&$fragments, $account, $arg
   // Check if its a filtered view.
   if ($argument == 'sent') {
     $fragments['where'][]       = "pm.author = %d";
-    $fragments['query_args'][]   = $account->uid;
+    $fragments['query_args']['where'][]   = $account->uid;
   }
   if ($argument == 'inbox') {
     $fragments['having'][]       = '((SELECT pmf.author FROM {pm_message} pmf WHERE pmf.mid = pmi.thread_id) = %d AND COUNT(pmi.thread_id) > 1) OR (SELECT pmf.author FROM {pm_message} pmf WHERE pmf.mid = pmi.thread_id) <> %d';
-    $fragments['query_args'][]   = $account->uid;
-    $fragments['query_args'][]   = $account->uid;
+    $fragments['query_args']['having'][]   = $account->uid;
+    $fragments['query_args']['having'][]   = $account->uid;
   }
 
   // Filter the message listing by any set tags.
@@ -460,7 +461,7 @@ function privatemsg_filter_privatemsg_sql_list_alter(&$fragments, $account, $arg
       foreach ($filter['tags'] as $tag) {
         $fragments['inner_join'][]  = "INNER JOIN {pm_tags_index} pmti$count ON (pmti$count.thread_id = pmi.thread_id AND pmti$count.uid = pmi.uid)";
         $fragments['where'][]       = "pmti$count.tag_id = %d";
-        $fragments['query_args'][]   = $tag;
+        $fragments['query_args']['where'][]   = $tag;
         $count++;
       }
     }
@@ -469,7 +470,7 @@ function privatemsg_filter_privatemsg_sql_list_alter(&$fragments, $account, $arg
       foreach ($filter['author'] as $author) {
         $fragments['inner_join'][]  = "INNER JOIN {pm_index} pmi$count ON (pmi$count.mid = pm.mid)";
         $fragments['where'][]       = "pmi$count.uid = %d";
-        $fragments['query_args'][]   = $author;
+        $fragments['query_args']['where'][]   = $author;
         $count++;
       }
     }
@@ -477,12 +478,12 @@ function privatemsg_filter_privatemsg_sql_list_alter(&$fragments, $account, $arg
     if (isset($filter['search']) && !empty($filter['search'])) {
       if (variable_get('privatemsg_filter_searchbody', FALSE)) {
         $fragments['where'][]       = "pm.subject LIKE '%s' OR pm.body LIKE '%s'";
-        $fragments['query_args'][]    = '%%'. $filter['search'] .'%%';
-        $fragments['query_args'][]    = '%%'. $filter['search'] .'%%';
+        $fragments['query_args']['where'][]    = '%%'. $filter['search'] .'%%';
+        $fragments['query_args']['where'][]    = '%%'. $filter['search'] .'%%';
       }
       else {
         $fragments['where'][]       = "pm.subject LIKE '%s'";
-        $fragments['query_args'][]    = '%%'. $filter['search'] .'%%';
+        $fragments['query_args']['where'][]    = '%%'. $filter['search'] .'%%';
       }
     }
   }
@@ -498,7 +499,7 @@ function privatemsg_filter_privatemsg_view_messages_alter(&$content, $count) {
 function privatemsg_filter_form(&$form_state) {
   global $user;
   $thread_id = arg(2);
-  
+
   $form['tags'] = array(
     '#type' => 'fieldset',
     '#title' => t('Tags'),

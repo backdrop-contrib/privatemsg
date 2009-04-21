@@ -27,7 +27,7 @@
  *
  *  - primary_table: The main table to select from
  *  - select: The fields that should be selected. This can be a simple field, a
- *    field with alias or even a subquery
+ *    field with alias or even a subquery.
  *  - inner_join: The tables that should be joined. This is not specific to
  *    inner joins.
  *    Example: INNER JOIN pm_index pmi ON (pmi.mid = pm.mid)
@@ -37,6 +37,8 @@
  *  - order_by: Order By values, example: pm.timestamp ASC
  *  - query_args: It is possible to use the placeholders like %s in each part of
  *    the query. The values of query_args are then inserted into these.
+ *    query_args consists of three arrays (join, where, having), one for each
+ *    key that currently supports arguments.
  *
  * Use _privatemsg_assemble_query
  *
@@ -52,20 +54,24 @@
  *
  * A short example:
  * @code
- * // first, create the sql function
- * function privatemsg_sql_getsubject(&$fragments, $mid) {
- *   // set the primary table
+ * // First, create the sql function.
+ * function privatemsg_sql_getsubject(&$fragments, $mid, $uid) {
+ *   // Set the primary table.
  *   $fragments['primary_table'] = '{pm_message} pm';
  *
- *   // add a field..
+ *   // Add a field.
  *   $fragments['select'][] = 'pm.subject';
  *
- *   // and finally add a condition
+ *   // Join another table
+ *   $fragment['inner_join'][] = 'INNER JOIN {pm_index} pi ON (pi.mid = pm.mid AND pi.uid = %d)';
+ *   $fragment['query_args']['join'][] $uid;
+ *
+ *   // And finally add a condition.
  *   $fragments['where'][] = 'pm.mid = %d';
- *   $fragments['query_args'][] = $mid;
+ *   $fragments['query_args']['where'][] = $mid;
  * }
  *
- * // Now we can use that query everywhere
+ * // Now we can use that query everywhere.
  * $query = _privatemsg_assemble_query('getsubject', 5);
  * $result = db_query($query['query']);
  * @endcode
