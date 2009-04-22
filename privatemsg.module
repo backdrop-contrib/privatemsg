@@ -591,6 +591,9 @@ function privatemsg_new(&$form_state, $account = NULL) {
 
   if ((int)$account > 0 && $account = user_load($account)) {
     $recipient  = $account->name .', ';
+    drupal_set_title(t('Write new message to %name', array('%name' => $recipient)));
+  } else {
+    drupal_set_title(t('Write new message'));
   }
   if (isset($form_state['values'])) {
     $recipient = $form_state['values']['recipient'];

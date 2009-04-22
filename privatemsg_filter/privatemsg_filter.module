@@ -78,7 +78,7 @@ function privatemsg_filter_admin() {
 
 function privatemsg_filter_page() {
   $content = '';
-  drupal_set_title('Tags');
+  drupal_set_title(t('Tags'));
 
   $sql = 'SELECT * FROM {pm_tags}';
   $query = db_query($sql);
