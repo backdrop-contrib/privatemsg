@@ -488,9 +488,9 @@ function privatemsg_filter_privatemsg_sql_list_alter(&$fragments, $account, $arg
   }
 }
 
-function privatemsg_filter_privatemsg_view_messages_alter(&$content, $count) {
-  if ($count > 0 && db_result(db_query('SELECT COUNT(*) FROM {pm_tags}')) > 0) {
-    $content['tags']['content'] = drupal_get_form('privatemsg_filter_form');
+function privatemsg_filter_privatemsg_view_messages_alter(&$content, $thread) {
+  if (count($thread['messages']) > 0 && db_result(db_query('SELECT COUNT(*) FROM {pm_tags}')) > 0) {
+    $content['tags']['#value'] = drupal_get_form('privatemsg_filter_form');
     $content['tags']['#weight'] = 10;
   }
 }
