@@ -931,7 +931,7 @@ function privatemsg_user($op, &$edit, &$account, $category = NULL) {
       if (variable_get('privatemsg_display_loginmessage', TRUE) && privatemsg_user_access()) {
         $count = privatemsg_unread_count();
         if ($count) {
-          drupal_set_message(t('You have <a href="@inbox">%unread</a>.', array('@inbox' => url('messages/inbox'), '%unread' => format_plural($count, '1 unread message', '@count unread messages'))));
+          drupal_set_message(t('You have <a href="@messages">%unread</a>.', array('@messages' => url('messages'), '%unread' => format_plural($count, '1 unread message', '@count unread messages'))));
         }
       }
       break;
