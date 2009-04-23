@@ -1005,7 +1005,7 @@ function _privatemsg_block_menu() {
   }
   if ( count( $links ) ) {
     $block = array(
-      'subject' => 'Private messages',
+      'subject' => t('Private messages'),
       'content' => theme('item_list', $links),
     );
   }
