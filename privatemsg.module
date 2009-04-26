@@ -717,9 +717,6 @@ function pm_send_validate($form, &$form_state) {
   }
 
   $validated = _privatemsg_validate_message($message, TRUE);
-  foreach ($validated['messages'] as $type => $text) {
-    drupal_set_message($text, $type);
-  }
   $form_state['validate_built_message'] = $message;
   if (!empty($invalid)) {
     drupal_set_message(t('The following users will not receive this private message: !invalid', array('!invalid' => implode(", ", $invalid))), 'error');
@@ -1274,7 +1271,11 @@ function _privatemsg_validate_message(&$message, $form = FALSE) {
   if (!empty($message['recipients']) && is_array($message['recipients'])) {
     foreach(module_invoke_all('privatemsg_block_message', $message['author'], $message['recipients']) as $blocked) {
       unset($message['recipients'][$blocked['uid']]);
-      $messages['warning'] += $block_results;
+      if ($form) {
+        drupal_set_message($blocked['message'], 'warning');
+      } else {
+        $messages['warning'][] = $blocked['message'];
+      }
     }
   }
 
