@@ -1,0 +1,468 @@
+# $Id$
+#
+# LANGUAGE translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  privatemsg.module,v 1.105 2008/12/18 16:26:33 litwol
+#  pm_block_user.module,v 1.1 2008/11/05 05:29:47 litwol
+#  privatemsg.info,v 1.5 2008/07/27 00:34:04 litwol
+#  privatemsg.install: n/a
+#  pm_block_user.info,v 1.2 2008/11/14 19:48:45 litwol
+#  privatemsg_filter.info,v 1.1 2008/12/12 21:28:04 litwol
+#  pm_block_user.install,v 1.1 2008/11/05 05:29:47 litwol
+#  privatemsg_filter.module,v 1.1 2008/12/12 21:28:04 litwol
+#  privatemsg_filter.install,v 1.1 2008/12/12 21:28:04 litwol
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2009-04-27 18:19+0200\n"
+"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
+"Last-Translator: NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: privatemsg.module:142
+msgid "Theming settings"
+msgstr ""
+
+#: privatemsg.module:146
+msgid "Private message display template"
+msgstr ""
+
+#: privatemsg.module:152
+msgid "Messages per page"
+msgstr ""
+
+#: privatemsg.module:155
+msgid "Choose the number of conversations that should be listed per page."
+msgstr ""
+
+#: privatemsg.module:215
+msgid "From !last"
+msgstr ""
+
+#: privatemsg.module:219
+msgid "Participants: !participants and !last"
+msgstr ""
+
+#: privatemsg.module:238
+msgid "You do not have sufficient rights to view someone else's messages"
+msgstr ""
+
+#: privatemsg.module:287;504;708
+msgid "Subject"
+msgstr ""
+
+#: privatemsg.module:290
+msgid "Last updated"
+msgstr ""
+
+#: privatemsg.module:303
+msgid "No messages to display."
+msgstr ""
+
+#: privatemsg.module:386
+msgid "unread"
+msgstr ""
+
+#: privatemsg.module:389
+msgid "read"
+msgstr ""
+
+#: privatemsg.module:395
+msgid "An error has occured, please contact the site administrator."
+msgstr ""
+
+#: privatemsg.module:434
+msgid "There are no messages available to display."
+msgstr ""
+
+#: privatemsg.module:494
+msgid "To"
+msgstr ""
+
+#: privatemsg.module:495
+msgid "Separate multiple names with commas."
+msgstr ""
+
+#: privatemsg.module:512
+msgid "Message"
+msgstr ""
+
+#: privatemsg.module:519
+msgid "Preview message"
+msgstr ""
+
+#: privatemsg.module:524
+msgid "Send message"
+msgstr ""
+
+#: privatemsg.module:529;972 pm_block_user/pm_block_user.module:54;67
+msgid "Cancel"
+msgstr ""
+
+#: privatemsg.module:555
+msgid "Blank messages are not allowed."
+msgstr ""
+
+#: privatemsg.module:611
+msgid "The following users will not receive this private message: @invalid"
+msgstr ""
+
+#: privatemsg.module:614
+msgid "There are no valid recipients."
+msgstr ""
+
+#: privatemsg.module:648
+msgid "A message has been sent to @recipients."
+msgstr ""
+
+#: privatemsg.module:828
+msgid "Send this user a message"
+msgstr ""
+
+#: privatemsg.module:836
+msgid "You have <a href=\"@inbox\">%unread</a>."
+msgstr ""
+
+#: privatemsg.module:846
+msgid "Privatemsg links"
+msgstr ""
+
+#: privatemsg.module:884;79
+msgid "Write new message"
+msgstr ""
+
+#: privatemsg.module:887
+msgid "All messages@new"
+msgstr ""
+
+#: privatemsg.module:890;56
+msgid "Sent messages"
+msgstr ""
+
+#: privatemsg.module:944
+msgid "Send reply to %recipient"
+msgstr ""
+
+#: privatemsg.module:968
+msgid "Are you sure you want to delete"
+msgstr ""
+
+#: privatemsg.module:970 pm_block_user/pm_block_user.module:52;65
+msgid "This action cannot be undone."
+msgstr ""
+
+#: privatemsg.module:971
+msgid "Delete"
+msgstr ""
+
+#: privatemsg.module:1001;71
+msgid "Delete message"
+msgstr ""
+
+#: privatemsg.module:392
+msgid "1 message marked as %status"
+msgid_plural "@count messages marked as %status"
+msgstr[0] ""
+msgstr[1] ""
+
+#: privatemsg.module:836
+msgid "1 unread message"
+msgid_plural "@count unread messages"
+msgstr[0] ""
+msgstr[1] ""
+
+#: privatemsg.module:22
+msgid "read privatemsg"
+msgstr ""
+
+#: privatemsg.module:23
+msgid "read all private messages"
+msgstr ""
+
+#: privatemsg.module:24
+msgid "administer privatemsg settings"
+msgstr ""
+
+#: privatemsg.module:25
+msgid "write privatemsg"
+msgstr ""
+
+#: privatemsg.module:34
+msgid "Messages"
+msgstr ""
+
+#: privatemsg.module:41
+msgid "All messages"
+msgstr ""
+
+#: privatemsg.module:48
+msgid "Mark all as read"
+msgstr ""
+
+#: privatemsg.module:63
+msgid "Read private message"
+msgstr ""
+
+#: privatemsg.module:101 privatemsg.info:0
+msgid "Private messages"
+msgstr ""
+
+#: privatemsg.module:102
+msgid "Configure private messaging settings."
+msgstr ""
+
+#: privatemsg.module:0
+msgid "privatemsg"
+msgstr ""
+
+#: privatemsg.install:6;139;184
+msgid "{pm_index} holds indexing information about messages and recepients for fast retrieval"
+msgstr ""
+
+#: privatemsg.install:9;54;142;187;237
+msgid "Private Message ID"
+msgstr ""
+
+#: privatemsg.install:15;148
+msgid "Messages thread ID"
+msgstr ""
+
+#: privatemsg.install:21;154;211
+msgid "UID of either the author or the recipient"
+msgstr ""
+
+#: privatemsg.install:27;121;160;217
+msgid "Whether the user has read this message"
+msgstr ""
+
+#: privatemsg.install:34;167;224
+msgid "Whether the user has deleted this message"
+msgstr ""
+
+#: privatemsg.install:51;234
+msgid "{pm_messages} holds the message information"
+msgstr ""
+
+#: privatemsg.install:60;243
+msgid "UID of the author"
+msgstr ""
+
+#: privatemsg.install:66;249
+msgid "Subject text of the message"
+msgstr ""
+
+#: privatemsg.install:72;255
+msgid "Body of the message"
+msgstr ""
+
+#: privatemsg.install:78;261
+msgid "Time when the message was sent"
+msgstr ""
+
+#: privatemsg.install:193
+msgid "ID of drupal 5 folder"
+msgstr ""
+
+#: privatemsg.install:199
+msgid "Messages old thread ID"
+msgstr ""
+
+#: privatemsg.install:205
+msgid "Messages new thread ID"
+msgstr ""
+
+#: privatemsg.info:0
+msgid "Allow private messages between users."
+msgstr ""
+
+#: privatemsg.info:0 pm_block_user/pm_block_user.info:0 privatemsg_filter/privatemsg_filter.info:0
+msgid "Mail"
+msgstr ""
+
+#: pm_block_user/pm_block_user.module:50
+msgid "You have previously blocked \"@author\" from sending you any more messages. Are you sure you want to unblock this user?"
+msgstr ""
+
+#: pm_block_user/pm_block_user.module:53
+msgid "Unblock @author"
+msgstr ""
+
+#: pm_block_user/pm_block_user.module:63
+msgid "Are you sure you want to block \"@author\" from sending you any more messages?"
+msgstr ""
+
+#: pm_block_user/pm_block_user.module:66
+msgid "Block @author"
+msgstr ""
+
+#: pm_block_user/pm_block_user.module:78
+msgid "@author has been blocked from sending you any further messages."
+msgstr ""
+
+#: pm_block_user/pm_block_user.module:82
+msgid "@author is now allowed to send you new messages."
+msgstr ""
+
+#: pm_block_user/pm_block_user.module:96
+msgid "!name has chosen to not recieve any more messages from you."
+msgstr ""
+
+#: pm_block_user/pm_block_user.module:110
+msgid "Unblock author"
+msgstr ""
+
+#: pm_block_user/pm_block_user.module:113
+msgid "Block author"
+msgstr ""
+
+#: pm_block_user/pm_block_user.module:14 pm_block_user/pm_block_user.info:0
+msgid "Block user messages"
+msgstr ""
+
+#: pm_block_user/pm_block_user.module:0
+msgid "pm_block_user"
+msgstr ""
+
+#: pm_block_user/pm_block_user.install:8
+msgid "{pm_block_user} holds data mapping which authors who cannot messages to which recipients "
+msgstr ""
+
+#: pm_block_user/pm_block_user.install:11
+msgid "ID of the author"
+msgstr ""
+
+#: pm_block_user/pm_block_user.install:17
+msgid "ID of the recipient"
+msgstr ""
+
+#: pm_block_user/pm_block_user.info:0
+msgid "Allows users to block other users from sending them messages."
+msgstr ""
+
+#: privatemsg_filter/privatemsg_filter.module:45
+msgid "Current tags:"
+msgstr ""
+
+#: privatemsg_filter/privatemsg_filter.module:65;80
+msgid "Add tags"
+msgstr ""
+
+#: privatemsg_filter/privatemsg_filter.module:72
+msgid "What tags would you like to add?"
+msgstr ""
+
+#: privatemsg_filter/privatemsg_filter.module:73
+msgid "Please insert a comma separated list of new tags in the form of \"tag1, tag2, tag3...\". All spaces will be replaced by hyphens."
+msgstr ""
+
+#: privatemsg_filter/privatemsg_filter.module:103
+msgid "!count tags have been saved: !tags."
+msgstr ""
+
+#: privatemsg_filter/privatemsg_filter.module:114
+msgid "Delete tags"
+msgstr ""
+
+#: privatemsg_filter/privatemsg_filter.module:131
+msgid "Delete selected tags"
+msgstr ""
+
+#: privatemsg_filter/privatemsg_filter.module:152
+msgid "!count tags have been deleted: !tags."
+msgstr ""
+
+#: privatemsg_filter/privatemsg_filter.module:236
+msgid "Filter Messages"
+msgstr ""
+
+#: privatemsg_filter/privatemsg_filter.module:242
+msgid "Search Subjects"
+msgstr ""
+
+#: privatemsg_filter/privatemsg_filter.module:248
+msgid "Authors"
+msgstr ""
+
+#: privatemsg_filter/privatemsg_filter.module:259;439;25
+msgid "Tags"
+msgstr ""
+
+#: privatemsg_filter/privatemsg_filter.module:268;325
+msgid "Filter"
+msgstr ""
+
+#: privatemsg_filter/privatemsg_filter.module:275;312
+msgid "Save Filter"
+msgstr ""
+
+#: privatemsg_filter/privatemsg_filter.module:288
+msgid "Filter Messages (Active)"
+msgstr ""
+
+#: privatemsg_filter/privatemsg_filter.module:303;329
+msgid "Reset"
+msgstr ""
+
+#: privatemsg_filter/privatemsg_filter.module:467
+msgid "Tag this message"
+msgstr ""
+
+#: privatemsg_filter/privatemsg_filter.module:487
+msgid "Tagging information has been saved."
+msgstr ""
+
+#: privatemsg_filter/privatemsg_filter.module:14
+msgid "use privatemsg_filter"
+msgstr ""
+
+#: privatemsg_filter/privatemsg_filter.module:15
+msgid "create privatemsg_filter"
+msgstr ""
+
+#: privatemsg_filter/privatemsg_filter.module:16
+msgid "delete privatemsg_filter"
+msgstr ""
+
+#: privatemsg_filter/privatemsg_filter.module:0
+msgid "privatemsg_filter"
+msgstr ""
+
+#: privatemsg_filter/privatemsg_filter.install:14
+msgid "{pm_tags} holds the names of tags and their id."
+msgstr ""
+
+#: privatemsg_filter/privatemsg_filter.install:17;36
+msgid "Tag ID"
+msgstr ""
+
+#: privatemsg_filter/privatemsg_filter.install:23
+msgid "The name of the tag"
+msgstr ""
+
+#: privatemsg_filter/privatemsg_filter.install:33
+msgid "{pm_tags_index} holds mapping information between tags, threads the users."
+msgstr ""
+
+#: privatemsg_filter/privatemsg_filter.install:42
+msgid "ID of the user"
+msgstr ""
+
+#: privatemsg_filter/privatemsg_filter.install:48
+msgid "id of the thread"
+msgstr ""
+
+#: privatemsg_filter/privatemsg_filter.info:0
+msgid "Privatemsg filter"
+msgstr ""
+
+#: privatemsg_filter/privatemsg_filter.info:0
+msgid "Allow users to filter messages using tags or other criteria."
+msgstr ""
+
