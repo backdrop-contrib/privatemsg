@@ -1213,6 +1213,7 @@ function privatemsg_reply($thread_id, $body = NULL, $options = array()) {
     return array(t('Thread %thread_id not found, unable to answer', array('%thread_id' => $thread_id)));
   }
 
+  $message['thread_id'] = $thread_id;
 
   $query = _privatemsg_assemble_query('participants', $thread_id);
   $participants = db_query($query['query']);
