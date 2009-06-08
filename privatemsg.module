@@ -1509,6 +1509,11 @@ function _privatemsg_assemble_query($query) {
   $QUERY_ARGS = $fragments['query_args'];
   $primary_table = $fragments['primary_table'];
 
+  // pgsql has a case sensitive LIKE - replace it with ILIKE. see http://drupal.org/node/462982
+  if ($GLOBALS['db_type'] == 'pgsql') {
+    $WHERE = str_replace('LIKE', 'ILIKE', $WHERE);
+  }
+
   if (empty($primary_table)) {
     $primary_table = '{privatemsg} pm';
   }
