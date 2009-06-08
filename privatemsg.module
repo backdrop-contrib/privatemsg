@@ -569,7 +569,9 @@ function privatemsg_view($thread) {
   $output = '';
   foreach ($thread['messages'] as $pmid => $message) {
     // Set message as read and theme it.
-    privatemsg_message_change_status($pmid, PRIVATEMSG_READ, $thread['user']);
+    if (!empty($message['is_new'])) {
+      privatemsg_message_change_status($pmid, PRIVATEMSG_READ, $thread['user']);
+    }
     $output .= theme('privatemsg_view', $message);
   }
   $content['messages']['#value'] = $output;
