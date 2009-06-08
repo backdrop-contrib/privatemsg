@@ -1010,10 +1010,11 @@ function privatemsg_block($op = 'list', $delta = 0, $edit = array()) {
     $blocks = array();
     $blocks['privatemsg-menu'] = array(
       'info' => t('Privatemsg links'),
+      'cache' => BLOCK_NO_CACHE,
     );
     $blocks['privatemsg-new'] = array(
       'info' => t('New message indication'),
-      'cache' => BLOCK_CACHE_PER_USER,
+      'cache' => BLOCK_NO_CACHE,
     );
 
     return $blocks;

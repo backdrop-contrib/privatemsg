@@ -392,3 +392,12 @@ function privatemsg_update_6000() {
 
   return $ret;
 }
+
+function privatemsg_update_6002() {
+  $ret = array();
+  // update_sql does not support parameters, we need to use db_query
+  $sql = "UPDATE {blocks} SET cache = %d WHERE module='privatemsg'";
+  $result = db_query($sql, BLOCK_NO_CACHE);
+  $ret[] = array('success' => $result !== FALSE, 'query' => check_plain($sql));
+  return $ret;
+}
