@@ -1658,6 +1658,8 @@ function privatemsg_thread_change_status($threads, $status, $account = NULL) {
 /**
  * Returns a table header definition based on the submitted keys.
  *
+ * Uses @link theming theme patterns @endlink to theme single headers.
+ *
  * @param $has_posts
  *   TRUE when there is at least one row. Decides if the select all checkbox should be displayed.
  * @param $keys
@@ -1686,7 +1688,7 @@ function _privatemsg_list_headers($has_posts, $keys) {
 /**
  * Formats a row in the message list.
  *
- * Uses theme patterns to theme single fields.
+ * Uses @link theming theme patterns @endlink to theme single fields.
  *
  * @param $thread
  *   Array with the row data returned by the database.
