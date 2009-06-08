@@ -1138,7 +1138,7 @@ function privatemsg_delete_submit($form, &$form_state) {
  * This functions does send a message in a new thread.
  * Example:
  * @code
- * privatemsg_new_thread('The subject', 'The body text', array(user_load(5)));
+ * privatemsg_new_thread(array(user_load(5)), 'The subject', 'The body text');
  * @endcode
  *
  * @param $recipients
@@ -1166,11 +1166,11 @@ function privatemsg_new_thread($recipients, $subject, $body = NULL, $options = a
   $message['body'] = $body;
   $message['recipients'] = $recipients;
 
-  // set custom options, if any
+  // Set custom options, if any.
   if (!empty($options)) {
     $message += $options;
   }
-  // apply defaults
+  // Apply defaults - this will not overwrite existing keys.
   $message += array(
     'author' => $author,
     'timestamp' => time(),
