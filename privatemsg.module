@@ -1602,7 +1602,7 @@ function _privatemsg_action_form() {
       '#value'  => t('Delete'),
   );
   // Display all operations which have a label.
-  $options = array(0 => t('More actions..'));
+  $options = array(0 => t('More actions...'));
   foreach (module_invoke_all('privatemsg_thread_operations') as $operation => $array) {
     if (isset($array['label'])) {
       $options[$operation] = $array['label'];

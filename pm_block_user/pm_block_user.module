@@ -97,7 +97,7 @@ function pm_block_user_form_submit($form, &$form_state) {
   while ($row = db_fetch_array($result)) {
     $blocked[] = array(
       'uid' => $row['recipient'],
-      'message' => t('!name has chosen to not recieve any more messages from you.', array('!name' => $recipients[$row['recipient']]->name))
+      'message' => t('%name has chosen to not recieve any more messages from you.', array('%name' => $recipients[$row['recipient']]->name))
     );
   }
   return $blocked;
