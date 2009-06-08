@@ -16,6 +16,7 @@
  *  - @link sql Query builder and related hooks @endlink
  *  - @link message_hooks Message hooks @endlink
  *  - @link generic_hooks Generic hooks @endlink
+ *  - @link theming Theming @endlink
  */
 
 /**
