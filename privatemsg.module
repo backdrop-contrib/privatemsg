@@ -1368,7 +1368,7 @@ function privatemsg_get_link($recipients, $account = array(), $subject = NULL) {
     global $user;
     $account = $user;
   }
-  
+
   if (!is_array($recipients)) {
     $recipients = array($recipients);
   }
@@ -1679,7 +1679,7 @@ function _privatemsg_list_headers($has_posts, $keys) {
 /**
  * Formats a row in the message list.
  *
- * Does use theme patterns to display the single fields.
+ * Uses theme patterns to theme single fields.
  *
  * @param $thread
  *   Array with the row data returned by the database.
