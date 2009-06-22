@@ -758,8 +758,34 @@ function pm_send_validate($form, &$form_state) {
     $message['subject'] = $trimed_body;
   }
 
+  list($message['recipients'], $invalid) = _privatemsg_parse_userstring($form_state['values']['recipient']);
+
+  $validated = _privatemsg_validate_message($message, TRUE);
+  foreach ($validated['messages'] as $type => $text) {
+    drupal_set_message($text, $type);
+  }
+  $form_state['validate_built_message'] = $message;
+  if (!empty($invalid)) {
+    drupal_set_message(t('The following users will not receive this private message: !invalid', array('!invalid' => implode(", ", $invalid))), 'error');
+  }
+}
+
+/**
+ * Extract the valid usernames of a string and loads them.
+ *
+ * This function is used to parse a string supplied by a username autocomplete
+ * field and load all user objects.
+ *
+ * @param $string
+ *   A string in the form "usernameA, usernameB, ...".
+ * @return
+ *   Array, first element is an array of loaded user objects, second an array
+ *   with invalid names.
+ *
+ */
+function _privatemsg_parse_userstring($string) {
   // Verify that recipient's name syntax is correct.
-  $fragments = explode(',', $form_state['values']['recipient']);
+  $fragments = explode(',', $string);
   $invalid = array();
   $valid   = array();
   foreach ($fragments as $index => $name) {
@@ -776,21 +802,17 @@ function pm_send_validate($form, &$form_state) {
   }
 
   // Verify users exist and load their accounts.
+  $users = array();
   foreach ($valid as $index => $name) {
     if ($recipient = user_load(array('name' => $name))) {
-      $message['recipients'][$recipient->uid] = $recipient;
+      $users[$recipient->uid] = $recipient;
     }
     else {
       // Here we add more invalid names due to the fact that they don't exist.
       $invalid[$name] = $name;
     }
   }
-
-  $validated = _privatemsg_validate_message($message, TRUE);
-  $form_state['validate_built_message'] = $message;
-  if (!empty($invalid)) {
-    drupal_set_message(t('The following users will not receive this private message: !invalid', array('!invalid' => implode(", ", $invalid))), 'error');
-  }
+  return array($users, $invalid);
 }
 
 function pm_send($form, &$form_state) {

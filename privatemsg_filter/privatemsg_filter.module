@@ -60,6 +60,13 @@ function privatemsg_filter_menu() {
     'type'             => MENU_LOCAL_TASK,
     'weight'           => -10,
   );
+  $items['messages/filter/user-name-autocomplete'] = array(
+    'page callback'    => 'privatemsg_user_name_autocomplete',
+    'access callback'  => 'privatemsg_user_access',
+    'access arguments' => array('write privatemsg'),
+    'type'             => MENU_CALLBACK,
+    'weight'           => -10,
+  );
   return $items;
 }
 
@@ -214,15 +221,7 @@ function privatemsg_filter_get_filter($account) {
   }
 
   if (isset($_GET['author'])) {
-    foreach (explode(' ', $_GET['author']) as $author) {
-      $author_data = privatemsg_filter_get_author_data($account);
-      if (isset($author_data[$author])) {
-        $filter[$author] = $author;
-      }
-      elseif (in_array($author, $author_data)) {
-        $filter['author'][array_search($author, $author_data)] = array_search($author, $author_data);
-      }
-    }
+    list($filter['author']) = _privatemsg_parse_userstring($_GET['author']);
   }
 
   if (isset($_GET['search'])) {
@@ -237,22 +236,6 @@ function privatemsg_filter_get_filter($account) {
     return $_SESSION['privatemsg_filter'];
   }
 
-}
-
-function privatemsg_filter_get_author_data($account) {
- static $author_data;
-
-  if (is_array($author_data)) {
-    return $author_data;
-  }
-  $sql = 'SELECT DISTINCT pm.author, u.name FROM {pm_message} pm INNER JOIN {pm_index} pmi ON pm.mid = pmi.mid INNER JOIN {users} u ON pm.author = u.uid WHERE pmi.uid = %d AND u.uid > 0 ORDER BY u.name';
-  $query = db_query($sql, $account->uid);
-
-  $author_data = array();
-  while ($result = db_fetch_object($query)) {
-    $author_data[$result->author] = $result->name;
-  }
-  return $author_data;
 }
 
 function privatemsg_filter_get_tags_data($account) {
@@ -290,12 +273,12 @@ function privatemsg_filter_dropdown(&$form_state, $account) {
   );
 
   $form['filter']['author'] = array(
-      '#type' => 'select',
-      '#title' => t('Users'),
-      '#options' => privatemsg_filter_get_author_data($account),
-      '#multiple' => TRUE,
-      '#size' => 5,
-      '#weight' => -10
+    '#type'               => 'textfield',
+    '#title'              => t('Participants'),
+    '#description'        => t('Separate multiple names with commas.'),
+    '#weight'             => -5,
+    '#size'               => 50,
+    '#autocomplete_path'  => 'messages/filter/user-name-autocomplete',
   );
 
   // Only show form if the user has some messages tagged.
@@ -337,7 +320,11 @@ function privatemsg_filter_dropdown_set_active(&$form, $filter) {
   $form['filter']['#collapsed'] = FALSE;
 
   if (isset($filter['author'])) {
-    $form['filter']['author']['#default_value'] = $filter['author'];
+    $string = '';
+    foreach ($filter['author'] as $author) {
+      $string .= $author->name . ', ';
+    }
+    $form['filter']['author']['#default_value'] = $string;
   }
   if (isset($filter['tags'])) {
     $form['filter']['tags']['#default_value'] = $filter['tags'];
@@ -357,6 +344,11 @@ function privatemsg_filter_dropdown_set_active(&$form, $filter) {
 }
 
 function privatemsg_filter_dropdown_submit($form, &$form_state) {
+
+  if (!empty($form_state['values']['author'])) {
+    list($form_state['values']['author']) = _privatemsg_parse_userstring($form_state['values']['author']);
+  }
+
   switch ($form_state['values']['op']) {
     case t('Save Filter'):
       $filter = array();
@@ -407,7 +399,6 @@ function privatemsg_filter_create_get_query($filter)
   }
 
   if (isset($filter['author']) && !empty($filter['author'])) {
-    array_map('user_load', $filter['author']);
     foreach ($filter['author'] as $author) {
       if (is_object($author) && isset($author->uid) && isset($author->name)) {
         $query['author'][] = $author->name;
@@ -417,7 +408,7 @@ function privatemsg_filter_create_get_query($filter)
       }
     }
     if (isset($query['author'])) {
-      $query['author'] = implode(' ', $query['author']);
+      $query['author'] = implode(',', $query['author']);
     }
   }
 
@@ -469,7 +460,7 @@ function privatemsg_filter_privatemsg_sql_list_alter(&$fragments, $account, $arg
       foreach ($filter['author'] as $author) {
         $fragments['inner_join'][]  = "INNER JOIN {pm_index} pmi$count ON (pmi$count.mid = pm.mid)";
         $fragments['where'][]       = "pmi$count.uid = %d";
-        $fragments['query_args']['where'][]   = $author;
+        $fragments['query_args']['where'][]   = $author->uid;
         $count++;
       }
     }
@@ -550,5 +541,24 @@ function privatemsg_filter_form_submit($form, &$form_state) {
       }
     }
     drupal_set_message(t('Tagging information has been saved.'));
+  }
+}
+
+/**
+ * Limit the user autocomplete for the filter widget.
+ *
+ * @param $fragments
+ *   Query fragments.
+ * @param $search
+ *   Username search string.
+ * @param $names
+ *   Array of names that are already part of the autocomplete field.
+ */
+function privatemsg_filter_privatemsg_sql_autocomplete_alter(&$fragments, $search, $names) {
+  global $user;
+  if (arg(1) == 'filter') {
+    $fragments['inner_join'][] = 'INNER JOIN {pm_index} pip ON pip.uid = u.uid';
+    $fragments['inner_join'][] = 'INNER JOIN {pm_index} piu ON piu.uid = %d AND pip.mid = piu.mid';
+    $fragments['query_args']['join'][] = $user->uid;
   }
 }
