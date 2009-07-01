@@ -112,33 +112,6 @@ function privatemsg_uninstall() {
   drupal_uninstall_schema('privatemsg');
 }
 
-function privatemsg_update_6001() {
-  $ret = array();
-
-  if (!db_column_exists('pm_index', 'is_new')) {
-
-    if (db_column_exists('pm_index', 'new')) {
-      $old_column = 'new';
-    }
-    elseif (db_column_exists('pm_index', 'new_flag')) {
-      $old_column = 'new_flag';
-    }
-    else {
-      return $ret;
-    }
-
-    db_drop_index($ret, 'pm_index', $old_column);
-    db_change_field($ret, 'pm_index', $old_column, 'is_new', array(
-          'description'   => 'Whether the user has read this message',
-          'type'          => 'int',
-          'default'       => 1,
-          'not null'      => TRUE,
-          'unsigned'      => TRUE));
-    db_add_index($ret, 'pm_index', 'is_new', array('mid', 'uid', 'is_new'));
-  }
-
-  return $ret;
-}
 
 function privatemsg_update_6000() {
   // Give update unlimited time to complete.
@@ -393,11 +366,55 @@ function privatemsg_update_6000() {
   return $ret;
 }
 
+function privatemsg_update_6001() {
+  $ret = array();
+
+  if (!db_column_exists('pm_index', 'is_new')) {
+
+    if (db_column_exists('pm_index', 'new')) {
+      $old_column = 'new';
+    }
+    elseif (db_column_exists('pm_index', 'new_flag')) {
+      $old_column = 'new_flag';
+    }
+    else {
+      return $ret;
+    }
+
+    db_drop_index($ret, 'pm_index', $old_column);
+    db_change_field($ret, 'pm_index', $old_column, 'is_new', array(
+          'description'   => 'Whether the user has read this message',
+          'type'          => 'int',
+          'default'       => 1,
+          'not null'      => TRUE,
+          'unsigned'      => TRUE));
+    db_add_index($ret, 'pm_index', 'is_new', array('mid', 'uid', 'is_new'));
+  }
+
+  return $ret;
+}
+
 function privatemsg_update_6002() {
   $ret = array();
   // update_sql does not support parameters, we need to use db_query
   $sql = "UPDATE {blocks} SET cache = %d WHERE module='privatemsg'";
   $result = db_query($sql, BLOCK_NO_CACHE);
+  $ret[] = array('success' => $result !== FALSE, 'query' => check_plain($sql));
+  return $ret;
+}
+
+/**
+ * Update function to resolve "forever new" messages
+ * as described in http://drupal.org/node/490650
+ */
+function privatemsg_update_6003() {
+  $ret = array();
+  // Find messages that have aformentioned problem
+  $sql = "SELECT DISTINCT p1.mid, p1.uid FROM pm_index p1 INNER JOIN pm_index p2 ON p1.thread_id = p2.thread_id AND p1.mid = p2.mid INNER JOIN pm_message pm ON p1.uid = pm.author AND p2.uid = pm.author WHERE p1.is_new != p2.is_new";
+  $result = db_query($sql);
+  while($row = db_fetch_object($result)) {
+      privatemsg_message_change_status($row->mid, PRIVATEMSG_READ, $row );
+  }
   $ret[] = array('success' => $result !== FALSE, 'query' => check_plain($sql));
   return $ret;
 }
