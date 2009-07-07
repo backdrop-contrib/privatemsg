@@ -410,7 +410,7 @@ function privatemsg_update_6002() {
 function privatemsg_update_6003() {
   $ret = array();
   // Find messages that have aformentioned problem
-  $sql = "SELECT DISTINCT p1.mid, p1.uid FROM pm_index p1 INNER JOIN pm_index p2 ON p1.thread_id = p2.thread_id AND p1.mid = p2.mid INNER JOIN pm_message pm ON p1.uid = pm.author AND p2.uid = pm.author WHERE p1.is_new != p2.is_new";
+  $sql = "SELECT DISTINCT p1.mid, p1.uid FROM {pm_index} p1 INNER JOIN {pm_index} p2 ON p1.thread_id = p2.thread_id AND p1.mid = p2.mid INNER JOIN {pm_message} pm ON p1.uid = pm.author AND p2.uid = pm.author WHERE p1.is_new != p2.is_new";
   $result = db_query($sql);
   while($row = db_fetch_object($result)) {
       privatemsg_message_change_status($row->mid, PRIVATEMSG_READ, $row );
