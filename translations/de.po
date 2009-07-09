@@ -1,0 +1,583 @@
+# $Id$
+#
+# German translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  privatemsg.api.php,v 1.1.2.5 2009/06/08 13:38:41 litwol
+#  pm_block_user.module,v 1.1.2.5 2009/06/08 13:38:41 litwol
+#  privatemsg.author-pane.inc,v 1.1.2.2 2009/02/18 01:36:46 litwol
+#  privatemsg.theme.inc,v 1.1.2.5 2009/06/08 11:19:18 litwol
+#  privatemsg.module,v 1.70.2.30.2.91.2.53 2009/06/08 14:27:53 litwol
+#  privatemsg.info,v 1.1.2.1.2.3.2.4 2009/01/25 23:25:18 litwol
+#  privatemsgapi.inc,v 1.8.2.3 2009/02/18 01:36:46 litwol
+#  pm_block_user.info,v 1.2.2.1 2009/04/10 15:52:48 litwol
+#  pm_email_notify.info,v 1.1.2.1 2009/04/16 16:14:18 litwol
+#  privatemsg_filter.info,v 1.1.2.1 2009/01/25 23:25:18 litwol
+#  pm_email_notify.module,v 1.1.2.1 2009/04/16 16:14:18 litwol
+#  privatemsg_filter.module,v 1.1.2.15 2009/04/22 02:23:45 litwol
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Drupal Privatemsg V6.x-1.x\n"
+"POT-Creation-Date: 2009-07-04 19:09+0200\n"
+"PO-Revision-Date: 2009-07-08 18:02+0100\n"
+"Last-Translator: Frank Ralf <webmaster@grundschule-heidhorst.de>\n"
+"Language-Team: Frank Tartler <frank.tartler@googlemail.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n!=1);\n"
+"X-Poedit-Language: German\n"
+"X-Poedit-Country: GERMANY\n"
+"X-Poedit-SourceCharset: utf-8\n"
+
+#: privatemsg.api.php:337
+#: pm_block_user/pm_block_user.module:100
+msgid "%name has chosen to not recieve any more messages from you."
+msgstr "%name hat sich entschieden, keine Nachrichten von Ihnen zu empfangen."
+
+#: privatemsg.api.php:369
+msgid "My link"
+msgstr "Mein Link"
+
+#: privatemsg.author-pane.inc:16;16
+msgid "Send private message"
+msgstr "Private Nachricht senden"
+
+#: privatemsg.author-pane.inc:18
+msgid "Send PM"
+msgstr "PN senden"
+
+#: privatemsg.theme.inc:160
+#: privatemsg.module:679
+msgid "Subject"
+msgstr "Betreff"
+
+#: privatemsg.theme.inc:175
+#: privatemsg.module:358
+msgid "Answers"
+msgstr "Antworten"
+
+#: privatemsg.theme.inc:189
+#: privatemsg.module:356
+#: privatemsg_filter/privatemsg_filter.module:277
+msgid "Participants"
+msgstr "Teilnehmer"
+
+#: privatemsg.theme.inc:203
+msgid "Last Updated"
+msgstr "Zuletzt aktualisiert"
+
+#: privatemsg.theme.inc:219
+#: privatemsg.module:357
+msgid "Started"
+msgstr "Begonnen"
+
+#: privatemsg.theme.inc:269
+msgid "No messages available."
+msgstr "Keine Nachrichten verfügbar."
+
+#: privatemsg.theme.inc:287
+msgid "You have a new message, click here to read it"
+msgid_plural "You have @count new messages, click here to read them"
+msgstr[0] "Sie haben eine neue Nachricht, klicken Sie hier um sie zu lesen"
+msgstr[1] "Sie haben @count neue Nachrichten, klicken Sie hier um sie zu lesen"
+
+#: privatemsg.module:90
+msgid " and others"
+msgstr " und andere"
+
+#: privatemsg.module:100
+msgid "From !last"
+msgstr "Von !last"
+
+#: privatemsg.module:104
+msgid "Participants: !participants and !last"
+msgstr "Teilnehmer: !participants und !last"
+
+#: privatemsg.module:323
+msgid "Theming settings"
+msgstr "Theming-Einstellungen"
+
+#: privatemsg.module:327
+msgid "Private message display template"
+msgstr "Template für die Anzeige privater Nachrichten"
+
+#: privatemsg.module:333
+msgid "Messages per page"
+msgstr "Nachrichten pro Seite"
+
+#: privatemsg.module:336
+msgid "Choose the number of conversations that should be listed per page."
+msgstr "Anzahl Unterhaltungen wählen, die pro Seite aufgelistet werden sollen."
+
+#: privatemsg.module:340
+msgid "Inform the user about new messages on login"
+msgstr "Den Benutzer beim Anmelden über neue Nachrichten informieren"
+
+#: privatemsg.module:342
+msgid "This option can safely be disabled if the \"New message indication\" block is used instead."
+msgstr "Diese Option kann problemlos deaktiviert werden, wenn stattdessen der Block „Neue-Nachrichten-Anzeige“ verwendet wird."
+
+#: privatemsg.module:346
+msgid "Configure listings"
+msgstr "Listen konfigurieren"
+
+#: privatemsg.module:353
+msgid "Configure fields"
+msgstr "Felder konfigurieren"
+
+#: privatemsg.module:354
+msgid "Select which columns/fields should be displayed in the message listings. Subject and Last updated cannot be disabled."
+msgstr "Auswahl welche Spalten/Felder in den Nachrichtenlisten angezeigt werden sollen. Betreff und Zuletzt aktualisiert können nicht deaktiviert werden."
+
+#: privatemsg.module:429;139
+msgid "Delete message"
+msgstr "Nachricht löschen"
+
+#: privatemsg.module:467
+msgid "You do not have sufficient rights to view someone else's messages"
+msgstr "Sie haben keine ausreichenden Rechte, um die Nachrichten anderer zu sehen."
+
+#: privatemsg.module:643
+msgid "Write new message to %recipient"
+msgstr "Neue Nachricht an %recipient schreiben"
+
+#: privatemsg.module:645;1091;147
+msgid "Write new message"
+msgstr "Neue Nachricht schreiben"
+
+#: privatemsg.module:668
+msgid "To"
+msgstr "An"
+
+#: privatemsg.module:669
+#: privatemsg_filter/privatemsg_filter.module:278
+msgid "Separate multiple names with commas."
+msgstr "Mehrere Namen durch Kommata trennen."
+
+#: privatemsg.module:687
+msgid "Message"
+msgstr "Nachricht"
+
+#: privatemsg.module:695
+msgid "Preview message"
+msgstr "Nachrichten-Vorschau"
+
+#: privatemsg.module:701
+msgid "Send message"
+msgstr "Nachrichten senden"
+
+#: privatemsg.module:714;1117
+#: pm_block_user/pm_block_user.module:54;67
+msgid "Cancel"
+msgstr "Abbrechen"
+
+#: privatemsg.module:729
+msgid "<strong>Reply to thread</strong>:<br /> Recipients: %to"
+msgstr "<strong>Auf Diskussion antworten</strong>:<br /> Empfänger: %to"
+
+#: privatemsg.module:769
+msgid "The following users will not receive this private message: !invalid"
+msgstr "Die folgenden Benutzer werden diese private Nachricht nicht erhalten: !invalid"
+
+#: privatemsg.module:824
+msgid "A message has been sent to !recipients."
+msgstr "Eine Nachricht wurde an !recipients gesendet."
+
+#: privatemsg.module:1014
+msgid "Send this user a message"
+msgstr "Diesem Benutzer eine Nachricht senden"
+
+#: privatemsg.module:1023
+msgid "You have <a href=\"@messages\">%unread</a>."
+msgstr "Es gibt <a href=\"@messages\">%unread</a>."
+
+#: privatemsg.module:1034
+msgid "Privatemsg links"
+msgstr "Privatemsg-Links"
+
+#: privatemsg.module:1038
+msgid "New message indication"
+msgstr "Neue-Nachrichten-Anzeige"
+
+#: privatemsg.module:1064;115;123
+msgid "Messages"
+msgstr "Nachrichten"
+
+#: privatemsg.module:1098;164;172;181
+#: privatemsg.info:0
+msgid "Private messages"
+msgstr "Private Nachrichten"
+
+#: privatemsg.module:1113
+msgid "Are you sure you want to delete"
+msgstr "Sollen diese Nachrichten wirklich gelöscht werden?"
+
+#: privatemsg.module:1115
+#: pm_block_user/pm_block_user.module:52;65
+msgid "This action cannot be undone."
+msgstr "Diese Aktion kann nicht rückgängig gemacht werden."
+
+#: privatemsg.module:1116;1629
+msgid "Delete"
+msgstr "Löschen"
+
+#: privatemsg.module:1156
+msgid "Message has been deleted"
+msgstr "Nachricht wurde gelöscht"
+
+#: privatemsg.module:1251
+msgid "Thread %thread_id not found, unable to answer"
+msgstr "Thread %thread_id nicht gefunden, es kann nicht geantwortet werden"
+
+#: privatemsg.module:1277;1284
+msgid "User @user is not allowed to write messages"
+msgstr "Benutzer @user darf keine Nachrichten schreiben"
+
+#: privatemsg.module:1294;1297
+msgid "Disallowed to send a message without subject"
+msgstr "Eine Nachricht darf nicht ohne Betreff versendet werden"
+
+#: privatemsg.module:1303;1306
+msgid "Disallowed to send a message without atleast one valid recipient"
+msgstr "Eine Nachricht darf nicht ohne mindestens einen gültigen Empfänger gesendet werden"
+
+#: privatemsg.module:1324;1327
+msgid "Disallowed to send message because all recipients are blocked"
+msgstr "Nachricht kann nicht gesendet werden, da alle Empfänger geblockt sind."
+
+#: privatemsg.module:1522
+#: privatemsgapi/privatemsgapi.inc:125
+msgid "Query function %function does not exist"
+msgstr "Abfragefunktion %function existiert nicht"
+
+#: privatemsg.module:1620
+msgid "Actions"
+msgstr "Aktionen"
+
+#: privatemsg.module:1632
+msgid "More actions..."
+msgstr "Weitere Aktionen..."
+
+#: privatemsg.module:1647
+msgid "Execute"
+msgstr "Ausführen"
+
+#: privatemsg.module:1679
+msgid "Marked %count threads as unread."
+msgstr "%count Threads als ungelesen markiert."
+
+#: privatemsg.module:1682
+msgid "Marked %count threads as read."
+msgstr "%count Diskussionen als gelesen markiert."
+
+#: privatemsg.module:1813
+msgid "undone"
+msgstr "rückgängig gemacht"
+
+#: privatemsg.module:1815
+msgid "The previous action can be !undo."
+msgstr "Diese Aktion kann nicht rückgängig gemacht werden."
+
+#: privatemsg.module:1852
+msgid "Deleted %count threads."
+msgstr "%count Threads gelöscht."
+
+#: privatemsg.module:1855
+msgid "Restored %count threads."
+msgstr "%count Threads wiederhergestellt."
+
+#: privatemsg.module:1865
+msgid "Mark as read"
+msgstr "Als gelesen markieren"
+
+#: privatemsg.module:1872
+msgid "Mark as unread"
+msgstr "Als ungelesen markieren"
+
+#: privatemsg.module:1023
+msgid "1 unread message"
+msgid_plural "@count unread messages"
+msgstr[0] "1 ungelesene Nachricht"
+msgstr[1] "@count ungelesene Nachrichten"
+
+#: privatemsg.module:1062
+msgid "Messages (1 new)"
+msgid_plural "Messages (@count new)"
+msgstr[0] "Nachrichten (1 neu)"
+msgstr[1] "Nachrichten (@count neu)"
+
+#: privatemsg.module:1078
+msgid "New message"
+msgid_plural "New messages"
+msgstr[0] "Neue Nachricht"
+msgstr[1] "Neue Nachrichten"
+
+#: privatemsg.module:23
+msgid "read privatemsg"
+msgstr "private Nachricht lesen"
+
+#: privatemsg.module:24
+msgid "read all private messages"
+msgstr "alle privaten Nachrichten lesen"
+
+#: privatemsg.module:25
+msgid "administer privatemsg settings"
+msgstr "Privatemsg-Einstellungen verwalten"
+
+#: privatemsg.module:26
+msgid "write privatemsg"
+msgstr "private Nachricht schreiben"
+
+#: privatemsg.module:131
+msgid "Read message"
+msgstr "Nachricht lesen"
+
+#: privatemsg.module:165;173
+msgid "Configure private messaging settings."
+msgstr "Einstellungen für private Nachrichten konfigurieren"
+
+#: privatemsg.module:182
+msgid "Undo last thread action"
+msgstr "Letzte Thread-Aktion rückgängig machen"
+
+#: privatemsg.info:0
+msgid "Allow private messages between users."
+msgstr "Private Nachrichten zwischen Benutzern erlauben"
+
+#: privatemsg.info:0
+#: pm_block_user/pm_block_user.info:0
+#: pm_email_notify/pm_email_notify.info:0
+#: privatemsg_filter/privatemsg_filter.info:0
+msgid "Mail"
+msgstr "E-Mail"
+
+#: pm_block_user/pm_block_user.module:50
+msgid "You have previously blocked \"@author\" from sending you any more messages. Are you sure you want to unblock this user?"
+msgstr "Sie haben zuletzt „@author“ gesperrt, so dass er Ihnen keine Nachrichten mehr sendet. Soll dieser Benutzer wirklich entsperrt werden?"
+
+#: pm_block_user/pm_block_user.module:53
+msgid "Unblock @author"
+msgstr "@author entsperren"
+
+#: pm_block_user/pm_block_user.module:63
+msgid "Are you sure you want to block \"@author\" from sending you any more messages?"
+msgstr "Soll „@author“ wirklich gesperrt werden, so dass er Ihnen keine Nachrichten mehr senden kann?"
+
+#: pm_block_user/pm_block_user.module:66
+msgid "Block @author"
+msgstr "@author sperren"
+
+#: pm_block_user/pm_block_user.module:78
+msgid "@author has been blocked from sending you any further messages."
+msgstr "@author wurde geblockt und kann Ihnen keine Nachrichten mehr senden."
+
+#: pm_block_user/pm_block_user.module:82
+msgid "@author is now allowed to send you new messages."
+msgstr "@author darf Ihnen jetzt neue Nachrichten senden."
+
+#: pm_block_user/pm_block_user.module:128
+msgid "Unblock author"
+msgstr "Autor entsperren"
+
+#: pm_block_user/pm_block_user.module:131
+msgid "Block author"
+msgstr "Autor sperren"
+
+#: pm_block_user/pm_block_user.module:14
+#: pm_block_user/pm_block_user.info:0
+msgid "Block user messages"
+msgstr "Benutzernachrichten sperren"
+
+#: pm_block_user/pm_block_user.info:0
+msgid "Allows users to block other users from sending them messages."
+msgstr "Benutzern erlauben, andere Benutzer zu sperren, so dass sie ihnen keine Nachrichten mehr schicken können."
+
+#: pm_email_notify/pm_email_notify.module:43
+msgid "Privatemsg e-mail notifications"
+msgstr "Privatemsg-E-Mail-Benachrichtigungen"
+
+#: pm_email_notify/pm_email_notify.module:47;73
+msgid "Privatemsg e-mail notification"
+msgstr "Privatemsg-E-Mail-Benachrichtigung"
+
+#: pm_email_notify/pm_email_notify.module:53
+msgid "Receive email notification for incoming private messages?"
+msgstr "E-Mail-Benachrichtigungen für eingehende private Nachrichten empfangen?"
+
+#: pm_email_notify/pm_email_notify.module:55
+msgid "No"
+msgstr "Nein"
+
+#: pm_email_notify/pm_email_notify.module:56
+msgid "Yes"
+msgstr "Ja"
+
+#: pm_email_notify/pm_email_notify.module:62
+msgid "Save"
+msgstr "Speichern"
+
+#: pm_email_notify/pm_email_notify.module:79
+msgid "Default e-mail notification setting"
+msgstr "Standard-Einstellung für E-Mail-Benachrichtigung"
+
+#: pm_email_notify/pm_email_notify.module:81
+msgid "Disabled"
+msgstr "Deaktiviert"
+
+#: pm_email_notify/pm_email_notify.module:82
+msgid "Enabled"
+msgstr "Aktiviert"
+
+#: pm_email_notify/pm_email_notify.module:90
+msgid "Customize the email messages sent to users upon receipt of a new private message. <br />Available variables are: !author, !pm_subject, !pm_body, !thread, !site, !login_url, !uri, !uri_brief."
+msgstr "E-Mail-Nachrichten anpassen, die beim Empfang einer neuen privaten Nachricht an Benutzer gesendet werden. <br />Verfügbare Variablen sind: !author, !pm_subject, !pm_body, !thread, !site, !login_url, !uri, !uri_brief."
+
+#: pm_email_notify/pm_email_notify.module:98
+msgid "Subject of notification messages"
+msgstr "Betreff von Benachrichtigungs-Nachrichten"
+
+#: pm_email_notify/pm_email_notify.module:105
+msgid "Body of notification messages"
+msgstr "Textkörper von Benachrichtigungs-Nachrichten"
+
+#: pm_email_notify/pm_email_notify.module:124
+msgid "Your email notification settings have been updated."
+msgstr "Die E-Mail-Benachrichtigungs-Einstellungen wurden aktualisiert."
+
+#: pm_email_notify/pm_email_notify.module:18;26
+msgid "E-mail notify"
+msgstr "E-Mail-Benachrichtigung"
+
+#: pm_email_notify/pm_email_notify.module:27
+msgid "E-mail notification settings"
+msgstr "E-Mail-Benachrichtigungs-Einstellungen"
+
+#: pm_email_notify/pm_email_notify.info:0
+msgid "Privatemsg Email Notification"
+msgstr "Privatemsg-E-Mail-Benachrichtigung"
+
+#: pm_email_notify/pm_email_notify.info:0
+msgid "Notifies users about new Private Messages via Email."
+msgstr "Benachrichtigt Benutzer über neue private Nachrichten via E-Mail"
+
+#: privatemsg_filter/privatemsg_filter.module:78
+msgid "Search message body"
+msgstr "Nachrichtentext durchsuchen"
+
+#: privatemsg_filter/privatemsg_filter.module:79
+msgid "WARNING: turning on this feature will slow down search performance by a large factor. Gets worse as your messages database increases."
+msgstr "WARNUNG: Das Einschalten dieser Funktion beeinträchtigt die Suchleistung erheblich. Das wird bei wachsender Nachrichtendatenbank schlimmer."
+
+#: privatemsg_filter/privatemsg_filter.module:88;288;495;25
+msgid "Tags"
+msgstr "Tags"
+
+#: privatemsg_filter/privatemsg_filter.module:98
+msgid "Current tags:"
+msgstr "Aktuelle Tags:"
+
+#: privatemsg_filter/privatemsg_filter.module:118;133
+msgid "Add tags"
+msgstr "Tags hinzufügen"
+
+#: privatemsg_filter/privatemsg_filter.module:125
+msgid "What tags would you like to add?"
+msgstr "Welche Tags sollen hinzugefügt werden?"
+
+#: privatemsg_filter/privatemsg_filter.module:126
+msgid "Please insert a comma separated list of new tags in the form of \"tag1, tag2, tag3...\". All spaces will be replaced by hyphens."
+msgstr "Es muss eine durch Kommata getrennt liste neuer Tags in der Form „tag1, tag2, tag3, ...“ eingegeben werden. Alle Leerzeichen werden durch Anführungszeichen ersetzt."
+
+#: privatemsg_filter/privatemsg_filter.module:156
+msgid "!count tags have been saved: !tags."
+msgstr "!count Tags wurden gespeichert: !tags."
+
+#: privatemsg_filter/privatemsg_filter.module:167
+msgid "Delete tags"
+msgstr "Tags löschen"
+
+#: privatemsg_filter/privatemsg_filter.module:184
+msgid "Delete selected tags"
+msgstr "Ausgewählte Tags löschen"
+
+#: privatemsg_filter/privatemsg_filter.module:205
+msgid "!count tags have been deleted: !tags."
+msgstr "!count Tags wurden gelöscht: !tags."
+
+#: privatemsg_filter/privatemsg_filter.module:265
+msgid "Filter Messages"
+msgstr "Nachrichten filtern"
+
+#: privatemsg_filter/privatemsg_filter.module:271
+msgid "Search messages"
+msgstr "Nachrichten suchen"
+
+#: privatemsg_filter/privatemsg_filter.module:271
+msgid "Search subjects"
+msgstr "Betreff durchsuchen"
+
+#: privatemsg_filter/privatemsg_filter.module:297;366;32
+msgid "Filter"
+msgstr "Filter"
+
+#: privatemsg_filter/privatemsg_filter.module:305;353
+msgid "Save Filter"
+msgstr "Filter speichern"
+
+#: privatemsg_filter/privatemsg_filter.module:319
+msgid "Filter Messages (Active)"
+msgstr "Nachrichten filtern (aktiv)"
+
+#: privatemsg_filter/privatemsg_filter.module:338;370
+msgid "Reset"
+msgstr "Zurücksetzen"
+
+#: privatemsg_filter/privatemsg_filter.module:523
+msgid "Tag this message"
+msgstr "Liste der Nachrichten"
+
+#: privatemsg_filter/privatemsg_filter.module:543
+msgid "Tagging information has been saved."
+msgstr "Tagging-Informationen wurden gespeichert."
+
+#: privatemsg_filter/privatemsg_filter.module:14
+msgid "use privatemsg_filter"
+msgstr "privatemsg_filter verwenden"
+
+#: privatemsg_filter/privatemsg_filter.module:15
+msgid "create privatemsg_filter"
+msgstr "privatemsg_filter erstellen"
+
+#: privatemsg_filter/privatemsg_filter.module:16
+msgid "delete privatemsg_filter"
+msgstr "privatemsg_filter löschen"
+
+#: privatemsg_filter/privatemsg_filter.module:33
+msgid "Configure filter settings."
+msgstr "Filter-Einstellungen konfigurieren"
+
+#: privatemsg_filter/privatemsg_filter.module:40
+msgid "All messages"
+msgstr "Alle Nachrichten"
+
+#: privatemsg_filter/privatemsg_filter.module:48
+msgid "Inbox"
+msgstr "Posteingang"
+
+#: privatemsg_filter/privatemsg_filter.module:56
+msgid "Sent messages"
+msgstr "Gesendete Nachrichten"
+
+#: privatemsg_filter/privatemsg_filter.info:0
+msgid "Privatemsg filter"
+msgstr "Privatemsg-Filter"
+
+#: privatemsg_filter/privatemsg_filter.info:0
+msgid "Allow users to filter messages using tags or other criteria."
+msgstr "Erlaube Benutzern, Nachrichten mittels Tags oder anderer Kriterien zu filtern"
+
+#~ msgid "Users"
+#~ msgstr "Benutzer"
+
