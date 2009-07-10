@@ -77,9 +77,6 @@ function theme_privatemsg_list_field($thread) {
  * @see theme_privatemsg_list_field()
  */
 function phptemplate_privatemsg_list_field__participants($thread) {
-  if (empty($thread['participants'])) {
-    return;
-  }
   $participants = _privatemsg_generate_user_array($thread['participants'], -4);
   $field = array();
   $field['data'] = _privatemsg_format_participants($participants, 3, TRUE);

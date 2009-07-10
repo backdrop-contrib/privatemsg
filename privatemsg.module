@@ -1709,6 +1709,28 @@ function _privatemsg_list_headers($has_posts, $keys) {
       $header[$key] = $return;
     }
   }
+  if (count($header) == 1) {
+    // No header definition returned, fallback to the default.
+    $header += _privatemsg_list_headers_fallback($keys);
+  }
+  return $header;
+}
+
+/**
+ * Table header definition for themes that don't support theme patterns.
+ * 
+ * @return
+ *   Array with the correct headers.
+ */
+function _privatemsg_list_headers_fallback($keys) {
+  $header = array();
+  foreach ($keys as $key) {
+    $theme_function = 'phptemplate_privatemsg_list_header__' .$key;
+    if (function_exists($theme_function)) {
+      $header[$key] = $theme_function();
+    }
+  }
+  
   return $header;
 }
 
@@ -1736,7 +1758,28 @@ function _privatemsg_list_thread($thread) {
       $row['data'][$key] = $return;
     }
   }
+  if (empty($row['data'])) {
+    $row['data'] = _privatemsg_list_thread_fallback($thread);
+  }
   return $row;
+}
+
+/**
+ * Table row definition for themes that don't support theme patterns.
+ *
+ * @return
+ *   Array with row data.
+ */
+function _privatemsg_list_thread_fallback($thread) {
+  $row_data = array();
+  foreach ($thread as $key => $data) {
+    $theme_function = 'phptemplate_privatemsg_list_field__' .$key;
+    if (function_exists($theme_function)) {
+      $row_data[$key] = $theme_function($thread);
+    }
+  }
+  
+  return $row_data;
 }
 
 /**
