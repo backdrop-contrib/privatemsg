@@ -815,13 +815,21 @@ function _privatemsg_parse_userstring($string) {
   return array($users, $invalid);
 }
 
+/**
+ * Submit callback for the privatemsg_new form.
+ */
 function pm_send($form, &$form_state) {
-  if (_privatemsg_send($form_state['validate_built_message'])) {    // Load usernames to which the message was sent to
-    $recipient_names = array();
-    foreach ($form_state['validate_built_message']['recipients'] as $recipient) {
-      $recipient_names[] = theme('username', $recipient);
-    }
+  $status = _privatemsg_send($form_state['validate_built_message']);
+  // Load usernames to which the message was sent to.
+  $recipient_names = array();
+  foreach ($form_state['validate_built_message']['recipients'] as $recipient) {
+    $recipient_names[] = theme('username', $recipient);
+  }
+  if ($status !== FALSE )  {
     drupal_set_message(t('A message has been sent to !recipients.', array('!recipients' => implode(', ', $recipient_names))));
+  }
+  else {
+    drupal_set_message(t('A an attempt to send message <em>may have failed</em> when sending to !recipients.', array('!recipients' => implode(', ', $recipient_names))), 'error');
   }
 }
 
@@ -1157,6 +1165,7 @@ function privatemsg_delete_submit($form, &$form_state) {
   }
   $form_state['redirect'] = 'messages';
 }
+
 /**
  * Send a new message.
  *
@@ -1178,7 +1187,21 @@ function privatemsg_delete_submit($form, &$form_state) {
  *     timestamp => Time when the message was sent
  *
  * @return
- *   Either true or an array with validation errors
+ *   An array with a key success. If TRUE, it also contains a key 'message' with
+ *   the created $message array, the same that is passed to the insert hook.
+ *   If FALSE, it contains a key 'messages'. This key contains an array where
+ *   the key is the error type (error, warning, notice) and an array with
+ *   messages of that type.
+ *
+ *   It is theoretically possible for success to be TRUE and message to be FALSE.
+ *   For example if one of the privatemsg database tables become corrupted. When testing
+ *   for success of message being sent it is always best to see if ['message'] is not FALSE
+ *   as well as ['success'] is TRUE.
+ *
+ *   Example:
+ *   @code
+ *   array('error' => array('A error message'))
+ *   @endcode
  *
  * @ingroup api
  */
@@ -1203,7 +1226,7 @@ function privatemsg_new_thread($recipients, $subject, $body = NULL, $options = a
 
   $validated = _privatemsg_validate_message($message);
   if ($validated['success']) {
-    $validated['success'] = _privatemsg_send($message);
+    $validated['message'] = _privatemsg_send($message);
   }
 
   return $validated;
@@ -1223,7 +1246,21 @@ function privatemsg_new_thread($recipients, $subject, $body = NULL, $options = a
  *     timestamp => Time when the message was sent
  *
  * @return
- *   Either true or an array with validation errors
+ *   An array with a key success and messages. This key contains an array where
+ *   the key is the error type (error, warning, notice) and an array with
+ *   messages of that type.. If success is TRUE, it also contains a key $message
+ *   with the created $message array, the same that is passed to
+ *   hook_privatemsg_message_insert().
+ *
+ *   It is theoretically possible for success to be TRUE and message to be FALSE.
+ *   For example if one of the privatemsg database tables become corrupted. When testing
+ *   for success of message being sent it is always best to see if ['message'] is not FALSE
+ *   as well as ['success'] is TRUE.
+ *
+ *   Example messages values:
+ *   @code
+ *   array('error' => array('A error message'))
+ *   @endcode
  *
  * @ingroup api
  */
@@ -1264,7 +1301,7 @@ function privatemsg_reply($thread_id, $body = NULL, $options = array()) {
 
   $validated = _privatemsg_validate_message($message);
   if ($validated['success']) {
-    $validated['success'] = _privatemsg_send($message);
+    $validated['message'] = _privatemsg_send($message);
   }
   return $validated;
 }
@@ -1329,13 +1366,25 @@ function _privatemsg_validate_message(&$message, $form = FALSE) {
   }
 
   $messages += module_invoke_all('privatemsg_message_validate', $message, $form);
-  $success = empty($messages['error']);
+  // Check if there are errors in $messages or if $form is TRUE, there are form errors.
+  $success = empty($messages['error']) || ($form && count((array)form_get_errors()) > 0);
   return array(
     'success'  => $success,
     'messages'   => $messages,
   );
 }
 
+/**
+ * Internal function to save a message.
+ *
+ * @param $message
+ *   A $message array with the data that should be saved. If a thread_id exists
+ *   it will be created as a reply to an existing thread. If not, a new thread
+ *   will be created.
+ *
+ * @return
+ *   The updated $message array.
+ */
 function _privatemsg_send($message) {
 
   drupal_alter('privatemsg_message_presave', $message);
@@ -1358,22 +1407,24 @@ function _privatemsg_send($message) {
 
   // 2) Save message to recipients.
   // Each recipient gets a record in the pm_index table.
-
   $query = "INSERT INTO {pm_index} (mid, thread_id, uid, is_new, deleted) VALUES (%d, %d, %d, %d, 0)";
   foreach ($message['recipients'] as $recipient) {
-
-    db_query($query, $mid, $message['thread_id'], $recipient->uid, 1);
+    if ( !db_query($query, $mid, $message['thread_id'], $recipient->uid, 1) ) {
+      return FALSE;  // We assume if one insert failed then the rest may fail too against the same table
+    }
   }
 
   // When author is also the recipient, we want to set message to UNREAD. all other times his message is set to READ.
   $is_new = isset($message['recipients'][$message['author']->uid]) ? 1 : 0;
 
   // Also add a record for the author to the pm_index table.
-  db_query($query, $mid, $message['thread_id'], $message['author']->uid, $is_new);
+  if ( !db_query($query, $mid, $message['thread_id'], $message['author']->uid, $is_new)) {
+    return FALSE; // same as above
+  }
 
   module_invoke_all('privatemsg_message_insert', $message);
 
-  return TRUE;
+  return $message;  // if we reached here that means we were successful at writing all messages to db
 }
 
 /**
@@ -1718,7 +1769,7 @@ function _privatemsg_list_headers($has_posts, $keys) {
 
 /**
  * Table header definition for themes that don't support theme patterns.
- * 
+ *
  * @return
  *   Array with the correct headers.
  */
@@ -1730,7 +1781,7 @@ function _privatemsg_list_headers_fallback($keys) {
       $header[$key] = $theme_function();
     }
   }
-  
+
   return $header;
 }
 
@@ -1778,7 +1829,7 @@ function _privatemsg_list_thread_fallback($thread) {
       $row_data[$key] = $theme_function($thread);
     }
   }
-  
+
   return $row_data;
 }
 
