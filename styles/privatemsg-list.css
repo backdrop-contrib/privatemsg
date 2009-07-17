@@ -1,3 +1,11 @@
 .privatemsg-unread .privatemsg-list-subject {
   font-weight: bold;
 }
+
+.privatemsg-unread .privatemsg-list-subject .marker {
+  font-weight: lighter;
+}
+
+.privatemsg-list-count {
+  text-align: center;
+}

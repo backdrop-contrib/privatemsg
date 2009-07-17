@@ -355,7 +355,7 @@ function private_message_settings() {
     '#options' => array(
       'participants'    => t('Participants'),
       'thread_started'  => t('Started'),
-      'count'           => t('Answers'),
+      'count'           => t('Messages'),
     ),
     '#default_value' => variable_get('privatemsg_display_fields', array('participants')),
   );
@@ -426,13 +426,22 @@ function privatemsg_preprocess_privatemsg_view(&$vars) {
   $vars['message_timestamp'] = format_date($message['timestamp'], 'small');
   $vars['message_body'] = check_markup($message['body']);
   if (isset($vars['mid'])) {
-    $vars['message_actions'][] = array('title' => t('Delete message'), 'href' => 'messages/delete/'. $vars['mid']);
+    $vars['message_actions'][] = array('title' => t('Delete message'), 'href' => 'messages/delete/' . $vars['mid']);
+  }
+  $vars['message_anchors'][] = 'privatemsg-mid-' . $vars['mid'];
+  if (!empty($message['is_new'])) {
+    $vars['message_anchors'][] = 'new';
   }
 
   // call hook_privatemsg_message_view_alter
   drupal_alter('privatemsg_message_view', $vars);
 
   $vars['message_actions'] = !empty($vars['message_actions']) ? theme('links', $vars['message_actions'], array('class' => 'message-actions')) : '';
+  
+  $vars['anchors'] = '';
+  foreach ($vars['message_anchors'] as $anchor) {
+    $vars['anchors'].= '<a name="' . $anchor . '"></a>';
+  }
 }
 
 function privatemsg_preprocess_privatemsg_to(&$vars) {
@@ -853,7 +862,7 @@ function privatemsg_sql_list(&$fragments, $account, $argument = 'list') {
   $fragments['select'][]      = 'pmi.thread_id';
   $fragments['select'][]      = 'MIN(pm.subject) as subject';
   $fragments['select'][]      = 'MAX(pm.timestamp) as last_updated';
-  $fragments['select'][]      = 'MAX(pmi.is_new) as is_new';
+  $fragments['select'][]      = 'SUM(pmi.is_new) as is_new';
 
   if (in_array('count', $fields)) {
     $fragments['select'][]      = 'COUNT(distinct pmi.mid) as count'; // We only want the distinct number of messages in this thread.

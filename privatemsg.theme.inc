@@ -91,7 +91,13 @@ function phptemplate_privatemsg_list_field__participants($thread) {
  */
 function phptemplate_privatemsg_list_field__subject($thread) {
   $field = array();
-  $field['data'] =l($thread['subject'], 'messages/view/'. $thread['thread_id']);
+  $options = array();
+  $is_new = '';
+  if (!empty($thread['is_new'])) {
+    $is_new = theme_mark(MARK_NEW);
+    $options['fragment'] = 'new';
+  }
+  $field['data'] = l($thread['subject'], 'messages/view/' . $thread['thread_id'], $options) . $is_new;
   $field['class'] = 'privatemsg-list-subject';
   return $field;
 }
@@ -103,7 +109,12 @@ function phptemplate_privatemsg_list_field__subject($thread) {
  */
 function phptemplate_privatemsg_list_field__count($thread) {
   $field = array();
-  $field['data'] =$thread['count'] -1;
+  $field['data'] = $thread['count'];
+  $options = array();
+  if (!empty($thread['is_new']) && $thread['is_new'] < $thread['count']) {
+    $options['fragment'] = 'new';
+    $field['data'] .= '<br />' . l((format_plural($thread['is_new'], '(1 new)', '(@count new)')),'messages/view/' . $thread['thread_id'], $options);
+  }
   $field['class'] = 'privatemsg-list-count';
   return $field;
 }
@@ -169,7 +180,7 @@ function phptemplate_privatemsg_list_header__subject() {
  */
 function phptemplate_privatemsg_list_header__count() {
   return array(
-    'data'    => t('Answers'),
+    'data'    => t('Messages'),
     'key'     => 'count',
     'class'   => 'privatemsg-header-count',
     '#weight' => -25,
