@@ -712,15 +712,17 @@ function privatemsg_new(&$form_state, $recipients = array(), $subject = '', $thr
     '#weight'             => 15,
   );
   $url = 'messages';
+  $title = t('Cancel');
   if (isset($_REQUEST['destination'])) {
     $url = $_REQUEST['destination'];
   }
   elseif (!is_null($thread_id)) {
     $url = $_GET['q'];
+    $title = t('Clear');
   }
 
   $form['privatemsg']['cancel'] = array(
-    '#value'              => l(t('Cancel'), $url, array('attributes' => array('id' => 'edit-cancel'))),
+    '#value'              => l($title, $url, array('attributes' => array('id' => 'edit-cancel'))),
     '#weight'             => 20,
   );
   $form['#validate'][]    = 'pm_send_validate';
