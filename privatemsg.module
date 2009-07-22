@@ -378,7 +378,7 @@ function privatemsg_theme() {
       'arguments'        => array('author' => NULL),
       'template'         => 'privatemsg-from',
     ),
-    'privatemsg_to'      => array(
+    'privatemsg_recipients' => array(
       'arguments'        => array('message' => NULL),
       'template'         => 'privatemsg-recipients',
     ),
@@ -444,7 +444,7 @@ function privatemsg_preprocess_privatemsg_view(&$vars) {
   }
 }
 
-function privatemsg_preprocess_privatemsg_to(&$vars) {
+function privatemsg_preprocess_privatemsg_recipients(&$vars) {
   $vars['participants'] = ''; // assign a default empty value
   if (isset($vars['message']['participants'])) {
     $vars['participants'] = _privatemsg_format_participants($vars['message']['participants']);
@@ -571,7 +571,7 @@ function privatemsg_view($thread) {
   drupal_set_title(check_plain($thread['subject']));
 
   // Render the participants.
-  $content['participants']['#value'] = theme('privatemsg_to', $thread);
+  $content['participants']['#value'] = theme('privatemsg_recipients', $thread);
   $content['participants']['#weight'] = -5;
 
   // Render the messages.
