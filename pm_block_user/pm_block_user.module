@@ -118,7 +118,7 @@ function pm_block_user_settings(&$form_state) {
 
 /**
  * Builds row of sending, receiving roles and actions that go with them.
- * 
+ *
  * @param $details
  *   Details of the row: default values and the unique row number (delta).
  * @param $blacklist
@@ -565,10 +565,10 @@ function pm_block_user_privatemsg_message_view_alter(&$vars) {
 
   if ($user->uid <> $author->uid) {
     if ($vars['message']['is_blocked']) {
-      $vars['message_actions'][] = array('title' => t('Unblock author'), 'href' => 'messages/block/'. $author->uid, array('query' => 'destination=messages/view/' . $thread_id));
+      $vars['message_actions'][] = array('title' => t('Unblock author'), 'href' => 'messages/block/'. $author->uid, 'query' => 'destination=messages/view/' . $thread_id);
     }
     else {
-      $vars['message_actions'][] = array('title' => t('Block author'), 'href' => 'messages/block/'. $author->uid, array('query' => 'destination=messages/view/' . $thread_id));
+      $vars['message_actions'][] = array('title' => t('Block author'), 'href' => 'messages/block/'. $author->uid, 'query' => 'destination=messages/view/' . $thread_id);
     }
   }
 }
