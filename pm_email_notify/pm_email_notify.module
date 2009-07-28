@@ -6,22 +6,14 @@
  * Notifies users about new Private Messages via Email.
  */
 
-define('PM_EMAIL_NOTIFY_DISABLE', 0);
-define('PM_EMAIL_NOTIFY_ENABLE', 1);
+define('PM_EMAIL_NOTIFY_DISABLED', 0);
+define('PM_EMAIL_NOTIFY_ENABLED', 1);
 
 
 /**
  * Implementation of hook_menu().
  */
 function pm_email_notify_menu() {
-  $items['messages/notify'] = array(
-    'title'            => 'E-mail notify',
-    'page callback'    => 'drupal_get_form',
-    'page arguments'   => array('pm_email_notify_user_settings_form'),
-    'access arguments' => array('read privatemsg'),
-    'type'             => MENU_LOCAL_TASK,
-    'weight'           => 10,
-  );
   $items['admin/settings/messages/notify'] = array(
     'title'            => 'E-mail notify',
     'description'      => 'E-mail notification settings',
@@ -32,36 +24,6 @@ function pm_email_notify_menu() {
     'weight'           => 10,
   );
   return $items;
-}
-
-/**
- * This function displays preference form on PM Email Notifications page.
- */
-function pm_email_notify_user_settings_form($form_state) {
-  global $user;
-
-  drupal_set_title(t('Privatemsg e-mail notifications'));
-
-  $form['enable_pm_mail'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Privatemsg e-mail notification'),
-    '#collapsible' => TRUE,
-    '#collapsed' => FALSE,
-  );
-  $form['enable_pm_mail']['enable'] = array(
-    '#type' => 'radios',
-    '#title' => t('Receive email notification for incoming private messages?'),
-    '#options' => array(
-      PM_EMAIL_NOTIFY_DISABLE => t('No'),
-      PM_EMAIL_NOTIFY_ENABLE => t('Yes'),
-    ),
-    '#default_value' => _pm_email_notify_is_enabled($user->uid),
-  );
-  $form['enable_pm_mail']['submit'] = array(
-    '#type'     => 'submit',
-    '#value'    => t('Save'),
-  );
-  return $form;
 }
 
 /**
@@ -78,10 +40,10 @@ function pm_email_notify_admin_settings_form() {
     '#type' => 'radios',
     '#title' => t('Default e-mail notification setting'),
     '#options' => array(
-      PM_EMAIL_NOTIFY_DISABLE => t('Disabled'),
-      PM_EMAIL_NOTIFY_ENABLE => t('Enabled'),
+      PM_EMAIL_NOTIFY_DISABLED => t('Disabled'),
+      PM_EMAIL_NOTIFY_ENABLED => t('Enabled'),
     ),
-    '#default_value' => variable_get('pm_email_notify_default', PM_EMAIL_NOTIFY_ENABLE),
+    '#default_value' => variable_get('pm_email_notify_default', PM_EMAIL_NOTIFY_ENABLED),
     '#weight' => 0,
   );
 
@@ -110,22 +72,6 @@ function pm_email_notify_admin_settings_form() {
 }
 
 /**
- * Save user notification setting.
- */
-function pm_email_notify_user_settings_form_submit($form, &$form_state) {
-  global $user;
-  $pm_email_enabled = $form_state['values']['enable'];
-  // update database entry with user preference:
-  db_query("UPDATE {pm_email_notify} SET email_notify_is_enabled = %d WHERE user_id = %d", $pm_email_enabled, $user->uid);
-  if (!db_affected_rows()) {
-    // Update will fail if record didnt exist, create a new entry with user preference in the database:
-    db_query("INSERT INTO {pm_email_notify} (email_notify_is_enabled, user_id) VALUES (%d, %d)", $pm_email_enabled, $user->uid);
-  }
-  drupal_set_message(t('Your email notification settings have been updated.'));
-}
-
-
-/**
  * Retrieve notification setting of a user.
  *
  * This function retrieves user's pm notification preference from database,
@@ -140,7 +86,7 @@ function _pm_email_notify_is_enabled($uid) {
   if ( !isset($notifications[$uid]) ) {
     $mail_notification = db_result(db_query('SELECT email_notify_is_enabled FROM {pm_email_notify} WHERE user_id = %d', $uid));
     if ($mail_notification === FALSE) { //db_result returns FALSE if result was not found.
-      $mail_notification = variable_get('pm_email_notify_default', PM_EMAIL_NOTIFY_ENABLE);
+      $mail_notification = variable_get('pm_email_notify_default', PM_EMAIL_NOTIFY_ENABLED);
     }
     $notifications[$uid] = (int)$mail_notification; //do we really need this cast?
   }
@@ -204,4 +150,47 @@ function _pm_email_notify_token($message) {
  */
 function _pm_email_notify_default_body() {
   return "Hi !username,\n\nThis is an automatic reminder from the site !site. You have received a new private message from !author.\n\nTo read your message, follow this link:\n!uri/messages\n\nIf you don't want to receive these emails again, change your preferences here:\n!uri/messages/notify";
+}
+
+/**
+ * Implement hook_user().
+ *
+ * Display settings form and store its information.
+ */
+function pm_email_notify_user($op, &$edit, &$account, $category = NULL) {
+  if ($category == 'account') {
+    switch ($op) {
+      case 'form':
+        $form['enable_pm_mail'] = array(
+          '#type' => 'fieldset',
+          '#title' => t('Privatemsg e-mail notification'),
+          '#collapsible' => TRUE,
+          '#collapsed' => FALSE,
+          '#weight' => 10,
+        );
+        $form['enable_pm_mail']['pm_send_notifications'] = array(
+          '#type' => 'radios',
+          '#title' => t('Receive email notification for incoming private messages'),
+          '#options' => array(
+            PM_EMAIL_NOTIFY_DISABLED => t('No'),
+            PM_EMAIL_NOTIFY_ENABLED => t('Yes'),
+          ),
+          '#default_value' => _pm_email_notify_is_enabled($account->uid),
+        );
+        return $form;
+
+      case 'submit':
+        $pm_email_enabled = $edit['pm_send_notifications'];
+        unset($edit['pm_send_notifications']);
+        // Update database entry with user preference.
+        db_query("UPDATE {pm_email_notify} SET email_notify_is_enabled = %d WHERE user_id = %d", $pm_email_enabled, $account->uid);
+        if (!db_affected_rows()) {
+          // Update will fail if record didnt exist, create a new entry with
+          // user preference in the database.
+          db_query("INSERT INTO {pm_email_notify} (email_notify_is_enabled, user_id) VALUES (%d, %d)", $pm_email_enabled, $account->uid);
+        }
+        break;
+
+    }
+  }
 }
