@@ -282,8 +282,8 @@ function privatemsg_thread_load($thread_id, $account = NULL) {
     // Load the list of participants.
     $query = _privatemsg_assemble_query('participants', $thread_id);
     $participants = db_query($query['query']);
-    while ($result = db_fetch_array($participants)) {
-      $thread['participants'][$result['uid']] = user_load($result['uid']);
+    while ($participant = db_fetch_object($participants)) {
+      $thread['participants'][$participant->uid] = $participant;
     }
     return $thread;
   }
@@ -949,10 +949,21 @@ function privatemsg_sql_messages(&$fragments, $threads, $account, $load_all = FA
   $fragments['order_by'][]    = 'pmi.mid ASC';
 }
 
+/**
+ * Load all participants of a thread.
+ *
+ * @param $fragments
+ *   Query fragments array.
+ * @param $thread_id
+ *   Thread id from which the participants should be loaded.
+ */
 function privatemsg_sql_participants(&$fragments, $thread_id) {
   $fragments['primary_table'] = '{pm_index} pmi';
 
-  $fragments['select'][]      = 'DISTINCT(pmi.uid) as uid';
+  $fragments['select'][]      = 'DISTINCT(pmi.uid) AS uid';
+  $fragments['select'][]      = 'u.name AS name';
+
+  $fragments['inner_join'][]  = 'INNER JOIN {users} u ON (u.uid = pmi.uid)';
   $fragments['where'][]       = 'pmi.thread_id = %d';
   $fragments['query_args']['where'][]  = $thread_id;
 }
