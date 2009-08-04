@@ -6,10 +6,6 @@
  * Notifies users about new Private Messages via Email.
  */
 
-define('PM_EMAIL_NOTIFY_DISABLED', 0);
-define('PM_EMAIL_NOTIFY_ENABLED', 1);
-
-
 /**
  * Implementation of hook_menu().
  */
@@ -37,13 +33,9 @@ function pm_email_notify_admin_settings_form() {
     '#collapsed' => FALSE,
   );
   $form['pm_email']['pm_email_notify_default'] = array(
-    '#type' => 'radios',
-    '#title' => t('Default e-mail notification setting'),
-    '#options' => array(
-      PM_EMAIL_NOTIFY_DISABLED => t('Disabled'),
-      PM_EMAIL_NOTIFY_ENABLED => t('Enabled'),
-    ),
-    '#default_value' => variable_get('pm_email_notify_default', PM_EMAIL_NOTIFY_ENABLED),
+    '#type' => 'checkbox',
+    '#title' => t('Notify users of new private messages by default'),
+    '#default_value' => variable_get('pm_email_notify_default', TRUE),
     '#weight' => 0,
   );
 
@@ -86,9 +78,9 @@ function _pm_email_notify_is_enabled($uid) {
   if ( !isset($notifications[$uid]) ) {
     $mail_notification = db_result(db_query('SELECT email_notify_is_enabled FROM {pm_email_notify} WHERE user_id = %d', $uid));
     if ($mail_notification === FALSE) { //db_result returns FALSE if result was not found.
-      $mail_notification = variable_get('pm_email_notify_default', PM_EMAIL_NOTIFY_ENABLED);
+      $mail_notification = variable_get('pm_email_notify_default', TRUE);
     }
-    $notifications[$uid] = (int)$mail_notification; //do we really need this cast?
+    $notifications[$uid] = $mail_notification;
   }
   return $notifications[$uid];
 }
@@ -169,12 +161,8 @@ function pm_email_notify_user($op, &$edit, &$account, $category = NULL) {
           '#weight' => 10,
         );
         $form['enable_pm_mail']['pm_send_notifications'] = array(
-          '#type' => 'radios',
+          '#type' => 'checkbox',
           '#title' => t('Receive email notification for incoming private messages'),
-          '#options' => array(
-            PM_EMAIL_NOTIFY_DISABLED => t('No'),
-            PM_EMAIL_NOTIFY_ENABLED => t('Yes'),
-          ),
           '#default_value' => _pm_email_notify_is_enabled($account->uid),
         );
         return $form;
