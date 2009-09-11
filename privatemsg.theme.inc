@@ -80,7 +80,7 @@ function phptemplate_privatemsg_list_field__participants($thread) {
   $participants = _privatemsg_generate_user_array($thread['participants'], -4);
   $field = array();
   $field['data'] = _privatemsg_format_participants($participants, 3, TRUE);
-  $field['class'] = 'privatemsg-list-participants';
+  $field['class'][] = 'privatemsg-list-participants';
   return $field;
 }
 
@@ -98,7 +98,7 @@ function phptemplate_privatemsg_list_field__subject($thread) {
     $options['fragment'] = 'new';
   }
   $field['data'] = l($thread['subject'], 'messages/view/' . $thread['thread_id'], $options) . $is_new;
-  $field['class'] = 'privatemsg-list-subject';
+  $field['class'][] = 'privatemsg-list-subject';
   return $field;
 }
 
@@ -115,7 +115,7 @@ function phptemplate_privatemsg_list_field__count($thread) {
     $options['fragment'] = 'new';
     $field['data'] .= '<br />' . l((format_plural($thread['is_new'], '(1 new)', '(@count new)')),'messages/view/' . $thread['thread_id'], $options);
   }
-  $field['class'] = 'privatemsg-list-count';
+  $field['class'][] = 'privatemsg-list-count';
   return $field;
 }
 
@@ -127,7 +127,7 @@ function phptemplate_privatemsg_list_field__count($thread) {
 function phptemplate_privatemsg_list_field__last_updated($thread) {
   $field = array();
   $field['data'] = format_date($thread['last_updated'], 'small');
-  $field['class'] = 'privatemsg-list-date';
+  $field['class'][] = 'privatemsg-list-date';
   return $field;
 }
 
@@ -139,7 +139,7 @@ function phptemplate_privatemsg_list_field__last_updated($thread) {
 function phptemplate_privatemsg_list_field__thread_started($thread) {
   $field = array();
   $field['data'] = format_date($thread['thread_started'], 'small');
-  $field['class'] = 'privatemsg-list-date-started';
+  $field['class'][] = 'privatemsg-list-date-started';
   return $field;
 }
 
@@ -168,7 +168,7 @@ function phptemplate_privatemsg_list_header__subject() {
     'data'    => t('Subject'),
     'field'   => 'subject',
     'key'     => 'subject',
-    'class'   => 'privatemsg-header-subject',
+    'class'   => array('privatemsg-header-subject'),
     '#weight' => -40,
   );
 }
@@ -182,7 +182,7 @@ function phptemplate_privatemsg_list_header__count() {
   return array(
     'data'    => t('Messages'),
     'key'     => 'count',
-    'class'   => 'privatemsg-header-count',
+    'class'   => array('privatemsg-header-count'),
     '#weight' => -25,
   );
 }
@@ -196,7 +196,7 @@ function phptemplate_privatemsg_list_header__participants() {
   return array(
     'data'    => t('Participants'),
     'key'     => 'participants',
-    'class'   => 'privatemsg-header-participants',
+    'class'   => array('privatemsg-header-participants'),
     '#weight' => -30,
   );
 }
@@ -212,7 +212,7 @@ function phptemplate_privatemsg_list_header__last_updated() {
     'field'   => 'last_updated',
     'key'     => 'last_updated',
     'sort'    => 'desc',
-    'class'   => 'privatemsg-header-lastupdated',
+    'class'   => array('privatemsg-header-lastupdated'),
     '#weight' => -20,
   );
 }
@@ -227,7 +227,7 @@ function phptemplate_privatemsg_list_header__thread_started() {
     'data'    => t('Started'),
     'field'   => 'thread_started',
     'key'     => 'thread_started',
-    'class'   => 'privatemsg-header-threadstarted',
+    'class'   => array('privatemsg-header-threadstarted'),
     '#weight' => -15,
   );
 }
@@ -284,8 +284,8 @@ function theme_privatemsg_list($form) {
   }
 
   // Theme the table, pass all generated information to the table theme function.
-  $form['list'] = array('#value' => theme('table', $headers, $themed_rows, array('class' => 'privatemsg-list')), '#weight' => 5);
-  return drupal_render($form);
+  $form['list'] = array('#markup' => theme('table', $headers, $themed_rows, array('class' => array('privatemsg-list'))), '#weight' => 5);
+  return drupal_render_children($form);
 }
 
 /**

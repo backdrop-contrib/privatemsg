@@ -67,8 +67,7 @@ class PrivatemsgAPITestCase extends DrupalWebTestCase {
   }
 
   function getMessageFromSubject($subject) {
-    $result = db_query("SELECT * FROM {pm_message} WHERE subject = '%s'", $subject);
-    return db_fetch_array($result);
+    return db_query("SELECT * FROM {pm_message} WHERE subject = :subject", array(':subject' => $subject))->fetchAssoc();
   }
 
   function testPrivatemsgApiReply() {

@@ -1,3 +1,7 @@
-Drupal.behaviors.hideButtons = function (context) {
- $("input.privatemsg-action-button").hide();
-};
+(function ($) {
+  Drupal.behaviors.hideButtons = {
+    attach: function (context) {
+      $("input.privatemsg-action-button").hide();
+    }
+  }
+})(jQuery);
