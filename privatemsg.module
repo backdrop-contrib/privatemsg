@@ -262,6 +262,7 @@ function privatemsg_view_access() {
  * @ingroup api
  */
 function privatemsg_thread_load($thread_id, $account = NULL) {
+  $threads = &drupal_static(__FUNCTION__, array());
   if ((int)$thread_id > 0) {
     $thread = array('thread_id' => $thread_id);
 
@@ -269,29 +270,38 @@ function privatemsg_thread_load($thread_id, $account = NULL) {
       global $user;
       $account = clone $user;
     }
-    // load messages returned by the messages query with _privatemsg_load().
-    $query = _privatemsg_assemble_query('messages', array($thread_id), $account);
-    foreach ($query->execute() as $row) {
-      if ($message = _privatemsg_load($row->mid, $account)) {
-        $thread['messages'][$row->mid] = $message;
+
+    if (!isset($threads[$account->uid])) {
+      $threads[$account->uid] = array();
+    }
+    
+    if (!array_key_exists($thread_id, $threads[$account->uid])) {
+      // load messages returned by the messages query with _privatemsg_load().
+      $query = _privatemsg_assemble_query('messages', array($thread_id), $account);
+      foreach ($query->execute()->fetchCol() as $mid) {
+        if ($message = _privatemsg_load($mid, $account)) {
+          $thread['messages'][$mid] = $message;
+        }
       }
-    }
-    // if there are no messages, don't allow access to the thread.
-    if (empty($thread['messages'])) {
-      return FALSE;
-    }
+      // if there are no messages, don't allow access to the thread.
+      if (empty($thread['messages'])) {
+        $thread = FALSE;
+      }
+      else {
+        // general data, assume subject is the same for all messages of that thread.
+        $thread['user'] = $account;
+        $message = current($thread['messages']);
+        $thread['subject'] = $message['subject'];
 
-    // general data, assume subject is the same for all messages of that thread.
-    $thread['user'] = $account;
-    $message = current($thread['messages']);
-    $thread['subject'] = $message['subject'];
-
-    // Load the list of participants.
-    $query = _privatemsg_assemble_query('participants', $thread_id);
-    foreach ($query->execute() as $participant) {
-      $thread['participants'][$participant->uid] = $participant;
+        // Load the list of participants.
+        $query = _privatemsg_assemble_query('participants', $thread_id);
+        foreach ($query->execute() as $participant) {
+          $thread['participants'][$participant->uid] = $participant;
+        }
+      }
+      $threads[$account->uid][$thread_id] = $thread;
     }
-    return $thread;
+    return $threads[$account->uid][$thread_id];
   }
   return FALSE;
 }
