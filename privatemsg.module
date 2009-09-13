@@ -120,7 +120,7 @@ function privatemsg_menu() {
     'page arguments'   => array('privatemsg_list', 'list'),
     'access callback'  => 'privatemsg_user_access',
     'type'             => MENU_NORMAL_ITEM,
-    'menu'             => 'user-menu',
+    'menu_name'        => 'user-menu',
   );
   $items['messages/list'] = array(
     'title'            => 'Messages',
@@ -129,7 +129,7 @@ function privatemsg_menu() {
     'access callback'  => 'privatemsg_user_access',
     'type'             => MENU_DEFAULT_LOCAL_TASK,
     'weight'           => -10,
-    'menu'             => 'user-menu',
+    'menu_name'        => 'user-menu',
   );
   $items['messages/view/%privatemsg_thread'] = array(
     'title'            => 'Read message',
@@ -138,7 +138,7 @@ function privatemsg_menu() {
     'access callback'  => 'privatemsg_view_access',
     'type'             => MENU_LOCAL_TASK,
     'weight'           => -10,
-    'menu'             => 'user-menu',
+    'menu_name'        => 'user-menu',
   );
   $items['messages/delete/%'] = array(
     'title'            => 'Delete message',
@@ -147,7 +147,7 @@ function privatemsg_menu() {
     'access callback'  => 'privatemsg_user_access',
     'type'             => MENU_CALLBACK,
     'weight'           => -10,
-    'menu'             => 'user-menu',
+    'menu_name'        => 'user-menu',
   );
   $items['messages/new'] = array(
     'title'            => 'Write new message',
@@ -157,7 +157,7 @@ function privatemsg_menu() {
     'access arguments' => array('write privatemsg'),
     'type'             => MENU_LOCAL_TASK,
     'weight'           => -7,
-    'menu'             => 'user-menu',
+    'menu_name'        => 'user-menu',
   );
   // Auto-completes available user names & removes duplicates.
   $items['messages/user-name-autocomplete'] = array(
@@ -989,7 +989,7 @@ function privatemsg_sql_unread_count($account) {
 function privatemsg_sql_autocomplete($search, $names) {
   $query = db_select('users', 'u')
     ->fields('u', array('name'))
-    ->condition('u.name', $search, 'LIKE')
+    ->condition('u.name', $search . '%', 'LIKE')
     ->condition('u.status', 0, '<>')
     ->orderBy('u.name', 'ASC')
     ->range(0, 10);
@@ -1591,6 +1591,11 @@ function _privatemsg_assemble_query($query) {
   $query = call_user_func_array($query_function, $args);
   // Add a tag to make it alterable.
   $query->addTag($query_group . '_' . $query_id);
+
+  // Add arguments as metadata.
+  foreach ($args as $id => $arg) {
+    $query->addMetaData('arg_' . $id, $arg);
+  }
 
   return $query;
 }

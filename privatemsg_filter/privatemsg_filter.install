@@ -6,7 +6,9 @@
  * install file for privatemsg_filter
  */
 
-
+/**
+ * Implements hook_schema().
+ */
 function privatemsg_filter_schema() {
   $schema = array();
 
@@ -59,20 +61,11 @@ function privatemsg_filter_schema() {
 
   return $schema;
 }
-function privatemsg_filter_install() {
-  drupal_install_schema('privatemsg_filter');
 
-}
-
+/**
+ * Implements hook_uninstall().
+ */
 function privatemsg_filter_uninstall() {
   variable_del('privatemsg_filter_searchbody');
   variable_del('privatemsg_filter_tagfield_weight');
-  drupal_uninstall_schema('privatemsg_filter');
-}
-
-function privatemsg_filter_update_6001() {
-  $ret = array();
-  $ret[] = update_sql("UPDATE {permission} SET perm = REPLACE(perm, 'use privatemsg_filter', 'filter private messages') WHERE perm LIKE '%use privatemsg_filter%'");
-  $ret[] = update_sql("UPDATE {permission} SET perm = REPLACE(perm, 'create privatemsg_filter', 'create private message tags') WHERE perm LIKE '%create privatemsg_filter%'");
-  return $ret;
 }
