@@ -2,5 +2,6 @@
 name = Block user messages
 description = Allows users to block other users from sending them messages.
 package = Mail
-core = 6.x
+core = 7.x
 dependencies[] = privatemsg
+files[]=pm_block_user.module

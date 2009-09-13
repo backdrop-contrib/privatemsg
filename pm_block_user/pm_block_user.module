@@ -40,20 +40,13 @@ function pm_block_user_menu() {
     'weight'           => -10,
   );
 
-  $items['admin/settings/messages/block'] = array(
+  $items['admin/config/people/messages/block'] = array(
     'title'            => 'User blocking rules',
     'description'      => 'Configure rules for which users may block each other.',
     'page callback'    => 'drupal_get_form',
     'page arguments'   => array('pm_block_user_settings'),
     'access arguments' => array('administer privatemsg settings'),
     'type'             => MENU_LOCAL_TASK,
-  );
-
-  $items['messages/block/js'] = array(
-    'title' => 'Javascript Block Actions Form',
-    'page callback' => 'pm_block_user_js',
-    'access arguments' => array('administer privatemsg settings'),
-    'type' => MENU_CALLBACK,
   );
 
   return $items;
@@ -99,8 +92,8 @@ function pm_block_user_settings(&$form_state) {
     '#prefix' => '<div id="add-rule-button">',
     '#suffix' => '<label for="edit-pm-block-actions-more">' . t('Add new rule') . '</label></div>',
     '#submit' => array('pm_block_user_more_submit'),
-    '#ahah' => array(
-      'path' => 'messages/block/js',
+    '#ajax' => array(
+      'callback' => 'pm_block_user_js',
       'wrapper' => 'block-actions',
       'method' => 'replace',
       'effect' => 'fade',
@@ -180,11 +173,11 @@ function _pm_block_user_actions_form($details, $blacklist = TRUE) {
     '#type' => 'submit',
     '#submit' => array('pm_block_user_remove_submit'),
     '#value' => t('Remove_' . $delta),
-    '#attributes' => array('class' => 'remove-action'),
+    '#attributes' => array('class' => array('remove-action')),
     '#prefix' => '<div id="remove-rule-button">',
     '#suffix' => '<label for="edit-remove">' . t('Remove rule') . '</label></div>',
-    '#ahah' => array(
-      'path' => 'messages/block/js',
+    '#ajax' => array(
+      'path' => 'pm_block_user_js',
       'wrapper' => 'block-actions',
       'method' => 'replace',
       'effect' => 'fade',
@@ -283,27 +276,8 @@ function _pm_block_user_settings_filter($settings) {
 /**
  * Menu callback for AHAH handling.
  */
-function pm_block_user_js() {
-  // See: http://drupal.org/node/331941 for the philosophy of Drupal AHAH.
-  $form_state = array('storage' => NULL, 'submitted' => FALSE);
-  $form_build_id = $_POST['form_build_id'];
-  $form = form_get_cache($form_build_id, $form_state);
-  $args = $form['#parameters'];
-  $form_id = array_shift($args);
-  $form['#post'] = $_POST;
-  $form['#redirect'] = FALSE;
-  $form['#programmed'] = FALSE;
-  $form_state['post'] = $_POST;
-  drupal_process_form($form_id, $form, $form_state);
-  $form = drupal_rebuild_form($form_id, $form_state, $args, $form_build_id);
-  $output_form = $form['block_actions'];
-  unset($output_form['#prefix'], $output_form['#suffix']); // Prevent duplicate wrappers.
-  $output = theme('status_messages') . drupal_render($output_form);
-
-  // Hack to make behaviours attach to new HTML controls (delete buttons in
-  // this case).
-  $javascript = drupal_add_js(NULL, NULL, 'header');
-  drupal_json(array('status' => TRUE, 'data' => $output));
+function pm_block_user_js($form, $form_state) {
+  return drupal_render($form['block_actions']);
 }
 
 /**
@@ -363,7 +337,7 @@ function theme_pm_block_user_actions($form) {
   }
 
   $output = theme('table', $headers, $rows);
-  $output .= drupal_render($form);
+  $output .= drupal_render_children($form);
 
   return $output;
 }
@@ -452,8 +426,11 @@ function pm_block_user_form($form_state, $author) {
     '#type' => 'value',
     '#value' => isset($_GET['destination']) ? $_GET['destination'] : 'messages/',
   );
-
-  if (db_result(db_query('SELECT COUNT(recipient) FROM {pm_block_user} WHERE author = %d AND recipient = %d', $author->uid, $user->uid))) {
+  $blocked = db_query('SELECT COUNT(recipient) FROM {pm_block_user} WHERE author = :author AND recipient = :recipient', array(
+    ':author' => $author->uid,
+    ':recipient' => $user->uid,
+  ))->fetchField();
+  if ($blocked) {
     $form['block_action'] = array(
       '#type' => 'value',
       '#value' => 'unblock_user',
@@ -488,11 +465,19 @@ function pm_block_user_form_submit($form, &$form_state) {
   if ($form_state['values']['confirm']) {
     switch ($form_state['values']['block_action']) {
       case 'block_user':
-        db_query('INSERT INTO {pm_block_user} (author, recipient) VALUES (%d, %d)', $form_state['values']['author'], $form_state['values']['recipient']);
+        db_insert('pm_block_user')
+          ->fields(array(
+            'author' => $form_state['values']['author'],
+            'recipient' => $form_state['values']['recipient'],
+          ))
+          ->execute();
         drupal_set_message(t('@author has been blocked from sending you any further messages.', array('@author' => $form_state['values']['author_name'])));
       break;
       case 'unblock_user':
-        db_query('DELETE FROM {pm_block_user} WHERE author = %d AND recipient = %d', $form_state['values']['author'], $form_state['values']['recipient']);
+        db_delete('pm_block_user')
+          ->condition('author', $form_state['values']['author'])
+          ->condition('recipient', $form_state['values']['recipient'])
+          ->execute();
         drupal_set_message(t('@author is now allowed to send you new messages.', array('@author' => $form_state['values']['author_name'])));
       break;
     }
@@ -509,10 +494,10 @@ function pm_block_user_privatemsg_block_message($author, $recipients) {
   // author from sending them private messages. Use a reference, so when
   // user_load() is needed here the array is updated, negating the need for
   // further calls to user_load() later in the code.
-  foreach ($recipients as $uid => &$recipient) {
+  foreach ($recipients as $recipient) {
     // Ensure we have a recipient user object which includes roles.
     if (!isset($recipient->roles)) {
-      $recipient = user_load($uid);
+      $recipient = user_load($recipient->uid);
     }
     // Note: this is checks whether the author may send the message (see third
     // parameter). Further below is a check whether the recipient may block it.
@@ -524,9 +509,12 @@ function pm_block_user_privatemsg_block_message($author, $recipients) {
     }
   }
   unset($recipient);
-  $args = array_merge(array($author->uid), array_keys($recipients));
-  $result = db_query('SELECT recipient FROM {pm_block_user} WHERE author = %d AND recipient IN ('. db_placeholders($recipients) .') GROUP BY recipient', $args);
-  while ($row = db_fetch_array($result)) {
+  $args = array(
+    ':author' => $author->uid,
+    ':recipients' => array_keys($recipients)
+  );
+  $result = db_query('SELECT recipient FROM {pm_block_user} WHERE author = :author AND recipient IN (:recipients) GROUP BY recipient', $args);
+  foreach ($result as $row) {
     $recipient = $recipients[$row['recipient']];
     // If there's a rule disallowing blocking of this message, send it anyway.
     if (_pm_block_user_rule_exists($author, $recipient, PM_BLOCK_USER_DISALLOW_BLOCKING)) {
@@ -540,11 +528,10 @@ function pm_block_user_privatemsg_block_message($author, $recipients) {
   return $blocked;
 }
 
-function pm_block_user_privatemsg_sql_load_alter(&$fragments, $pmid, $uid) {
-  $fragments['select'][] = 'pmbu.recipient AS is_blocked';
-  $fragments['select'][] = 'pmi.thread_id';
-
-  $fragments['inner_join'][] = 'LEFT JOIN {pm_block_user} pmbu ON (pm.author = pmbu.author AND pmi.uid = pmbu.recipient)';
+function pm_block_user_query_privatemsg_load_alter($query) {
+  $query->addField('pmbu', 'recipient', 'is_blocked');
+  $query->addField('pmi', 'thread_id');
+  $query->leftJoin('pm_block_user', 'pmbu', 'pm.author = pmbu.author AND pmi.uid = pmbu.recipient');
 }
 
 /**
@@ -553,7 +540,8 @@ function pm_block_user_privatemsg_sql_load_alter(&$fragments, $pmid, $uid) {
 function pm_block_user_privatemsg_message_view_alter(&$vars) {
   global $user;
 
-  $author = $vars['message']['author'];
+  // @todo: weird, figure out why it is below #message.
+  $author = $vars['message']['#message']['author'];
   if (_pm_block_user_rule_exists($author, $user, PM_BLOCK_USER_DISALLOW_BLOCKING)) {
     return;
   }

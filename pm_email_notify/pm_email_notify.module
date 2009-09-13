@@ -10,7 +10,7 @@
  * Implementation of hook_menu().
  */
 function pm_email_notify_menu() {
-  $items['admin/settings/messages/notify'] = array(
+  $items['admin/config/people/messages/notify'] = array(
     'title'            => 'E-mail notify',
     'description'      => 'E-mail notification settings',
     'page callback'    => 'drupal_get_form',
@@ -73,10 +73,10 @@ function pm_email_notify_admin_settings_form() {
  *   User uid
  */
 function _pm_email_notify_is_enabled($uid) {
-  static $notifications = array();
+  $notifications = &drupal_static(__FUNCTION__, array());
   // Cache the result set in case this method is executed in batched operation which will perform many unnecessary repeated selects for the same user
-  if ( !isset($notifications[$uid]) ) {
-    $mail_notification = db_result(db_query('SELECT email_notify_is_enabled FROM {pm_email_notify} WHERE user_id = %d', $uid));
+  if (!isset($notifications[$uid]) ) {
+    $mail_notification = db_query('SELECT email_notify_is_enabled FROM {pm_email_notify} WHERE user_id = :uid', array(':uid' => $uid))->fetchField();
     if ($mail_notification === FALSE) { //db_result returns FALSE if result was not found.
       $mail_notification = variable_get('pm_email_notify_default', TRUE);
     }
@@ -109,8 +109,8 @@ function pm_email_notify_mail($key, &$message, $params) {
   $variables = array_merge($variables, _pm_email_notify_token($params['message']));
   switch ($key) {
     case 'notice':
-      $message['subject'] = t(variable_get('pm_email_notify_subject', 'New private message at !site.'), $variables, $language->language);
-      $message['body'] = t(variable_get('pm_email_notify_body', _pm_email_notify_default_body()), $variables, $language->language);
+      $message['subject'] = t(variable_get('pm_email_notify_subject', 'New private message at !site.'), $variables, array('langcode' => $language->language));
+      $message['body'] = t(variable_get('pm_email_notify_body', _pm_email_notify_default_body()), $variables, array('langcode' => $language->language));
       break;
   }
 }
@@ -145,40 +145,35 @@ function _pm_email_notify_default_body() {
 }
 
 /**
- * Implement hook_user().
- *
- * Display settings form and store its information.
+ * Implement hook_user_form().
  */
-function pm_email_notify_user($op, &$edit, &$account, $category = NULL) {
+function pm_email_notify_user_form(&$edit, &$account, $category = NULL) {
   if ($category == 'account') {
-    switch ($op) {
-      case 'form':
-        $form['enable_pm_mail'] = array(
-          '#type' => 'fieldset',
-          '#title' => t('Privatemsg e-mail notification'),
-          '#collapsible' => TRUE,
-          '#collapsed' => FALSE,
-          '#weight' => 10,
-        );
-        $form['enable_pm_mail']['pm_send_notifications'] = array(
-          '#type' => 'checkbox',
-          '#title' => t('Receive email notification for incoming private messages'),
-          '#default_value' => _pm_email_notify_is_enabled($account->uid),
-        );
-        return $form;
+    $form['enable_pm_mail'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Privatemsg e-mail notification'),
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+      '#weight' => 10,
+    );
+    $form['enable_pm_mail']['pm_send_notifications'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Receive email notification for incoming private messages'),
+      '#default_value' => _pm_email_notify_is_enabled($account->uid),
+    );
+    return $form;
+  }
+}
 
-      case 'submit':
-        $pm_email_enabled = $edit['pm_send_notifications'];
-        unset($edit['pm_send_notifications']);
-        // Update database entry with user preference.
-        db_query("UPDATE {pm_email_notify} SET email_notify_is_enabled = %d WHERE user_id = %d", $pm_email_enabled, $account->uid);
-        if (!db_affected_rows()) {
-          // Update will fail if record didnt exist, create a new entry with
-          // user preference in the database.
-          db_query("INSERT INTO {pm_email_notify} (email_notify_is_enabled, user_id) VALUES (%d, %d)", $pm_email_enabled, $account->uid);
-        }
-        break;
-
-    }
+/**
+ * Implement hook_user_form().
+ */
+function pm_email_notify_user_submit(&$edit, &$account, $category = NULL) {
+  if ($category == 'account') {
+    db_merge('pm_email_notify')
+      ->fields(array('email_notify_is_enabled' => $edit['pm_send_notifications']))
+      ->key(array('user_id' => $account->uid))
+      ->execute();
+    unset($edit['pm_send_notifications']);
   }
 }

@@ -4,8 +4,9 @@
  * @file
  * Install file for pm_block_user.module
  */
+
 /**
- * @return unknown
+ * Implement hook_schema().
  */
 function pm_block_user_schema() {
   $schema = array();
@@ -29,12 +30,4 @@ function pm_block_user_schema() {
   );
 
   return $schema;
-}
-function pm_block_user_install() {
-  drupal_install_schema('pm_block_user');
-
-}
-
-function pm_block_user_uninstall() {
-  drupal_uninstall_schema('pm_block_user');
 }
