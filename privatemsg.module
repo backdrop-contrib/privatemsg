@@ -1649,7 +1649,7 @@ function _privatemsg_action_form() {
       '#options'       => $options,
       '#default_value' => 0,
       // Execute the submit button if a operation has been selected.
-      '#attributes'    => array('onchange' => "$('#edit-submit').click()"),
+      '#attributes'    => array('onchange' => "(function ($) { $('#edit-submit').click() })(jQuery);"),
   );
   $form['submit'] = array(
       '#type'       => 'submit',
@@ -1689,10 +1689,10 @@ function privatemsg_thread_change_status($threads, $status, $account = NULL) {
     ->execute();
 
   if ($status == PRIVATEMSG_UNREAD) {
-    drupal_set_message(t('Marked %count threads as unread.', array('%count' => count($threads))));
+    drupal_set_message(format_plural(count($threads), 'Marked 1 thread as unread.', 'Marked @count threads as unread.'));
   }
   else {
-    drupal_set_message(t('Marked %count threads as read.', array('%count' => count($threads))));
+    drupal_set_message(format_plural(count($threads), 'Marked 1 thread as read.', 'Marked @count threads as read.'));
   }
 }
 /**
@@ -1904,10 +1904,10 @@ function privatemsg_thread_change_delete($threads, $delete, $account = NULL) {
   }
 
   if ($delete) {
-    drupal_set_message(t('Deleted %count threads.', array('%count' => count($threads))));
+    drupal_set_message(format_plural(count($threads), 'Deleted 1 thread.', 'Deleted @count threads.'));
   }
   else {
-    drupal_set_message(t('Restored %count threads.', array('%count' => count($threads))));
+    drupal_set_message(format_plural(count($threads), 'Restored 1 thread.', 'Restored @count threads.'));
   }
 }
 

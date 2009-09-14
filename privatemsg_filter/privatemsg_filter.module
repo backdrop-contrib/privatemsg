@@ -156,6 +156,7 @@ function privatemsg_filter_dropdown(&$form_state, $account) {
     '#title' => t('Filter Messages'),
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
+    '#weight' => 20,
   );
   $form['filter']['search'] = array(
     '#type' => 'textfield',
