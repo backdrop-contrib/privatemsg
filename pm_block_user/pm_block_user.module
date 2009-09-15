@@ -541,7 +541,7 @@ function pm_block_user_privatemsg_message_view_alter(&$vars) {
   global $user;
 
   // @todo: weird, figure out why it is below #message.
-  $author = $vars['message']['#message']['author'];
+  $author = $vars['message']['author'];
   if (_pm_block_user_rule_exists($author, $user, PM_BLOCK_USER_DISALLOW_BLOCKING)) {
     return;
   }
