@@ -106,7 +106,7 @@ function pm_email_notify_privatemsg_message_insert($message) {
 function pm_email_notify_mail($key, &$message, $params) {
   $language = $message['language'];
   $variables = user_mail_tokens($params['recipient'], $language);
-  $variables = array_merge($variables, _pm_email_notify_token($params['message']));
+  $variables = array_merge($variables, _pm_email_notify_token($params['recipient'], $params['message']));
   switch ($key) {
     case 'notice':
       $message['subject'] = t(variable_get('pm_email_notify_subject', 'New private message at !site.'), $variables, array('langcode' => $language->language));
@@ -124,14 +124,14 @@ function pm_email_notify_mail($key, &$message, $params) {
  * @return
  *  Array of mappings from token names to values (for use with strtr()).
  */
-function _pm_email_notify_token($message) {
+function _pm_email_notify_token($recipient, $message) {
 
   $tokens = array(
     '!author' => $message['author']->name,
     '!pm_subject' => drupal_html_to_text($message['subject'], array()),
     '!pm_body' => drupal_html_to_text($message['body'], array()),
     '!thread' => $message['thread_id'],
-    '!author_uid' => $message['author']->uid,
+    '!user_uid' => $recipient->uid,
   );
 
   return $tokens;
@@ -142,7 +142,7 @@ function _pm_email_notify_token($message) {
  * Returns default email notification body.
  */
 function _pm_email_notify_default_body() {
-  return "Hi !username,\n\nThis is an automatic reminder from the site !site. You have received a new private message from !author.\n\nTo read your message, follow this link:\n!uri/messages\n\nIf you don't want to receive these emails again, change your preferences here:\n!uri/user/!author_uid/edit";
+  return "Hi !username,\n\nThis is an automatic reminder from the site !site. You have received a new private message from !author.\n\nTo read your message, follow this link:\n!uri/messages\n\nIf you don't want to receive these emails again, change your preferences here:\n!uri/user/!user_uid/edit";
 }
 
 /**

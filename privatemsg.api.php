@@ -150,43 +150,33 @@ function hook_privatemsg_sql_autocomplete_alter(&$fragments, $search, $names) {
 function hook_privatemsg_sql_list_alter(&$fragment, $account) {
 
 }
-/**
- * Display a list of sent messages.
- *
- * @param $fragments
- *   Query fragments
- * @param $account
- *   User object
- */
-function hook_privatemsg_sql_list_sent_alter(&$fragment, $account) {
-
-}
 
 /**
- * Load a single message.
+ * Query definition to load a message.
  *
  * @param $fragments
- *   Query fragments
+ *   Query fragments array
  * @param $pmid
- *   message id, pm.mid
+ *   the id of the message
  * @param $account
- *   User object
+ *   User object of account for which to load the message
  */
-function hook_privatemsg_sql_load_alter(&$fragment, $pmid, $account) {
+function hook_privatemsg_sql_load_alter(&$fragment, $pmid, $account = NULL) {
 
 }
 /**
- * Load all message id's of a thread.
+ * Query definition to load messages of one or multiple threads.
  *
  * @param $fragments
- *   Query fragments
- * @param $thread_id
- *   Thread id, pmi.thread_id is the same as the mid of the first
- *   message of that thread
+ *   Query fragments array.
+ * @param $threads
+ *   Array with one or multiple thread id's.
  * @param $account
- *   User object
+ *   User object for which the messages are being loaded.
+ * @param $load_all
+ *   Deleted messages are only loaded if this is set to TRUE.
  */
-function hook_privatemsg_sql_messages_alter(&$fragment, $thread_id, $account) {
+function hook_privatemsg_sql_messages_alter(&$fragment, $threads, $account = NULL, $load_all = FALSE) {
 
 }
 
@@ -294,10 +284,12 @@ function hook_privatemsg_message_load($message) {
  * user.
  * @todo There is no "undelete" hook
  *
- * @param $message
- *   Message array
+ * @param $pmid
+ *   ID of the message that has been deleted
+ * @param $deleted_by_all
+ *   Boolean to show whether the message has been deleted by all users or not
  */
-function hook_privatemsg_message_delete($message) {
+function hook_privatemsg_message_delete($pmid, $deleted_by_all) {
 
 }
 

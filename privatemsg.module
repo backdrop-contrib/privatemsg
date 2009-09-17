@@ -197,6 +197,15 @@ function privatemsg_menu() {
     'type'             => MENU_CALLBACK,
     'menu'             => 'user-menu',
   );
+  $items['user/%/messages'] = array(
+    'title' => 'Messages',
+    'page callback'    => 'drupal_get_form',
+    'page arguments'   => array('privatemsg_list', 'list', 1),
+    'access callback'  => 'privatemsg_user_tab_access',
+    'access arguments' => array(1),
+    'type' => MENU_LOCAL_TASK,
+  );
+
   return $items;
 }
 
@@ -227,6 +236,30 @@ function privatemsg_user_access($permission = 'read privatemsg', $account = NULL
   return TRUE;
 }
 
+/**
+ * Function to check if a user can access the messages tab on a user page.
+ *
+ * @param $uid
+ *   the user's id for whom the permission is being checked.
+ */
+function privatemsg_user_tab_access($uid) {
+  global $user;
+  $account = $user;
+
+  // Disallow anonymous access, regardless of permissions.
+  if (!$account->uid) {
+    return FALSE;
+  }
+  // If a user is viewing own account, allow access.
+  if ($account->uid == $uid && privatemsg_user_access('read privatemsg', $account)) {
+    return TRUE;
+  }
+  // If a user has permission to view other user's messages, then allow access.
+  if (privatemsg_user_access('read all private messages', $account)) {
+    return TRUE;
+  }
+  return FALSE;
+}
 
 /**
  * Check access to the view messages page.
@@ -281,10 +314,17 @@ function privatemsg_thread_load($thread_id, $account = NULL) {
     }
     
     if (!array_key_exists($thread_id, $threads[$account->uid])) {
+      // Load the list of participants.
+      $thread['participants'] = _privatemsg_assemble_query('participants', $thread_id)->execute()->fetchAllAssoc('uid');
+      $thread['read_all'] = FALSE;
+      if (!array_key_exists($account->uid, $thread['participants']) && privatemsg_user_access('read all private messages', $account)) {
+        $thread['read_all'] = TRUE;
+      }
+
       // load messages returned by the messages query with _privatemsg_load().
-      $query = _privatemsg_assemble_query('messages', array($thread_id), $account);
+      $query = _privatemsg_assemble_query('messages', array($thread_id), $thread['read_all'] ? NULL : $account);
       foreach ($query->execute()->fetchCol() as $mid) {
-        if ($message = _privatemsg_load($mid, $account)) {
+        if ($message = _privatemsg_load($mid, $thread['read_all'] ? NULL : $account)) {
           $thread['messages'][$mid] = $message;
         }
       }
@@ -297,12 +337,6 @@ function privatemsg_thread_load($thread_id, $account = NULL) {
         $thread['user'] = $account;
         $message = current($thread['messages']);
         $thread['subject'] = $message['subject'];
-
-        // Load the list of participants.
-        $query = _privatemsg_assemble_query('participants', $thread_id);
-        foreach ($query->execute() as $participant) {
-          $thread['participants'][$participant->uid] = $participant;
-        }
       }
       $threads[$account->uid][$thread_id] = $thread;
     }
@@ -458,7 +492,7 @@ function privatemsg_preprocess_privatemsg_view(&$vars) {
   drupal_alter('privatemsg_message_view', $vars);
 
   $vars['message_actions'] = !empty($vars['message_actions']) ? theme('links', $vars['message_actions'], array('class' => array('message-actions'))) : '';
-  
+
   $vars['anchors'] = '';
   foreach ($vars['message_anchors'] as $anchor) {
     $vars['anchors'].= '<a name="' . $anchor . '"></a>';
@@ -595,6 +629,11 @@ function privatemsg_unread_count($account = NULL) {
 function privatemsg_view($thread) {
   drupal_set_title($thread['subject']);
 
+  if ($thread['read_all']) {
+    // User has permission to read all messages AND is not a participant of the current thread.
+    drupal_set_message(t('This conversation is being viewed with escalated priviledges and may not be the same as shown to normal users.'), 'warning');
+  }
+
   // Render the participants.
   $content['participants'] = array(
     '#markup' => theme('privatemsg_recipients', $thread),
@@ -615,14 +654,14 @@ function privatemsg_view($thread) {
 
   // Display the reply form if user is allowed to use it.
   if (privatemsg_user_access('write privatemsg')) {
-    $content['reply'] = drupal_get_form('privatemsg_new', $thread['participants'], $thread['subject'], $thread['thread_id']);
+    $content['reply'] = drupal_get_form('privatemsg_new', $thread['participants'], $thread['subject'], $thread['thread_id'], $thread['read_all']);
     $content['reply']['#weight'] = 5;
   }
   return $content;
 }
 
 
-function privatemsg_new(&$form_state, $recipients = array(), $subject = '', $thread_id = NULL) {
+function privatemsg_new(&$form_state, $recipients = array(), $subject = '', $thread_id = NULL, $read_all = FALSE) {
   global $user;
 
   $recipients_string = '';
@@ -773,6 +812,10 @@ function privatemsg_new(&$form_state, $recipients = array(), $subject = '', $thr
       $form['privatemsg']['#access'] = FALSE;
     }
   }
+  $form['privatemsg']['read_all'] = array(
+    '#type'  => 'value',
+    '#value' => $read_all,
+  );
   return $form;
 }
 
@@ -783,6 +826,7 @@ function pm_send_validate($form, &$form_state) {
   $message['body']      = $form_state['values']['body'];
   $message['subject']   = $form_state['values']['subject'];
   $message['author']    = $form_state['values']['author'];
+  $message['read_all']  = $form_state['values']['read_all'];
   $message['timestamp'] = time();
   if (isset($form_state['values']['thread_id']) && $form_state['values']['thread_id']) {
     $message['thread_id'] = $form_state['values']['thread_id'];
@@ -964,47 +1008,52 @@ function privatemsg_sql_list($account, $argument = 'list') {
 }
 
 /**
- * Query function for load.
+ * Query definition to load a message.
+ *
+ * @param $pmid
+ *   the id of the message.
+ * @param $account
+ *   User object of account for which to load the message.
  */
-function privatemsg_sql_load($pmid, $account) {
+function privatemsg_sql_load($pmid, $account = NULL) {
   $query = db_select('pm_message', 'pm')
     ->fields('pm', array('mid', 'author', 'subject', 'body', 'timestamp'))
     ->fields('pmi', array('is_new'))
-    ->condition('pmi.mid', $pmid)
-    ->condition('pmi.uid', $account->uid);
-
+    ->condition('pmi.mid', $pmid);
+  if($account) {
+    $query->condition('pmi.uid', $account->uid);
+  }
   $query->join('pm_index', 'pmi', 'pm.mid = pmi.mid');
   return $query;
 }
 /**
  * Query definition to load messages of one or multiple threads.
  *
- * @param $fragments
- *  Query fragments array.
  * @param $threads
- *  Array with one or multiple thread id's.
+ *   Array with one or multiple thread id's.
  * @param $account
- *  User object for which the messages are being loaded.
+ *   User object for which the messages are being loaded.
  * @param $load_all
- *  Deleted messages are only loaded if this is set to TRUE.
+ *   Deleted messages are only loaded if this is set to TRUE.
  */
-function privatemsg_sql_messages($threads, $account, $load_all = FALSE) {
+function privatemsg_sql_messages($threads, $account = NULL, $load_all = FALSE) {
   $query = db_select('pm_index', 'pmi');
   $query->addExpression('DISTINCT(pmi.mid)', 'mid');
   if (!$load_all) {
     $query->condition('pmi.deleted', 0);
   }
-  return $query
+  $query
     ->condition('pmi.thread_id', $threads)
-    ->condition('pmi.uid', $account->uid)
     ->orderBy('pmi.mid', 'ASC');
+  if($account) {
+    $query->condition('pmi.uid', $account->uid);
+  }
+  return $query;
 }
 
 /**
  * Load all participants of a thread.
  *
- * @param $fragments
- *   Query fragments array.
  * @param $thread_id
  *   Thread id from which the participants should be loaded.
  */
@@ -1177,19 +1226,43 @@ function _privatemsg_block_menu() {
 }
 
 function privatemsg_delete($form_state, $pmid) {
-  global $user;
 
   $form['pmid'] = array(
     '#type' => 'value',
     '#value' => $pmid,
   );
+  if (privatemsg_user_access('read all private messages')) {
+    $form['delete_options'] = array(
+      '#type' => 'checkbox',
+      '#title' => 'Delete this message for all users?',
+      '#description' => 'Tick the box to delete the message for all users.',
+      '#default_value' => FALSE,
+    );
+  }
   return confirm_form($form,
-    t('Are you sure you want to delete the message?'),
+    t('Are you sure you want to delete this message?'),
     isset($_GET['destination']) ? $_GET['destination'] : 'messages/view/'. $pmid,
     t('This action cannot be undone.'),
     t('Delete'),
     t('Cancel')
   );
+}
+
+function privatemsg_delete_submit($form, &$form_state) {
+  global $user;
+  $account = clone $user;
+
+  if ($form_state['values']['confirm']) {
+    if ($form_state['values']['delete_options']) {
+      privatemsg_message_change_delete($form_state['values']['pmid'], 1);
+      drupal_set_message(t('Message has been deleted for all users'));
+    }
+    else {
+      privatemsg_message_change_delete($form_state['values']['pmid'], 1, $account);
+      drupal_set_message(t('Message has been deleted'));
+    }
+  }
+  $form_state['redirect'] = 'messages';
 }
 
 /**
@@ -1200,7 +1273,7 @@ function privatemsg_delete($form_state, $pmid) {
  * @param $delete
  *   Either deletes or restores the thread (1 => delete, 0 => restore)
  * @param $account
- *   User acccount for which the message should be deleted.
+ *   User acccount for which the delete action should be carried out - Set to NULL to delete for all users.
  *
  * @ingroup api
  */
@@ -1209,30 +1282,22 @@ function privatemsg_message_change_delete($pmid, $delete, $account = NULL) {
     global $user;
     $account = clone $user;
   }
-  $message = _privatemsg_load($pmid, $account);
-
-  db_update('pm_index')
+  $update = db_update('pm_index')
     ->fields(array('deleted' => $delete))
-    ->condition('mid', $pmid)
-    ->condition('uid', $account->uid)
-    ->execute();
+    ->condition('mid', $pmid);
+  if ($account){
+    $update->condition('uid', $account->uid);
+  }
+  $update->execute();
 
-  $deleted = db_query("SELECT MIN(deleted) AS deleted_by_all FROM {pm_index} WHERE mid = %d", $pmid)->fetchField();
+  $deleted = db_query("SELECT MIN(deleted) AS deleted_by_all FROM {pm_index} WHERE mid = :mid", array(':mid' => $pmid))->fetchField();
 
   $deleted_by_all = FALSE;
-  if ($deleted == 0) {
+  if ($deleted > 0) {
     $deleted_by_all = TRUE;
   }
 
-  module_invoke_all('privatemsg_message_delete', $message, $deleted_by_all);
-}
-
-function privatemsg_delete_submit($form, &$form_state) {
-  if ($form_state['values']['confirm']) {
-    privatemsg_message_change_delete($form_state['values']['pmid'], 1);
-    drupal_set_message(t('Message has been deleted'));
-  }
-  $form_state['redirect'] = 'messages';
+  module_invoke_all('privatemsg_message_delete', $pmid, $deleted_by_all);
 }
 
 /**
@@ -1484,7 +1549,23 @@ function _privatemsg_send($message) {
     ));
   }
 
-  // When author is also the recipient, we want to set message to UNREAD. all other times his message is set to READ.
+  if (isset($message['read_all'])) {
+    // The message was sent in read all mode, add the author as recipient to all
+    // existing messages.
+    $query_messages = _privatemsg_assemble_query('messages', array($message['thread_id']), NULL);
+    foreach ($query_messages->execute()->fetchCol() as $mid) {
+      $query->values(array(
+        'mid' => $mid,
+        'thread_id' => $message['thread_id'],
+        'uid' => $message['author']->uid,
+        'is_new' => 0,
+        'deleted' => 0,
+      ));
+     }
+   }
+
+  // When author is also the recipient, we want to set message to UNREAD.
+  // All other times the message is set to READ.
   $is_new = isset($message['recipients'][$message['author']->uid]) ? 1 : 0;
 
   // Also add a record for the author to the pm_index table.
@@ -1499,7 +1580,8 @@ function _privatemsg_send($message) {
 
   module_invoke_all('privatemsg_message_insert', $message);
 
-  return $message;  // if we reached here that means we were successful at writing all messages to db
+  // If we reached here that means we were successful at writing all messages to db.
+  return $message;
 }
 
 /**
@@ -1564,11 +1646,6 @@ function privatemsg_get_link($recipients, $account = array(), $subject = NULL) {
  * @ingroup api
  */
 function _privatemsg_load($pmid, $account = NULL) {
-  if (empty($account)) {
-    global $user;
-    $account = clone $user;
-  }
-
   $query = _privatemsg_assemble_query('load', $pmid, $account);
 
   if ($message = $query->execute()->fetchAssoc()) {
@@ -1908,7 +1985,7 @@ function privatemsg_list_submit($form, &$form_state) {
  * @param $delete
  *   Indicates if the threads should be deleted or restored. 1 => delete, 0 => restore.
  * @param $account
- *   User object for which the threads should be deleted, defaults to the current user.
+ *   User acccount for which the delete action should be carried out - Set to NULL to delete for all users.
  */
 function privatemsg_thread_change_delete($threads, $delete, $account = NULL) {
   if (!is_array($threads)) {
