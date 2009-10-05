@@ -681,13 +681,14 @@ function privatemsg_new(&$form_state, $recipients = array(), $subject = '', $thr
   $usercount = 0;
   $to = array();
   $to_themed = array();
+  $blocked = FALSE;
   foreach ($recipients as $recipient) {
     if (in_array($recipient->name, $to)) {
       // We already added the recipient to the list, skip him.
       continue;
     }
     // Check if another module is blocking the sending of messages to the recipient by current user.
-    $user_blocked = module_invoke_all('privatemsg_block_message', $user, array($recipient));
+    $user_blocked = module_invoke_all('privatemsg_block_message', $user, array($recipient->uid => $recipient));
     if (!count($user_blocked) <> 0 && $recipient->uid) {
       if ($recipient->uid == $user->uid) {
         $usercount++;
@@ -697,20 +698,26 @@ function privatemsg_new(&$form_state, $recipients = array(), $subject = '', $thr
       $to[] = $recipient->name;
       $to_themed[$recipient->uid] = theme('username', $recipient);
     }
+    else {
+      // Recipient list contains blocked users.
+      $blocked = TRUE;
+    }
   }
 
-  if (empty($to) && $usercount >= 1) {
+  if (empty($to) && $usercount >= 1 && !$blocked) {
     // Assume the user sent message to own account as if the usercount is one or less, then the user sent a message but not to self.
     $to[] = $user->name;
     $to_themed[$user->uid] = theme('username', $user);
   }
 
-
   if (!empty($to)) {
     $recipients_string = implode(', ', $to);
   }
   if (isset($form_state['values'])) {
-    $recipients_string = $form_state['values']['recipient'];
+    if (isset($form_state['values']['recipient'])) {
+      $recipients_string = $form_state['values']['recipient'];
+      
+    }
     $subject   = $form_state['values']['subject'];
     $body      = $form_state['values']['body'];
   }
@@ -844,7 +851,7 @@ function pm_send_validate($form, &$form_state) {
     // Load participants.
     $message['recipients'] = _privatemsg_load_thread_participants($form_state['values']['thread_id']);
     // Remove author.
-    if (isset($message['recipients'][$form_state['values']['author']->uid])) {
+    if (isset($message['recipients'][$form_state['values']['author']->uid]) && count($message['recipients']) > 1) {
       unset($message['recipients'][$form_state['values']['author']->uid]);
     }
   }

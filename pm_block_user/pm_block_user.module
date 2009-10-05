@@ -508,7 +508,7 @@ function pm_block_user_privatemsg_block_message($author, $recipients) {
       );
     }
   }
-  unset($recipient);
+
   $args = array(
     ':author' => $author->uid,
     ':recipients' => array_keys($recipients)
