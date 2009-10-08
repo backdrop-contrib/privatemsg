@@ -141,7 +141,7 @@ function privatemsg_menu() {
     'page arguments'   => array(2),
     'access callback'  => 'privatemsg_view_access',
     'type'             => MENU_LOCAL_TASK,
-    'weight'           => -10,
+    'weight'           => -5,
     'menu_name'        => 'user-menu',
   );
   $items['messages/delete/%'] = array(
@@ -161,7 +161,7 @@ function privatemsg_menu() {
     'access callback'  => 'privatemsg_user_access',
     'access arguments' => array('write privatemsg'),
     'type'             => MENU_LOCAL_TASK,
-    'weight'           => -7,
+    'weight'           => -3,
     'menu_name'        => 'user-menu',
   );
   // Auto-completes available user names & removes duplicates.
@@ -170,7 +170,6 @@ function privatemsg_menu() {
     'access callback'  => 'privatemsg_user_access',
     'access arguments' => array('write privatemsg'),
     'type'             => MENU_CALLBACK,
-    'weight'           => -10,
   );
   $items['admin/config/people/messages'] = array(
     'title'            => 'Private messages',
@@ -400,7 +399,7 @@ function private_message_settings() {
     '#type' => 'fieldset',
     '#title' => t('Configure listings'),
     '#collapsible' => TRUE,
-    '#collapsed' => TRUE,
+    '#collapsed' => FALSE,
   );
 
   $form['privatemsg_listing']['privatemsg_display_fields'] = array(

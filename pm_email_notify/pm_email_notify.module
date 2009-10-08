@@ -29,7 +29,7 @@ function pm_email_notify_admin_settings_form() {
   $form['pm_email'] = array(
     '#type' => 'fieldset',
     '#title' => t('Privatemsg e-mail notification'),
-    '#collapsible' => TRUE,
+    '#collapsible' => FALSE,
     '#collapsed' => FALSE,
   );
   $form['pm_email']['pm_email_notify_default'] = array(

@@ -68,4 +68,5 @@ function privatemsg_filter_schema() {
 function privatemsg_filter_uninstall() {
   variable_del('privatemsg_filter_searchbody');
   variable_del('privatemsg_filter_tagfield_weight');
+  variable_del('privatemsg_filter_default_list');
 }
