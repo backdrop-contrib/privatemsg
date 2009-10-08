@@ -253,7 +253,7 @@ function theme_privatemsg_list($form) {
     foreach ($form['#rows'] as $thread_id => $row) {
       $data = array();
       // Render the checkbox.
-      $data[] = drupal_render($form['threads'][$thread_id]);
+      $data[] = array('data' => drupal_render($form['threads'][$thread_id]), 'class' => array('privatemsg-list-select'));
 
       // Store the #rows data in the same order as the header is, the key property of the header refers to the field that belongs to it.
       foreach ($headers as $header) {

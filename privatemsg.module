@@ -518,7 +518,7 @@ function privatemsg_preprocess_privatemsg_recipients(&$vars) {
  * @return
  *   Form array
  */
-function privatemsg_list(&$form_state, $argument = 'list', $uid = NULL) {
+function privatemsg_list($form, &$form_state, $argument = 'list', $uid = NULL) {
   global $user;
 
   // Setting default behavior...
@@ -660,7 +660,7 @@ function privatemsg_view($thread) {
 }
 
 
-function privatemsg_new(&$form_state, $recipients = array(), $subject = '', $thread_id = NULL, $read_all = FALSE) {
+function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '', $thread_id = NULL, $read_all = FALSE) {
   global $user;
 
   $recipients_string = '';
@@ -1231,7 +1231,7 @@ function _privatemsg_block_menu() {
   return $block;
 }
 
-function privatemsg_delete($form_state, $pmid) {
+function privatemsg_delete($form, $form_state, $pmid) {
 
   $form['pmid'] = array(
     '#type' => 'value',
