@@ -81,6 +81,13 @@ function privatemsg_schema() {
         'not null'      => TRUE,
         'size'          => 'big',
       ),
+      'format'        => array(
+        'type'          => 'int',
+        'size'          => 'small',
+        'not null'      => TRUE,
+        'default'       => 0,
+        'description'   => 'The {filter_formats}.format of the message text.',
+      ),
       'timestamp'     => array(
         'description'   => 'Time when the message was sent',
         'type'          => 'int',

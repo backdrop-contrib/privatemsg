@@ -478,7 +478,7 @@ function privatemsg_preprocess_privatemsg_view(&$vars) {
    * @todo perhaps make this timestamp configurable via admin UI?
    */
   $vars['message_timestamp'] = format_date($message['timestamp'], 'small');
-  $vars['message_body'] = check_markup($message['body']);
+  $vars['message_body'] = check_markup($message['body'], $message['format']);
   if (isset($vars['mid']) && privatemsg_user_access('delete privatemsg')) {
     $vars['message_actions'][] = array('title' => t('Delete message'), 'href' => 'messages/delete/' . $vars['mid']);
   }
@@ -743,7 +743,7 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
     '#value' => $user,
   );
   if (is_null($thread_id)) {
-    $form['privatemsg']['recipient']  = array(
+    $form['privatemsg']['recipient'] = array(
       '#type'               => 'textfield',
       '#title'              => t('To'),
       '#description'        => t('Separate multiple names with commas.'),
@@ -755,7 +755,7 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
       // Do not hardcode #maxlength, make it configurable by number of recipients, not their name length.
     );
   }
-  $form['privatemsg']['subject']    = array(
+  $form['privatemsg']['subject'] = array(
     '#type'               => 'textfield',
     '#title'              => t('Subject'),
     '#size'               => 50,
@@ -763,13 +763,20 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
     '#default_value'      => $subject,
     '#weight'             => -5,
   );
-  $form['privatemsg']['body']       = array(
+
+  // The input filter widget looses the format during preview, specify it
+  // explicitly.
+  if (isset($form_state['values']) && array_key_exists('body_format', $form_state['values'])) {
+    $format = $form_state['values']['body_format'];
+  }
+  $form['privatemsg']['body'] = array(
     '#type'               => 'textarea',
     '#title'              => t('Message'),
-    '#cols'               => 10,
     '#rows'               => 6,
     '#weight'             => 0,
     '#default_value'      => $body,
+    '#resizable'          => TRUE,
+    '#text_format'        => isset($format) ? $format : filter_default_format(),
   );
   $form['privatemsg']['preview'] = array(
     '#type'               => 'submit',
@@ -828,6 +835,7 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
 function pm_send_validate($form, &$form_state) {
   // The actual message that is being sent, we create this during validation and pass to submit to send out.
   $message = $form_state['values'];
+  $message['format']    = $form_state['values']['body_format'];
   $message['timestamp'] = time();
 
   $trimed_body = trim(truncate_utf8(strip_tags($message['body']), 50, TRUE, TRUE));
@@ -953,6 +961,14 @@ function pm_preview($form, &$form_state) {
  * @{
  */
 
+/**
+ * Query definition to load a list of threads.
+ *
+ * @param $account
+ *  User object for which the messages are being loaded.
+ * @param $argument
+ *  string argument which can be used in the query builder to modify the thread listing.
+ */
 function privatemsg_sql_list($account, $argument = 'list') {
   $query = db_select('pm_message', 'pm')->extend('TableSort')->extend('PagerDefault');
   $query->join('pm_index', 'pmi', 'pm.mid = pmi.mid');
@@ -1015,7 +1031,7 @@ function privatemsg_sql_list($account, $argument = 'list') {
  */
 function privatemsg_sql_load($pmid, $account = NULL) {
   $query = db_select('pm_message', 'pm')
-    ->fields('pm', array('mid', 'author', 'subject', 'body', 'timestamp'))
+    ->fields('pm', array('mid', 'author', 'subject', 'body', 'timestamp', 'format'))
     ->fields('pmi', array('is_new'))
     ->condition('pmi.mid', $pmid);
   if($account) {
@@ -1354,6 +1370,7 @@ function privatemsg_new_thread($recipients, $subject, $body = NULL, $options = a
   $message += array(
     'author' => $author,
     'timestamp' => time(),
+    'format' => filter_default_format($author),
   );
 
   $validated = _privatemsg_validate_message($message);
@@ -1363,6 +1380,7 @@ function privatemsg_new_thread($recipients, $subject, $body = NULL, $options = a
 
   return $validated;
 }
+
 /**
  * Send a reply message
  *
@@ -1411,6 +1429,7 @@ function privatemsg_reply($thread_id, $body = NULL, $options = array()) {
   $message += array(
     'author' => $author,
     'timestamp' => time(),
+    'format' => filter_default_format($author),
   );
 
   // We don't know the subject and the recipients, so we need to load them..
@@ -1523,6 +1542,7 @@ function _privatemsg_send($message) {
   $args['subject'] = $message['subject'];
   $args['author'] = $message['author']->uid;
   $args['body'] = $message['body'];
+  $args['format'] = $message['format'];
   $args['timestamp'] = $message['timestamp'];
   $mid = db_insert('pm_message')
     ->fields($args)
