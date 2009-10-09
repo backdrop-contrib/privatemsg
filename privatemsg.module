@@ -827,31 +827,23 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
 
 function pm_send_validate($form, &$form_state) {
   // The actual message that is being sent, we create this during validation and pass to submit to send out.
-  $message = array();
-
-  $message['body']      = $form_state['values']['body'];
-  $message['subject']   = $form_state['values']['subject'];
-  $message['author']    = $form_state['values']['author'];
-  $message['read_all']  = $form_state['values']['read_all'];
+  $message = $form_state['values'];
   $message['timestamp'] = time();
-  if (isset($form_state['values']['thread_id']) && $form_state['values']['thread_id']) {
-    $message['thread_id'] = $form_state['values']['thread_id'];
-  }
 
   $trimed_body = trim(truncate_utf8(strip_tags($message['body']), 50, TRUE, TRUE));
   if (empty($message['subject']) && !empty($trimed_body)) {
     $message['subject'] = $trimed_body;
   }
   // Only parse the user string for a new thread.
-  if (!isset($form_state['values']['thread_id'])) {
-    list($message['recipients'], $invalid) = _privatemsg_parse_userstring($form_state['values']['recipient']);
+  if (!isset($message['thread_id'])) {
+    list($message['recipients'], $invalid) = _privatemsg_parse_userstring($message['recipient']);
   }
   else {
     // Load participants.
-    $message['recipients'] = _privatemsg_load_thread_participants($form_state['values']['thread_id']);
+    $message['recipients'] = _privatemsg_load_thread_participants($message['thread_id']);
     // Remove author.
-    if (isset($message['recipients'][$form_state['values']['author']->uid]) && count($message['recipients']) > 1) {
-      unset($message['recipients'][$form_state['values']['author']->uid]);
+    if (isset($message['recipients'][$message['author']->uid]) && count($message['recipients']) > 1) {
+      unset($message['recipients'][$message['author']->uid]);
     }
   }
 
