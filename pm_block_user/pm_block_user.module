@@ -336,7 +336,10 @@ function theme_pm_block_user_actions($form) {
     );
   }
 
-  $output = theme('table', $headers, $rows);
+  $output = theme('table', array(
+    'header' => $headers,
+    'rows' => $rows
+  ));
   $output .= drupal_render_children($form);
 
   return $output;

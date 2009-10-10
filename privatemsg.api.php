@@ -278,22 +278,6 @@ function hook_privatemsg_message_load($message) {
 }
 
 /**
- * Is called when a message is deleted.
- *
- * Note: The message is actually only marked as deleted and only for the current
- * user.
- * @todo There is no "undelete" hook
- *
- * @param $pmid
- *   ID of the message that has been deleted
- * @param $deleted_by_all
- *   Boolean to show whether the message has been deleted by all users or not
- */
-function hook_privatemsg_message_delete($pmid, $deleted_by_all) {
-
-}
-
-/**
  * Is called when a message is flushed.
  *
  * The message will be deleted from the database, remove any related data here.

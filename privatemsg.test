@@ -110,6 +110,64 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
     }
   }
 
+  /**
+   * Tests for the flush feature
+   */
+  function testPrivatemsgFlush()
+  {
+    $author = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
+    $recipient = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
+
+    // Send 10 messages.
+    for ($i = 0; $i < 10; $i++) {
+      privatemsg_new_thread(array($recipient), 'Message #'. $i, 'This is the body', array('author' => $author));
+    }
+
+    // Delete message 1, 3, 4, 6, 9 for author.
+    foreach (array(1, 3, 4, 6, 9) as $pmid) {
+      privatemsg_message_change_delete($pmid, TRUE, $author);
+    }
+
+    // Delete message 1, 2, 4, 6, 8 for recipient.
+    foreach (array(1, 3, 4, 6, 9) as $pmid) {
+      privatemsg_message_change_delete($pmid, TRUE, $recipient);
+    }
+
+    // Now, mid 1, 4 and 6 have been deleted by both.
+
+    // Flush configuration, enable, delay is default, 30 days
+    variable_set('privatemsg_flush_enabled', TRUE);
+
+    // Set back the deleted timestamp 35 days back of mid 4.
+    db_update('pm_index')
+      ->fields(array('deleted' => time() - 35 * 86400))
+      ->condition('mid', 4)
+      ->execute();
+    // Set back the deleted timestamp of mid 6, but only 20 days back.
+    db_update('pm_index')
+      ->fields(array('deleted' => time() - 20 * 86400))
+      ->condition('mid', 6)
+      ->execute();
+
+    // Run flush.
+    privatemsg_cron();
+
+    // Check if the undeleted messages are still there.
+    foreach (array(2, 3, 5, 7, 8, 9, 10) as $pmid) {
+      $message = _privatemsg_load($pmid, $author);
+      $this->assertTrue(!empty($message), t('Undeleted message #%id is still in the system', array('%id' => $pmid)));
+    }
+
+    // Check if the "recently" deleted  messages are still there.
+    foreach (array(1, 6) as $pmid) {
+      $message = _privatemsg_load($pmid, $author);
+      $this->assertTrue(!empty($message), t('Deleted message #%id is still in the system', array('%id' => $pmid)));
+    }
+
+    // Mid 4 should have been flushed.
+    $message = _privatemsg_load(4, $author);
+    $this->assertTrue(empty($message), t('Message #4 has been flushed'));
+  }
 
   /**
    * Implementation of tearDown().

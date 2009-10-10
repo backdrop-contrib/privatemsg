@@ -88,7 +88,7 @@ function _privatemsg_format_participants($part_array, $limit = 20, $no_text = FA
         $limited = TRUE;
         break;
       }
-      $to[] = theme('username', $account);
+      $to[] = theme('username', array('account' => $account));
     }
 
     $limit_string = '';
@@ -395,6 +395,38 @@ function private_message_settings() {
     '#default_value' => variable_get('privatemsg_display_loginmessage', TRUE),
     '#description' => t('This option can safely be disabled if the "New message indication" block is used instead.'),
   );
+
+  $form['flush_deleted'] = array(
+    '#type'        => 'fieldset',
+    '#collapsible' => TRUE,
+    '#collapsed'   => TRUE,
+    '#title'       => t('Flush deleted messages'),
+    '#description' => t('By default, deleted messages are only hidden from the
+                         user but still stored in the database. These settings
+                         control if and when messages should be removed.'),
+  );
+
+  $form['flush_deleted']['privatemsg_flush_enabled'] = array(
+    '#type'          => 'checkbox',
+    '#title'         => t('Flush deleted messages'),
+    '#default_value' => variable_get('privatemsg_flush_enabled', FALSE),
+    '#description'   => t('Enable the flushing of deleted messages. Requires that cron is enabled'),
+  );
+
+  $form['flush_deleted']['privatemsg_flush_days'] = array(
+    '#type' => 'select',
+    '#title' => t('Flush messages after they have been deleted for more days than'),
+    '#default_value' => variable_get('privatemsg_flush_days', 30),
+    '#options' => drupal_map_assoc(array(0, 1, 2, 5, 10, 30, 100)),
+  );
+
+  $form['flush_deleted']['privatemsg_flush_max'] = array(
+    '#type' => 'select',
+    '#title' => t('Maximum number of messages to flush per cron run'),
+    '#default_value' => variable_get('privatemsg_flush_max', 200),
+    '#options' => drupal_map_assoc(array(50, 100, 200, 500, 1000)),
+  );
+
   $form['privatemsg_listing'] = array(
     '#type' => 'fieldset',
     '#title' => t('Configure listings'),
@@ -420,6 +452,32 @@ function private_message_settings() {
 
 function private_message_settings_submit() {
   drupal_theme_rebuild();
+}
+
+/**
+ * Implementation of hook_cron().
+ *
+ * If the flush feature is enabled, a given amount of deleted messages that are
+ * old enough are flushed.
+ */
+function privatemsg_cron() {
+  if (variable_get('privatemsg_flush_enabled', FALSE)) {
+    $query = _privatemsg_assemble_query('deleted', variable_get('privatemsg_flush_days', 30), variable_get('privatemsg_flush_max', 200));
+
+    foreach ($query->execute()->fetchCol() as $mid) {
+      $message = _privatemsg_load($mid);
+      module_invoke_all('privatemsg_message_flush', $message);
+
+      // Delete recipients of the message.
+      db_delete('pm_index')
+        ->condition('mid', $mid)
+        ->execute();
+      // Delete message itself.
+      db_delete('pm_message')
+        ->condition('mid', $mid)
+        ->execute();
+    }
+  }
 }
 
 function privatemsg_theme() {
@@ -472,8 +530,8 @@ function privatemsg_preprocess_privatemsg_view(&$vars) {
 
   $message = $vars['message'];
   $vars['mid'] = isset($message['mid']) ? $message['mid']:null;
-  $vars['author_picture'] = theme('user_picture', $message['author']);
-  $vars['author_name_link'] = theme('username', $message['author']);
+  $vars['author_picture'] = theme('user_picture', array('account' => $message['author']));
+  $vars['author_name_link'] = theme('username', array('account' => $message['author']));
   /**
    * @todo perhaps make this timestamp configurable via admin UI?
    */
@@ -490,7 +548,7 @@ function privatemsg_preprocess_privatemsg_view(&$vars) {
   // call hook_privatemsg_message_view_alter
   drupal_alter('privatemsg_message_view', $vars);
 
-  $vars['message_actions'] = !empty($vars['message_actions']) ? theme('links', $vars['message_actions'], array('class' => array('message-actions'))) : '';
+  $vars['message_actions'] = !empty($vars['message_actions']) ? theme('links', array('links' => $vars['message_actions'], 'attributes' => array('class' => array('message-actions')))) : '';
 
   $vars['anchors'] = '';
   foreach ($vars['message_anchors'] as $anchor) {
@@ -635,7 +693,7 @@ function privatemsg_view($thread) {
 
   // Render the participants.
   $content['participants'] = array(
-    '#markup' => theme('privatemsg_recipients', $thread),
+    '#markup' => theme('privatemsg_recipients', array('thread' => $thread)),
     '#weight' => -5
   );
 
@@ -647,7 +705,7 @@ function privatemsg_view($thread) {
       privatemsg_message_change_status($pmid, PRIVATEMSG_READ, $thread['user']);
     }
     $content['messages'][$pmid] = array(
-      '#markup' => theme('privatemsg_view', $message),
+      '#markup' => theme('privatemsg_view', array('message' => $message)),
     );
   }
 
@@ -695,7 +753,7 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
         continue;
       }
       $to[] = $recipient->name;
-      $to_themed[$recipient->uid] = theme('username', $recipient);
+      $to_themed[$recipient->uid] = theme('username', array('account' => $recipient));
     }
     else {
       // Recipient list contains blocked users.
@@ -706,7 +764,7 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
   if (empty($to) && $usercount >= 1 && !$blocked) {
     // Assume the user sent message to own account as if the usercount is one or less, then the user sent a message but not to self.
     $to[] = $user->name;
-    $to_themed[$user->uid] = theme('username', $user);
+    $to_themed[$user->uid] = theme('username', array('account' => $user));
   }
 
   if (!empty($to)) {
@@ -934,7 +992,7 @@ function pm_send($form, &$form_state) {
   // Load usernames to which the message was sent to.
   $recipient_names = array();
   foreach ($form_state['validate_built_message']['recipients'] as $recipient) {
-    $recipient_names[] = theme('username', $recipient);
+    $recipient_names[] = theme('username', array('account' => $recipient));
   }
   if ($status !== FALSE )  {
     drupal_set_message(t('A message has been sent to !recipients.', array('!recipients' => implode(', ', $recipient_names))));
@@ -949,7 +1007,7 @@ function pm_preview($form, &$form_state) {
   drupal_validate_form($form['form_id']['#value'], $form, $form_state);
   if (!form_get_errors()) {
     $form_state['privatemsg_preview'] = array(
-        '#markup' => theme('privatemsg_view', $form_state['validate_built_message']),
+        '#markup' => theme('privatemsg_view', array('message' => $form_state['validate_built_message'])),
     );
   }
 
@@ -1105,6 +1163,26 @@ function privatemsg_sql_autocomplete($search, $names) {
 }
 
 /**
+ * Query Builder function to load all messages that should be flushed.
+ *
+ * @param $days
+ *   Select messages older than x days.
+ * @param $max
+ *   Select no more than $max messages.
+ */
+function privatemsg_sql_deleted($days, $max) {
+  $query = db_select('pm_message', 'pm');
+  $query->addField('pm', 'mid');
+
+  $query->join('pm_index', 'pmi', 'pmi.mid = pm.mid');
+  return $query
+    ->groupBy('pm.mid')
+    ->havingCondition('MIN(pmi.deleted)', 0, '>')
+    ->havingCondition('MAX(pmi.deleted)', time() - $days * 86400, '<')
+    ->range(0, $max);
+}
+
+/**
  * @}
  */
 
@@ -1135,7 +1213,7 @@ function privatemsg_user_name_autocomplete($string) {
     }
   }
   // convert to object to prevent drupal bug, see http://drupal.org/node/175361
-  drupal_json((object)$matches);
+  drupal_json_output((object)$matches);
 }
 
 /**
@@ -1213,7 +1291,7 @@ function _privatemsg_block_new() {
   if ($count) {
     $block = array(
       'subject' => format_plural($count, 'New message', 'New messages'),
-      'content' => theme('privatemsg_new_block', $count),
+      'content' => theme('privatemsg_new_block', array('count' => $count)),
     );
     return $block;
   }
@@ -1233,7 +1311,7 @@ function _privatemsg_block_menu() {
   if (count($links)) {
     $block = array(
       'subject' => t('Private messages'),
-      'content' => theme('item_list', $links),
+      'content' => theme('item_list', array('links' => $links)),
     );
   }
   return $block;
@@ -1292,26 +1370,18 @@ function privatemsg_delete_submit($form, &$form_state) {
  * @ingroup api
  */
 function privatemsg_message_change_delete($pmid, $delete, $account = NULL) {
-  if (is_null($account)) {
-    global $user;
-    $account = clone $user;
+  $delete_value = 0;
+  if ($delete == TRUE) {
+    $delete_value = time();
   }
+
   $update = db_update('pm_index')
-    ->fields(array('deleted' => $delete))
+    ->fields(array('deleted' => $delete_value))
     ->condition('mid', $pmid);
   if ($account){
     $update->condition('uid', $account->uid);
   }
   $update->execute();
-
-  $deleted = db_query("SELECT MIN(deleted) AS deleted_by_all FROM {pm_index} WHERE mid = :mid", array(':mid' => $pmid))->fetchField();
-
-  $deleted_by_all = FALSE;
-  if ($deleted > 0) {
-    $deleted_by_all = TRUE;
-  }
-
-  module_invoke_all('privatemsg_message_delete', $pmid, $deleted_by_all);
 }
 
 /**

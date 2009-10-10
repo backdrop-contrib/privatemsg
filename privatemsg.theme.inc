@@ -239,6 +239,8 @@ function phptemplate_privatemsg_list_header__thread_started() {
  * by the header and field theme patterns.
  */
 function theme_privatemsg_list($form) {
+  // @todo: Something is wrong, remove this hack.
+  $form = $form[0];
   $has_posts = !empty($form['#rows']);
 
   drupal_add_css(drupal_get_path('module', 'privatemsg') .'/styles/privatemsg-list.css');
@@ -284,7 +286,14 @@ function theme_privatemsg_list($form) {
   }
 
   // Theme the table, pass all generated information to the table theme function.
-  $form['list'] = array('#markup' => theme('table', $headers, $themed_rows, array('class' => array('privatemsg-list'))), '#weight' => 5);
+  $form['list'] = array(
+    '#markup' => theme('table', array(
+      'header'     => $headers,
+      'rows'       => $themed_rows,
+      'attributes' => array('class' => array('privatemsg-list')),
+    )),
+    '#weight' => 5,
+  );
   return drupal_render_children($form);
 }
 
