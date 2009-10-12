@@ -10,7 +10,7 @@ class PrivatemsgAPITestCase extends DrupalWebTestCase {
   /**
    * Implementation of getInfo().
    */
-  function getInfo() {
+  static function getInfo() {
     return array(
       // 'name' should start with what is being tested (menu item) followed by what about it
       // is being tested (creation/deletion).

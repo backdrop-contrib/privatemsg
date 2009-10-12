@@ -1,0 +1,72 @@
+<?php
+class PrivatemsgFilterTestCase extends DrupalWebTestCase {
+  /**
+   * Implementation of getInfo().
+   */
+  static function getInfo() {
+    return array(
+      'name' => t('Privatemsg Filter functionality.'),
+      'description' => t('Test filters, tags and inbox/sent handling'),
+      'group' => t('Privatemsg'),
+    );
+  }
+
+  /**
+   * Implementation of setUp().
+   */
+  function setUp() {
+    parent::setUp('privatemsg', 'privatemsg_filter');
+  }
+
+  /**
+   * Test correct handling of read all permissions.
+   */
+  function testInboxSentHandling() {
+    $author    = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
+    $recipient = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
+
+    // Create new message.
+    $edit = array(
+      'recipient'   => $recipient->name,
+      'subject'     => $this->randomName(20),
+      'body'        => $this->randomName(100),
+    );
+    $this->drupalLogin($author);
+    $this->drupalPost('messages/new', $edit, t('Send message'));
+    $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $recipient->name)), t('Message sent confirmation displayed'));
+
+    // Validate that the message is not displayed in the inbox of the author
+    // but in the sent list.
+    $this->drupalGet('messages');
+    $this->assertNoText($edit['subject'], t('Thread not displayed in inbox for author.'));
+    $this->drupalGet('messages/sent');
+    $this->assertText($edit['subject'], t('Thread displayed in "Sent messages" for author.'));
+    $this->drupalGet('messages/list');
+    $this->assertText($edit['subject'], t('Thread displayed in "All messages" for author.'));
+
+    // Write a reply as recipient.
+    $this->drupalLogin($recipient);
+    $this->drupalGet('messages');
+    $this->assertText($edit['subject'], t('Thread displayed in inbox for recipient.'));
+    $this->drupalGet('messages/sent');
+    $this->assertNoText($edit['subject'], t('Thread not displayed in "Sent messages" for recipient.'));
+    $this->drupalGet('messages/list');
+    $this->assertText($edit['subject'], t('Thread displayed in "All messages." for recipient.'));
+
+    // Navigate to the new message.
+    $this->clickLink($edit['subject']);
+    $response = array(
+      'body' => $this->randomName(100),
+    );
+    $this->drupalPost(NULL, $response, t('Send message'));
+    $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $author->name)), t('Message sent confirmation displayed'));
+
+    $this->drupalGet('messages/sent');
+    $this->assertText($edit['subject'], t('Thread displayed in "Sent messages" for recipient.'));
+
+    $this->drupalLogin($author);
+    $this->drupalGet('messages');
+    $this->assertText($edit['subject'], t('Thread displayed in inbox for author.'));
+  }
+}
+?>

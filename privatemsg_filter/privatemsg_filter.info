@@ -5,4 +5,5 @@ package = Mail
 core = 7.x
 dependencies[] = privatemsg
 files[]=privatemsg_filter.module
+files[]=privatemsg_filter.test
 

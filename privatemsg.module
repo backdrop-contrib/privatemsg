@@ -686,11 +686,6 @@ function privatemsg_unread_count($account = NULL) {
 function privatemsg_view($thread) {
   drupal_set_title($thread['subject']);
 
-  if ($thread['read_all']) {
-    // User has permission to read all messages AND is not a participant of the current thread.
-    drupal_set_message(t('This conversation is being viewed with escalated priviledges and may not be the same as shown to normal users.'), 'warning');
-  }
-
   // Render the participants.
   $content['participants'] = array(
     '#markup' => theme('privatemsg_recipients', array('thread' => $thread)),
@@ -714,6 +709,13 @@ function privatemsg_view($thread) {
     $content['reply'] = drupal_get_form('privatemsg_new', $thread['participants'], $thread['subject'], $thread['thread_id'], $thread['read_all']);
     $content['reply']['#weight'] = 5;
   }
+  // Check after calling the privatemsg_new form so that this message is only
+  // displayed when we are not sending a message.
+  if ($thread['read_all']) {
+    // User has permission to read all messages AND is not a participant of the current thread.
+    drupal_set_message(t('This conversation is being viewed with escalated priviledges and may not be the same as shown to normal users.'), 'warning');
+  }
+
   return $content;
 }
 
@@ -1607,6 +1609,22 @@ function _privatemsg_send($message) {
 
   drupal_alter('privatemsg_message_presave', $message);
 
+  $query = db_insert('pm_index')->fields(array('mid', 'thread_id', 'uid', 'is_new', 'deleted'));
+  if (isset($message['read_all']) && $message['read_all']) {
+    // The message was sent in read all mode, add the author as recipient to all
+    // existing messages.
+    $query_messages = _privatemsg_assemble_query('messages', array($message['thread_id']), NULL);
+    foreach ($query_messages->execute()->fetchCol() as $mid) {
+      $query->values(array(
+        'mid' => $mid,
+        'thread_id' => $message['thread_id'],
+        'uid' => $message['author']->uid,
+        'is_new' => 0,
+        'deleted' => 0,
+      ));
+     }
+  }
+
   // 1) Save the message body first.
   $args = array();
   $args['subject'] = $message['subject'];
@@ -1626,7 +1644,6 @@ function _privatemsg_send($message) {
 
   // 2) Save message to recipients.
   // Each recipient gets a record in the pm_index table.
-  $query = db_insert('pm_index')->fields(array('mid', 'thread_id', 'uid', 'is_new', 'deleted'));
   foreach ($message['recipients'] as $recipient) {
     $query->values(array(
       'mid' => $mid,
@@ -1636,21 +1653,6 @@ function _privatemsg_send($message) {
       'deleted' => 0,
     ));
   }
-
-  if (isset($message['read_all'])) {
-    // The message was sent in read all mode, add the author as recipient to all
-    // existing messages.
-    $query_messages = _privatemsg_assemble_query('messages', array($message['thread_id']), NULL);
-    foreach ($query_messages->execute()->fetchCol() as $mid) {
-      $query->values(array(
-        'mid' => $mid,
-        'thread_id' => $message['thread_id'],
-        'uid' => $message['author']->uid,
-        'is_new' => 0,
-        'deleted' => 0,
-      ));
-     }
-   }
 
   // When author is also the recipient, we want to set message to UNREAD.
   // All other times the message is set to READ.

@@ -10,7 +10,7 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
   /**
    * Implementation of getInfo().
    */
-  function getInfo() {
+  static function getInfo() {
     return array
     (
       // 'name' should start with what is being tested (menu item) followed by what about it
@@ -108,6 +108,70 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
         }
       }
     }
+  }
+
+  /**
+   * Test correct handling of read all permissions.
+   */
+  function testReadAllPermission() {
+    $author    = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
+    $recipient = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
+    $admin     = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg', 'read all private messages'));
+
+    // Create new message.
+    $edit = array(
+      'recipient'   => $recipient->name,
+      'subject'     => $this->randomName(20),
+      'body'        => $this->randomName(100),
+    );
+    $this->drupalLogin($author);
+    $this->drupalPost('messages/new', $edit, t('Send message'));
+
+    $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $recipient->name)), t('Message sent confirmation displayed'));
+
+    $this->drupalLogin($admin);
+    $this->drupalGet('messages/view/1');
+
+    $this->assertText(t('This conversation is being viewed with escalated priviledges and may not be the same as shown to normal users.'), t('Notice about read all mode displayed.'));
+
+    // Send a first response.
+    $admin_edit = array(
+      'body'        => $this->randomName(100),
+    );
+    $this->drupalPost('messages/view/1', $admin_edit, t('Send message'));
+    
+    // Make sure that the notice is not displayed anymore.
+    // @tod: Commented out because this does not work as expected.
+    $this->assertNoText(t('This conversation is being viewed with escalated priviledges and may not be the same as shown to normal users.'), t('Notice about read all mode not displayed.'));
+
+    // Make sure that both the existing message body and the new one are displayed.
+    $this->assertText($edit['body'], t('First message body displayed.'));
+    $this->assertText($admin_edit['body'], t('New message body displayed.'));
+
+    $admin_recipient_count = db_query("SELECT COUNT(*) FROM {pm_index} WHERE uid = :uid AND thread_id = :thread_id", array(
+      ':uid' => $admin->uid,
+      ':thread_id' => 1,
+    ))->fetchField();
+    $this->assertEqual($admin_recipient_count, 2, t('Admin is listed as recipient for every message once.'));
+
+
+    // Send a second response.
+    $admin_edit2 = array(
+      'body' => $this->randomName(100),
+    );
+    $this->drupalPost('messages/view/1', $admin_edit2, t('Send message'));
+
+    // Make sure that both the existing message body and the new one are displayed.
+    $this->assertText($edit['body'], t('First message body displayed.'));
+    $this->assertText($admin_edit['body'], t('Second response body displayed.'));
+    $this->assertText($admin_edit2['body'], t('Third message body displayed.'));
+
+    $admin_recipient_count = db_query("SELECT COUNT(*) FROM {pm_index} WHERE uid = :uid AND thread_id = :thread_id", array(
+      ':uid' => $admin->uid,
+      ':thread_id' => 1,
+    ))->fetchField();
+    $this->assertEqual($admin_recipient_count, 3, t('Admin is listed as recipient for every message once.'));
+
   }
 
   /**
