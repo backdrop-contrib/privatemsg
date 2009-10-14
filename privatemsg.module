@@ -200,8 +200,8 @@ function privatemsg_menu() {
     'title' => 'Messages',
     'page callback'    => 'drupal_get_form',
     'page arguments'   => array('privatemsg_list', 'list', 1),
-    'access callback'  => 'privatemsg_user_tab_access',
-    'access arguments' => array(1),
+    'access callback'  => 'privatemsg_user_access',
+    'access arguments' => array('read all private messages'),
     'type' => MENU_LOCAL_TASK,
   );
 
@@ -233,31 +233,6 @@ function privatemsg_user_access($permission = 'read privatemsg', $account = NULL
     return FALSE;
   }
   return TRUE;
-}
-
-/**
- * Function to check if a user can access the messages tab on a user page.
- *
- * @param $uid
- *   the user's id for whom the permission is being checked.
- */
-function privatemsg_user_tab_access($uid) {
-  global $user;
-  $account = $user;
-
-  // Disallow anonymous access, regardless of permissions.
-  if (!$account->uid) {
-    return FALSE;
-  }
-  // If a user is viewing own account, allow access.
-  if ($account->uid == $uid && privatemsg_user_access('read privatemsg', $account)) {
-    return TRUE;
-  }
-  // If a user has permission to view other user's messages, then allow access.
-  if (privatemsg_user_access('read all private messages', $account)) {
-    return TRUE;
-  }
-  return FALSE;
 }
 
 /**
