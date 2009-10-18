@@ -513,7 +513,7 @@ function privatemsg_preprocess_privatemsg_view(&$vars) {
   $vars['message_timestamp'] = format_date($message['timestamp'], 'small');
   $vars['message_body'] = check_markup($message['body'], $message['format']);
   if (isset($vars['mid']) && privatemsg_user_access('delete privatemsg')) {
-    $vars['message_actions'][] = array('title' => t('Delete message'), 'href' => 'messages/delete/' . $vars['mid']);
+    $vars['message_actions']['delete'] = array('title' => t('Delete message'), 'href' => 'messages/delete/' . $vars['mid']);
   }
   $vars['message_anchors'][] = 'privatemsg-mid-' . $vars['mid'];
   if (!empty($message['is_new'])) {
@@ -1224,11 +1224,11 @@ function privatemsg_block_info() {
   $blocks = array();
   $blocks['privatemsg-menu'] = array(
       'info' => t('Privatemsg links'),
-      'cache' => BLOCK_NO_CACHE,
+      'cache' => DRUPAL_NO_CACHE,
   );
   $blocks['privatemsg-new'] = array(
       'info' => t('New message indication'),
-      'cache' => BLOCK_NO_CACHE,
+      'cache' => DRUPAL_NO_CACHE,
   );
 
   return $blocks;
