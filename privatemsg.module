@@ -2008,37 +2008,55 @@ function privatemsg_list_submit($form, &$form_state) {
     $operation = $operations[$keys[1]];
   }
 
-  // Filter out unchecked threads, this gives us an array of "checked" threads.
-  $threads = array_filter($form_state['values']['threads']);
+  // Only execute something if we have a valid callback and at least one checked thread.
+  if (!empty($operation['callback'])) {
+    privatemsg_operation_execute($operation, $form_state['values']['threads']);
+  }
+}
 
-  // Only execute something if we have a valid callback and atleast one checked thread.
-  if (!empty($operation['callback']) && !empty($threads)) {
+/**
+ * Execute an operation on a number of threads.
+ *
+ * @param $operation
+ *   The operation that should be executed.
+ *   @see hook_privatemsg_thread_operations()
+ * @param $threads
+ *   An array of thread ids. The array is filtered before used, a checkboxes
+ *   array can be directly passed to it.
+ */
+function privatemsg_operation_execute($operation, $threads) {
+  // Filter out unchecked threads, this gives us an array of "checked" threads.
+  $threads = array_filter($threads);
+
+  if (empty($threads)) {
+    // Do not execute anything if there are no checked threads.
+    return;
+  }
+  // Add in callback arguments if present.
+  if (isset($operation['callback arguments'])) {
+    $args = array_merge(array($threads), $operation['callback arguments']);
+  }
+  else {
+    $args = array($threads);
+  }
+  // Execute the chosen action and pass the defined arguments.
+  call_user_func_array($operation['callback'], $args);
+
+  // Check if that operation has defined an undo callback.
+  if (isset($operation['undo callback']) && $undo_function = $operation['undo callback']) {
     // Add in callback arguments if present.
-    if (isset($operation['callback arguments'])) {
-      $args = array_merge(array($threads), $operation['callback arguments']);
+    if (isset($operation['undo callback arguments'])) {
+      $undo_args = array_merge(array($threads), $operation['undo callback arguments']);
     }
     else {
-      $args = array($threads);
+      $undo_args = array($threads);
     }
-    // Execute the chosen action and pass the defined arguments.
-    call_user_func_array($operation['callback'], $args);
-
-    // Check if that operation has defined a undo callback
-    if (isset($operation['undo callback']) && $undo_function = $operation['undo callback']) {
-      // Add in callback arguments if present.
-      if (isset($operation['undo callback arguments'])) {
-        $undo_args = array_merge(array($threads), $operation['undo callback arguments']);
-      }
-      else {
-        $undo_args = array($threads);
-      }
-      // Store the undo callback in the session and display a "Undo" link.
-      // @todo: Provide a more flexible solution for such an undo action, operation defined string for example.
-      $_SESSION['privatemsg']['undo callback'] = array('function' => $undo_function, 'args' => $undo_args);
-      $undo = l(t('undone'), 'messages/undo/action', array('query' => drupal_get_destination()));
-
-      drupal_set_message(t('The previous action can be !undo.', array('!undo' => $undo)));
-    }
+    // Store the undo callback in the session and display a "Undo" link.
+    // @todo: Provide a more flexible solution for such an undo action, operation defined string for example.
+    $_SESSION['privatemsg']['undo callback'] = array('function' => $undo_function, 'args' => $undo_args);
+    $undo = url('messages/undo/action', array('query' => drupal_get_destination()));
+    
+    drupal_set_message(t('The previous action can be <a href="!undo">undone</a>.', array('!undo' => $undo)));
   }
 }
 

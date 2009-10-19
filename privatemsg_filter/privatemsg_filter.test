@@ -95,6 +95,34 @@ class PrivatemsgTagsTestCase extends DrupalWebTestCase {
     parent::setUp('privatemsg', 'privatemsg_filter');
   }
 
+  function testCreateUserTag() {
+    $webuser = $this->drupalCreateuser(array('read privatemsg', 'write privatemsg', 'tag private messages', 'create private message tags'));
+
+    // Create a new thread through the api.
+    $response = privatemsg_new_thread(array($webuser), $this->randomName(10), $this->randomName(20), array('author' => $webuser));
+    $thread_id = $response['message']['thread_id'];
+
+    $edit = array(
+      'tags' => 'Awesome bananas, Banana',
+    );
+    $this->drupalLogin($webuser);
+    $this->drupalPost('messages/view/' . $thread_id, $edit, t('Tag this conversation'));
+    $this->assertRaw('Awesome bananas,', t('Found message tag'));
+    $this->assertRaw('Banana', t('Found message tag'));
+
+
+    // Create a another thread through the api.
+    $response = privatemsg_new_thread(array($webuser), $this->randomName(10), $this->randomName(20), array('author' => $webuser));
+    $thread_id = $response['message']['thread_id'];
+
+    $edit = array(
+      'tags' => 'Banana, Apple',
+    );
+    $this->drupalPost('messages/view/' . $thread_id, $edit, t('Tag this conversation'));
+    $this->assertRaw('Banana', t('Found message tag'));
+    $this->assertRaw('Apple,', t('Found message tag'));
+  }
+
   function testTagsAdministration() {
     // Create users.
     $admin = $this->drupalCreateuser(array('administer privatemsg settings', 'read privatemsg', 'write privatemsg', 'tag private messages', 'create private message tags'));
