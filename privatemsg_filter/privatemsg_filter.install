@@ -27,6 +27,13 @@ function privatemsg_filter_schema() {
         'length'        => 255,
         'not null'      => TRUE,
       ),
+      'public'    => array(
+        'description'   => 'Defines if a tag is public (visible for all users)',
+        'type'          => 'int',
+        'unsigned'      => TRUE,
+        'size'          => 'tiny',
+        'default'       => 0,
+      ),
     ),
     'primary key'     => array('tag_id')
   );

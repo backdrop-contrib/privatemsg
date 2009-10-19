@@ -38,6 +38,50 @@ function privatemsg_filter_menu() {
     'access arguments' => array('administer privatemsg settings'),
     'type'             => MENU_LOCAL_TASK,
   );
+  $items['admin/config/people/messages/tags'] = array(
+    'title'            => 'Tags',
+    'description'      => 'Configure tags.',
+    'page callback'    => 'privatemsg_tags_admin',
+    'access arguments' => array('administer privatemsg settings'),
+    'type'             => MENU_LOCAL_TASK,
+    'file'             => 'privatemsg_filter.admin.inc',
+  );
+  $items['admin/config/people/messages/tags/list'] = array(
+    'title'            => 'List',
+    'description'      => 'Configure tags.',
+    'page callback'    => 'privatemsg_tags_admin',
+    'access arguments' => array('administer privatemsg settings'),
+    'type'             => MENU_DEFAULT_LOCAL_TASK,
+    'file'             => 'privatemsg_filter.admin.inc',
+    'weight'           => -10,
+  );
+  $items['admin/config/people/messages/tags/add'] = array(
+    'title'            => 'Add',
+    'description'      => 'Configure tags.',
+    'page callback'    => 'drupal_get_form',
+    'page arguments'   => array('privatemsg_tags_form'),
+    'access arguments' => array('administer privatemsg settings'),
+    'type'             => MENU_LOCAL_TASK,
+    'file'             => 'privatemsg_filter.admin.inc',
+  );
+  $items['admin/config/people/messages/tags/edit/%'] = array(
+    'title'            => 'Add',
+    'description'      => 'Configure tags.',
+    'page callback'    => 'drupal_get_form',
+    'page arguments'   => array('privatemsg_tags_form', 6),
+    'access arguments' => array('administer privatemsg settings'),
+    'type'             => MENU_CALLBACK,
+    'file'             => 'privatemsg_filter.admin.inc',
+  );
+  $items['admin/config/people/messages/tags/delete/%'] = array(
+    'title'            => 'Add',
+    'description'      => 'Configure tags.',
+    'page callback'    => 'drupal_get_form',
+    'page arguments'   => array('privatemsg_filter_tags_delete', 6),
+    'access arguments' => array('administer privatemsg settings'),
+    'type'             => MENU_CALLBACK,
+    'file'             => 'privatemsg_filter.admin.inc',
+  );
   $items['messages/inbox'] = array(
     'title'            => 'Inbox',
     'page callback'    => 'drupal_get_form',
@@ -174,7 +218,7 @@ function privatemsg_filter_get_tags_data($account) {
   }
 
   // Only show the tags that a user have used.
-  return $tag_data = _privatemsg_assemble_query(array('used_tags', 'privatemsg_filter'), $account)->execute()->fetchAllKeyed();
+  return $tag_data = _privatemsg_assemble_query(array('tags', 'privatemsg_filter'), $account)->execute()->fetchAllKeyed();
 }
 
 function privatemsg_filter_dropdown(&$form_state, $account) {
@@ -417,7 +461,7 @@ function privatemsg_filter_form(&$form_state) {
   $thread_id = arg(2);
 
   // Get a list of current tags for this thread
-  $query = _privatemsg_assemble_query(array('used_tags', 'privatemsg_filter'), $user, $thread_id);
+  $query = _privatemsg_assemble_query(array('tags', 'privatemsg_filter'), $user, $thread_id);
   $count = $query->countQuery()->execute()->fetchField();
   $tags = implode(', ', $query->execute()->fetchCol(1));
 
@@ -550,14 +594,26 @@ function privatemsg_filter_query_privatemsg_autocomplete_alter($query) {
  * @param $thread_id
  *  The thread_id - Only needed if we want the tags for a specific thread instead of all used tags on any thread.
  */
-function privatemsg_filter_sql_used_tags($user, $thread_id = NULL) {
+function privatemsg_filter_sql_tags($user = NULL, $thread_id = NULL) {
   $query = db_select('pm_tags', 't')
-    ->fields('t', array('tag_id', 'tag'))
-    ->condition('ti.uid', $user->uid)
+    ->fields('t', array('tag_id', 'tag', 'public'))
     ->orderBy('t.tag', 'ASC');
-  $query->join('pm_tags_index', 'ti', 'ti.tag_id = t.tag_id');
   if (!empty($thread_id)) {
+    $query->join('pm_tags_index', 'ti', 'ti.tag_id = t.tag_id');
     $query->condition('ti.thread_id', $thread_id);
+  }
+  else {
+    $query->addExpression('COUNT(ti.thread_id)', 'count');
+    $query->leftJoin('pm_tags_index', 'ti', 'ti.tag_id = t.tag_id');
+    $query
+      ->groupBy('t.tag_id')
+      ->groupBy('t.tag');
+  }
+  if (!empty($user)) {
+    $query->condition('ti.uid', $user->uid);
+  }
+  if (!empty($thread_id) || !empty($user)) {
+    $query->orderBy('t.tag', 'ASC');
   }
   return $query;
 }

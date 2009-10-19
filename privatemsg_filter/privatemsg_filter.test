@@ -1,4 +1,7 @@
 <?php
+/**
+ * Test filters, tags and inbox/sent handling.
+ */
 class PrivatemsgFilterTestCase extends DrupalWebTestCase {
   /**
    * Implementation of getInfo().
@@ -69,4 +72,122 @@ class PrivatemsgFilterTestCase extends DrupalWebTestCase {
     $this->assertText($edit['subject'], t('Thread displayed in inbox for author.'));
   }
 }
-?>
+
+/**
+ * Test filters, tags and inbox/sent handling.
+ */
+class PrivatemsgTagsTestCase extends DrupalWebTestCase {
+  /**
+   * Implementation of getInfo().
+   */
+  function getInfo() {
+    return array(
+      'name' => t('Privatemsg Tags functionality.'),
+      'description' => t('Test Privatemsg tags use and administration functionality.'),
+      'group' => t('Privatemsg'),
+    );
+  }
+
+  /**
+   * Implementation of setUp().
+   */
+  function setUp() {
+    parent::setUp('privatemsg', 'privatemsg_filter');
+  }
+
+  function testTagsAdministration() {
+    // Create users.
+    $admin = $this->drupalCreateuser(array('administer privatemsg settings', 'read privatemsg', 'write privatemsg', 'tag private messages', 'create private message tags'));
+    $webuser = $this->drupalCreateuser(array('read privatemsg', 'write privatemsg', 'tag private messages', 'create private message tags'));
+
+    // Prepare data.
+    $private = array(
+      'tag' => $this->randomName(10),
+      'public' => FALSE,
+    );
+    $public = array(
+      'tag' => $this->randomName(10),
+      'public' => 1,
+    );
+    $to_edit = array(
+      'tag' => $this->randomName(10),
+      'public' => 1,
+    );
+    $edited_tag = array(
+      'tag' => $this->randomName(10),
+      'public' => FALSE,
+    );
+    $duplicate = $private;
+
+    $this->drupalLogin($admin);
+
+    // Check that the empty message is displayed.
+    $this->drupalGet('admin/config/people/messages/tags/list');
+    $this->assertText(t('No tags available.'), t('No tags exist yet.'));
+
+    // Create tags.
+    $this->drupalPost('admin/config/people/messages/tags/add', $private, t('Create tag'));
+    $this->assertText(t('Tag created.'));
+    $this->drupalPost('admin/config/people/messages/tags/add', $public, t('Create tag'));
+    $this->assertText(t('Tag created.'));
+    $this->drupalPost('admin/config/people/messages/tags/add', $to_edit, t('Create tag'));
+    $this->assertText(t('Tag created.'));
+    $this->drupalPost('admin/config/people/messages/tags/add', $duplicate, t('Create tag'));
+    $this->assertText(t('Tag already exists, choose a different name.'));
+
+    // Verify that all tags are displayed.
+    $this->drupalGet('admin/config/people/messages/tags/list');
+    foreach (array($private, $public, $to_edit) as $tag) {
+      $this->assertText($tag['tag'], t('Tag %tag displayed', array('%tag' => $tag['tag'])));
+    }
+
+    // Verfiy private/public flag.
+    $rows = $this->xpath('//table/tbody/tr');
+    foreach ($rows as $row) {
+      // Index 0 is tag name.
+      if ((string)$row->td[0] == $private['tag']) {
+        // Index 2 is Yes/- flag indicator.
+        $this->assertEqual((string)$row->td[2], '-', t('Private tag does not have public flag.'));
+      }
+      else {
+        $this->assertEqual((string)$row->td[2], t('Yes'), t('Public tag does have public flag.'));
+      }
+      // Extract edit url.
+      if ((string)$row->td[0] == $to_edit['tag']) {
+        $edit_url = substr($row->td[3]->a[0]['href'], 1);
+      }
+      // Extract edit url.
+      if ((string)$row->td[0] == $public['tag']) {
+        $delete_url = substr($row->td[3]->a[1]['href'], 1);
+      }
+    }
+
+    // Edit Tag.
+    $this->drupalGet($edit_url);
+    $this->assertTitle(t('Edit @tag | @site-name', array('@site-name' => variable_get('site_name', 'Drupal'), '@tag' => $to_edit['tag'])), t('Correct title for @tag is set.', array('@tag' => $to_edit['tag'])));
+
+    // With duplicate data.
+    $this->drupalPost(NULL, $duplicate, t('Save tag'));
+    $this->assertText(t('Tag already exists, choose a different name.'));
+
+    // With valid data.
+    $this->drupalPost(NULL, $edited_tag, t('Save tag'));
+    $this->assertText(t('Tag updated.'), t('Tag has been updated'));
+
+    // Verify edited tag.
+    $this->assertNoText($to_edit['tag'], t('Old tag name not found anymore.'));
+    $this->assertText($edited_tag['tag'], t('Tag has been renamed.'));
+    $rows = $this->xpath('//table/tbody/tr');
+    foreach ($rows as $row) {
+      // The new tag name should exist and the public flag should be set to false.
+      if ((string)$row->td[0] == $edited_tag['tag']) {
+        $this->assertEqual((string)$row->td[2], '-', t('Edited tag does not have public flag.'));
+      }
+    }
+
+    // Delete tag.
+    $this->drupalPost($delete_url, array(), t('Delete'));
+    $this->assertText(t('Tag has been deleted'), t('Tag has been deleted'));
+    $this->assertNoText($public['tag'], t('Deleted tag is not displayed anymore.'));
+  }
+}
