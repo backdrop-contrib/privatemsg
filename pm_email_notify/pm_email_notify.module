@@ -41,11 +41,9 @@ function pm_email_notify_admin_settings_form() {
 
   $form['pm_email']['pm_email_notify_desc'] = array(
     '#type' => 'item',
-    '#value' => t('Customize the email messages sent to users upon receipt of a new private message. <br />Available variables are: !author, !author_uid, !pm_subject, !pm_body, !thread, !site, !login_url, !uri, !uri_brief.'),
+    '#value' => t('Customize the email messages sent to users upon receipt of a new private message. <br />Available variables are: !author, !author_uid, !pm_subject, !pm_body, !thread, !site, !login_url, !uri, !uri_brief, !message (URL) and !settings (URL).'),
     '#weight' => 1,
   );
-
-
 
   $form['pm_email']['pm_email_notify_subject'] = array(
     '#type' => 'textfield',
@@ -120,7 +118,7 @@ function pm_email_notify_mail($key, &$message, $params) {
  *
  * @param $message
  *  The private message array being sent.  Must contain at
- *  least the fields 'author', 'subject', and 'body'.
+ *  least the fields 'author', 'subject', 'thread_id' and 'body'.
  * @return
  *  Array of mappings from token names to values (for use with strtr()).
  */
@@ -132,6 +130,8 @@ function _pm_email_notify_token($recipient, $message) {
     '!pm_body' => drupal_html_to_text($message['body'], array()),
     '!thread' => $message['thread_id'],
     '!user_uid' => $recipient->uid,
+    '!message' => url('messages/view/' . $message['thread_id'], array('absolute' => TRUE)),
+    '!settings' => url('user/' . $recipient->uid . '/edit', array('absolute' => TRUE)),
   );
 
   return $tokens;
@@ -142,7 +142,7 @@ function _pm_email_notify_token($recipient, $message) {
  * Returns default email notification body.
  */
 function _pm_email_notify_default_body() {
-  return "Hi !username,\n\nThis is an automatic reminder from the site !site. You have received a new private message from !author.\n\nTo read your message, follow this link:\n!uri/messages\n\nIf you don't want to receive these emails again, change your preferences here:\n!uri/user/!user_uid/edit";
+  return "Hi !username,\n\nThis is an automatic reminder from the site !site. You have received a new private message from !author.\n\nTo read your message, follow this link:\n!message\n\nIf you don't want to receive these emails again, change your preferences here:\n!settings";
 }
 
 /**
