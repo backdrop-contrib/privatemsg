@@ -68,46 +68,146 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
   /**
    * Test sending message from the /messages/new page between two people
    */
-  function testPrivatemsgWriteNewPrivatemsgFormSubmit() {
-    /**
-     * create an author and recipient users
-     */
+  function testWriteReplyPrivatemsg() {
+    // Create a author and two recipients.
     $author     = $this->drupalCreateUser(array('write privatemsg'));
     $recipient  = $this->drupalCreateUser(array('read privatemsg'));
+    $recipient2  = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg'));
 
-    /**
-     * login using author
-     * Fill navigate to privatemsg/new form, fill it out and submit
-     */
+    // Login author and go to new message form.
     $this->drupalLogin($author);
     $this->drupalGet('messages/new');
 
-    //assert if form is present //submit the form only if we found it
-    $xpath = '//form[@id="privatemsg-new"]';
-    if ( $this->assertTrue($this->xpath($xpath), 'Write New Message form successfuly found.', 'privatemsg') ) {
-      $edit = array(      //create new message
-        'recipient'   => $recipient->name,
-        'subject'     => $this->randomName(20),
-        'body'        => $this->randomName(100),
-      );
-      //submit our message
-      $this->drupalPost('messages/new', $edit, t('Send message'));
-      //check if we got successful confirmation
-      if ( $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $recipient->name)), 'Message sent confirmation displayed', 'privatemsg') ) {
-        /**
-         * Login using recipient and try to read the message by going to inbox first
-         * We do the test inside this conditional block because sending messages test much pass before we proceed to reading messages
-         */
-        $this->drupalLogin($recipient);
-        $this->drupalGet('messages');
+    // Prepare edit arrays, single recipient.
+    $edit = array(
+      'recipient'   => $recipient->name,
+      'subject'     => $this->randomName(20),
+      'body'        => $this->randomName(100),
+    );
+    // Two recipients.
+    $edit2 = array(
+      'recipient'   => $recipient->name . ', ' . $recipient2->name,
+      'subject'     => $this->randomName(20),
+      'body'        => $this->randomName(100),
+    );
+    // No recipients.
+    $editnone = array(
+      'recipient'   => '',
+      'subject'     => $this->randomName(20),
+      'body'        => $this->randomName(100),
+    );
+    // Invalid recipient
+    $editinvalid = array(
+      'recipient'   => $this->randomName(5),
+      'subject'     => $this->randomName(20),
+      'body'        => $this->randomName(100),
+    );
+    // Empty body.
+    $editnobody = array(
+      'recipient'   => $recipient->name,
+      'subject'     => $this->randomName(20),
+      'body'        => '',
+    );
+    // Empty subject.
+    $editnosubject = array(
+      'recipient'   => $recipient->name,
+      'subject'     => '',
+      'body'        => $this->randomName(100),
+    );
+    // Empty subject and body.
+    $editempty = array(
+      'recipient'   => $recipient->name,
+      'subject'     => '',
+      'body'        => '',
+    );
+    // Invalid and valid recipient
+    $editmixed = array(
+      'recipient'   => ($invalidmixed = $this->randomName(5)) . ', ' . $recipient->name,
+      'subject'     => $this->randomName(20),
+      'body'        => $this->randomName(100),
+    );
 
-        //assert if we see the subject of the message
-        if ( $this->assertText(t('@text', array('@text' => $edit['subject'])), 'Sent Message subject found.', 'privatemsg') ) {
-          $this->clickLink(t('@text', array('@text' => $edit['subject']))); //navigate into the message
-          $this->assertText($edit['body'], 'Found Message body.', 'privatemsg'); //confirm that we can read the message that was sent
-        }
-      }
-    }
+    // Submit the messages.
+    $this->drupalPost('messages/new', $edit, t('Send message'));
+    $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $recipient->name)), 'Message sent confirmation displayed.');
+
+    $this->drupalPost('messages/new', $edit2, t('Send message'));
+    $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => implode(', ', array($recipient->name, $recipient2->name)))), 'Message sent confirmation displayed.');
+
+    $this->drupalPost('messages/new', $editnone, t('Send message'));
+    $this->assertText(t('Disallowed to send a message without atleast one valid recipient'), 'Message was not sent.');
+
+    $this->drupalPost('messages/new', $editinvalid, t('Send message'));
+    $this->assertText(t('Disallowed to send a message without atleast one valid recipient'), 'Message was not sent.');
+    $this->assertText(t('The following users will not receive this private message: @recipients', array('@recipients' => $editinvalid['recipient'])), 'Message about non-existing user displayed.');
+
+    $this->drupalPost('messages/new', $editnobody, t('Send message'));
+    $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $recipient->name)), 'Message sent confirmation displayed.');
+
+    $this->drupalPost('messages/new', $editnosubject, t('Send message'));
+    $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $recipient->name)), 'Message sent confirmation displayed.');
+
+    $this->drupalPost('messages/new', $editempty, t('Send message'));
+    $this->assertText(t('Disallowed to send a message without subject'), 'Empty subject message displayed.');
+
+    $this->drupalPost('messages/new', $editmixed, t('Send message'));
+    $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $recipient->name)), 'Message sent confirmation displayed.');
+    $this->assertText(t('The following users will not receive this private message: @recipients', array('@recipients' => $invalidmixed)), 'Message about non-existing user displayed.');
+
+    // Login as recipient2 and try to write some replies.
+    $this->drupalLogin($recipient2);
+    $this->drupalGet('messages');
+
+    $this->assertNoText($edit['subject'], 'Sent message subject found.');
+    $this->assertText($edit2['subject'], 'Sent message subject found.');
+    $this->clickLink($edit2['subject']);
+
+    $this->assertText($edit2['body'], 'Found message body.');
+
+    // Prepare replies.
+    $reply = array(
+      'body' => $this->randomName(100),
+    );
+    // Empty body.
+    $replyempty = array(
+      'body' => '',
+    );
+
+    $this->drupalPost(NULL, $reply, t('Send message'));
+    $this->assertText(t('A message has been sent to @recipient, @author.', array('@recipient' => $recipient->name, '@author' => $author->name)), 'Reply has been sent.');
+    $this->assertText($reply['body'], 'New message body displayed.');
+
+    $this->drupalPost(NULL, $replyempty, t('Send message'));
+    $this->assertText(t('Disallowed to send reply without a message.'));
+
+    // Login using recipient and try to read the message by going to inbox first.
+    $this->drupalLogin($recipient);
+    $this->drupalGet('messages');
+
+    // Assert if we see the subject of the messages.
+    $this->assertText($edit['subject'], 'Sent message subject found.');
+    $this->assertText($edit2['subject'], 'Sent message subject found.');
+    $this->assertText($editnobody['subject'], 'Sent message subject found.');
+    $this->assertText(trim(truncate_utf8(strip_tags($editnosubject['body']), 50, TRUE, TRUE)), 'Sent message subject found.');
+    $this->assertText($editmixed['subject'], 'Sent message subject found.');
+
+    // Assert that we don't see those that were invalid.
+    $this->assertNoText($editnone['subject'], 'Invalid message subject not found.');
+    $this->assertNoText($editinvalid['subject'], 'Invalid message subject not found.');
+
+    // Navigate into the message.
+    $this->clickLink($edit['subject']);
+    // Confirm that we can read the message that was sent.
+    $this->assertText($edit['body'], 'Found message body.');
+    $this->assertNoText(t('Reply to thread:'), 'Reply form is not displayed.');
+
+    // Navigate into the message.
+    $this->drupalGet('messages');
+    $this->clickLink($edit2['subject']);
+    // Confirm that we can read the message that was sent.
+    $this->assertText($edit2['body'], 'Found message body.');
+    // Confirm that we can read the reply that was sent.
+    $this->assertText($reply['body'], 'Found reply body.');
   }
 
   /**

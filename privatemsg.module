@@ -1461,7 +1461,7 @@ function privatemsg_new_thread($recipients, $subject, $body = NULL, $options = a
  *
  * @ingroup api
  */
-function privatemsg_reply($thread_id, $body = NULL, $options = array()) {
+function privatemsg_reply($thread_id, $body, $options = array()) {
   global $user;
   $author = clone $user;
 
@@ -1527,6 +1527,16 @@ function _privatemsg_validate_message(&$message, $form = FALSE) {
     }
     else {
       $messages['error'][] = t('Disallowed to send a message without subject');
+    }
+  }
+
+  // Don't allow replies without a body.
+  if (!empty($message['thread_id']) && empty($message['body'])) {
+    if ($form) {
+      form_set_error('body', t('Disallowed to send reply without a message.'));
+    }
+    else {
+      $messages['error'][] = t('Disallowed to send reply without a message.');
     }
   }
 

@@ -90,8 +90,9 @@ class PrivatemsgAPITestCase extends DrupalWebTestCase {
     $resultok = privatemsg_reply($thread_row['mid'], 'Test Body', array('author' => $recipient1));
     $this->assertTrue($resultok['success'], 'Reply could be sent successfully');
 
-    $resultok = privatemsg_reply($thread_row['mid'], '', array('author' => $recipient2));
-    $this->assertTrue($resultok['success'], 'API allowed to send message without body');
+    $resultf1 = privatemsg_reply($thread_row['mid'], '', array('author' => $recipient2));
+    $this->assertFalse($resultf1['success'], 'API denied to send message without body.');
+    $this->assertEqual($resultf1['messages']['error'][0], t('Disallowed to send reply without a message.'), 'Correct error returned when replying with an empty body.');
 
     $resultf2 = privatemsg_reply($thread_row['mid'], 'Test Body', array('author' => $recipient3));
     $errormessage = 'User '. $recipient3->name .' is not allowed to write messages';
