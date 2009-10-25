@@ -483,12 +483,12 @@ function privatemsg_filter_create_get_query($filter)
 function privatemsg_filter_form_privatemsg_list_alter(&$form, $form_state) {
   global $user;
   
-  if (privatemsg_user_access('filter private messages')) {
+  if (privatemsg_user_access('filter private messages') && !empty($form['#data'])) {
     $form += privatemsg_filter_dropdown($form_state, $form['#account']);
   }
 
   $tags = privatemsg_filter_get_tags_data($user);
-  if (privatemsg_user_access('filter private messages') && !empty($tags)) {
+  if (privatemsg_user_access('filter private messages') && !empty($tags) && !empty($form['#data'])) {
     $options = array();
     $options[] = t('Apply Tag...');
     foreach ($tags as $tag_id => $tag) {
