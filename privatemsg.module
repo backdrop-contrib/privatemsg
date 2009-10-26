@@ -295,14 +295,11 @@ function privatemsg_thread_load($thread_id, $account = NULL) {
         $thread['read_all'] = TRUE;
       }
 
-      // load messages returned by the messages query with _privatemsg_load().
+      // load messages returned by the messages query.
       $query = _privatemsg_assemble_query('messages', array($thread_id), $thread['read_all'] ? NULL : $account);
-      foreach ($query->execute()->fetchCol() as $mid) {
-        if ($message = _privatemsg_load($mid, $thread['read_all'] ? NULL : $account)) {
-          $thread['messages'][$mid] = $message;
-        }
-      }
-      // if there are no messages, don't allow access to the thread.
+      $thread['messages'] = privatemsg_message_load_multiple($query->execute()->fetchCol(), $thread['read_all'] ? NULL : $account);
+
+      // If there are no messages, don't allow access to the thread.
       if (empty($thread['messages'])) {
         $thread = FALSE;
       }
@@ -440,7 +437,7 @@ function privatemsg_cron() {
     $query = _privatemsg_assemble_query('deleted', variable_get('privatemsg_flush_days', 30), variable_get('privatemsg_flush_max', 200));
 
     foreach ($query->execute()->fetchCol() as $mid) {
-      $message = _privatemsg_load($mid);
+      $message = privatemsg_message_load($mid);
       module_invoke_all('privatemsg_message_flush', $message);
 
       // Delete recipients of the message.
@@ -1057,18 +1054,18 @@ function privatemsg_sql_list($account, $argument = 'list') {
 }
 
 /**
- * Query definition to load a message.
+ * Query function for loading a single or multiple messages.
  *
- * @param $pmid
- *   the id of the message.
+ * @param $pmids
+ *   Array of pmids.
  * @param $account
- *   User object of account for which to load the message.
+ *   Account for which the messages should be loaded.
  */
-function privatemsg_sql_load($pmid, $account = NULL) {
+function privatemsg_sql_load($pmids, $account = NULL) {
   $query = db_select('pm_message', 'pm')
     ->fields('pm', array('mid', 'author', 'subject', 'body', 'timestamp', 'format'))
     ->fields('pmi', array('is_new'))
-    ->condition('pmi.mid', $pmid);
+    ->condition('pmi.mid', $pmids);
   if($account) {
     $query->condition('pmi.uid', $account->uid);
   }
@@ -1481,7 +1478,7 @@ function privatemsg_reply($thread_id, $body, $options = array()) {
 
   // We don't know the subject and the recipients, so we need to load them..
   // thread_id == mid on the first message of the thread
-  $first_message = _privatemsg_load($thread_id, $message['author']);
+  $first_message = privatemsg_message_load($thread_id, $message['author']);
   if (!$first_message) {
     return array(
       'success'  => FALSE,
@@ -1720,10 +1717,31 @@ function privatemsg_get_link($recipients, $account = array(), $subject = NULL) {
  *
  * @ingroup api
  */
-function _privatemsg_load($pmid, $account = NULL) {
-  $query = _privatemsg_assemble_query('load', $pmid, $account);
+function privatemsg_message_load($pmid, $account = NULL) {
+  $messages = privatemsg_message_load_multiple(array($pmid), $account);
+  return current($messages);
+}
 
-  if ($message = $query->execute()->fetchAssoc()) {
+/**
+ * Load multiple messages.
+ *
+ * @param $pmids
+ *   Array of Message ids, pm.mid field
+ * @param $account
+ *   For which account the message should be loaded.
+ *   Defaults to the current user.
+ *
+ * @ingroup api
+ */
+function privatemsg_message_load_multiple($pmids, $account = NULL) {
+  // Avoid SQL error that would happen with an empty pm.mid IN () clause.
+  if (empty($pmids)) {
+    return array();
+  }
+  $result = _privatemsg_assemble_query('load', $pmids, $account)->execute();
+
+  $messages = array();
+  while ($message = $result->fetchAssoc()) {
     $message['user'] = $account;
     // Load author of message.
     $message['author'] = user_load($message['author']);
@@ -1731,9 +1749,9 @@ function _privatemsg_load($pmid, $account = NULL) {
     if (!empty($returned)) {
       $message = array_merge_recursive($returned, $message);
     }
-    return $message;
+    $messages[$message['mid']] = $message;
   }
-  return FALSE;
+  return $messages;
 }
 
 /**
