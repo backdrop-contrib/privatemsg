@@ -144,10 +144,10 @@ function privatemsg_menu() {
     'weight'           => -5,
     'menu_name'        => 'user-menu',
   );
-  $items['messages/delete/%'] = array(
+  $items['messages/delete/%privatemsg_thread/%privatemsg_message'] = array(
     'title'            => 'Delete message',
     'page callback'    => 'drupal_get_form',
-    'page arguments'   => array('privatemsg_delete', 2),
+    'page arguments'   => array('privatemsg_delete', 2, 3),
     'access callback'  => 'privatemsg_user_access',
     'access arguments' => array('delete privatemsg'),
     'type'             => MENU_CALLBACK,
@@ -501,7 +501,8 @@ function privatemsg_preprocess_privatemsg_view(&$vars) {
 //  drupal_set_message('<pre>'. print_r($vars,1 ) . '</pre>');
 
   $message = $vars['message'];
-  $vars['mid'] = isset($message['mid']) ? $message['mid']:null;
+  $vars['mid'] = isset($message['mid']) ? $message['mid'] : NULL;
+  $vars['thread_id'] = isset($message['thread_id']) ? $message['thread_id'] : NULL;
   $vars['author_picture'] = theme('user_picture', array('account' => $message['author']));
   $vars['author_name_link'] = theme('username', array('account' => $message['author']));
   /**
@@ -509,8 +510,8 @@ function privatemsg_preprocess_privatemsg_view(&$vars) {
    */
   $vars['message_timestamp'] = format_date($message['timestamp'], 'small');
   $vars['message_body'] = check_markup($message['body'], $message['format']);
-  if (isset($vars['mid']) && privatemsg_user_access('delete privatemsg')) {
-    $vars['message_actions']['delete'] = array('title' => t('Delete message'), 'href' => 'messages/delete/' . $vars['mid']);
+  if (isset($vars['mid']) && isset($vars['thread_id']) && privatemsg_user_access('delete privatemsg')) {
+    $vars['message_actions'][] = array('title' => t('Delete message'), 'href' => 'messages/delete/' . $vars['thread_id'] . '/' . $vars['mid']);
   }
   $vars['message_anchors'][] = 'privatemsg-mid-' . $vars['mid'];
   if (!empty($message['is_new'])) {
@@ -1064,7 +1065,7 @@ function privatemsg_sql_list($account, $argument = 'list') {
 function privatemsg_sql_load($pmids, $account = NULL) {
   $query = db_select('pm_message', 'pm')
     ->fields('pm', array('mid', 'author', 'subject', 'body', 'timestamp', 'format'))
-    ->fields('pmi', array('is_new'))
+    ->fields('pmi', array('is_new', 'thread_id'))
     ->condition('pmi.mid', $pmids);
   if($account) {
     $query->condition('pmi.uid', $account->uid);
@@ -1291,12 +1292,16 @@ function _privatemsg_block_menu() {
   return $block;
 }
 
-function privatemsg_delete($form, $form_state, $pmid) {
-
+function privatemsg_delete($form, $form_state, $thread, $message) {
   $form['pmid'] = array(
     '#type' => 'value',
-    '#value' => $pmid,
+    '#value' => $message['mid'],
   );
+  $form['delete_destination'] = array(
+    '#type' => 'value',
+    '#value' => count($thread['messages']) > 1 ? 'messages/view/' . $message['thread_id'] : 'messages',
+  );
+
   if (privatemsg_user_access('read all private messages')) {
     $form['delete_options'] = array(
       '#type' => 'checkbox',
@@ -1307,7 +1312,7 @@ function privatemsg_delete($form, $form_state, $pmid) {
   }
   return confirm_form($form,
     t('Are you sure you want to delete this message?'),
-    isset($_GET['destination']) ? $_GET['destination'] : 'messages/view/'. $pmid,
+    isset($_GET['destination']) ? $_GET['destination'] : 'messages/view/'. $message['thread_id'],
     t('This action cannot be undone.'),
     t('Delete'),
     t('Cancel')
@@ -1319,16 +1324,16 @@ function privatemsg_delete_submit($form, &$form_state) {
   $account = clone $user;
 
   if ($form_state['values']['confirm']) {
-    if ($form_state['values']['delete_options']) {
+    if (isset($form_state['values']['delete_options']) && $form_state['values']['delete_options']) {
       privatemsg_message_change_delete($form_state['values']['pmid'], 1);
-      drupal_set_message(t('Message has been deleted for all users'));
+      drupal_set_message(t('Message has been deleted for all users.'));
     }
     else {
       privatemsg_message_change_delete($form_state['values']['pmid'], 1, $account);
-      drupal_set_message(t('Message has been deleted'));
+      drupal_set_message(t('Message has been deleted.'));
     }
   }
-  $form_state['redirect'] = 'messages';
+  $form_state['redirect'] = $form_state['values']['delete_destination'];
 }
 
 /**

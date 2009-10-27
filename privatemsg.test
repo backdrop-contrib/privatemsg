@@ -333,6 +333,87 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
     $this->assertTrue(empty($message), t('Message #4 has been flushed'));
   }
 
+  function testDelete() {
+    // Create users.
+    $author = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg', 'delete privatemsg'));
+    $recipient = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg', 'delete privatemsg'));
+    $recipient2 = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
+    $admin = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg', 'delete privatemsg', 'read all private messages'));
+
+    // Create texts.
+    $subject = $this->randomName(20);
+    $body1 = $this->randomName(100);
+    $body2 = $this->randomName(100);
+
+    // Create message and response.
+    $return = privatemsg_new_thread(array($recipient, $recipient2), $subject, $body1, array('author' => $author));
+    privatemsg_reply($return['message']['thread_id'], $body2, array('author' => $recipient));
+
+    // Check with user without delete permission.
+    $this->drupalLogin($recipient2);
+    $this->drupalGet('messages/view/' . $return['message']['thread_id']);
+    $this->assertText($subject, 'Subject is displayed');
+    $this->assertText($body1, 'First message is displayed');
+    $this->assertText($body2, 'Second message is displayed');
+    $this->assertNoText(t('Delete message'), 'Delete message is link is not displayed for user without permission');
+
+    // Check if access for that user is denied.
+    $this->drupalGet('messages/delete/' . $return['message']['thread_id'] . '/' . $return['message']['mid']);
+    $this->assertText(t('Access denied'));
+
+    // Check with user with delete access.
+    $this->drupalLogin($recipient);
+    $this->drupalGet('messages/view/' . $return['message']['thread_id']);
+    $this->assertText(t('Delete message'), 'Delete message is link is displayed for user without permission');
+
+    // Click delete link of the second message and cancel.
+    $this->clickLink(t('Delete message'), 1);
+    $this->assertText(t('Are you sure you want to delete this message?'), 'Confirmation message displayed');
+    $this->clickLink(t('Cancel'));
+    $this->assertText($body2, 'Second message is still displayed');
+
+    // Confirm message deletion.
+    $this->clickLink(t('Delete message'), 1);
+    $this->assertText(t('Are you sure you want to delete this message?'), 'Confirmation message displayed');
+    $this->drupalPost(NULL, array(), t('Delete'));
+    $this->assertText(t('Message has been deleted.'), 'Message deleted has been deleted');
+    $this->assertText($body1, 'First message is still displayed');
+    $this->assertNoText($body2, 'Second message was deleted');
+    
+    // Click delete link of the first message and cancel.
+    $this->clickLink(t('Delete message'));
+    $this->assertText(t('Are you sure you want to delete this message?'), 'Confirmation message displayed');
+    $this->clickLink(t('Cancel'));
+    $this->assertText($body1, 'Second message is still displayed');
+
+    // Confirm message deletion.
+    $this->clickLink(t('Delete message'));
+    $this->assertText(t('Are you sure you want to delete this message?'), 'Confirmation message displayed');
+    $this->drupalPost(NULL, array(), t('Delete'));
+    $this->assertText(t('Message has been deleted.'), 'Message deleted has been deleted');
+    $this->assertNoText($subject, 'All messages of that thread have been deleted');
+
+    // Test if the message has not been deleted for other users.
+    $this->drupalLogin($recipient2);
+    $this->drupalGet('messages/view/' . $return['message']['thread_id']);
+    $this->assertText($body1, 'First message is still displayed');
+    $this->assertText($body2,'First message is still displayed');
+
+    // Test delete all checkbox.
+    $this->drupalLogin($admin);
+    $this->drupalGet('messages/view/' . $return['message']['thread_id']);
+    $this->clickLink(t('Delete message'), 1);
+    $this->drupalPost(NULL, array('delete_options' => TRUE), t('Delete'));
+    $this->assertText(t('Message has been deleted for all users.'), 'Message deleted has been deleted');
+
+    // Test if the message has been deleted for all users.
+    $this->drupalLogin($recipient2);
+    $this->drupalGet('messages/view/' . $return['message']['thread_id']);
+    $this->assertText($body1, 'First message is still displayed');
+    $this->assertNoText($body2, 'Second message has been deleted for all users');
+
+  }
+
   /**
    * Implementation of tearDown().
    */

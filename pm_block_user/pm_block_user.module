@@ -533,7 +533,6 @@ function pm_block_user_privatemsg_block_message($author, $recipients) {
 
 function pm_block_user_query_privatemsg_load_alter($query) {
   $query->addField('pmbu', 'recipient', 'is_blocked');
-  $query->addField('pmi', 'thread_id');
   $query->leftJoin('pm_block_user', 'pmbu', 'pm.author = pmbu.author AND pmi.uid = pmbu.recipient');
 }
 
