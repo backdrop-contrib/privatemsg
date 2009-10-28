@@ -1305,8 +1305,8 @@ function privatemsg_delete($form, $form_state, $thread, $message) {
   if (privatemsg_user_access('read all private messages')) {
     $form['delete_options'] = array(
       '#type' => 'checkbox',
-      '#title' => 'Delete this message for all users?',
-      '#description' => 'Tick the box to delete the message for all users.',
+      '#title' => t('Delete this message for all users?'),
+      '#description' => t('Tick the box to delete the message for all users.'),
       '#default_value' => FALSE,
     );
   }
