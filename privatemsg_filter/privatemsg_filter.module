@@ -565,7 +565,7 @@ function privatemsg_filter_query_privatemsg_list_alter($query) {
     $query->condition('pm.author', $account->uid);
   }
   if ($argument == 'inbox') {
-    $query->having('((SELECT pmf.author FROM {pm_message} pmf WHERE pmf.mid = pmi.thread_id) = :uid1 AND COUNT(pmi.thread_id) > 1) OR (SELECT pmf.author FROM {pm_message} pmf WHERE pmf.mid = pmi.thread_id) <> :uid2', array(
+    $query->having('((SELECT pmf.author FROM {pm_message} pmf WHERE pmf.mid = pmi.thread_id) = :uid1 AND COUNT(pmi.thread_id) > 1) OR (SELECT COUNT(*) FROM {pm_message} pmf INNER JOIN {pm_index} pmif ON (pmf.mid = pmif.mid) WHERE pmif.thread_id = pmi.thread_id AND pmf.author <> :uid2) > 0', array(
       ':uid1' => $account->uid,
       ':uid2' => $account->uid,
     ));

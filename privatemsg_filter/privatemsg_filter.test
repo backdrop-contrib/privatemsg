@@ -25,7 +25,7 @@ class PrivatemsgFilterTestCase extends DrupalWebTestCase {
    * Test correct handling of read all permissions.
    */
   function testInboxSentHandling() {
-    $author    = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
+    $author    = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg', 'delete privatemsg'));
     $recipient = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
 
     // Create new message.
@@ -70,6 +70,31 @@ class PrivatemsgFilterTestCase extends DrupalWebTestCase {
     $this->drupalLogin($author);
     $this->drupalGet('messages');
     $this->assertText($edit['subject'], t('Thread displayed in inbox for author.'));
+
+    // Test for bug http://drupal.org/node/617648
+    // Delete all messages for author.
+    $delete = array(
+        'threads[1]' => 1,
+    );
+    $this->drupalPost(NULL, $delete, t('Delete'));
+    $this->assertNoText($edit['subject'], t('Thread has been deleted for author.'));
+
+    // Write a reply as recipient.
+    $this->drupalLogin($recipient);
+    $this->drupalGet('messages');
+
+    // Navigate to the new message.
+    $this->clickLink($edit['subject']);
+    $response = array(
+      'body' => $this->randomName(100),
+    );
+    $this->drupalPost(NULL, $response, t('Send message'));
+    $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $author->name)), t('Message sent confirmation displayed'));
+
+    // Check if thread is visible again for author.
+    $this->drupalLogin($author);
+    $this->drupalGet('messages');
+    $this->assertText($edit['subject'], t('Thread displayed again in inbox for author.'));
   }
 }
 
