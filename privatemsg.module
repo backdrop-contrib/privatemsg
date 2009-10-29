@@ -373,9 +373,7 @@ function private_message_settings() {
     '#collapsible' => TRUE,
     '#collapsed'   => TRUE,
     '#title'       => t('Flush deleted messages'),
-    '#description' => t('By default, deleted messages are only hidden from the
-                         user but still stored in the database. These settings
-                         control if and when messages should be removed.'),
+    '#description' => t('By default, deleted messages are only hidden from the user but still stored in the database. These settings control if and when messages should be removed.'),
   );
 
   $form['flush_deleted']['privatemsg_flush_enabled'] = array(
