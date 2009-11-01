@@ -79,12 +79,12 @@ function _privatemsg_generate_user_array($userstring, $slice = NULL) {
  * @return
  *   String with formated user objects, like user1, user2.
  */
-function _privatemsg_format_participants($part_array, $limit = 20, $no_text = FALSE) {
+function _privatemsg_format_participants($part_array, $limit = NULL, $no_text = FALSE) {
   if (count($part_array) > 0) {
     $to = array();
     $limited = FALSE;
     foreach ($part_array as $account) {
-      if (count($to) >= $limit) {
+      if (is_int($limit) && count($to) >= $limit) {
         $limited = TRUE;
         break;
       }
