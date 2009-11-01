@@ -1747,7 +1747,10 @@ function privatemsg_message_load_multiple($pmids, $account = NULL) {
   while ($message = $result->fetchAssoc()) {
     $message['user'] = $account;
     // Load author of message.
-    $message['author'] = user_load($message['author']);
+    if (!($message['author'] = user_load($message['author']))) {
+      // If user does not exist, load anonymous user.
+      $message['author'] = user_load(array('uid' => 0));
+    }
     $returned = module_invoke_all('privatemsg_message_load', $message);
     if (!empty($returned)) {
       $message = array_merge_recursive($returned, $message);
