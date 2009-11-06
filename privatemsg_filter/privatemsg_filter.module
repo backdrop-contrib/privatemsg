@@ -740,7 +740,8 @@ function privatemsg_filter_sql_tags($user = NULL, $thread_id = NULL) {
     $query->leftJoin('pm_tags_index', 'ti', 'ti.tag_id = t.tag_id');
     $query
       ->groupBy('t.tag_id')
-      ->groupBy('t.tag');
+      ->groupBy('t.tag')
+      ->groupBy('t.public');
   }
   if (!empty($user)) {
     $query->condition('ti.uid', $user->uid);
