@@ -126,8 +126,8 @@ function _pm_email_notify_token($recipient, $message) {
 
   $tokens = array(
     '!author' => $message['author']->name,
-    '!pm_subject' => drupal_html_to_text($message['subject'], array()),
-    '!pm_body' => drupal_html_to_text($message['body'], array()),
+    '!pm_subject' => drupal_html_to_text(check_plain($message['subject'])),
+    '!pm_body' => drupal_html_to_text(check_markup($message['body'], $message['format'])),
     '!thread' => $message['thread_id'],
     '!user_uid' => $recipient->uid,
     '!message' => url('messages/view/' . $message['thread_id'], array('absolute' => TRUE)),
