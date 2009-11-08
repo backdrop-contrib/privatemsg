@@ -1491,7 +1491,12 @@ function privatemsg_reply($thread_id, $body, $options = array()) {
 
   $message['thread_id'] = $thread_id;
 
+  // Load participants.
   $message['recipients'] = _privatemsg_load_thread_participants($thread_id);
+  // Remove author.
+  if (isset($message['recipients'][$message['author']->uid]) && count($message['recipients']) > 1) {
+    unset($message['recipients'][$message['author']->uid]);
+  }
   $message['subject'] = $first_message['subject'];
 
   $validated = _privatemsg_validate_message($message);
