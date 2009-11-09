@@ -337,8 +337,9 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
     // Create users.
     $author = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg', 'delete privatemsg'));
     $recipient = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg', 'delete privatemsg'));
-    $recipient2 = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
+    $recipient2 = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg', 'cancel account'));
     $admin = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg', 'delete privatemsg', 'read all private messages'));
+    $dummy = $this->drupalCreateUser(array('cancel account'));
 
     // Create texts.
     $subject = $this->randomName(20);
@@ -412,6 +413,52 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
     $this->assertText($body1, 'First message is still displayed');
     $this->assertNoText($body2, 'Second message has been deleted for all users');
 
+    // Check that messages of canceled users (user_cancel_delete) are deleted too.
+    $edit = array('body' => $this->randomName(100));
+    $this->drupalPost(NULL, $edit, t('Send message'));
+    $this->drupalGet('messages/view/' . $return['message']['thread_id']);
+    $this->assertText($edit['body'], t('New reply is displayed'));
+
+    // Reload user object, don't use the cache.
+    $recipient2 = user_load($recipient2->uid, TRUE);
+
+    // Attempt to cancel account.
+    variable_set('user_cancel_method', 'user_cancel_delete');
+    $this->drupalGet('user/' . $recipient2->uid . '/edit');
+    $this->drupalPost(NULL, NULL, t('Cancel account'));
+
+    // Confirm account cancellation.
+    $timestamp = time();
+    $this->drupalPost(NULL, NULL, t('Cancel account'));
+
+    // Confirm account cancellation request.
+    $this->drupalGet("user/$recipient2->uid/cancel/confirm/$timestamp/" . user_pass_rehash($recipient2->pass, $timestamp, $recipient2->login));
+
+    // Simpletest thinks that we are still logged in.
+    $this->loggedInUser = NULL;
+
+    $this->drupalLogin($admin);
+    $this->drupalGet('messages/view/' . $return['message']['thread_id']);
+    $this->assertText($body1, 'First message is still displayed');
+    $this->assertNoText($edit['body'], t('Reply of deleted user is not displayed anymore'));
+
+    // Check that deleting users that didn't send any message does not cause
+    // errors.
+    $this->drupalLogin($dummy);
+
+    // Reload user object, don't use the cache.
+    $dummy = user_load($dummy->uid, TRUE);
+
+    // Attempt to cancel account.
+    $this->drupalGet('user/' . $dummy->uid . '/edit');
+    $this->drupalPost(NULL, NULL, t('Cancel account'));
+
+    // Confirm account cancellation.
+    $timestamp = time();
+    $this->drupalPost(NULL, NULL, t('Cancel account'));
+
+    // Confirm account cancellation request.
+    $this->drupalGet("user/$dummy->uid/cancel/confirm/$timestamp/" . user_pass_rehash($dummy->pass, $timestamp, $dummy->login));
   }
 
   /**

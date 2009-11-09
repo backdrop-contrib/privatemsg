@@ -772,3 +772,13 @@ function privatemsg_filter_sql_tags_autocomplete($search, $tags) {
   }
   return $query;
 }
+
+/**
+ * Implements hook_user_cancel().
+ */
+function privatemsg_filter_user_cancel($edit, $account, $method) {
+  // Always delete since this is only visible for the user anyway.
+  db_delete('pm_tags_index')
+    ->condition('uid', $account->uid)
+    ->delete();
+}

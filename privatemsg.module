@@ -1214,6 +1214,46 @@ function privatemsg_user_login(&$edit, &$account) {
 }
 
 /**
+ * Implements hook_user_cancel().
+ */
+function privatemsg_user_cancel($edit, $account, $method) {
+  switch ($method) {
+    case 'user_cancel_reassign':
+      db_update('pm_message')
+        ->condition('author', $account->uid)
+        ->fields(array('author' => 0))
+        ->execute();
+      break;
+    
+    case 'user_cancel_delete':
+    case 'user_cancel_block_unpublish':
+      $mids = db_select('pm_message', 'pm')
+        ->fields('pm', array('mid'))
+        ->condition('author', $account->uid)
+        ->execute()
+        ->fetchCol();
+
+      if (!empty($mids)) {
+        // Delete recipient entries in {pm_index} of the messages the user wrote.
+        db_delete('pm_index')
+          ->condition('mid', $mids)
+          ->execute();
+      }
+
+      // Delete messages the user wrote.
+      db_delete('pm_message')
+        ->condition('author', $account->uid)
+        ->execute();
+
+      // Delete recipient entries of that user.
+      db_delete('pm_index')
+        ->condition('uid', $account->uid)
+        ->execute();
+      break;
+  }
+}
+
+/**
  * Implements hook_block_info().
  */
 function privatemsg_block_info() {
