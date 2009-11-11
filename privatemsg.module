@@ -58,6 +58,8 @@ function _privatemsg_generate_user_array($userstring, $slice = NULL) {
   // Convert user uid list (uid1,uid2,uid3) into an array. If $slice is not NULL
   // pass that as argument to array_slice(). For example, -4 will only load the
   // last four users.
+  // This is done to avoid loading user objects that are not displayed, for
+  // obvious performance reasons.
   $users = explode(',', $userstring);
   if (!is_null($slice)) {
     $users = array_slice($users, $slice);
