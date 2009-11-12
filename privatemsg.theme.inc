@@ -240,7 +240,7 @@ function phptemplate_privatemsg_list_header__thread_started() {
  */
 function theme_privatemsg_list($form) {
   // @todo: Something is wrong, remove this hack.
-  $form = $form[0];
+  $form = $form['form'];
   $has_posts = !empty($form['#rows']);
 
   drupal_add_css(drupal_get_path('module', 'privatemsg') .'/styles/privatemsg-list.css');

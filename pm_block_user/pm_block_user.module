@@ -55,7 +55,7 @@ function pm_block_user_menu() {
 /**
  * Menu callback for blocked user settings.
  */
-function pm_block_user_settings(&$form_state) {
+function pm_block_user_settings($form, &$form_state) {
   drupal_add_css(drupal_get_path('module', 'pm_block_user') .'/pm_block_user.css');
   // Need to cache form for AHAH, so it can be rebuilt from cache later.
   $form = array(
@@ -286,7 +286,7 @@ function pm_block_user_js($form, $form_state) {
 function pm_block_user_theme() {
   return array(
     'pm_block_user_actions' => array(
-      'arguments' => array('form' => NULL),
+      'render element' => 'form',
     ),
   );
 }
@@ -297,6 +297,9 @@ function pm_block_user_theme() {
  * @ingroup themeable
  */
 function theme_pm_block_user_actions($form) {
+  // @todo: Something is wrong, remove this hack.
+  $form = $form['form'];
+
   $rows = array();
   $headers = array(
     t('If the author has the role'),

@@ -455,25 +455,25 @@ function privatemsg_cron() {
 function privatemsg_theme() {
   return array(
     'privatemsg_view'    => array(
-      'arguments'        => array('message' => NULL),
+      'variables'        => array('message' => NULL),
       'template'         => variable_get('private_message_view_template', 'privatemsg-view'), // 'privatemsg',
     ),
     'privatemsg_from'    => array(
-      'arguments'        => array('author' => NULL),
+      'variables'        => array('author' => NULL),
       'template'         => 'privatemsg-from',
     ),
     'privatemsg_recipients' => array(
-      'arguments'        => array('message' => NULL),
+      'variables'        => array('message' => NULL),
       'template'         => 'privatemsg-recipients',
     ),
     'privatemsg_between' => array(
-      'arguments'        => array('recipients' => NULL),
+      'variables'        => array('recipients' => NULL),
       'template'         => 'privatemsg-between',
     ),
     'privatemsg_list'    => array(
       'file'                  => 'privatemsg.theme.inc',
       'path'                  => drupal_get_path('module', 'privatemsg'),
-      'arguments'        => array('form'),
+      'render element'        => 'form',
     ),
     // Define pattern for header/field templates. The theme system will register all
     // theme functions that start with the defined pattern.
@@ -595,7 +595,7 @@ function privatemsg_list($form, &$form_state, $argument = 'list', $uid = NULL) {
   // Define checkboxes, pager and theme
   $form['threads'] = array('#type' => 'checkboxes', '#options' => $threads);
   $form['pager'] = array('#theme' => 'pager', '#weight' => 20);
-  $form['#theme'] = 'privatemsg_list';
+  //$form['#theme'] = 'privatemsg_list';
 
   // Store the account for which the threads are displayed.
   $form['#account'] = $account;
@@ -815,12 +815,14 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
     '#type'               => 'submit',
     '#value'              => t('Preview message'),
     '#submit'             => array('pm_preview'),
+    '#validate'           => array('pm_send_validate'),
     '#weight'             => 10,
   );
   $form['privatemsg']['submit'] = array(
     '#type'               => 'submit',
     '#value'              => t('Send message'),
     '#submit'             => array('pm_send'),
+    '#validate'           => array('pm_send_validate'),
     '#weight'             => 15,
   );
   $url = 'messages';
@@ -837,7 +839,6 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
     '#value'              => l($title, $url, array('attributes' => array('id' => 'edit-cancel'))),
     '#weight'             => 20,
   );
-  $form['#validate'][]    = 'pm_send_validate';
 
   if (!is_null($thread_id)) {
     $form['privatemsg']['thread_id'] = array(
@@ -1066,7 +1067,8 @@ function privatemsg_sql_load($pmids, $account = NULL) {
   $query = db_select('pm_message', 'pm')
     ->fields('pm', array('mid', 'author', 'subject', 'body', 'timestamp', 'format'))
     ->fields('pmi', array('is_new', 'thread_id'))
-    ->condition('pmi.mid', $pmids);
+    ->condition('pmi.mid', $pmids)
+    ->orderBy('pm.timestamp', 'ASC');
   if($account) {
     $query->condition('pmi.uid', $account->uid);
   }
@@ -1086,12 +1088,13 @@ function privatemsg_sql_load($pmids, $account = NULL) {
 function privatemsg_sql_messages($threads, $account = NULL, $load_all = FALSE) {
   $query = db_select('pm_index', 'pmi');
   $query->addExpression('DISTINCT(pmi.mid)', 'mid');
+  $query->join('pm_message', 'pm', 'pm.mid = pmi.mid');
   if (!$load_all) {
     $query->condition('pmi.deleted', 0);
   }
   $query
     ->condition('pmi.thread_id', $threads)
-    ->orderBy('pmi.mid', 'ASC');
+    ->orderBy('pm.timestamp', 'ASC');
   if($account) {
     $query->condition('pmi.uid', $account->uid);
   }
