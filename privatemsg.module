@@ -516,6 +516,7 @@ function privatemsg_preprocess_privatemsg_view(&$vars) {
   $vars['message_anchors'][] = 'privatemsg-mid-' . $vars['mid'];
   if (!empty($message['is_new'])) {
     $vars['message_anchors'][] = 'new';
+    $vars['new'] = drupal_ucfirst(t('new'));
   }
 
   // call hook_privatemsg_message_view_alter
