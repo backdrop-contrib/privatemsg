@@ -64,6 +64,12 @@ class PrivatemsgAPITestCase extends DrupalWebTestCase {
     $message = $this->getMessageFromSubject('not allowed');
     $this->assertTrue(empty($message), 'Message was not saved in database');
 
+    // Test with an input format that the author is not allowed to use.
+    $resultf4 = privatemsg_new_thread(array($recipient1, $recipient2, $recipient3), 'input filter not allowed', 'Body text', array('author' => $author, 'format' => 2));
+    $errormessage = t('User @user is not allowed to use the specified input format.', array('@user' => $author->name));
+    $this->assertEqual($errormessage, $resultf4['messages']['error'][0], t('User is not allowed to use the specified input format.'));
+    $message = $this->getMessageFromSubject('input filter not allowed');
+    $this->assertTrue(empty($message), 'Message was not saved in database');
   }
 
   function getMessageFromSubject($subject) {

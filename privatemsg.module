@@ -1591,6 +1591,16 @@ function _privatemsg_validate_message(&$message, $form = FALSE) {
     }
   }
 
+  // Check if an allowed format is used.
+  if (!filter_access(filter_format_load($message['format']), $message['author'])) {
+    if ($form) {
+      form_set_error('format', t('You are not allowed to use the specified input format.'));
+    }
+    else {
+      $messages['error'][] = t('User @user is not allowed to use the specified input format.', array('@user' => $message['author']->name));
+    }
+  }
+
   if (empty($message['recipients']) || !is_array($message['recipients'])) {
     if ($form) {
       form_set_error('to', t('Disallowed to send a message without atleast one valid recipient'));
