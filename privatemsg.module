@@ -14,6 +14,10 @@ define('PRIVATEMSG_READ', 0);
  * Status constant for unread messages.
  */
 define('PRIVATEMSG_UNREAD', 1);
+/**
+ * Show unlimited messages in a thread.
+ */
+define('PRIVATEMSG_UNLIMITED', 'unlimited');
 
 /**
  * Implements hook_permission().
@@ -264,6 +268,8 @@ function privatemsg_view_access() {
  * @param $account
  *   User object for which the thread should be loaded, defaults to
  *   the current user.
+ * @param $limit
+ *   How many messages should be loaded. Note that counting starts from the end.
  *
  * @return
  *   $thread object, with keys messages, participants, title and user. messages
@@ -275,7 +281,7 @@ function privatemsg_view_access() {
 
  * @ingroup api
  */
-function privatemsg_thread_load($thread_id, $account = NULL) {
+function privatemsg_thread_load($thread_id, $account = NULL, $limit = NULL) {
   $threads = &drupal_static(__FUNCTION__, array());
   if ((int)$thread_id > 0) {
     $thread = array('thread_id' => $thread_id);
@@ -297,8 +303,47 @@ function privatemsg_thread_load($thread_id, $account = NULL) {
         $thread['read_all'] = TRUE;
       }
 
-      // load messages returned by the messages query.
+      // If limit is NULL, select based on get params.
+      if (is_null($limit)) {
+        if (isset($_GET['start'])) {
+          $limit = $_GET['start'];
+        }
+        else {
+          $limit = variable_get('privatemsg_view_use_max_as_default', FALSE) ? variable_get('privatemsg_view_default_amount', 10) : variable_get('privatemsg_view_max_amount', 20);
+        }
+      }
+      $thread['limit'] = $limit;
+
+      // Load messages returned by the messages query with privatemsg_message_load_multiple().
       $query = _privatemsg_assemble_query('messages', array($thread_id), $thread['read_all'] ? NULL : $account);
+      // Override count query to use DISTINCT.
+      $countQuery = $query->countquery();
+      $expressions = &$countQuery->getExpressions();
+      $expressions['expression']['expression'] = 'COUNT(DISTINCT pmi.mid)';
+      $thread['message_count'] = $thread['to'] = $countQuery->execute()->fetchField();
+      $thread['from'] = 1;
+      // Check if we need to limit the messages.
+      $max_amount = variable_get('privatemsg_view_max_amount', 20);
+      if ($limit != PRIVATEMSG_UNLIMITED) {
+        if ($max_amount == PRIVATEMSG_UNLIMITED) {
+          $max_amount = $thread['older_start'] = $thread['message_count'];
+        }
+        if ($thread['message_count'] > $limit) {
+          $thread['from'] = $thread['message_count'] - $limit + 1;
+          if ($thread['from'] + $max_amount - 1 < $thread['message_count']) {
+            $thread['to'] = $thread['from'] + $max_amount - 1;
+             $thread['newer_start'] = $limit - $max_amount;
+          }
+          if (empty($thread['older_start'])) {
+            $thread['older_start'] = $limit + $max_amount;
+          }
+        }
+        elseif ($limit > $thread['message_count'] && ($thread['from'] + $max_amount - 1 < $thread['message_count'])) {
+          $thread['newer_start'] = $limit - $max_amount;
+          $thread['to'] = $max_amount = $thread['message_count'] - $limit + $max_amount;
+        }
+        $query->range($thread['from'] - 1, $max_amount);
+      }
       $thread['messages'] = privatemsg_message_load_multiple($query->execute()->fetchCol(), $thread['read_all'] ? NULL : $account);
 
       // If there are no messages, don't allow access to the thread.
@@ -306,7 +351,7 @@ function privatemsg_thread_load($thread_id, $account = NULL) {
         $thread = FALSE;
       }
       else {
-        // general data, assume subject is the same for all messages of that thread.
+        // General data, assume subject is the same for all messages of that thread.
         $thread['user'] = $account;
         $message = current($thread['messages']);
         $thread['subject'] = $message['subject'];
@@ -356,13 +401,6 @@ function private_message_settings() {
     '#default_value' => variable_get('private_message_view_template', 'privatemsg-view'),
     '#options'       => private_message_view_options(),
   );
-  $form['privatemsg_per_page'] = array(
-    '#type' => 'select',
-    '#title' => t('Messages per page'),
-    '#default_value' => variable_get('privatemsg_per_page', 25),
-    '#options' => drupal_map_assoc(array(10, 25, 50, 75, 100)),
-    '#description' => t('Choose the number of conversations that should be listed per page.'),
-  );
   $form['privatemsg_display_loginmessage'] = array(
     '#type' => 'checkbox',
     '#title' => t('Inform the user about new messages on login'),
@@ -406,6 +444,14 @@ function private_message_settings() {
     '#collapsed' => FALSE,
   );
 
+  $form['privatemsg_listing']['privatemsg_per_page'] = array(
+    '#type' => 'select',
+    '#title' => t('Threads per page'),
+    '#default_value' => variable_get('privatemsg_per_page', 25),
+    '#options' => drupal_map_assoc(array(10, 25, 50, 75, 100)),
+    '#description' => t('Choose the number of conversations that should be listed per page.'),
+  );
+
   $form['privatemsg_listing']['privatemsg_display_fields'] = array(
     '#type' => 'checkboxes',
     '#title' => t('Configure fields'),
@@ -417,6 +463,36 @@ function private_message_settings() {
     ),
     '#default_value' => variable_get('privatemsg_display_fields', array('participants')),
   );
+
+  $amounts = drupal_map_assoc(array(5, 10, 20, 30, 50, 70, 90, 150, 200, 250, 300));
+  $form['privatemsg_listing']['privatemsg_view_max_amount'] = array(
+    '#type'          => 'select',
+    '#title'         => t('Number of messages on thread pages'),
+    '#options'       => $amounts + array(PRIVATEMSG_UNLIMITED => t('Unlimited')),
+    '#default_value' => variable_get('privatemsg_view_max_amount', 20),
+    '#description'   => t('Threads will not show more than this number of messages on a single page.'),
+    '#weight'        => 10,
+  );
+
+  $form['privatemsg_listing']['privatemsg_view_use_max_as_default'] = array(
+    '#type'          => 'checkbox',
+    '#title'         => t('Display different amount of messages on first thread page'),
+    '#default_value' => variable_get('privatemsg_view_use_max_as_default', FALSE),
+    '#description'   => t('By default, the first thread page shows the maximally allowed amount of messages. Enable this checkbox to set a different value.'),
+    '#weight'        => 15,
+  );
+
+  $form['privatemsg_listing']['privatemsg_view_default_amount'] = array(
+    '#prefix'        => '<div id="privatemsg-view-default-button">',
+    '#suffix'        => '</div>',
+    '#type'          => 'select',
+    '#title'         => t('Number of messages on first thread page'),
+    '#default_value' => variable_get('privatemsg_view_default_amount', 10),
+    '#description'   => t('The number of messages to be displayed on first thread page. Displays the newest messages.'),
+    '#options'       => $amounts,
+    '#weight'        => 20,
+  );
+  drupal_add_js(drupal_get_path('module', 'privatemsg') .'/privatemsg-admin.js');
 
   $form['#submit'][] = 'private_message_settings_submit';
   return system_settings_form($form);
@@ -657,6 +733,36 @@ function privatemsg_unread_count($account = NULL) {
  */
 function privatemsg_view($thread) {
   drupal_set_title($thread['subject']);
+
+  // Generate paging links.
+  $older = '';
+  if (isset($thread['older_start'])) {
+    $options = array(
+      'query' => array('start' => $thread['older_start']),
+      'title' => t('Display older messages'),
+    );
+     $older = l(t('<<'), 'messages/view/' . $thread['thread_id'], $options);
+  }
+  $newer = '';
+  if (isset($thread['newer_start'])) {
+    $options = array(
+      'query' => array('start' => $thread['newer_start']),
+      'title' => t('Display newer messages'),
+    );
+    $newer = l(t('>>'), 'messages/view/' . $thread['thread_id'], $options);
+  }
+  $substitutions = array('@from' => $thread['from'], '@to' => $thread['to'], '@total' => $thread['message_count'], '!previous_link' => $older, '!newer_link' => $newer);
+  $title = t('!previous_link Displaying messages @from - @to of @total !newer_link', $substitutions);
+  $content['display_all'] = array(
+    '#markup'  => trim($title),
+    '#prefix' => '<div class="privatemsg-view-pager">',
+    '#suffix' => '</div>',
+    '#weight' => -10,
+  );
+
+  // Display a copy at the end.
+  $content['display_all_bottom'] = $content['display_all'];
+  $content['display_all_bottom']['#weight'] = 3;
 
   // Render the participants.
   $content['participants'] = array(
@@ -1091,9 +1197,15 @@ function privatemsg_sql_messages($threads, $account = NULL, $load_all = FALSE) {
   if (!$load_all) {
     $query->condition('pmi.deleted', 0);
   }
+  // If there are multiple inserts during the same second (tests, for example)
+  // sort by mid second to have them in the same order as they were saved.
   $query
     ->condition('pmi.thread_id', $threads)
-    ->orderBy('pm.timestamp', 'ASC');
+    // Order by timestamp first.
+    ->orderBy('pm.timestamp', 'ASC')
+    // If there are multiple inserts during the same second (tests, for example)
+    // sort by mid second to have them in the same order as they were saved.
+    ->orderBy('pmi.mid', 'ASC');
   if($account) {
     $query->condition('pmi.uid', $account->uid);
   }

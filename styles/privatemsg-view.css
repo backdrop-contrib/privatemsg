@@ -53,3 +53,10 @@
   background-image:none;
   list-style-image: none;
 }
+
+.privatemsg-view-pager {
+  border: 1px solid #C5C5C5;
+  margin: 20px 0 20px 200px;
+  padding-left: 10px;
+  width: 300px;
+}
