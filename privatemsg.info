@@ -6,3 +6,6 @@ core = 7.x
 files[] = privatemsg.module
 files[] = privatemsg.test
 files[] = tests/privatemsgapi.test
+files[] = views/views_handler_field_privatemsg_link.inc
+files[] = views/privatemsg.views.inc
+

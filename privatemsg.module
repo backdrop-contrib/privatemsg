@@ -2333,3 +2333,13 @@ function privatemsg_privatemsg_thread_operations() {
   }
   return $operations;
 }
+
+/**
+ * Implementation of hook_views_api().
+ */
+function privatemsg_views_api() {
+  return array(
+    'api' => 2,
+    'path' => drupal_get_path('module', 'privatemsg') . '/views',
+  );
+}
