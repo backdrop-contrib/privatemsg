@@ -9,3 +9,11 @@
 .privatemsg-list-count {
   text-align: center;
 }
+
+.privatemsg-list-subject {
+  min-width: 35%;
+}
+
+.privatemsg-list-date {
+  min-width: 20%;
+}

@@ -470,11 +470,6 @@ function privatemsg_theme() {
       'variables'        => array('recipients' => NULL),
       'template'         => 'privatemsg-between',
     ),
-    'privatemsg_list'    => array(
-      'file'                  => 'privatemsg.theme.inc',
-      'path'                  => drupal_get_path('module', 'privatemsg'),
-      'render element'        => 'form',
-    ),
     // Define pattern for header/field templates. The theme system will register all
     // theme functions that start with the defined pattern.
     'privatemsg_list_header'  => array(
@@ -568,33 +563,36 @@ function privatemsg_list($form, &$form_state, $argument = 'list', $uid = NULL) {
   }
   // By this point we have figured out for which user we are listing messages and now it is safe to use $account->uid in the listing query.
 
-  $query = _privatemsg_assemble_query('list', $account, $argument);
+  drupal_add_css(drupal_get_path('module', 'privatemsg') .'/styles/privatemsg-list.css');
 
-  $threads = array();
-  $form['#data'] = array();
+  // Load the table columns.
+  $columns = array_merge(array('subject', 'last_updated'), array_filter(variable_get('privatemsg_display_fields', array('participants'))));
+
+  // Load the themed list headers based on the available data.
+  $headers = _privatemsg_list_headers($columns);
+  uasort($headers, 'element_sort');
+
+  $form['list'] = array(
+    '#type' => 'tableselect',
+    '#header' => $headers,
+    '#options' => array(),
+    '#attributes' => array('class' => array('privatemsg-list')),
+    '#empty' => t('No messages available.'),
+    '#weight' => 5,
+    '#pre_render' => array('_privatemsg_list_thread'),
+  );
+
+  $query = _privatemsg_assemble_query('list', $account, $argument);
   foreach ($query->execute() as $row) {
     // Store the raw row data.
-    $form['#data'][$row->thread_id] = (array)$row;
-    // Store the themed row data.
-    $form['#rows'][$row->thread_id] = _privatemsg_list_thread((array)$row);
-    // store thread id for the checkboxes array
-    $threads[$row->thread_id] = '';
+    $form['list']['#options'][$row->thread_id] = (array)$row;
   }
-  if (empty($form['#data'])) {
-    // If no threads are displayed, use these default columns.
-    $keys = array('subject', 'author', 'last_updated');
-  }
-  else {
-    // Load the keys of the first row in data, we don't know the key
-    $keys = array_keys($form['#data'][key($form['#data'])]);
+
+  if (!empty($form['list']['#options'])) {
     $form['actions'] = _privatemsg_action_form();
-    $form['actions']['#weight'] = 20;
   }
-  // Load the themed list headers based on the available data
-  $form['#headers'] = _privatemsg_list_headers(!empty($form['#data']), $keys);
 
   // Define checkboxes, pager and theme
-  $form['threads'] = array('#type' => 'checkboxes', '#options' => $threads);
   $form['pager'] = array('#theme' => 'pager', '#weight' => 20);
   //$form['#theme'] = 'privatemsg_list';
 
@@ -1052,7 +1050,7 @@ function privatemsg_sql_list($account, $argument = 'list') {
     ->condition('pmi.deleted', 0)
     ->groupBy('pmi.thread_id')
     ->orderBy('MAX(pmi.is_new)', 'DESC')
-    ->orderByHeader(_privatemsg_list_headers( FALSE, array('subject', 'last_updated') + $fields))
+    ->orderByHeader(_privatemsg_list_headers(array_merge(array('subject', 'last_updated'), $fields)))
     ->limit(variable_get('privatemsg_per_page', 25));
 }
 
@@ -1971,22 +1969,20 @@ function privatemsg_thread_change_status($threads, $status, $account = NULL) {
  * @return
  *   Array with header defintions for tablesort_sql and theme('table').
  */
-function _privatemsg_list_headers($has_posts, $keys) {
-  $select_header = $has_posts ? theme('table_select_header_cell') : '';
-  $select_header['#weight'] = -50;
+function _privatemsg_list_headers($keys) {
 
   // theme() doesn't include the theme file for patterns, we need to do it manually.
   include_once drupal_get_path('module', 'privatemsg') .'/privatemsg.theme.inc';
 
-  $header = array($select_header);
+  $header = array();
   foreach ($keys as $key) {
     // First, try to load a specific theme for that header, if not present, use the default.
-    if ($return = theme(array('privatemsg_list_header__'. $key, 'privatemsg_list_header'))) {
+    if ($return = theme(array('privatemsg_list_header__' . $key , 'privatemsg_list_header'))) {
       // The default theme returns nothing, only store the value if we have something.
       $header[$key] = $return;
     }
   }
-  if (count($header) == 1) {
+  if (count($header) == 0) {
     // No header definition returned, fallback to the default.
     $header += _privatemsg_list_headers_fallback($keys);
   }
@@ -2012,7 +2008,7 @@ function _privatemsg_list_headers_fallback($keys) {
 }
 
 /**
- * Formats a row in the message list.
+ * Formats all rows (#options) in the privatemsg tableselect thread list.
  *
  * Uses @link theming theme patterns @endlink to theme single fields.
  *
@@ -2021,24 +2017,26 @@ function _privatemsg_list_headers_fallback($keys) {
  * @return
  *   Row definition for use with theme('table')
  */
-function _privatemsg_list_thread($thread) {
-  $row = array('data' => array());
-
-  if (!empty($thread['is_new'])) {
-    // Set the css class in the tr tag.
-    $row['class'][] = 'privatemsg-unread';
-  }
-  foreach ($thread as $key => $data) {
-    // First, try to load a specific theme for that field, if not present, use the default.
-    if ($return = theme(array('privatemsg_list_field__'. $key, 'privatemsg_list_field'), $thread)) {
-      // The default theme returns nothing, only store the value if we have something.
-      $row['data'][$key] = $return;
+function _privatemsg_list_thread($tableselect) {
+  foreach ($tableselect['#options'] as $id => $thread) {
+    $row = array();
+    if (!empty($thread['is_new'])) {
+      // Set the css class in the tr tag.
+      $row['#attributes']['class'][] = 'privatemsg-unread';
     }
+    foreach ($thread as $key => $data) {
+      // First, try to load a specific theme for that field, if not present, use the default.
+      if ($return = theme(array('privatemsg_list_field__'. $key, 'privatemsg_list_field'), $thread)) {
+        // The default theme returns nothing, only store the value if we have something.
+        $row['data'][$key] = $return;
+      }
+    }
+    if (empty($row['data'])) {
+      $row = _privatemsg_list_thread_fallback($thread);
+    }
+    $tableselect['#options'][$id] = $row;
   }
-  if (empty($row['data'])) {
-    $row['data'] = _privatemsg_list_thread_fallback($thread);
-  }
-  return $row;
+  return $tableselect;
 }
 
 /**
@@ -2105,7 +2103,7 @@ function privatemsg_list_submit($form, &$form_state) {
 
   // Only execute something if we have a valid callback and at least one checked thread.
   if (!empty($operation['callback'])) {
-    privatemsg_operation_execute($operation, $form_state['values']['threads']);
+    privatemsg_operation_execute($operation, $form_state['values']['list']);
   }
 }
 

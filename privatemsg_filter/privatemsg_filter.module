@@ -164,6 +164,8 @@ function privatemsg_filter_form_private_message_settings_alter(&$form, $form_sta
     '#title' => t('Choose the default list option'),
     '#description' => t('Choose which of the two lists are shown by default when following the messages link.'),
   );
+  // Add tags to the list of possible columns.
+  $form['privatemsg_listing']['privatemsg_display_fields']['#options']['tags'] = t('Tags');
 
   $form['#submit'][] = 'privatemsg_filter_settings_submit';
 }
@@ -487,8 +489,28 @@ function privatemsg_filter_form_privatemsg_list_alter(&$form, $form_state) {
     $form += privatemsg_filter_dropdown($form_state, $form['#account']);
   }
 
+  $fields = array_filter(variable_get('privatemsg_display_fields', array('participants')));
+  if (in_array('tags', $fields)) {
+    // Load thread id's of the current list.
+    $threads = array_keys($form['list']['#options']);
+
+    // Fetch all tags of those threads.
+    $query = _privatemsg_assemble_query(array('tags', 'privatemsg_filter'), $user, $threads, 3);
+
+    // Add them to #data
+    foreach ($query->execute() as $tag) {
+      $form['list']['#options'][$tag->thread_id]['tags'][$tag->tag_id] = $tag->tag;
+    }
+    // Avoid notices for threads without tags.
+    foreach ($form['list']['#options'] as &$thread) {
+      if (empty($thread['tags'])) {
+        $thread['tags'] = array();
+      }
+    }
+  }
+
   $tags = privatemsg_filter_get_tags_data($user);
-  if (privatemsg_user_access('filter private messages') && !empty($tags) && !empty($form['#data'])) {
+  if (privatemsg_user_access('filter private messages') && !empty($tags) && !empty( $form['list']['#options'])) {
     $options = array();
     $options[] = t('Apply Tag...');
     foreach ($tags as $tag_id => $tag) {
@@ -525,6 +547,43 @@ function privatemsg_filter_form_privatemsg_list_alter(&$form, $form_state) {
 }
 
 /**
+ * Define the header for the tags column.
+ *
+ * @see theme_privatemsg_list_header()
+ */
+function phptemplate_privatemsg_list_header__tags() {
+   return array(
+    'data' => t('Tags'),
+    'key' => 'tags',
+    'class' => 'privatemsg-header-tags',
+    '#weight' => -42,
+  );
+}
+
+
+/**
+ * Default theme pattern function to display tags.
+ * 
+ * @see theme_privatemsg_list_field()
+ */
+function phptemplate_privatemsg_list_field__tags($thread) {
+  if (!empty($thread['tags'])) {
+    $tags = array();
+
+    foreach ($thread['tags'] as $tag_id => $tag) {
+      $tags[] = l(strlen($tag) > 15 ? substr($tag, 0, 13) . '...' : $tag, 'messages', array(
+        'attributes' => array('title' => $tag),
+        'query' => array('tags' => $tag)
+      ));
+    }
+    return array(
+      'data'  => implode(', ', $tags),
+      'class' => 'privatemsg-list-tags',
+    );
+  }
+}
+
+/**
  * Form callback for adding a tag to threads.
  */
 function privatemsg_filter_add_tag_submit($form, &$form_state) {
@@ -535,7 +594,7 @@ function privatemsg_filter_add_tag_submit($form, &$form_state) {
     'undo callback arguments' => array('tag_id' => $form_state['values']['tag-add']),
   );
   drupal_set_message(t('The selected conversations have been tagged.'));
-  privatemsg_operation_execute($operation, $form_state['values']['threads']);
+  privatemsg_operation_execute($operation, $form_state['values']['list']);
 }
 
 /**
@@ -549,7 +608,7 @@ function privatemsg_filter_remove_tag_submit($form, &$form_state) {
     'undo callback arguments' => array('tag_id' => $form_state['values']['tag-remove']),
   );
   drupal_set_message(t('The tag has been removed from the selected conversations.'));
-  privatemsg_operation_execute($operation, $form_state['values']['threads']);
+  privatemsg_operation_execute($operation, $form_state['values']['list']);
 }
 
 /**
@@ -622,7 +681,7 @@ function privatemsg_filter_form(&$form_state) {
   $thread_id = arg(2);
 
   // Get a list of current tags for this thread
-  $query = _privatemsg_assemble_query(array('tags', 'privatemsg_filter'), $user, $thread_id);
+  $query = _privatemsg_assemble_query(array('tags', 'privatemsg_filter'), $user, array($thread_id));
   $count = $query->countQuery()->execute()->fetchField();
   $tags = implode(', ', $query->execute()->fetchCol(1));
 
@@ -723,17 +782,20 @@ function privatemsg_filter_query_privatemsg_autocomplete_alter($query) {
  * Query definition to get the tags in use by the specified user.
  *
  * @param $user
- *  User object for whom we want the tags.
- * @param $thread_id
- *  The thread_id - Only needed if we want the tags for a specific thread instead of all used tags on any thread.
+ *   User object for whom we want the tags.
+ * @param $threads
+ *   Array of thread ids, defaults to all threads of a user.
+ * @param $limit
+ *   Limit the number of tags *per thread*.
  */
-function privatemsg_filter_sql_tags($user = NULL, $thread_id = NULL) {
+function privatemsg_filter_sql_tags($user = NULL, $threads = NULL, $limit = NULL) {
   $query = db_select('pm_tags', 't')
     ->fields('t', array('tag_id', 'tag', 'public'))
     ->orderBy('t.tag', 'ASC');
-  if (!empty($thread_id)) {
+  if (!empty($threads)) {
+    $query->addField('ti', 'thread_id');
     $query->join('pm_tags_index', 'ti', 'ti.tag_id = t.tag_id');
-    $query->condition('ti.thread_id', $thread_id);
+    $query->condition('ti.thread_id', $threads);
   }
   else {
     $query->addExpression('COUNT(ti.thread_id)', 'count');
@@ -746,7 +808,22 @@ function privatemsg_filter_sql_tags($user = NULL, $thread_id = NULL) {
   if (!empty($user)) {
     $query->condition('ti.uid', $user->uid);
   }
-  if (!empty($thread_id) || !empty($user)) {
+
+  // Only select n tags per thread (ordered per tag_id), see
+  // http://www.xaprb.com/blog/2006/12/07/how-to-select-the-firstleastmax-row-per-group-in-sql/.
+  //
+  // It does select how many tags for that thread/uid combination exist that
+  // have a lower tag_id and does only select those that have less than $limit.
+  //
+  // This should only have a very minor performance impact as most users won't
+  // tag a thread with 1000 different tags.
+  if ($limit) {
+    $query->where('(SELECT count(*) FROM {pm_tags_index} AS pmtic
+                    WHERE pmtic.thread_id = ti.thread_id
+                    AND pmtic.uid = ti.uid
+                    AND pmtic.tag_id < ti.tag_id) < :limit', array(':limit' => $limit));
+  }
+  elseif (!empty($thread_id) || !empty($user)) {
     $query->orderBy('t.tag', 'ASC');
   }
   return $query;

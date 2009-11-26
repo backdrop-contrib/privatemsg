@@ -74,7 +74,7 @@ class PrivatemsgFilterTestCase extends DrupalWebTestCase {
     // Test for bug http://drupal.org/node/617648
     // Delete all messages for author.
     $delete = array(
-        'threads[1]' => 1,
+        'list[1]' => 1,
     );
     $this->drupalPost(NULL, $delete, t('Delete'));
     $this->assertNoText($edit['subject'], t('Thread has been deleted for author.'));

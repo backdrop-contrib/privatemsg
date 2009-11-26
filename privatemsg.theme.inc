@@ -155,7 +155,6 @@ function phptemplate_privatemsg_list_field__thread_started($thread) {
  *   this column.
  */
 function theme_privatemsg_list_header() {
-
 }
 
 /**
@@ -167,7 +166,6 @@ function phptemplate_privatemsg_list_header__subject() {
   return array(
     'data'    => t('Subject'),
     'field'   => 'subject',
-    'key'     => 'subject',
     'class'   => array('privatemsg-header-subject'),
     '#weight' => -40,
   );
@@ -181,7 +179,6 @@ function phptemplate_privatemsg_list_header__subject() {
 function phptemplate_privatemsg_list_header__count() {
   return array(
     'data'    => t('Messages'),
-    'key'     => 'count',
     'class'   => array('privatemsg-header-count'),
     '#weight' => -25,
   );
@@ -195,7 +192,6 @@ function phptemplate_privatemsg_list_header__count() {
 function phptemplate_privatemsg_list_header__participants() {
   return array(
     'data'    => t('Participants'),
-    'key'     => 'participants',
     'class'   => array('privatemsg-header-participants'),
     '#weight' => -30,
   );
@@ -210,7 +206,6 @@ function phptemplate_privatemsg_list_header__last_updated() {
   return array(
     'data'    => t('Last Updated'),
     'field'   => 'last_updated',
-    'key'     => 'last_updated',
     'sort'    => 'desc',
     'class'   => array('privatemsg-header-lastupdated'),
     '#weight' => -20,
@@ -226,75 +221,9 @@ function phptemplate_privatemsg_list_header__thread_started() {
   return array(
     'data'    => t('Started'),
     'field'   => 'thread_started',
-    'key'     => 'thread_started',
     'class'   => array('privatemsg-header-threadstarted'),
     '#weight' => -15,
   );
-}
-
-/**
- * Theme to display the privatemsg list.
- *
- * This theme builds a table with paging based on the data which has been built
- * by the header and field theme patterns.
- */
-function theme_privatemsg_list($form) {
-  // @todo: Something is wrong, remove this hack.
-  $form = $form['form'];
-  $has_posts = !empty($form['#rows']);
-
-  drupal_add_css(drupal_get_path('module', 'privatemsg') .'/styles/privatemsg-list.css');
-
-  // sort the headers array based on the #weight property.
-  $headers = $form['#headers'];
-  usort($headers, 'element_sort');
-
-  $themed_rows = array();
-  // Check if there is atleast a single thread.
-  if ($has_posts) {
-    foreach ($form['#rows'] as $thread_id => $row) {
-      $data = array();
-      // Render the checkbox.
-      $data[] = array('data' => drupal_render($form['threads'][$thread_id]), 'class' => array('privatemsg-list-select'));
-
-      // Store the #rows data in the same order as the header is, the key property of the header refers to the field that belongs to it.
-      foreach ($headers as $header) {
-        if (!empty($header['key'])) {
-          if (isset($row['data'][$header['key']])) {
-            $data[] = $row['data'][$header['key']];
-          }
-          else {
-            // Store a empty value so that the order is still correct.
-            $data[] = '';
-          }
-        }
-      }
-      // Replace the data
-      $row['data'] = $data;
-      $themed_rows[] = $row;
-    }
-  }
-  else {
-    // Display a message if now messages are available.
-    $themed_rows[] = array(array('data' => t('No messages available.'), 'colspan' => count($headers)));
-  }
-
-  // Remove any data in header that we don't need anymore.
-  foreach ($headers as $id => $header) {
-    unset($headers[$id]['key']);
-    unset($headers[$id]['#weight']);
-  }
-
-  // Theme the table, pass all generated information to the table theme function.
-  $form['list'] = array(
-    '#markup' => theme('table', array(
-      'header'     => $headers,
-      'rows'       => $themed_rows,
-      'attributes' => array('class' => array('privatemsg-list')),
-    )),
-    '#weight' => 5,
-  );
-  return drupal_render_children($form);
 }
 
 /**
