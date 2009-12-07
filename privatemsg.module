@@ -268,8 +268,8 @@ function privatemsg_view_access() {
  * @param $account
  *   User object for which the thread should be loaded, defaults to
  *   the current user.
- * @param $limit
- *   How many messages should be loaded. Note that counting starts from the end.
+ * @param $start
+ *   Message offset from the start of the thread.
  *
  * @return
  *   $thread object, with keys messages, participants, title and user. messages
@@ -281,7 +281,7 @@ function privatemsg_view_access() {
 
  * @ingroup api
  */
-function privatemsg_thread_load($thread_id, $account = NULL, $limit = NULL) {
+function privatemsg_thread_load($thread_id, $account = NULL, $start = NULL) {
   $threads = &drupal_static(__FUNCTION__, array());
   if ((int)$thread_id > 0) {
     $thread = array('thread_id' => $thread_id);
@@ -303,17 +303,6 @@ function privatemsg_thread_load($thread_id, $account = NULL, $limit = NULL) {
         $thread['read_all'] = TRUE;
       }
 
-      // If limit is NULL, select based on get params.
-      if (is_null($limit)) {
-        if (isset($_GET['start'])) {
-          $limit = $_GET['start'];
-        }
-        else {
-          $limit = variable_get('privatemsg_view_use_max_as_default', FALSE) ? variable_get('privatemsg_view_default_amount', 10) : variable_get('privatemsg_view_max_amount', 20);
-        }
-      }
-      $thread['limit'] = $limit;
-
       // Load messages returned by the messages query with privatemsg_message_load_multiple().
       $query = _privatemsg_assemble_query('messages', array($thread_id), $thread['read_all'] ? NULL : $account);
       // Override count query to use DISTINCT.
@@ -324,25 +313,60 @@ function privatemsg_thread_load($thread_id, $account = NULL, $limit = NULL) {
       $thread['from'] = 1;
       // Check if we need to limit the messages.
       $max_amount = variable_get('privatemsg_view_max_amount', 20);
-      if ($limit != PRIVATEMSG_UNLIMITED) {
+
+      // If there is no start value, select based on get params.
+      if (is_null($start)) {
+        if (isset($_GET['start']) && $_GET['start'] < $thread['message_count']) {
+          $start = $_GET['start'];
+        }
+        else {
+          $start = $thread['message_count'] - (variable_get('privatemsg_view_use_max_as_default', FALSE) ? variable_get('privatemsg_view_default_amount', 10) : variable_get('privatemsg_view_max_amount', 20));
+        }
+      }
+
+      if ($start != PRIVATEMSG_UNLIMITED) {
         if ($max_amount == PRIVATEMSG_UNLIMITED) {
-          $max_amount = $thread['older_start'] = $thread['message_count'];
+          $last_page = 0;
+          $max_amount = $thread['message_count'];
         }
-        if ($thread['message_count'] > $limit) {
-          $thread['from'] = $thread['message_count'] - $limit + 1;
-          if ($thread['from'] + $max_amount - 1 < $thread['message_count']) {
-            $thread['to'] = $thread['from'] + $max_amount - 1;
-             $thread['newer_start'] = $limit - $max_amount;
-          }
-          if (empty($thread['older_start'])) {
-            $thread['older_start'] = $limit + $max_amount;
-          }
+        else {
+          // Calculate the number of messages on the "last" page to avoid
+          // message overlap.
+          // Note - the last page lists the earliest messages, not the latest.
+          $paging_count = variable_get('privatemsg_view_use_max_as_default', FALSE) ? $thread['message_count'] - variable_get('privatemsg_view_default_amount', 10) : $thread['message_count'];
+          $last_page = $paging_count % $max_amount;
         }
-        elseif ($limit > $thread['message_count'] && ($thread['from'] + $max_amount - 1 < $thread['message_count'])) {
-          $thread['newer_start'] = $limit - $max_amount;
-          $thread['to'] = $max_amount = $thread['message_count'] - $limit + $max_amount;
+
+        // Sanity check - we cannot start from a negative number.
+        if ($start < 0) {
+          $start = 0;
         }
-        $query->range($thread['from'] - 1, $max_amount);
+        $thread['start'] = $start;
+
+        //If there are newer messages on the page, show pager link allowing to go to the newer messages.
+        if (($start + $max_amount + 1) < $thread['message_count']) {
+          $thread['to'] = $start + $max_amount;
+          $thread['newer_start'] = $start + $max_amount;
+        }
+        if ($start - $max_amount >= 0) {
+          $thread['older_start'] = $start - $max_amount;
+        }
+        elseif ($start > 0) {
+          $thread['older_start'] = 0;
+        }
+
+        // Do not show messages on the last page that would show on the page
+        // before. This will only work when using the visual pager.
+        if ($start < $last_page && $max_amount != PRIVATEMSG_UNLIMITED) {
+          unset($thread['older_start']);
+          $thread['to'] = $thread['newer_start'] = $max_amount = $last_page;
+          // Start from the first message - this is a specific hack to make sure
+          // the message display has sane paging on the last page.
+          $start = 0;
+        }
+        // Visual counts start from 1 instead of zero, so plus one.
+        $thread['from'] = $start + 1;
+        $query->range($start, $max_amount);
       }
       $thread['messages'] = privatemsg_message_load_multiple($query->execute()->fetchCol(), $thread['read_all'] ? NULL : $account);
 
@@ -753,7 +777,7 @@ function privatemsg_view($thread) {
   }
   $substitutions = array('@from' => $thread['from'], '@to' => $thread['to'], '@total' => $thread['message_count'], '!previous_link' => $older, '!newer_link' => $newer);
   $title = t('!previous_link Displaying messages @from - @to of @total !newer_link', $substitutions);
-  $content['display_all'] = array(
+  $content['pager_top'] = array(
     '#markup'  => trim($title),
     '#prefix' => '<div class="privatemsg-view-pager">',
     '#suffix' => '</div>',
@@ -761,8 +785,8 @@ function privatemsg_view($thread) {
   );
 
   // Display a copy at the end.
-  $content['display_all_bottom'] = $content['display_all'];
-  $content['display_all_bottom']['#weight'] = 3;
+  $content['pager_bottom'] = $content['pager_top'];
+  $content['pager_bottom']['#weight'] = 3;
 
   // Render the participants.
   $content['participants'] = array(
