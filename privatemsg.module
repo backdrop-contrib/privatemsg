@@ -2026,12 +2026,13 @@ function _privatemsg_action_form() {
       '#attributes'    => array('onchange' => "(function ($) { $('#edit-submit').click() })(jQuery);"),
   );
   $form['submit'] = array(
+      '#prefix'     => '<div class="privatemsg-op-button">',
+      '#suffix'    => '</div>',
       '#type'       => 'submit',
       '#value'      => t('Execute'),
       '#submit'     => array('privatemsg_list_submit'),
-      '#attributes' => array('class' => array('privatemsg-action-button')),
   );
-  // JS for hiding the execute button(s)
+  // JS for hiding the execute button.
   drupal_add_js(drupal_get_path('module', 'privatemsg') .'/privatemsg-list.js');
   return $form;
 }

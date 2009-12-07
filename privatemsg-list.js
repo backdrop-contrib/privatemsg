@@ -1,7 +1,11 @@
 (function ($) {
   Drupal.behaviors.hideButtons = {
     attach: function (context) {
-      $("input.privatemsg-action-button").hide();
+      $("div.privatemsg-op-button").hide();
+
+      $('#privatemsg-list #edit-operation').change(function () {
+        $('#edit-submit').click();
+      });
     }
   }
 })(jQuery);
