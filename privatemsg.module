@@ -357,7 +357,7 @@ function privatemsg_thread_load($thread_id, $account = NULL, $start = NULL) {
 
         // Do not show messages on the last page that would show on the page
         // before. This will only work when using the visual pager.
-        if ($start < $last_page && $max_amount != PRIVATEMSG_UNLIMITED) {
+        if ($start < $last_page && $max_amount != PRIVATEMSG_UNLIMITED && $max_amount < $thread['message_count']) {
           unset($thread['older_start']);
           $thread['to'] = $thread['newer_start'] = $max_amount = $last_page;
           // Start from the first message - this is a specific hack to make sure
