@@ -1563,7 +1563,11 @@ function privatemsg_new_thread($recipients, $subject, $body = NULL, $options = a
   $message = array();
   $message['subject'] = $subject;
   $message['body'] = $body;
-  $message['recipients'] = $recipients;
+  // Make sure that recipients are keyed by user id and are not added
+  // multiple times.
+  foreach ($recipients as $recipient) {
+    $message['recipients'][$recipient->uid] = $recipient;
+  }
 
   // Set custom options, if any.
   if (!empty($options)) {

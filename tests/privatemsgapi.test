@@ -32,7 +32,7 @@ class PrivatemsgAPITestCase extends DrupalWebTestCase {
   }
 
   function testPrivatemsgApiNewThread() {
-    $author     = $this->drupalCreateUser(array('write privatemsg'));
+    $author     = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
     $recipient1  = $this->drupalCreateUser(array('read privatemsg'));
     $recipient2  = $this->drupalCreateUser(array('read privatemsg'));
     $recipient3  = $this->drupalCreateUser(array('read privatemsg'));
@@ -70,6 +70,14 @@ class PrivatemsgAPITestCase extends DrupalWebTestCase {
     $this->assertEqual($errormessage, $resultf4['messages']['error'][0], t('User is not allowed to use the specified input format.'));
     $message = $this->getMessageFromSubject('input filter not allowed');
     $this->assertTrue(empty($message), 'Message was not saved in database');
+
+    // Send a message through the api to the same user and check if it marked
+    // as new.
+    privatemsg_new_thread(array($author), $subject = $this->randomString(10), $this->randomString(20), array('author' => $author));
+    $this->drupalLogin($author);
+    $this->drupalGet('messages');
+    $this->clickLink($subject);
+    $this->assertText(t('New'), t('Message is marked as new'));
   }
 
   function getMessageFromSubject($subject) {
