@@ -39,14 +39,34 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
    */
   function testPrivatemsgReadPrivatemsgPermission() {
     $user_no_read_msg = $this->drupalCreateUser(); // set up user with default permissions (meaning: no read privatemsg permission
+    $author     = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
+    $recipient  = $this->drupalCreateUser(array('read privatemsg'));
+    $no_recipient  = $this->drupalCreateUser(array('read privatemsg'));
+
+
+    $subject = $this->randomName(20);
+    $body = $this->randomName(50);
+
+    $response = privatemsg_new_thread(array($recipient), $subject, $body, array('author' => $author));
+
     $this->drupalLogin($user_no_read_msg);
     $this->drupalGet('messages');
     $this->assertResponse(403, t('HTTP Response 403: Access to mailbox was blocked to user without "<em>read privatemsg</em>" permission'));
 
-    $user_read_msg = $this->drupalCreateUser(array('read privatemsg')); // set up user with default permissions (meaning: no read privatemsg permission
-    $this->drupalLogin($user_read_msg);
+    $this->drupalLogin($no_recipient);
     $this->drupalGet('messages');
     $this->assertResponse(200, t('HTTP Response 200: Access to mailbox was authorized to user with "<em>read privatemsg</em>" permission'));
+
+    $this->drupalGet('messages/view/' . $response['message']['thread_id']);
+    $this->assertResponse(403, t('HTTP Response 403: Access to thread is blocked for non-recipients.'));
+
+    $this->drupalLogin($recipient);
+    $this->drupalGet('messages/view/' . $response['message']['thread_id']);
+    $this->assertText($subject, t('Access to thread for recipient allowed.'));
+
+    $this->drupalGet('messages/view/' . $response['message']['thread_id'] + 1);
+    $this->assertResponse(404, t('Non-existing thread lead to HTTP Response 404.'));
+
   }
   /**
    * Test user access to /messages/new
