@@ -186,4 +186,24 @@ function privatemsg_filter_tags_delete_submit($form, &$form_state) {
   }
   $form_state['redirect'] = 'admin/config/people/messages/tags';
 }
-?>
+
+function privatemsg_filter_admin() {
+  $form = array();
+
+  $form['privatemsg_filter_searchbody'] = array(
+    '#type'          => 'checkbox',
+    '#title'         => t('Search message body'),
+    '#description'   => t('WARNING: turning on this feature will slow down search performance by a large factor. Gets worse as your messages database increases.'),
+    '#default_value' => variable_get('privatemsg_filter_searchbody', FALSE),
+  );
+
+  $form['privatemsg_filter_tagfield_weight'] = array(
+    '#type'          => 'textfield',
+    '#title'         => t('Position of the tagging textfield'),
+    '#description'   => t('Use higher values to push the form lower down the page, lower or negative values to raise it higher.'),
+    '#size'          => 4,
+    '#default_value' => variable_get('privatemsg_filter_tagfield_weight', 10),
+  );
+
+  return system_settings_form($form);
+}
