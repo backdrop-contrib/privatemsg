@@ -861,7 +861,7 @@ function privatemsg_sql_deleted($days, $max) {
  * Implements hook_user_view().
  */
 function privatemsg_user_view(&$account) {
-  if ($url = privatemsg_get_link(array($account)) && variable_get('privatemsg_display_profile_links', 1)) {
+  if (($url = privatemsg_get_link(array($account))) && variable_get('privatemsg_display_profile_links', 1)) {
     $account->content['privatemsg_send_new_message'] = array(
       '#markup' => l(t('Send this user a message'), $url, array('query' => drupal_get_destination())),
       '#weight' => 10,
@@ -1449,6 +1449,9 @@ function privatemsg_get_link($recipients, $account = array(), $subject = NULL) {
   $validated = array();
   foreach ($recipients as $recipient) {
     if (!privatemsg_user_access('read privatemsg', $recipient)) {
+      continue;
+    }
+    if (variable_get('privatemsg_display_link_self', TRUE) == FALSE && $account->uid == $recipient->uid) {
       continue;
     }
     if (count(module_invoke_all('privatemsg_block_message', $account, array($recipient))) > 0) {

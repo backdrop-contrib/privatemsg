@@ -26,6 +26,7 @@ function privatemsg_admin_settings() {
     '#title' => t('Inform the user about new messages on login'),
     '#default_value' => variable_get('privatemsg_display_loginmessage', TRUE),
     '#description' => t('This option can safely be disabled if the "New message indication" block is used instead.'),
+    '#weight'      => -5,
   );
 
   $form['flush_deleted'] = array(
@@ -118,6 +119,14 @@ function privatemsg_admin_settings() {
     '#title' => t('"Send private message" link settings'),
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
+  );
+
+  $form['links']['privatemsg_display_link_self'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Display "Send this user a message" links for themself'),
+    '#description' => t('If enabled, each users sees that link on their own profile, comments and similiar places.'),
+    '#default_value' => variable_get('privatemsg_display_link_self', TRUE),
+    '#weight'        => -10,
   );
 
   $form['links']['privatemsg_display_profile_links'] = array(
