@@ -79,7 +79,7 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
     $this->drupalGet('messages/new');
     $this->assertResponse(403, t('HTTP Response 403: Access to Write New Message page was blocked to user without "<em>write privatemsg</em>" permission'));
 
-    $user_write_msg = $this->drupalCreateUser(array('write privatemsg')); // set up user with default permissions (meaning: no read privatemsg permission
+    $user_write_msg = $this->drupalCreateUser(array('write privatemsg')); // set up user with write privatemsg permissions
     $this->drupalLogin($user_write_msg);
     $this->drupalGet('messages/new');
     $this->assertResponse(200, t('HTTP Response 200: Access to Write New Message page was authorized to user with "<em>write privatemsg</em>" permission'));
@@ -108,7 +108,7 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
     $this->drupalLogin($recipient);
     $this->drupalGet('messages');
     $this->clickLink($subject_single);
-    
+
     $this->assertText(t('Displaying messages 1 - 1 of 1'), t('Pager is displayed'));
     $this->assertNoText(t('&gt;&gt;'), t('Newer messages link not displayed.'));
     $this->assertNoText(t('&lt;&lt;'), t('Older messages link not displayed.'));
@@ -354,6 +354,67 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
   }
 
   /**
+   * Test functionality around disabling private messaging.
+   */
+  function testDisablePrivatemsg() {
+    $enableduser = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg')); // set up user with read/write privatemsg permissions
+    $enableduser2 = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg')); // set up user with read/write privatemsg permissions
+    $disableduser = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg')); // set up user with read/write privatemsg permissions
+
+    // Create a message between the users that we can use to test
+    $return = privatemsg_new_thread(array($disableduser), $this->randomName(20), $this->randomName(100), array('author' => $enableduser));
+    $mid = $return['message']['thread_id'];
+
+    $this->drupalLogin($disableduser);
+    //Now disable $disabledUser
+    $this->drupalGet('user/'. $disableduser->uid .'/edit');
+    $edit['pm_enable'] = FALSE;
+    $this->drupalPost('user/'. $disableduser->uid .'/edit', $edit, t('Save'));
+
+    // refresh $disableduser
+    $disableduser = user_load($disableduser->uid, TRUE);
+
+    // verify that disableduser can list messages
+    $this->drupalGet('messages');
+    $this->assertResponse(200, t('HTTP Response 200: Access to reading messages page is allowed.'));
+
+    // verify that $disableduser can read messages but there is not reply form
+    $this->drupalGet('messages/'. $return['message']['thread_id']);
+    $this->assertResponse(200, t('HTTP Response 200: Access to message thread page is allowed.'));
+    $this->assertNoText(t('Reply to thread'), 'No reply form shown.');
+
+    // verify that $disableduser cannot send a new message
+    $this->drupalGet('messages/new');
+    $this->assertResponse(403, t('HTTP Response 403: Access to Write New Message page was blocked to user with private messaging disabled'));
+
+    // check that $disableduser cannot submit a reply
+    $result = privatemsg_reply($return['message']['thread_id'], $this->randomName(100), array('author' => $disableduser));
+    $this->assertFalse($result['success'], 'Message reply was not sent.');
+
+    // log in as $enableduser and try to send to $disabled user
+    // make sure that a message to multiple recipients still works if one is disabled
+    $message = array(
+      'recipient'   => $disableduser->name,
+      'subject'     => $this->randomName(20),
+      'body'        => $this->randomName(100),
+    );
+    $this->drupalLogin($enableduser);
+    $this->drupalPost('messages/new', $message, t('Send message'));
+    $this->assertText(t('Disallowed to send message because all recipients are blocked'), 'Message was not sent.');
+
+    // make sure that a message to multiple recipients still works if one is disabled
+    $messagemultiple = array(
+      'recipient'   => $enableduser2->name .', '. $disableduser->name,
+      'subject'     => $this->randomName(20),
+      'body'        => $this->randomName(100),
+    );
+    $this->drupalPost('messages/new', $messagemultiple, t('Send message'));
+    $this->assertText(t('@recipient has disabled private message receiving.', array('@recipient' => $disableduser->name)), 'Message about user with disabled private messaging.');
+    $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $enableduser2->name)), 'Message sent confirmation displayed.');
+
+  }
+
+  /**
    * Test correct handling of read all permissions.
    */
   function testReadAllPermission() {
@@ -523,7 +584,7 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
     $this->assertText(t('Message has been deleted.'), 'Message deleted has been deleted');
     $this->assertText($body1, 'First message is still displayed');
     $this->assertNoText($body2, 'Second message was deleted');
-    
+
     // Click delete link of the first message and cancel.
     $this->clickLink(t('Delete message'));
     $this->assertText(t('Are you sure you want to delete this message?'), 'Confirmation message displayed');

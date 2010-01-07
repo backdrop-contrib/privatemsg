@@ -249,6 +249,9 @@ function privatemsg_user_access($permission = 'read privatemsg', $account = NULL
   if (!$account->uid) { // Disallow anonymous access, regardless of permissions
     return FALSE;
   }
+  if (privatemsg_is_disabled($account) && ($permission == 'write privatemsg') ) {
+    return FALSE;
+  }
   if (!user_access($permission, $account)) {
     return FALSE;
   }
@@ -278,6 +281,25 @@ function privatemsg_view_access($thread) {
     return TRUE;
   }
   return FALSE;
+}
+
+/**
+ * Checks the status of private messaging for provided user.
+ *
+ * @param user object to check
+ * @return TRUE if user has disabled private messaging, FALSE otherwise
+ */
+function privatemsg_is_disabled($account) {
+
+  if (!$account || !$account->uid) {
+    return FALSE;
+  }
+
+  if (!isset($account->privatemsg_disabled)) {
+    $account->privatemsg_disabled = (bool)db_query('SELECT 1 FROM {pm_disable} WHERE uid = :uid ', array(':uid' => $account->uid))->fetchField();
+  }
+
+  return ($account->privatemsg_disabled);
 }
 
 /**
@@ -801,6 +823,7 @@ function privatemsg_sql_autocomplete($search, $names) {
     ->fields('u', array('name'))
     ->condition('u.name', $search . '%', 'LIKE')
     ->condition('u.status', 0, '<>')
+    ->where('NOT EXISTS (SELECT 1 FROM {pm_disable} pd WHERE pd.uid=u.uid)')
     ->orderBy('u.name', 'ASC')
     ->range(0, 10);
 
@@ -896,6 +919,80 @@ function privatemsg_user_cancel($edit, $account, $method) {
         ->execute();
       break;
   }
+  // Always delete user settings.
+  db_delete('pm_disable')
+    ->condition('uid', $account->uid)
+    ->execute();
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function privatemsg_form_alter(&$form, &$form_state, $form_id) {
+  if (($form_id == 'user_register_form' || $form_id == 'user_profile_form') && $form['#user_category'] == 'account') {
+    $form['privatemsg'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Privatemsg settings'),
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+      '#weight' => 10,
+    );
+
+    $form['privatemsg']['pm_enable'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Enable Private Messaging'),
+      '#default_value' => !privatemsg_is_disabled($form['#user']),
+      '#description' => t('Disabling private messages prevents you from sending or receiving messages from other users.'),
+    );
+  }
+}
+
+/**
+ * Implements hook_user_insert().
+ */
+function privatemsg_user_update(&$edit, $account, $category) {
+  if ($category == 'account' && isset($edit['pm_enable'])) {
+    $current = privatemsg_is_disabled($account);
+    $disabled = (!$edit['pm_enable']);
+    $edit['pm_enable'] = NULL;
+
+    $account->privatemsg_disabled = $disabled;
+
+    // only perform the save if the value has changed
+    if ($current != $disabled) {
+      if ($disabled) {
+        db_insert('pm_disable')
+          ->fields(array('uid' => $account->uid))
+          ->execute();
+      }
+      else {
+        db_delete('pm_disable')
+          ->condition('uid', $account->uid)
+          ->execute();
+      }
+    }
+  }
+}
+
+/**
+ * Implementation of hook_privatemsg_block_message.
+ */
+function privatemsg_privatemsg_block_message($author, $recipients) {
+  $blocked = array();
+  if (privatemsg_is_disabled($author)) {
+    $blocked[] = array('uid' => $author->uid,
+                       'message' => t('You have disabled private message sending and receiving.'),
+                 );
+  }
+  foreach($recipients as $recipient) {
+    if (privatemsg_is_disabled($recipient)) {
+      $blocked[] = array('uid' => $recipient->uid,
+                       'message' => t('%recipient has disabled private message receiving.', array('%recipient' => $recipient->name))
+                 );
+    }
+  }
+
+  return $blocked;
 }
 
 /**

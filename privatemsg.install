@@ -103,6 +103,18 @@ function privatemsg_schema() {
     ),
   );
 
+  $schema['pm_disable'] = array(
+    'description'       => '{pm_disable} holds the list of users that have disabled private messaging',
+    'fields' => array(
+      'uid'    => array(
+        'description'   => 'ID of the user',
+        'type'          => 'int',
+        'not null'      => TRUE,
+        'unsigned'      => TRUE,
+      ),
+    ),
+    'primary key'       => array('uid'),
+  );
 
   return $schema;
 }
