@@ -127,4 +127,8 @@ function privatemsg_uninstall() {
   variable_del('privatemsg_view_default_amount');
   variable_del('privatemsg_view_max_amount');
   variable_del('privatemsg_view_use_max_as_default');
+  variable_del('privatemsg_display_profile_links');
+  variable_del('privatemsg_link_node_types');
+  variable_del('privatemsg_display_on_teaser');
+  variable_del('privatemsg_display_on_comments');
 }

@@ -112,6 +112,40 @@ function privatemsg_admin_settings() {
     '#options'       => $amounts,
     '#weight'        => 20,
   );
+
+  $form['links'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('"Send private message" link settings'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+
+  $form['links']['privatemsg_display_profile_links'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Display link on profile pages.'),
+    '#description' => t('If this setting is enabled, a link to send a private message will be displayed.'),
+    '#default_value' => variable_get('privatemsg_display_profile_links', 1),
+  );
+
+  $node_types = node_type_get_names();
+  $form['links']['privatemsg_link_node_types'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Display link on the selected content types'),
+    '#description' => t('Select which content types should display a link to send a private message to the author. By default, the link is not displayed below teasers.'),
+    '#default_value' => variable_get('privatemsg_link_node_types', array()),
+    '#options' => $node_types,
+  );
+  $form['links']['privatemsg_display_on_teaser'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Display link on teasers of the selected content types.'),
+    '#default_value' => variable_get('privatemsg_display_on_teaser', 1),
+  );
+  $form['links']['privatemsg_display_on_comments'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Display links on comments of selected content types.'),
+    '#description' => t('Also display a link to send a private message to the authors of the comments of the selected content types.'),
+    '#default_value' => variable_get('privatemsg_display_on_comments', 0),
+  );
   drupal_add_js(drupal_get_path('module', 'privatemsg') .'/privatemsg-admin.js');
 
   $form['#submit'][] = 'private_message_settings_submit';

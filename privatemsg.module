@@ -861,7 +861,7 @@ function privatemsg_sql_deleted($days, $max) {
  * Implements hook_user_view().
  */
 function privatemsg_user_view(&$account) {
-  if ($url = privatemsg_get_link(array($account))) {
+  if ($url = privatemsg_get_link(array($account)) && variable_get('privatemsg_display_profile_links', 1)) {
     $account->content['privatemsg_send_new_message'] = array(
       '#markup' => l(t('Send this user a message'), $url, array('query' => drupal_get_destination())),
       '#weight' => 10,
@@ -1816,6 +1816,45 @@ function privatemsg_privatemsg_thread_operations() {
   return $operations;
 }
 
+/**
+ * Implements hook_node_view().
+ */
+function privatemsg_node_view($node, $view_mode) {
+  $types = array_filter(variable_get('privatemsg_link_node_types', array()));
+  $url = privatemsg_get_link(user_load($node->uid));
+  if (in_array($node->type, $types) && !empty($url) && ($view_mode == 'full' || (variable_get('privatemsg_display_on_teaser', 1) && $view_mode == 'teaser'))) {
+    $links['privatemsg_link'] = array(
+      'title' => t('Send author a message'),
+      'href' => $url . '/' . t('Message regarding @node', array( '@node' => $node->title['und'][0]['value'])),
+      'query' => drupal_get_destination(),
+    );
+    $node->content['links']['privatemsg'] = array(
+      '#theme' => 'links',
+      '#links' => $links,
+      '#attributes' => array('class' => array('links', 'inline')),
+    );
+  }
+}
+
+/**
+ * Implements hook_comment_view().
+ */
+function privatemsg_comment_view($comment) {
+  $types = array_filter(variable_get('privatemsg_link_node_types', array()));
+  $url = privatemsg_get_link(user_load($comment->uid));
+  if (in_array(node_load($comment->nid)->type, $types) && !empty($url) && variable_get('privatemsg_display_on_comments', 0)) {
+    $links['privatemsg_link'] = array(
+      'title' => t('Send author a message'),
+      'href' => $url . '/' . t('Message regarding @comment', array('@comment' => trim($comment->subject))),
+      'query' => drupal_get_destination(),
+    );
+    $comment->content['links']['privatemsg'] = array(
+      '#theme' => 'links',
+      '#links' => $links,
+      '#attributes' => array('class' => array('links', 'inline')),
+    );
+  }
+}
 /**
  * Implementation of hook_views_api().
  */
