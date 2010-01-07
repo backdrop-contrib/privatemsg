@@ -719,7 +719,7 @@ function privatemsg_sql_list($account, $argument = 'list') {
   if (in_array('participants', $fields)) {
     // Query for a string with uid's, for example "1,6,7". This needs a subquery on PostgreSQL.
     if (db_driver() == 'pgsql') {
-      $query->addExpression("array_to_string(array(SELECT DISTINCT textin(int4out(pmia.uid))
+      $query->addExpression("array_to_string(array(SELECT DISTINCT pmia.uid
                                                           FROM {pm_index} pmia
                                                           WHERE pmia.thread_id = pmi.thread_id), ',')", 'participants');
     }
@@ -773,7 +773,7 @@ function privatemsg_sql_load($pmids, $account = NULL) {
  */
 function privatemsg_sql_messages($threads, $account = NULL, $load_all = FALSE) {
   $query = db_select('pm_index', 'pmi');
-  $query->addExpression('DISTINCT(pmi.mid)', 'mid');
+  $query->addField('pmi', 'mid');
   $query->join('pm_message', 'pm', 'pm.mid = pmi.mid');
   if (!$load_all) {
     $query->condition('pmi.deleted', 0);
@@ -782,6 +782,8 @@ function privatemsg_sql_messages($threads, $account = NULL, $load_all = FALSE) {
   // sort by mid second to have them in the same order as they were saved.
   $query
     ->condition('pmi.thread_id', $threads)
+    ->groupBy('pm.timestamp')
+    ->groupBy('pmi.mid')
     // Order by timestamp first.
     ->orderBy('pm.timestamp', 'ASC')
     // If there are multiple inserts during the same second (tests, for example)
