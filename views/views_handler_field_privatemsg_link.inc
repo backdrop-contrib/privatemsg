@@ -92,10 +92,9 @@ class views_handler_field_privatemsg_link extends views_handler_field {
         }
       }
 
-    $form['alter']['help'] = array(
-      '#type' => 'hidden',
+    $form['help'] = array(
       '#id' => 'views-tokens-help',
-      '#prefix' => '<div><fieldset id="views-tokens-help"><legend>' . t('Replacement patterns') . '</legend>' . $output . '</fieldset></div>',
+      '#markup' => '<div><fieldset id="views-tokens-help"><legend>' . t('Replacement patterns') . '</legend>' . $output . '</fieldset></div>',
     );
 
     $form['return'] = array(
