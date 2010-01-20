@@ -354,10 +354,10 @@ function privatemsg_thread_load($thread_id, $account = NULL, $start = NULL, $use
 
       // Load messages returned by the messages query with privatemsg_message_load_multiple().
       $query = _privatemsg_assemble_query('messages', array($thread_id), $thread['read_all'] ? NULL : $account);
-      // Override count query to use DISTINCT.
-      $countQuery = $query->countquery();
-      $expressions = &$countQuery->getExpressions();
-      $expressions['expression']['expression'] = 'COUNT(DISTINCT pmi.mid)';
+      // Use subquery to bypass group by since it is not possible to alter
+      // existing GROUP BY statements.
+      $countQuery = db_select($query);
+      $countQuery->addExpression('COUNT(*)');
       $thread['message_count'] = $thread['to'] = $countQuery->execute()->fetchField();
       $thread['from'] = 1;
       // Check if we need to limit the messages.
