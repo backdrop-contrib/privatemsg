@@ -187,7 +187,15 @@ function privatemsg_menu() {
     'access arguments' => array('write privatemsg'),
     'type'             => MENU_CALLBACK,
   );
-  $items['admin/config/people/messages'] = array(
+  $items['admin/config/messaging'] = array(
+    'title' => 'Messaging',
+    'description' => 'Messaging systems.',
+    'page callback' => 'system_admin_menu_block_page',
+    'access arguments' => array('access administration pages'),
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path('module', 'system'),
+  );
+  $items['admin/config/messaging/privatemsg'] = array(
     'title'            => 'Private messages',
     'description'      => 'Configure private messaging settings.',
     'page callback'    => 'drupal_get_form',
@@ -196,7 +204,7 @@ function privatemsg_menu() {
     'access arguments' => array('administer privatemsg settings'),
     'type'             => MENU_NORMAL_ITEM,
   );
-  $items['admin/config/people/messages/default'] = array(
+  $items['admin/config/messaging/privatemsg/default'] = array(
     'title'            => 'Private messages',
     'description'      => 'Configure private messaging settings.',
     'page callback'    => 'drupal_get_form',

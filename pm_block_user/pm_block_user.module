@@ -41,7 +41,7 @@ function pm_block_user_menu() {
     'weight'           => -10,
   );
 
-  $items['admin/config/people/messages/block'] = array(
+  $items['admin/config/messaging/privatemsg/block'] = array(
     'title'            => 'User blocking rules',
     'description'      => 'Configure rules for which users may block each other.',
     'page callback'    => 'drupal_get_form',

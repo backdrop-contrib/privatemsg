@@ -10,7 +10,7 @@
  * Implementation of hook_menu().
  */
 function pm_email_notify_menu() {
-  $items['admin/config/people/messages/notify'] = array(
+  $items['admin/config/messaging/privatemsg/notify'] = array(
     'title'            => 'E-mail notify',
     'description'      => 'E-mail notification settings',
     'page callback'    => 'drupal_get_form',

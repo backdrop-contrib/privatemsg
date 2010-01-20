@@ -30,7 +30,7 @@ function privatemsg_filter_permission() {
  * Implementation of hook_menu().
  */
 function privatemsg_filter_menu() {
-  $items['admin/config/people/messages/filter'] = array(
+  $items['admin/config/messaging/privatemsg/filter'] = array(
     'title'            => 'Filter',
     'description'      => 'Configure filter settings.',
     'page callback'    => 'drupal_get_form',
@@ -39,7 +39,7 @@ function privatemsg_filter_menu() {
     'access arguments' => array('administer privatemsg settings'),
     'type'             => MENU_LOCAL_TASK,
   );
-  $items['admin/config/people/messages/tags'] = array(
+  $items['admin/config/messaging/privatemsg/tags'] = array(
     'title'            => 'Tags',
     'description'      => 'Configure tags.',
     'page callback'    => 'privatemsg_tags_admin',
@@ -47,7 +47,7 @@ function privatemsg_filter_menu() {
     'access arguments' => array('administer privatemsg settings'),
     'type'             => MENU_LOCAL_TASK,
   );
-  $items['admin/config/people/messages/tags/list'] = array(
+  $items['admin/config/messaging/privatemsg/tags/list'] = array(
     'title'            => 'List',
     'description'      => 'Configure tags.',
     'page callback'    => 'privatemsg_tags_admin',
@@ -56,7 +56,7 @@ function privatemsg_filter_menu() {
     'type'             => MENU_DEFAULT_LOCAL_TASK,
     'weight'           => -10,
   );
-  $items['admin/config/people/messages/tags/add'] = array(
+  $items['admin/config/messaging/privatemsg/tags/add'] = array(
     'title'            => 'Add',
     'description'      => 'Configure tags.',
     'page callback'    => 'drupal_get_form',
@@ -65,7 +65,7 @@ function privatemsg_filter_menu() {
     'access arguments' => array('administer privatemsg settings'),
     'type'             => MENU_LOCAL_TASK,
   );
-  $items['admin/config/people/messages/tags/edit/%'] = array(
+  $items['admin/config/messaging/privatemsg/tags/edit/%'] = array(
     'title'            => 'Add',
     'description'      => 'Configure tags.',
     'page callback'    => 'drupal_get_form',
@@ -74,7 +74,7 @@ function privatemsg_filter_menu() {
     'access arguments' => array('administer privatemsg settings'),
     'type'             => MENU_CALLBACK,
   );
-  $items['admin/config/people/messages/tags/delete/%'] = array(
+  $items['admin/config/messaging/privatemsg/tags/delete/%'] = array(
     'title'            => 'Add',
     'description'      => 'Configure tags.',
     'page callback'    => 'drupal_get_form',
