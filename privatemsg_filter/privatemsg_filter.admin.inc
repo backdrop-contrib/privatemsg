@@ -45,8 +45,8 @@ function privatemsg_tags_admin() {
     $row['tag'] = check_plain($tag->tag);
     $row['count'] = $tag->count;
     $row['public'] = $tag->public ? t('Yes') : '-';
-    $row['operations'] = l(t('edit'), 'admin/config/people/messages/tags/edit/' . $tag->tag_id);
-    $row['operations'] .= ' ' . l(t('delete'), 'admin/config/people/messages/tags/delete/' . $tag->tag_id);
+    $row['operations'] = l(t('edit'), 'admin/config/messaging/privatemsg/tags/edit/' . $tag->tag_id);
+    $row['operations'] .= ' ' . l(t('delete'), 'admin/config/messaging/privatemsg/tags/delete/' . $tag->tag_id);
 
     $rows[] = $row;
   }
@@ -137,7 +137,6 @@ function privatemsg_tags_form_submit($form, &$form_state) {
       ->condition('tag_id', $form_state['values']['tag_id'])
       ->execute();
     drupal_set_message(t('Tag updated.'));
-    $form_state['redirect'] = 'admin/config/people/messages/tags';
   }
   else {
     // Tag does not yet exist, create a new one.
@@ -149,6 +148,7 @@ function privatemsg_tags_form_submit($form, &$form_state) {
       ->execute();
     drupal_set_message(t('Tag created.'));
   }
+  $form_state['redirect'] = 'admin/config/messaging/privatemsg/tags';
 }
 
 /**
@@ -163,7 +163,7 @@ function privatemsg_filter_tags_delete($form, &$form_state, $tag_id) {
   );
   return confirm_form($form,
     t('Are you sure you want to delete?'),
-    isset($_GET['destination']) ? $_GET['destination'] : 'admin/config/people/messages/tags',
+    isset($_GET['destination']) ? $_GET['destination'] : 'admin/config/messaging/privatemsg/tags',
     t('This action cannot be undone.'),
     t('Delete'),
     t('Cancel')
@@ -184,7 +184,7 @@ function privatemsg_filter_tags_delete_submit($form, &$form_state) {
 
     drupal_set_message(t('Tag has been deleted'));
   }
-  $form_state['redirect'] = 'admin/config/people/messages/tags';
+  $form_state['redirect'] = 'admin/config/messaging/privatemsg/tags';
 }
 
 function privatemsg_filter_admin() {

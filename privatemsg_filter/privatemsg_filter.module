@@ -47,26 +47,17 @@ function privatemsg_filter_menu() {
     'access arguments' => array('administer privatemsg settings'),
     'type'             => MENU_LOCAL_TASK,
   );
-  $items['admin/config/messaging/privatemsg/tags/list'] = array(
-    'title'            => 'List',
-    'description'      => 'Configure tags.',
-    'page callback'    => 'privatemsg_tags_admin',
-    'file'             => 'privatemsg_filter.admin.inc',
-    'access arguments' => array('administer privatemsg settings'),
-    'type'             => MENU_DEFAULT_LOCAL_TASK,
-    'weight'           => -10,
-  );
   $items['admin/config/messaging/privatemsg/tags/add'] = array(
-    'title'            => 'Add',
+    'title'            => 'Add tag',
     'description'      => 'Configure tags.',
     'page callback'    => 'drupal_get_form',
     'page arguments'   => array('privatemsg_tags_form'),
     'file'             => 'privatemsg_filter.admin.inc',
     'access arguments' => array('administer privatemsg settings'),
-    'type'             => MENU_LOCAL_TASK,
+    'type'             => MENU_LOCAL_ACTION,
   );
   $items['admin/config/messaging/privatemsg/tags/edit/%'] = array(
-    'title'            => 'Add',
+    'title'            => 'Edit tag',
     'description'      => 'Configure tags.',
     'page callback'    => 'drupal_get_form',
     'page arguments'   => array('privatemsg_tags_form', 6),
@@ -75,7 +66,7 @@ function privatemsg_filter_menu() {
     'type'             => MENU_CALLBACK,
   );
   $items['admin/config/messaging/privatemsg/tags/delete/%'] = array(
-    'title'            => 'Add',
+    'title'            => 'Delete tag',
     'description'      => 'Configure tags.',
     'page callback'    => 'drupal_get_form',
     'page arguments'   => array('privatemsg_filter_tags_delete', 6),

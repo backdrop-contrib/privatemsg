@@ -175,21 +175,21 @@ class PrivatemsgTagsTestCase extends DrupalWebTestCase {
     $this->drupalLogin($admin);
 
     // Check that the empty message is displayed.
-    $this->drupalGet('admin/config/people/messages/tags/list');
+    $this->drupalGet('admin/config/messaging/privatemsg/tags/list');
     $this->assertText(t('No tags available.'), t('No tags exist yet.'));
 
     // Create tags.
-    $this->drupalPost('admin/config/people/messages/tags/add', $private, t('Create tag'));
+    $this->drupalPost('admin/config/messaging/privatemsg/tags/add', $private, t('Create tag'));
     $this->assertText(t('Tag created.'));
-    $this->drupalPost('admin/config/people/messages/tags/add', $public, t('Create tag'));
+    $this->drupalPost('admin/config/messaging/privatemsg/tags/add', $public, t('Create tag'));
     $this->assertText(t('Tag created.'));
-    $this->drupalPost('admin/config/people/messages/tags/add', $to_edit, t('Create tag'));
+    $this->drupalPost('admin/config/messaging/privatemsg/tags/add', $to_edit, t('Create tag'));
     $this->assertText(t('Tag created.'));
-    $this->drupalPost('admin/config/people/messages/tags/add', $duplicate, t('Create tag'));
+    $this->drupalPost('admin/config/messaging/privatemsg/tags/add', $duplicate, t('Create tag'));
     $this->assertText(t('Tag already exists, choose a different name.'));
 
     // Verify that all tags are displayed.
-    $this->drupalGet('admin/config/people/messages/tags/list');
+    $this->drupalGet('admin/config/messaging/privatemsg/tags/list');
     foreach (array($private, $public, $to_edit) as $tag) {
       $this->assertText($tag['tag'], t('Tag %tag displayed', array('%tag' => $tag['tag'])));
     }

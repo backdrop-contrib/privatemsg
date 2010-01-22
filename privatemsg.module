@@ -175,7 +175,7 @@ function privatemsg_menu() {
     'file'             => 'privatemsg.pages.inc',
     'access callback'  => 'privatemsg_user_access',
     'access arguments' => array('write privatemsg'),
-    'type'             => MENU_LOCAL_TASK,
+    'type'             => MENU_LOCAL_ACTION,
     'weight'           => -3,
     'menu_name'        => 'user-menu',
   );
