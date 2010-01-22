@@ -5,3 +5,4 @@ package = Mail
 core = 7.x
 dependencies[] = privatemsg
 files[]=pm_email_notify.module
+configure=configure=admin/config/messaging/privatemsg/notify

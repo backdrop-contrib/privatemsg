@@ -5,3 +5,4 @@ package = Mail
 core = 7.x
 dependencies[] = privatemsg
 files[]=pm_block_user.module
+configure=admin/config/messaging/privatemsg/block

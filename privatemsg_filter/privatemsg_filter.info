@@ -6,4 +6,5 @@ core = 7.x
 dependencies[] = privatemsg
 files[]=privatemsg_filter.module
 files[]=privatemsg_filter.test
+configure=admin/config/messaging/privatemsg/filter
 
