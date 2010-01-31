@@ -205,13 +205,12 @@ class PrivatemsgTagsTestCase extends DrupalWebTestCase {
       else {
         $this->assertEqual((string)$row->td[2], t('Yes'), t('Public tag does have public flag.'));
       }
-      // Extract edit url.
+      // Extract edit/delete url. Only the part starting with admin/ is needed.
       if ((string)$row->td[0] == $to_edit['tag']) {
-        $edit_url = substr($row->td[3]->a[0]['href'], 1);
+        $edit_url = substr($row->td[3]->a[0]['href'], strpos($row->td[3]->a[0]['href'], 'admin/'));
       }
-      // Extract edit url.
       if ((string)$row->td[0] == $public['tag']) {
-        $delete_url = substr($row->td[3]->a[1]['href'], 1);
+        $delete_url = drupal_substr($row->td[3]->a[1]['href'], strpos($row->td[3]->a[1]['href'], 'admin/'));
       }
     }
 
