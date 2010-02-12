@@ -108,10 +108,12 @@ function _pm_email_notify_default_body() {
 }
 
 /**
- * Implement hook_user_form().
+ * Implements hook_form_alter().
  */
-function pm_email_notify_user_form(&$edit, &$account, $category = NULL) {
-  if ($category == 'account') {
+function privatemsg_form_alter(&$form, &$form_state, $form_id) {
+  // We have to use user_acces() because privatemsg_user_access() would
+  // return FALSE when privatemsg is disabled.
+  if (($form_id == 'user_register_form' || $form_id == 'user_profile_form') && $form['#user_category'] == 'account' && privatemsg_user_access('read privatemsg')) {
     $form['enable_pm_mail'] = array(
       '#type' => 'fieldset',
       '#title' => t('Privatemsg e-mail notification'),
@@ -124,7 +126,6 @@ function pm_email_notify_user_form(&$edit, &$account, $category = NULL) {
       '#title' => t('Receive email notification for incoming private messages'),
       '#default_value' => _pm_email_notify_is_enabled($account->uid),
     );
-    return $form;
   }
 }
 
@@ -132,7 +133,7 @@ function pm_email_notify_user_form(&$edit, &$account, $category = NULL) {
  * Implement hook_user_form().
  */
 function pm_email_notify_user_submit(&$edit, &$account, $category = NULL) {
-  if ($category == 'account') {
+  if ($category == 'account' && privatemsg_user_access('read privatemsg')) {
     db_merge('pm_email_notify')
       ->fields(array('email_notify_is_enabled' => $edit['pm_send_notifications']))
       ->key(array('user_id' => $account->uid))
