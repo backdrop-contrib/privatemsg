@@ -376,8 +376,11 @@ function privatemsg_thread_load($thread_id, $account = NULL, $start = NULL, $use
         if (isset($_GET['start']) && $_GET['start'] < $thread['message_count']) {
           $start = $_GET['start'];
         }
+        elseif (!variable_get('privatemsg_view_use_max_as_default', FALSE) && $max_amount == PRIVATEMSG_UNLIMITED) {
+          $start = PRIVATEMSG_UNLIMITED;
+        }
         else {
-          $start = $thread['message_count'] - (variable_get('privatemsg_view_use_max_as_default', FALSE) ? variable_get('privatemsg_view_default_amount', 10) : variable_get('privatemsg_view_max_amount', 20));
+          $start = $thread['message_count'] - (variable_get('privatemsg_view_use_max_as_default', FALSE) ? variable_get('privatemsg_view_default_amount', 10) : $max_amount);
         }
       }
 

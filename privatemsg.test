@@ -183,6 +183,17 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
     $this->assertText($bodies[22], t('Message is displayed.'));
     $this->assertNoText(t('&gt;&gt;'), t('Newer messages link not displayed.'));
     $this->assertNoText(t('&lt;&lt;'), t('Older messages link not displayed.'));
+
+    // Check with max_amount = UNLIMITED and different default amount disabled.
+    variable_set('privatemsg_view_use_max_as_default', FALSE);
+
+    $this->drupalGet('messages');
+    $this->clickLink($subject);
+    $this->assertText(t('Displaying messages 1 - 23 of 23'), t('Pager is displayed'));
+    $this->assertText($bodies[0], t('Message is displayed.'));
+    $this->assertText($bodies[22], t('Message is displayed.'));
+    $this->assertNoText(t('&gt;&gt;'), t('Newer messages link not displayed.'));
+    $this->assertNoText(t('&lt;&lt;'), t('Older messages link not displayed.'));
   }
 
   /**
