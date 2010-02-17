@@ -6,7 +6,7 @@
  * User menu callbacks for pm_block_user.module.
  */
 
-function pm_block_user_form($form_state, $author) {
+function pm_block_user_form($form, $form_state, $author) {
   global $user;
 
   $form['author'] = array(
@@ -58,7 +58,7 @@ function pm_block_user_form($form_state, $author) {
 }
 
 /**
- * Implementation of hook_form_submit().
+ * Submit callback for block user confirmation form.
  */
 function pm_block_user_form_submit($form, &$form_state) {
   if ($form_state['values']['confirm']) {
@@ -82,4 +82,85 @@ function pm_block_user_form_submit($form, &$form_state) {
     }
   }
   $form_state['redirect'] = $form_state['values']['destination'];
+}
+
+/**
+ * Formbuilder function to build a simple form to block users.
+ */
+function pm_block_user_list() {
+  global $user;
+
+  $form['new'] = array(
+    '#type'   => 'fieldset',
+    '#title'  => t('Block a user'),
+  );
+  $form['new']['name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Username'),
+    '#autocomplete_path' => 'messages/user-name-autocomplete',
+    '#description'        => t('Separate multiple names with commas.'),
+  );
+  $form['new']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Block user'),
+    '#submit' => array('pm_block_user_block_submit'),
+  );
+
+  $header = array(
+    array(
+      'data' => t('Username'),
+      'field' => 'u.name',
+      'sort'  => 'asc',
+      ),
+    array(
+      'data' => t('Operations'),
+      ),
+  );
+
+  $select = db_select('pm_block_user', 'pmb')->extend('PagerDefault')->extend('TableSort')
+    ->fields('pmb', array('author'))
+    ->condition('pmb.recipient', $user->uid)
+    ->limit(20)
+    ->orderByHeader($header);
+
+  // Only show existing users, therefore join users.
+  $select->innerJoin('users', 'u', 'u.uid = pmb.author');
+
+  $rows = array();
+  foreach ($select->execute() as $row) {
+    $rows[] = array(
+      theme('username', array('account' => user_load($row->author))),
+      l(t('unblock'), 'messages/block/' . $row->author, array('query' => drupal_get_destination())),
+    );
+  }
+  $form['#header'] = $header;
+  $form['#rows'] = $rows;
+  return $form;
+}
+
+/**
+ * Submit callback for block user form.
+ */
+function pm_block_user_block_submit($form, &$form_state) {
+  global $user;
+  list($accounts, $invalid) = _privatemsg_parse_userstring($form_state['values']['name']);
+  if (!empty($accounts)) {
+    $insert = db_insert('pm_block_user')->fields(array('author', 'recipient'));
+    foreach ($accounts as $account) {
+      $insert->values(array(
+        'author' => $account->uid,
+        'recipient' => $user->uid,
+      ));
+      drupal_set_message(t('!author has been blocked from sending you any further messages.', array('!author' => theme('username', array('account' => $account)))));
+    }
+    $insert->execute();
+  }
+}
+
+/**
+ * Theme function to theme the blocked user listing.
+ */
+function theme_pm_block_user_list($variables) {
+  $form = $variables['form'];
+  return drupal_render_children($form) . theme('table', array('header' => $form['#header'], 'rows' =>  $form['#rows'])) . theme('pager');
 }

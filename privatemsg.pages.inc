@@ -366,7 +366,7 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
     );
     $recipients_string_themed = implode(', ', $to_themed);
     $form['privatemsg']['recipient_display'] = array(
-      '#value' =>  '<p>'. t('<strong>Reply to thread</strong>:<br /> Recipients: !to', array('!to' => $recipients_string_themed)) .'</p>',
+      '#markup' =>  '<p>'. t('<strong>Reply to thread</strong>:<br /> Recipients: !to', array('!to' => $recipients_string_themed)) .'</p>',
       '#weight' => -10,
     );
     if (empty($recipients_string)) {

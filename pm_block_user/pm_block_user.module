@@ -41,6 +41,17 @@ function pm_block_user_menu() {
     'weight'           => -10,
   );
 
+  $items['messages/blocked'] = array(
+    'title'            => 'Blocked users',
+    'page callback'    => 'drupal_get_form',
+    'page arguments'    => array('pm_block_user_list'),
+    'file'             => 'pm_block_user.pages.inc',
+    'access callback'  => 'privatemsg_user_access',
+    'access arguments' => array('read privatemsg'),
+    'type'             => MENU_LOCAL_TASK,
+    'weight'           => 10,
+  );
+
   $items['admin/config/messaging/privatemsg/block'] = array(
     'title'            => 'User blocking rules',
     'description'      => 'Configure rules for which users may block each other.',
@@ -67,8 +78,9 @@ function pm_block_user_menu() {
  */
 function pm_block_user_theme() {
   return array(
-    'pm_block_user_actions' => array(
+    'pm_block_user_list' => array(
       'render element' => 'form',
+      'file'      => 'pm_block_user.pages.inc',
     ),
   );
 }
@@ -225,14 +237,14 @@ function pm_block_user_privatemsg_block_message($author, $recipients) {
   );
   $result = db_query('SELECT recipient FROM {pm_block_user} WHERE author = :author AND recipient IN (:recipients) GROUP BY recipient', $args);
   foreach ($result as $row) {
-    $recipient = $recipients[$row['recipient']];
+    $recipient = $recipients[$row->recipient];
     // If there's a rule disallowing blocking of this message, send it anyway.
     if (_pm_block_user_rule_exists($author, $recipient, PM_BLOCK_USER_DISALLOW_BLOCKING)) {
       continue;
     }
     $blocked[] = array(
-      'uid' => $row['recipient'],
-      'message' => t('%name has chosen to not recieve any more messages from you.', array('%name' => $recipients[$row['recipient']]->name))
+      'uid' => $row->recipient,
+      'message' => t('%name has chosen to not recieve any more messages from you.', array('%name' => $recipients[$row->recipient]->name))
     );
   }
   return $blocked;
@@ -262,10 +274,10 @@ function pm_block_user_privatemsg_message_view_alter(&$vars) {
 
   if ($user->uid <> $author->uid) {
     if ($vars['message']['is_blocked']) {
-      $vars['message_actions']['unblock_author'] = array('title' => t('Unblock author'), 'href' => 'messages/block/'. $author->uid, 'query' => 'destination=messages/view/' . $thread_id);
+      $vars['message_actions']['unblock_author'] = array('title' => t('Unblock author'), 'href' => 'messages/block/'. $author->uid, 'query' => array('destination' => 'messages/view/' . $thread_id));
     }
     else {
-      $vars['message_actions']['block_author'] = array('title' => t('Block author'), 'href' => 'messages/block/'. $author->uid, 'query' => 'destination=messages/view/' . $thread_id);
+      $vars['message_actions']['block_author'] = array('title' => t('Block author'), 'href' => 'messages/block/'. $author->uid, 'query' => array('destination' => 'messages/view/' . $thread_id));
     }
   }
 }
