@@ -27,6 +27,7 @@ function pm_block_user_schema() {
         'unsigned'      => TRUE,
       ),
     ),
+    'primary key' => array('author', 'recipient'),
   );
 
   return $schema;
