@@ -73,7 +73,7 @@ class PrivatemsgAPITestCase extends DrupalWebTestCase {
 
     // Send a message through the api to the same user and check if it marked
     // as new.
-    privatemsg_new_thread(array($author), $subject = $this->randomString(10), $this->randomString(20), array('author' => $author));
+    privatemsg_new_thread(array($author), $subject = $this->randomName(10), $this->randomString(20), array('author' => $author));
     $this->drupalLogin($author);
     $this->drupalGet('messages');
     $this->clickLink($subject);
