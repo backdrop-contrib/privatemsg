@@ -747,7 +747,6 @@ function privatemsg_sql_list($account, $argument = 'list') {
     ->condition('pmi.uid', $account->uid)
     ->condition('pmi.deleted', 0)
     ->groupBy('pmi.thread_id')
-    ->orderBy('MAX(pmi.is_new)', 'DESC')
     ->orderByHeader(_privatemsg_list_headers(array_merge(array('subject', 'last_updated'), $fields)))
     ->limit(variable_get('privatemsg_per_page', 25));
 }
