@@ -4,7 +4,7 @@
   drupal_add_css(drupal_get_path('module', 'privatemsg').'/styles/privatemsg-view.css');
 ?>
 <?php print $anchors; ?>
-<div class="privatemsg-box-fb" id="privatemsg-mid-<?php print $mid; ?>">
+<div class="privatemsg-box-fb <?php print $zebra; ?>" id="privatemsg-mid-<?php print $mid; ?>">
   <div class="left-column">
     <div class="avatar-fb">
       <?php print $author_picture; ?>
