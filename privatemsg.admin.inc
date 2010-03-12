@@ -28,6 +28,13 @@ function privatemsg_admin_settings() {
     '#description' => t('This option can safely be disabled if the "New message indication" block is used instead.'),
     '#weight'      => -5,
   );
+  $form['privatemsg_display_disabled_message'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Inform the user on /messages pages that he can not write new messages when privatemsg is disabled.'),
+    '#default_value' => variable_get('privatemsg_display_disabled_message', TRUE),
+    '#description' => t('Users can (if given the permission) disable Privatemsg which disallows writing messages to them and they can not write messages themself. If enabled, those users are informed on the relevant pages why they are not allowed to write messages.'),
+    '#weight'      => -8,
+  );
 
   $form['flush_deleted'] = array(
     '#type'        => 'fieldset',

@@ -370,7 +370,7 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
   function testDisablePrivatemsg() {
     $enableduser = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg')); // set up user with read/write privatemsg permissions
     $enableduser2 = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg')); // set up user with read/write privatemsg permissions
-    $disableduser = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg')); // set up user with read/write privatemsg permissions
+    $disableduser = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg', 'allow disabling privatemsg')); // set up user with read/write privatemsg permissions
 
     // Create a message between the users that we can use to test
     $return = privatemsg_new_thread(array($disableduser), $this->randomName(20), $this->randomName(100), array('author' => $enableduser));
