@@ -148,6 +148,7 @@ function privatemsg_list($form, &$form_state, $argument = 'list', $uid = NULL) {
   $headers = _privatemsg_list_headers($columns);
   uasort($headers, 'element_sort');
 
+  $form = array('#list_argument' => $argument);
   $form['list'] = array(
     '#type' => 'tableselect',
     '#header' => $headers,
@@ -317,17 +318,17 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
 
   // The input filter widget looses the format during preview, specify it
   // explicitly.
-  if (isset($form_state['values']) && array_key_exists('body_format', $form_state['values'])) {
-    $format = $form_state['values']['body_format'];
+  if (isset($form_state['values']) && array_key_exists('format', $form_state['values'])) {
+    $format = $form_state['values']['format'];
   }
   $form['privatemsg']['body'] = array(
-    '#type'               => 'textarea',
+    '#type'               => 'text_format',
     '#title'              => t('Message'),
     '#rows'               => 6,
     '#weight'             => 0,
     '#default_value'      => $body,
     '#resizable'          => TRUE,
-    '#text_format'        => isset($format) ? $format : filter_default_format(),
+    '#format'             => isset($format) ? $format : NULL,
   );
   $form['privatemsg']['preview'] = array(
     '#type'               => 'submit',
@@ -384,7 +385,7 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
 function privatemsg_new_validate($form, &$form_state) {
   // The actual message that is being sent, we create this during validation and pass to submit to send out.
   $message = $form_state['values'];
-  $message['format']    = $form_state['values']['body_format'];
+  $message['format']    = $form_state['values']['format'];
   $message['timestamp'] = time();
 
   $trimed_body = trim(truncate_utf8(strip_tags($message['body']), 50, TRUE, TRUE));

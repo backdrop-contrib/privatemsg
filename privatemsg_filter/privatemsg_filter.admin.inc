@@ -207,3 +207,80 @@ function privatemsg_filter_admin() {
 
   return system_settings_form($form);
 }
+
+/**
+ * Display confirmation message before rebuilding inbox tag.
+ */
+function privatemsg_filter_inbox_rebuid_form() {
+  $status = '<p>'. t('Newly sent messages are automatically tagged with a hidden system tag. To also have existing messages show up in the inbox, you need to process these by starting the rebuild process. Rebuilding may take some time if there are many messages. After rebuilding has completed messages will automatically show up in the inbox.') .'</p>';
+
+  $form['status'] = array('#markup' => $status);
+  $form['rebuild'] = array(
+    '#type' => 'submit',
+    '#value' => t('Rebuild inbox'),
+  );
+
+  return $form;
+}
+
+/**
+ * Submit callback for inbox rebuild form.
+ */
+function privatemsg_filter_inbox_rebuid_form_submit($form, &$form_state) {
+  $batch = array(
+    'title' => t('Rebuilding inbox'),
+    'operations' => array(
+      array('privatemsg_filter_inbox_rebuild_process', array()),
+    ),
+    'finished' => 'privatemsg_filter_inbox_rebuild_finished',
+    'file' => drupal_get_path('module', 'privatemsg_filter') . '/privatemsg_filter.admin.inc',
+  );
+  batch_set($batch);
+}
+
+/**
+ * Batch processing function for rebuilding the index.
+ */
+function privatemsg_filter_inbox_rebuild_process(&$context) {
+  // First run, initialize sandbox.
+  if (!isset($context['sandbox']['current_thread_id'])) {
+    $context['sandbox']['current_thread_id'] = 0;
+    // Assume that the thread ids are distributed more or less equally over the
+    // whole data set. This allows us to calculate the approximate progress.
+    $context['sandbox']['max'] = db_query('SELECT MAX(thread_id) FROM {pm_index}')->fetchField();
+    $context['results']['count'] = 0;
+  }
+
+  // Fetch the 10 next thread_ids.
+  $threads = db_query_range('SELECT DISTINCT thread_id FROM {pm_index} WHERE thread_id > :thread_id', 0, 20, array(':thread_id' => $context['sandbox']['current_thread_id']))->fetchCol();
+
+  if (!empty($threads)) {
+    // By limiting this slow query (having condition with 2 depending subqueries)
+    // on a specific set of threads, this allows us to process the slow having
+    // part on a relatively small subset of pm_index that can be selected based on
+    // the thread_id index.
+    $sql = 'SELECT pmi.thread_id, pmi.uid FROM pm_index pmi WHERE thread_id IN (:threads)  GROUP BY pmi.uid HAVING ((SELECT pmf.author FROM pm_message pmf WHERE pmf.mid = pmi.thread_id) = pmi.uid AND COUNT(pmi.thread_id) > 1) OR (SELECT COUNT(*) FROM pm_message pmf INNER JOIN pm_index pmif ON (pmf.mid = pmif.mid) WHERE pmif.thread_id = pmi.thread_id AND pmf.author <> pmi.uid) > 0';
+    $result = db_query($sql, array(':threads' => $threads));
+    foreach ($result as $row) {
+      // $row is an object with uid property, so we pass it to the function as a
+      // pseudo user object.
+      privatemsg_filter_add_tags(array($row->thread_id), variable_get('privatemsg_filter_inbox_tag', ''), $row);
+      $context['results']['count']++;
+    }
+    $context['sandbox']['current_thread_id'] = max($threads);
+  }
+  // Set #finished based on sandbox.
+  $context['finished'] = empty($context['sandbox']['max']) ? 1 : ($context['sandbox']['current_thread_id'] / $context['sandbox']['max']);
+}
+
+/**
+ * Finished batch callback for index rebuild.
+ */
+function privatemsg_filter_inbox_rebuild_finished($success, $results, $operations) {
+  if ($success) {
+    drupal_set_message(format_plural($results['count'], 'One thread tagged.', '@count threads tagged.'));
+  }
+  else {
+    drupal_set_message(t('Finished with an error.'), 'error');
+  };
+}

@@ -881,7 +881,7 @@ function privatemsg_sql_deleted($days, $max) {
 /**
  * Implements hook_user_view().
  */
-function privatemsg_user_view(&$account) {
+function privatemsg_user_view($account) {
   if (($url = privatemsg_get_link(array($account))) && variable_get('privatemsg_display_profile_links', 1)) {
     $account->content['privatemsg_send_new_message'] = array(
       '#markup' => l(t('Send this user a message'), $url, array('query' => drupal_get_destination())),
@@ -893,7 +893,7 @@ function privatemsg_user_view(&$account) {
 /**
  * Implements hook_user_login().
  */
-function privatemsg_user_login(&$edit, &$account) {
+function privatemsg_user_login(&$edit, $account) {
   if (variable_get('privatemsg_display_loginmessage', TRUE) && privatemsg_user_access()) {
     $count = privatemsg_unread_count();
     if ($count) {
@@ -906,6 +906,7 @@ function privatemsg_user_login(&$edit, &$account) {
  * Implements hook_user_cancel().
  */
 function privatemsg_user_cancel($edit, $account, $method) {
+  debug($method);
   switch ($method) {
     case 'user_cancel_reassign':
       db_update('pm_message')
@@ -913,35 +914,51 @@ function privatemsg_user_cancel($edit, $account, $method) {
         ->fields(array('author' => 0))
         ->execute();
       break;
-    
-    case 'user_cancel_delete':
     case 'user_cancel_block_unpublish':
-      $mids = db_select('pm_message', 'pm')
-        ->fields('pm', array('mid'))
-        ->condition('author', $account->uid)
-        ->execute()
-        ->fetchCol();
-
-      if (!empty($mids)) {
-        // Delete recipient entries in {pm_index} of the messages the user wrote.
-        db_delete('pm_index')
-          ->condition('mid', $mids)
-          ->execute();
-      }
-
-      // Delete messages the user wrote.
-      db_delete('pm_message')
-        ->condition('author', $account->uid)
-        ->execute();
-
-      // Delete recipient entries of that user.
-      db_delete('pm_index')
-        ->condition('uid', $account->uid)
-        ->execute();
+      _privatemsg_delete_data($account);
       break;
   }
   // Always delete user settings.
   db_delete('pm_disable')
+    ->condition('uid', $account->uid)
+    ->execute();
+}
+
+/**
+ * Implements hook_user_delete().
+ */
+function privatemsg_user_delete($account) {
+  _privatemsg_delete_data($account);
+  // Always delete user settings.
+  db_delete('pm_disable')
+    ->condition('uid', $account->uid)
+    ->execute();
+}
+
+/**
+ * Delete all message data from a user.
+ */
+function _privatemsg_delete_data($account) {
+  $mids = db_select('pm_message', 'pm')
+    ->fields('pm', array('mid'))
+    ->condition('author', $account->uid)
+    ->execute()
+    ->fetchCol();
+
+  if (!empty($mids)) {
+    // Delete recipient entries in {pm_index} of the messages the user wrote.
+    db_delete('pm_index')
+      ->condition('mid', $mids)
+      ->execute();
+  }
+
+  // Delete messages the user wrote.
+  db_delete('pm_message')
+    ->condition('author', $account->uid)
+    ->execute();
+
+  // Delete recipient entries of that user.
+  db_delete('pm_index')
     ->condition('uid', $account->uid)
     ->execute();
 }
@@ -1532,7 +1549,7 @@ function privatemsg_message_load_multiple($pmids, $account = NULL) {
     // Load author of message.
     if (!($message['author'] = user_load($message['author']))) {
       // If user does not exist, load anonymous user.
-      $message['author'] = user_load(array('uid' => 0));
+      $message['author'] = user_load(0);
     }
     $returned = module_invoke_all('privatemsg_message_load', $message);
     if (!empty($returned)) {

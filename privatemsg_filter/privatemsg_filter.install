@@ -34,6 +34,13 @@ function privatemsg_filter_schema() {
         'size'          => 'tiny',
         'default'       => 0,
       ),
+      'hidden' => array(
+        'type'          => 'int',
+        'description'   => 'Defines if a tag should not be displayed and is usually automatically managed',
+        'unsigned'      => TRUE,
+        'size'          => 'tiny',
+        'default'       => 0,
+      )
     ),
     'primary key'     => array('tag_id')
   );
@@ -76,4 +83,21 @@ function privatemsg_filter_uninstall() {
   variable_del('privatemsg_filter_searchbody');
   variable_del('privatemsg_filter_tagfield_weight');
   variable_del('privatemsg_filter_default_list');
+  variable_del('privatemsg_filter_inbox_tag');
+}
+
+/**
+ * Implements hook_enable().
+ */
+function privatemsg_filter_enable() {
+  if (!($tag_id = variable_get('privatemsg_filter_inbox_tag', '')) || db_query('SELECT 1 FROM {pm_tags} WHERE tag_id = :tag_id', array(':tag_id' => $tag_id))->fetchField()) {
+    $tag_id = db_insert('pm_tags')
+      ->fields(array(
+        'tag' => 'Inbox',
+        'hidden' => 1,
+      ))
+      ->execute();
+    variable_set('privatemsg_filter_inbox_tag', $tag_id);
+  }
+  drupal_set_message(t('Visit <a href="!rebuild_url">Rebuild Inbox</a> to tag existing messages to show up in the inbox.', array('!rebuild_url' => url('admin/config/messaging/privatemsg/tags/rebuild'))));
 }

@@ -32,7 +32,7 @@ class PrivatemsgFilterTestCase extends DrupalWebTestCase {
     $edit = array(
       'recipient'   => $recipient->name,
       'subject'     => $this->randomName(20),
-      'body'        => $this->randomName(100),
+      'body[value]' => $this->randomName(100),
     );
     $this->drupalLogin($author);
     $this->drupalPost('messages/new', $edit, t('Send message'));
@@ -59,7 +59,7 @@ class PrivatemsgFilterTestCase extends DrupalWebTestCase {
     // Navigate to the new message.
     $this->clickLink($edit['subject']);
     $response = array(
-      'body' => $this->randomName(100),
+      'body[value]' => $this->randomName(100),
     );
     $this->drupalPost(NULL, $response, t('Send message'));
     $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $author->name)), t('Message sent confirmation displayed'));
@@ -86,7 +86,7 @@ class PrivatemsgFilterTestCase extends DrupalWebTestCase {
     // Navigate to the new message.
     $this->clickLink($edit['subject']);
     $response = array(
-      'body' => $this->randomName(100),
+      'body[value]' => $this->randomName(100),
     );
     $this->drupalPost(NULL, $response, t('Send message'));
     $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $author->name)), t('Message sent confirmation displayed'));
@@ -95,6 +95,19 @@ class PrivatemsgFilterTestCase extends DrupalWebTestCase {
     $this->drupalLogin($author);
     $this->drupalGet('messages');
     $this->assertText($edit['subject'], t('Thread displayed again in inbox for author.'));
+
+    // Test archiving of messages.
+    // Delete all messages for author.
+    $archive = array(
+        'list[1]' => 1,
+    );
+    $this->drupalPost(NULL, $archive, t('Archive'));
+    $this->assertText(t('The messages have been archived.'), t('Confirmation message displayed'));
+    $this->assertNoText($edit['subject'], t('Thread has been removed from inbox.'));
+
+    $this->drupalGet('messages/list');
+    $this->assertText($edit['subject'], t('Thread still displayed in "All messages" list.'));
+
   }
 }
 
