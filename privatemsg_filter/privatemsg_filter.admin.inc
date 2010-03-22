@@ -252,14 +252,14 @@ function privatemsg_filter_inbox_rebuild_process(&$context) {
   }
 
   // Fetch the 10 next thread_ids.
-  $threads = db_query_range('SELECT DISTINCT thread_id FROM {pm_index} WHERE thread_id > :thread_id', 0, 20, array(':thread_id' => $context['sandbox']['current_thread_id']))->fetchCol();
+  $threads = db_query_range('SELECT DISTINCT thread_id FROM {pm_index} WHERE thread_id > :thread_id ORDER BY thread_id ASC', 0, 20, array(':thread_id' => $context['sandbox']['current_thread_id']))->fetchCol();
 
   if (!empty($threads)) {
     // By limiting this slow query (having condition with 2 depending subqueries)
     // on a specific set of threads, this allows us to process the slow having
     // part on a relatively small subset of pm_index that can be selected based on
     // the thread_id index.
-    $sql = 'SELECT pmi.thread_id, pmi.uid FROM pm_index pmi WHERE thread_id IN (:threads)  GROUP BY pmi.uid HAVING ((SELECT pmf.author FROM pm_message pmf WHERE pmf.mid = pmi.thread_id) = pmi.uid AND COUNT(pmi.thread_id) > 1) OR (SELECT COUNT(*) FROM pm_message pmf INNER JOIN pm_index pmif ON (pmf.mid = pmif.mid) WHERE pmif.thread_id = pmi.thread_id AND pmf.author <> pmi.uid) > 0';
+    $sql = 'SELECT pmi.thread_id, pmi.uid FROM pm_index pmi WHERE thread_id IN (:threads) GROUP BY pmi.thread_id, pmi.uid HAVING ((SELECT pmf.author FROM pm_message pmf WHERE pmf.mid = pmi.thread_id) = pmi.uid AND COUNT(pmi.thread_id) > 1) OR (SELECT COUNT(*) FROM pm_message pmf INNER JOIN pm_index pmif ON (pmf.mid = pmif.mid) WHERE pmif.thread_id = pmi.thread_id AND pmf.author <> pmi.uid) > 0';
     $result = db_query($sql, array(':threads' => $threads));
     foreach ($result as $row) {
       // $row is an object with uid property, so we pass it to the function as a
