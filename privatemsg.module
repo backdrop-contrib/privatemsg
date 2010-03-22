@@ -576,7 +576,7 @@ function privatemsg_preprocess_privatemsg_view(&$vars) {
   // call hook_privatemsg_message_view_alter
   drupal_alter('privatemsg_message_view', $vars);
 
-  $vars['message_actions'] = !empty($vars['message_actions']) ? theme('links', array('links' => $vars['message_actions'], 'attributes' => array('class' => array('message-actions')))) : '';
+  $vars['message_actions'] = !empty($vars['message_actions']) ? theme('links', array('links' => $vars['message_actions'], 'attributes' => array('class' => array('privatemsg-message-actions')))) : '';
 
   $vars['anchors'] = '';
   foreach ($vars['message_anchors'] as $anchor) {
