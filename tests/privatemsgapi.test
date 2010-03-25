@@ -54,7 +54,7 @@ class PrivatemsgAPITestCase extends DrupalWebTestCase {
     $this->assertEqual('Disallowed to send a message without subject', $resultf1['messages']['error'][0], 'API denied to send message without subject');
 
     $resultf2 = privatemsg_new_thread(array(), 'no recipients', 'Body text', array('author' => $author));
-    $this->assertEqual('Disallowed to send a message without atleast one valid recipient', $resultf2['messages']['error'][0], 'API denied to send message without recipients');
+    $this->assertEqual('Disallowed to send a message without at least one valid recipient', $resultf2['messages']['error'][0], 'API denied to send message without recipients');
     $message = $this->getMessageFromSubject('no recipients');
     $this->assertTrue(empty($message), 'Message was not saved in database');
 
