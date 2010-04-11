@@ -9,26 +9,27 @@
 function privatemsg_admin_settings() {
   $form = array();
 
-  $form['theming_settings'] = array(
+  $form['display_settings'] = array(
     '#type'        => 'fieldset',
     '#collapsible' => TRUE,
     '#collapsed'   => TRUE,
-    '#title'       => t('Theming settings'),
+    '#title'       => t('Display settings'),
+    '#weight'      => 5,
   );
-  $form['theming_settings']['private_message_view_template'] = array(
+  $form['display_settings']['private_message_view_template'] = array(
     '#type'          => 'radios',
     '#title'         => t('Private message display template'),
     '#default_value' => variable_get('private_message_view_template', 'privatemsg-view'),
     '#options'       => privatemsg_view_options(),
   );
-  $form['privatemsg_display_loginmessage'] = array(
+  $form['display_settings']['privatemsg_display_loginmessage'] = array(
     '#type' => 'checkbox',
     '#title' => t('Inform the user about new messages on login'),
     '#default_value' => variable_get('privatemsg_display_loginmessage', TRUE),
     '#description' => t('This option can safely be disabled if the "New message indication" block is used instead.'),
     '#weight'      => -5,
   );
-  $form['privatemsg_display_disabled_message'] = array(
+  $form['display_settings']['privatemsg_display_disabled_message'] = array(
     '#type' => 'checkbox',
     '#title' => t('Inform the user on /messages pages that he can not write new messages when privatemsg is disabled.'),
     '#default_value' => variable_get('privatemsg_display_disabled_message', TRUE),
@@ -42,6 +43,7 @@ function privatemsg_admin_settings() {
     '#collapsed'   => TRUE,
     '#title'       => t('Flush deleted messages'),
     '#description' => t('By default, deleted messages are only hidden from the user but still stored in the database. These settings control if and when messages should be removed.'),
+    '#weight'    => 20,
   );
 
   $form['flush_deleted']['privatemsg_flush_enabled'] = array(
@@ -70,6 +72,7 @@ function privatemsg_admin_settings() {
     '#title' => t('Configure listings'),
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
+    '#weight' => -5,
   );
 
   $form['privatemsg_listing']['privatemsg_per_page'] = array(
@@ -126,6 +129,7 @@ function privatemsg_admin_settings() {
     '#title' => t('"Send private message" link settings'),
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
+    '#weight' => 10,
   );
 
   $form['links']['privatemsg_display_link_self'] = array(
