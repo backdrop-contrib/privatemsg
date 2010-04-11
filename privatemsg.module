@@ -241,6 +241,26 @@ function privatemsg_menu() {
 }
 
 /**
+ * Implements hook_menu_local_tasks_alter().
+ */
+function privatemsg_menu_local_tasks_alter(&$data, $router_item, $root_path) {
+  // Add action link to 'messages/new' on 'messages' page.
+  $add_to_array = array('messages/list', 'messages/inbox', 'messages/sent', 'messages/view');
+  foreach ($add_to_array as $add_to) {
+    if (strpos($root_path, $add_to) !== FALSE) {
+    $item = menu_get_item('messages/new');
+    if ($item['access']) {
+      $data['actions']['output'][] = array(
+        '#theme' => 'menu_local_action',
+        '#link' => $item,
+      );
+    }
+    break;
+    }
+  }
+}
+
+/**
  * Privatemsg  wrapper for user_access.
  *
  * Never allows anonymous user access as that doesn't makes sense.
