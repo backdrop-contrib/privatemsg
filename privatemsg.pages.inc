@@ -200,9 +200,11 @@ function privatemsg_list_submit($form, &$form_state) {
   // Load all keys where the value is the current op.
   $keys = array_keys($form_state['values'], $form_state['values']['op']);
 
-  // The first one is op itself, we need to use the second.
-  if (isset($keys[1]) && isset($operations[$keys[1]])) {
-    $operation = $operations[$keys[1]];
+  // Loop over them and detect if a matching button was pressed.
+  foreach ($keys as $key) {
+    if ($key != 'op' && isset($operations[$key])) {
+      $operation = $operations[$key];
+    }
   }
 
   // Only execute something if we have a valid callback and at least one checked thread.
