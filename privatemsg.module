@@ -793,7 +793,8 @@ function privatemsg_sql_load($pmids, $account = NULL) {
     ->fields('pm', array('mid', 'author', 'subject', 'body', 'timestamp', 'format'))
     ->fields('pmi', array('is_new', 'thread_id'))
     ->condition('pmi.mid', $pmids)
-    ->orderBy('pm.timestamp', 'ASC');
+    ->orderBy('pm.timestamp', 'ASC')
+    ->orderBy('pm.mid', 'ASC');
   if($account) {
     $query->condition('pmi.uid', $account->uid);
   }
