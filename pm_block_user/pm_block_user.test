@@ -9,7 +9,7 @@ class PrivatemsgBlockUserCase extends DrupalWebTestCase {
   /**
    * Implements getInfo().
    */
-  static function getInfo() {
+  static static function getInfo() {
     return array(
       'name' => t('User blocking functionality.'),
       'description' => t('Test blocking and unblocking of users'),

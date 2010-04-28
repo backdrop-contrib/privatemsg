@@ -118,7 +118,7 @@ class PrivatemsgTagsTestCase extends DrupalWebTestCase {
   /**
    * Implementation of getInfo().
    */
-  function getInfo() {
+  static function getInfo() {
     return array(
       'name' => t('Privatemsg Tags functionality.'),
       'description' => t('Test Privatemsg tags use and administration functionality.'),

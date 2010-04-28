@@ -10,7 +10,7 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
   /**
    * Implementation of getInfo().
    */
-  static function getInfo() {
+  static static function getInfo() {
     return array
     (
       // 'name' should start with what is being tested (menu item) followed by what about it
