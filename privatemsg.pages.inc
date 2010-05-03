@@ -169,6 +169,9 @@ function privatemsg_list($form, &$form_state, $argument = 'list', $uid = NULL) {
     $form['actions'] = _privatemsg_action_form();
   }
 
+  // Save the currently active account, used for actions.
+  $form['account'] = array('#type' => 'value', '#value' => $account);
+
   // Define checkboxes, pager and theme
   $form['pager'] = array('#theme' => 'pager', '#weight' => 20);
   //$form['#theme'] = 'privatemsg_list';
@@ -209,7 +212,7 @@ function privatemsg_list_submit($form, &$form_state) {
 
   // Only execute something if we have a valid callback and at least one checked thread.
   if (!empty($operation['callback'])) {
-    privatemsg_operation_execute($operation, $form_state['values']['list']);
+    privatemsg_operation_execute($operation, $form_state['values']['list'], $form_state['values']['account']);
   }
 }
 
@@ -460,6 +463,10 @@ function privatemsg_undo_action() {
     $undo = $_SESSION['privatemsg']['undo callback'];
     // If the defined undo callback exists, execute it
     if (isset($undo['function']) && isset($undo['args'])) {
+      // Load the user object.
+      if (isset($undo['args']['account']) && $undo['args']['account'] > 0) {
+        $undo['args']['account'] = user_load((int)$undo['args']['account']);
+      }
       call_user_func_array($undo['function'], $undo['args']);
     }
     // Return back to the site defined by the destination GET param.

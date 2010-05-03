@@ -656,6 +656,15 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
     $this->assertText($body1, 'First message is still displayed');
     $this->assertNoText($edit['body[value]'], t('Reply of deleted user is not displayed anymore'));
 
+    // Test if admin is allowed to delete messages of other users.
+    $this->drupalGet('user/' . $author->uid . '/messages');
+    $this->checkThreadDelete($return['message']);
+
+    // Check if user is allowed to delete messages.
+    $this->drupalLogin($author);
+    $this->drupalGet('messages');
+    $this->checkThreadDelete($return['message']);
+
     // Check that deleting users that didn't send any message does not cause
     // errors.
     $this->drupalLogin($dummy);
@@ -673,6 +682,25 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
 
     // Confirm account cancellation request.
     $this->drupalGet("user/$dummy->uid/cancel/confirm/$timestamp/" . user_pass_rehash($dummy->pass, $timestamp, $dummy->login));
+  }
+
+ function checkThreadDelete($message) {
+    $this->assertText($message['subject'], t('Message is displayed.'));
+
+    $delete = array(
+      'list[' . $message['thread_id'] . ']' => 1,
+    );
+    $this->drupalPost(NULL, $delete, t('Delete'));
+    $this->assertText(t('Deleted @count thread.', array('@count' => 1)), t('Delete message displayed.'));
+    $this->assertNoText($message['subject'], t('Message is not displayed anymore.'));
+    $this->assertText(t('No messages available.'), t('No messages available anymore.'));
+
+    // Revert delete action.
+    $this->clickLink(t('undone'));
+
+    $this->assertText(t('Restored @count thread.', array('@count' => 1)), t('Restore message displayed'));
+    $this->assertText($message['subject'], t('Message is displayed again.'));
+    $this->assertNoText(t('No messages available.'), t('Messages are available.'));
   }
 
   /**

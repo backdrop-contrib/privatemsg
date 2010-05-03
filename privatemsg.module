@@ -1775,7 +1775,7 @@ function _privatemsg_list_thread_fallback($thread) {
  *   An array of thread ids. The array is filtered before used, a checkboxes
  *   array can be directly passed to it.
  */
-function privatemsg_operation_execute($operation, $threads) {
+function privatemsg_operation_execute($operation, $threads, $account = null) {
   // Filter out unchecked threads, this gives us an array of "checked" threads.
   $threads = array_filter($threads);
 
@@ -1790,6 +1790,12 @@ function privatemsg_operation_execute($operation, $threads) {
   else {
     $args = array($threads);
   }
+
+  // Add the user object to the arguments.
+  if ($account) {
+    $args[] = $account;
+  }
+
   // Execute the chosen action and pass the defined arguments.
   call_user_func_array($operation['callback'], $args);
 
@@ -1801,6 +1807,11 @@ function privatemsg_operation_execute($operation, $threads) {
     }
     else {
       $undo_args = array($threads);
+    }
+
+    // Avoid saving the complete user object in the session.
+    if ($account) {
+      $undo_args['account'] = $account->uid;
     }
     // Store the undo callback in the session and display a "Undo" link.
     // @todo: Provide a more flexible solution for such an undo action, operation defined string for example.
