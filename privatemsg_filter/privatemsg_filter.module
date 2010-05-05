@@ -157,6 +157,15 @@ function privatemsg_filter_form_privatemsg_admin_settings_alter(&$form, $form_st
 }
 
 /**
+ * Rebuilding the menu if necessary.
+ */
+function privatemsg_filter_settings_submit($form, &$form_state) {
+  if ($form['privatemsg_listing']['privatemsg_filter_default_list']['#default_value'] != $form_state['values']['privatemsg_filter_default_list']) {
+    menu_rebuild();
+  }
+}
+
+/**
  * Function to create a tag
  *
  * @param $tags A single tag or an array of tags.
@@ -496,7 +505,7 @@ function privatemsg_filter_form_privatemsg_list_alter(&$form, $form_state) {
   }
 
   $tags = privatemsg_filter_get_tags_data($user);
-  if (privatemsg_user_access('filter private messages') && !empty($tags) && !empty( $form['list']['#options'])) {
+  if (privatemsg_user_access('tag private messages') && !empty($tags) && !empty( $form['list']['#options'])) {
     $options = array();
     $options[] = t('Apply Tag...');
     foreach ($tags as $tag_id => $tag) {

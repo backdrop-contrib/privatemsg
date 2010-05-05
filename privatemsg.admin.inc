@@ -168,7 +168,7 @@ function privatemsg_admin_settings() {
   );
   drupal_add_js(drupal_get_path('module', 'privatemsg') .'/privatemsg-admin.js');
 
-  $form['#submit'][] = 'private_message_settings_submit';
+  $form['#submit'][] = 'privatemsg_admin_settings_submit';
   return system_settings_form($form);
 }
 
