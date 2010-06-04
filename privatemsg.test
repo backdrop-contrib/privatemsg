@@ -10,7 +10,7 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
   /**
    * Implementation of getInfo().
    */
-  static static function getInfo() {
+  public static function getInfo() {
     return array
     (
       // 'name' should start with what is being tested (menu item) followed by what about it
@@ -287,7 +287,7 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
     $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $recipient->name)), 'Message sent confirmation displayed.');
 
     $this->drupalPost('messages/new', $editempty, t('Send message'));
-    $this->assertText(t('Disallowed to send a message without subject'), 'Empty subject message displayed.');
+    $this->assertText(t('Disallowed to send a message without a subject'), 'Empty subject message displayed.');
 
     $this->drupalPost('messages/new', $editmixed, t('Send message'));
     $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $recipient->name)), 'Message sent confirmation displayed.');

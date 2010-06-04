@@ -10,7 +10,7 @@ class PrivatemsgAPITestCase extends DrupalWebTestCase {
   /**
    * Implementation of getInfo().
    */
-  static static function getInfo() {
+  public static function getInfo() {
     return array(
       // 'name' should start with what is being tested (menu item) followed by what about it
       // is being tested (creation/deletion).
@@ -51,7 +51,7 @@ class PrivatemsgAPITestCase extends DrupalWebTestCase {
     $this->assertTrue($resultok2['success'], 'API allowed to send message without body');
 
     $resultf1 = privatemsg_new_thread(array($recipient1, $recipient2, $recipient3), '', 'No subject', array('author' => $author));
-    $this->assertEqual('Disallowed to send a message without subject', $resultf1['messages']['error'][0], 'API denied to send message without subject');
+    $this->assertEqual('Disallowed to send a message without a subject', $resultf1['messages']['error'][0], 'API denied to send message without a subject');
 
     $resultf2 = privatemsg_new_thread(array(), 'no recipients', 'Body text', array('author' => $author));
     $this->assertEqual('Disallowed to send a message without at least one valid recipient', $resultf2['messages']['error'][0], 'API denied to send message without recipients');

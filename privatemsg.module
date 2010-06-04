@@ -1331,10 +1331,10 @@ function _privatemsg_validate_message(&$message, $form = FALSE) {
 
   if (empty($message['subject'])) {
     if ($form) {
-      form_set_error('subject', t('Disallowed to send a message without subject'));
+      form_set_error('subject', t('Disallowed to send a message without a subject'));
     }
     else {
-      $messages['error'][] = t('Disallowed to send a message without subject');
+      $messages['error'][] = t('Disallowed to send a message without a subject');
     }
   }
 
