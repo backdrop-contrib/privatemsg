@@ -367,6 +367,7 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
    * Test functionality around disabling private messaging.
    */
   function testDisablePrivatemsg() {
+    $admin_user = $this->drupalCreateUser(array('administer permissions'));
     $enableduser = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg')); // set up user with read/write privatemsg permissions
     $enableduser2 = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg')); // set up user with read/write privatemsg permissions
     $disableduser = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg', 'allow disabling privatemsg')); // set up user with read/write privatemsg permissions
@@ -376,33 +377,34 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
     $mid = $return['message']['thread_id'];
 
     $this->drupalLogin($disableduser);
-    //Now disable $disabledUser
+    // Now disable $disabledUser.
     $this->drupalGet('user/'. $disableduser->uid .'/edit');
     $edit['pm_enable'] = FALSE;
     $this->drupalPost('user/'. $disableduser->uid .'/edit', $edit, t('Save'));
 
-    // refresh $disableduser
-    $disableduser = user_load($disableduser->uid, TRUE);
-
-    // verify that disableduser can list messages
+    // Verify that disableduser can list messages.
     $this->drupalGet('messages');
     $this->assertResponse(200, t('HTTP Response 200: Access to reading messages page is allowed.'));
 
-    // verify that $disableduser can read messages but there is not reply form
+    // Verify that $disableduser can read messages but there is not reply form.
     $this->drupalGet('messages/'. $return['message']['thread_id']);
     $this->assertResponse(200, t('HTTP Response 200: Access to message thread page is allowed.'));
     $this->assertNoText(t('Reply to thread'), 'No reply form shown.');
 
-    // verify that $disableduser cannot send a new message
+    // Verify that $disableduser cannot send a new message.
     $this->drupalGet('messages/new');
     $this->assertResponse(403, t('HTTP Response 403: Access to Write New Message page was blocked to user with private messaging disabled'));
 
-    // check that $disableduser cannot submit a reply
-    $result = privatemsg_reply($return['message']['thread_id'], $this->randomName(100), array('author' => $disableduser));
+    // Use a newly loaded user object to test the API calls.
+    $disableduser_loaded = user_load($disableduser->uid, TRUE);
+
+    // Check that $disableduser cannot submit a reply.
+    $result = privatemsg_reply($return['message']['thread_id'], $this->randomName(100), array('author' => $disableduser_loaded));
     $this->assertFalse($result['success'], 'Message reply was not sent.');
 
-    // log in as $enableduser and try to send to $disabled user
-    // make sure that a message to multiple recipients still works if one is disabled
+    // Log in as $enableduser and try to send to $disabled user.
+    // Make sure that a message to multiple recipients still works if one is
+    // disabled.
     $message = array(
       'recipient'   => $disableduser->name,
       'subject'     => $this->randomName(20),
@@ -412,7 +414,8 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
     $this->drupalPost('messages/new', $message, t('Send message'));
     $this->assertText(t('Disallowed to send message because all recipients are blocked'), 'Message was not sent.');
 
-    // make sure that a message to multiple recipients still works if one is disabled
+    // Make sure that a message to multiple recipients still works if one is
+    // disabled.
     $messagemultiple = array(
       'recipient'   => $enableduser2->name .', '. $disableduser->name,
       'subject'     => $this->randomName(20),
@@ -422,6 +425,21 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
     $this->assertText(t('@recipient has disabled private message receiving.', array('@recipient' => $disableduser->name)), 'Message about user with disabled private messaging.');
     $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $enableduser2->name)), 'Message sent confirmation displayed.');
 
+    // Remove the permission to disable privatemsg.
+    $this->drupalLogin($admin_user);
+    // 6 is the rid of the custom $disableduser role.
+    $edit = array('6[allow disabling privatemsg]' => FALSE);
+    $this->drupalPost('admin/user/permissions', $edit, t('Save permissions'));
+
+    // Make sure that the option is not visible anymore.
+    $this->drupalLogin($disableduser);
+    $this->drupalGet('user/' . $disableduser->uid . '/edit');
+    $this->assertNoText(t('Enable Private Messaging'), t('Disable privatemsg setting not displayed'));
+
+    // Verify that the user is now allowed to write messages again.
+    $this->drupalGet('messages/new');
+    $this->assertNoText(t('You are not authorized to access this page.'), t('Access denied page is not displayed.'));
+    $this->assertText(t('Write new message'), t('Write message form is displayed.'));
   }
 
   /**

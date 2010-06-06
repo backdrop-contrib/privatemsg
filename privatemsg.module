@@ -327,16 +327,19 @@ function privatemsg_view_access($thread) {
  * @return TRUE if user has disabled private messaging, FALSE otherwise
  */
 function privatemsg_is_disabled($account) {
-
   if (!$account || !$account->uid) {
     return FALSE;
   }
 
   if (!isset($account->privatemsg_disabled)) {
-    $account->privatemsg_disabled = (bool)db_query('SELECT 1 FROM {pm_disable} WHERE uid = :uid ', array(':uid' => $account->uid))->fetchField();
+    $account->privatemsg_disabled = FALSE;
+    // Make sure we have a fully loaded user object and try to load it if not.
+    if ((!empty($account->roles) || $account = user_load($account->uid)) && user_access('allow disabling privatemsg', $account)) {
+      $account->privatemsg_disabled = (bool)db_query('SELECT 1 FROM {pm_disable} WHERE uid = :uid ', array(':uid' => $account->uid))->fetchField();
+    }
   }
 
-  return ($account->privatemsg_disabled);
+  return $account->privatemsg_disabled;
 }
 
 /**
@@ -1041,15 +1044,17 @@ function privatemsg_user_update(&$edit, $account, $category) {
 function privatemsg_privatemsg_block_message($author, $recipients) {
   $blocked = array();
   if (privatemsg_is_disabled($author)) {
-    $blocked[] = array('uid' => $author->uid,
-                       'message' => t('You have disabled private message sending and receiving.'),
-                 );
+    $blocked[] = array(
+      'uid' => $author->uid,
+      'message' => t('You have disabled private message sending and receiving.'),
+    );
   }
-  foreach($recipients as $recipient) {
+  foreach ($recipients as $recipient) {
     if (privatemsg_is_disabled($recipient)) {
-      $blocked[] = array('uid' => $recipient->uid,
-                       'message' => t('%recipient has disabled private message receiving.', array('%recipient' => $recipient->name))
-                 );
+      $blocked[] = array(
+        'uid' => $recipient->uid,
+        'message' => t('%recipient has disabled private message receiving.', array('%recipient' => $recipient->name))
+      );
     }
   }
 
