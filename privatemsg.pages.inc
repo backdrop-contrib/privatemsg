@@ -390,10 +390,11 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
 function privatemsg_new_validate($form, &$form_state) {
   // The actual message that is being sent, we create this during validation and pass to submit to send out.
   $message = $form_state['values'];
-  $message['format']    = $form_state['values']['format'];
+  $message['format']    = $message['body']['format'];
+  $message['body']      = $message['body']['value'];
   $message['timestamp'] = time();
 
-  $trimed_body = trim(truncate_utf8(strip_tags($message['body']), 50, TRUE, TRUE));
+  $trimed_body = trim(truncate_utf8(strip_tags($message['body']['value']), 50, TRUE, TRUE));
   if (empty($message['subject']) && !empty($trimed_body)) {
     $message['subject'] = $trimed_body;
   }

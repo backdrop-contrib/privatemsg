@@ -58,7 +58,6 @@ class PrivatemsgBlockUserCase extends DrupalWebTestCase {
     // one in the list and set index based on that.
     $rows = $this->xpath('//tbody/tr');
 
-    debug((string)$rows[0]->td[0]->span);
     $index = (int) !($user2->name == (string)$rows[0]->td[0]->span);
     $this->clickLink(t('unblock'), $index);
     $this->drupalPost(NULL, array(), t('Unblock @user', array('@user' => $user2->name)));
