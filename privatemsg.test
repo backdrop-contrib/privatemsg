@@ -428,8 +428,8 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
     // Remove the permission to disable privatemsg.
     $this->drupalLogin($admin_user);
     // 6 is the rid of the custom $disableduser role.
-    $edit = array('6[allow disabling privatemsg]' => FALSE);
-    $this->drupalPost('admin/user/permissions', $edit, t('Save permissions'));
+    $edit = array('7[allow disabling privatemsg]' => FALSE);
+    $this->drupalPost('admin/people/permissions', $edit, t('Save permissions'));
 
     // Make sure that the option is not visible anymore.
     $this->drupalLogin($disableduser);

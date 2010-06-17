@@ -895,8 +895,7 @@ function privatemsg_sql_deleted($days, $max) {
   $query->join('pm_index', 'pmi', 'pmi.mid = pm.mid');
   return $query
     ->groupBy('pm.mid')
-    ->havingCondition('MIN(pmi.deleted)', 0, '>')
-    ->havingCondition('MAX(pmi.deleted)', time() - $days * 86400, '<')
+    ->having('MIN(pmi.deleted) > 0 AND MAX(pmi.deleted) < :old', array(':old' => time() - $days * 86400))
     ->range(0, $max);
 }
 

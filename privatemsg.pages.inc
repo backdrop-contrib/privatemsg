@@ -394,7 +394,7 @@ function privatemsg_new_validate($form, &$form_state) {
   $message['body']      = $message['body']['value'];
   $message['timestamp'] = time();
 
-  $trimed_body = trim(truncate_utf8(strip_tags($message['body']['value']), 50, TRUE, TRUE));
+  $trimed_body = trim(truncate_utf8(strip_tags($message['body']), 50, TRUE, TRUE));
   if (empty($message['subject']) && !empty($trimed_body)) {
     $message['subject'] = $trimed_body;
   }
