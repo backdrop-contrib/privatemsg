@@ -848,7 +848,7 @@ function privatemsg_filter_user_cancel($edit, $account, $method) {
  * Implements hook_privatemsg_message_insert().
  */
 function privatemsg_filter_privatemsg_message_insert($message) {
-  foreach ($message['recipients'] as $recipient) {
-    privatemsg_filter_add_tags(array($message['thread_id']), variable_get('privatemsg_filter_inbox_tag', ''), $recipient);
+  foreach ($message->recipients as $recipient) {
+    privatemsg_filter_add_tags(array($message->thread_id), variable_get('privatemsg_filter_inbox_tag', ''), $recipient);
   }
 }

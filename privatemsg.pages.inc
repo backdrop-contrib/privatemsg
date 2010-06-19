@@ -66,11 +66,11 @@ function _privatemsg_action_form() {
 function privatemsg_delete($form, $form_state, $thread, $message) {
   $form['pmid'] = array(
     '#type' => 'value',
-    '#value' => $message['mid'],
+    '#value' => $message->mid,
   );
   $form['delete_destination'] = array(
     '#type' => 'value',
-    '#value' => count($thread['messages']) > 1 ? 'messages/view/' . $message['thread_id'] : 'messages',
+    '#value' => count($thread['messages']) > 1 ? 'messages/view/' . $message->thread_id : 'messages',
   );
 
   if (privatemsg_user_access('read all private messages')) {
@@ -83,7 +83,7 @@ function privatemsg_delete($form, $form_state, $thread, $message) {
   }
   return confirm_form($form,
     t('Are you sure you want to delete this message?'),
-    isset($_GET['destination']) ? $_GET['destination'] : 'messages/view/'. $message['thread_id'],
+    isset($_GET['destination']) ? $_GET['destination'] : 'messages/view/'. $message->thread_id,
     t('This action cannot be undone.'),
     t('Delete'),
     t('Cancel')
@@ -291,16 +291,16 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
     );
     $form['message_header']['message_preview'] = $form_state['privatemsg_preview'];
   }
-  $form['privatemsg'] = array(
+  $form = array(
     '#type'               => 'fieldset',
     '#access'             => privatemsg_user_access('write privatemsg'),
   );
-  $form['privatemsg']['author'] = array(
+  $form['author'] = array(
     '#type' => 'value',
     '#value' => $user,
   );
   if (is_null($thread_id)) {
-    $form['privatemsg']['recipient'] = array(
+    $form['recipient'] = array(
       '#type'               => 'textfield',
       '#title'              => t('To'),
       '#description'        => t('Separate multiple names with commas.'),
@@ -312,7 +312,7 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
       // Do not hardcode #maxlength, make it configurable by number of recipients, not their name length.
     );
   }
-  $form['privatemsg']['subject'] = array(
+  $form['subject'] = array(
     '#type'               => 'textfield',
     '#title'              => t('Subject'),
     '#size'               => 50,
@@ -326,7 +326,7 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
   if (isset($form_state['values']) && array_key_exists('format', $form_state['values'])) {
     $format = $form_state['values']['format'];
   }
-  $form['privatemsg']['body'] = array(
+  $form['body'] = array(
     '#type'               => 'text_format',
     '#title'              => t('Message'),
     '#rows'               => 6,
@@ -335,13 +335,13 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
     '#resizable'          => TRUE,
     '#format'             => isset($format) ? $format : NULL,
   );
-  $form['privatemsg']['preview'] = array(
+  $form['preview'] = array(
     '#type'               => 'submit',
     '#value'              => t('Preview message'),
     '#submit'             => array('privatemsg_new_preview'),
     '#weight'             => 10,
   );
-  $form['privatemsg']['submit'] = array(
+  $form['submit'] = array(
     '#type'               => 'submit',
     '#value'              => t('Send message'),
     '#weight'             => 15,
@@ -356,58 +356,65 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
     $title = t('Clear');
   }
 
-  $form['privatemsg']['cancel'] = array(
+  $form['cancel'] = array(
     '#value'              => l($title, $url, array('attributes' => array('id' => 'edit-cancel'))),
     '#weight'             => 20,
   );
 
   if (!is_null($thread_id)) {
-    $form['privatemsg']['thread_id'] = array(
+    $form['thread_id'] = array(
       '#type' => 'value',
       '#value' => $thread_id,
     );
-    $form['privatemsg']['subject'] = array(
+    $form['subject'] = array(
           '#type' => 'value',
           '#default_value' => $subject,
     );
     $recipients_string_themed = implode(', ', $to_themed);
-    $form['privatemsg']['recipient_display'] = array(
+    $form['recipient_display'] = array(
       '#markup' =>  '<p>'. t('<strong>Reply to thread</strong>:<br /> Recipients: !to', array('!to' => $recipients_string_themed)) .'</p>',
       '#weight' => -10,
     );
     if (empty($recipients_string)) {
       // If there are no valid recipients, unset the message reply form.
-      $form['privatemsg']['#access'] = FALSE;
+      $form['#access'] = FALSE;
     }
   }
-  $form['privatemsg']['read_all'] = array(
+  $form['read_all'] = array(
     '#type'  => 'value',
     '#value' => $read_all,
   );
+  // Attach field widgets.
+  $message = (object) array();
+  if (isset($form_state['validate_built_message'])) {
+    $message = $form_state['validate_built_message'];
+  }
+  field_attach_form('privatemsg_message', $message, $form, $form_state);
   return $form;
 }
 
 function privatemsg_new_validate($form, &$form_state) {
-  // The actual message that is being sent, we create this during validation and pass to submit to send out.
-  $message = $form_state['values'];
-  $message['format']    = $message['body']['format'];
-  $message['body']      = $message['body']['value'];
-  $message['timestamp'] = time();
+  // The actual message that is being sent, we create this during validation and
+  // pass to submit to send out.
+  $message = (object)$form_state['values'];
+  $message->format    = $message->body['format'];
+  $message->body      = $message->body['value'];
+  $message->timestamp = time();
 
-  $trimed_body = trim(truncate_utf8(strip_tags($message['body']), 50, TRUE, TRUE));
-  if (empty($message['subject']) && !empty($trimed_body)) {
-    $message['subject'] = $trimed_body;
+  $trimed_body = trim(truncate_utf8(strip_tags($message->body), 50, TRUE, TRUE));
+  if (empty($message->subject) && !empty($trimed_body)) {
+    $message->subject = $trimed_body;
   }
   // Only parse the user string for a new thread.
-  if (!isset($message['thread_id'])) {
-    list($message['recipients'], $invalid) = _privatemsg_parse_userstring($message['recipient']);
+  if (!isset($message->thread_id)) {
+    list($message->recipients, $invalid) = _privatemsg_parse_userstring($message->recipient);
   }
   else {
     // Load participants.
-    $message['recipients'] = _privatemsg_load_thread_participants($message['thread_id']);
+    $message->recipients = _privatemsg_load_thread_participants($message->thread_id);
     // Remove author.
-    if (isset($message['recipients'][$message['author']->uid]) && count($message['recipients']) > 1) {
-      unset($message['recipients'][$message['author']->uid]);
+    if (isset($message->recipients[$message->author->uid]) && count($message->recipients) > 1) {
+      unset($message->recipients[$message->author->uid]);
     }
   }
 
@@ -441,7 +448,7 @@ function privatemsg_new_submit($form, &$form_state) {
   $status = _privatemsg_send($form_state['validate_built_message']);
   // Load usernames to which the message was sent to.
   $recipient_names = array();
-  foreach ($form_state['validate_built_message']['recipients'] as $recipient) {
+  foreach ($form_state['validate_built_message']->recipients as $recipient) {
     $recipient_names[] = theme('username', array('account' => $recipient));
   }
   if ($status !== FALSE )  {
@@ -470,9 +477,9 @@ function privatemsg_undo_action() {
       }
       call_user_func_array($undo['function'], $undo['args']);
     }
-    // Return back to the site defined by the destination GET param.
-    drupal_goto();
   }
+  // Return back to the site defined by the destination GET param.
+  drupal_goto();
 }
 
 
@@ -560,7 +567,7 @@ function privatemsg_view($thread) {
   $content['messages']['#weight'] = 0;
   foreach ($thread['messages'] as $pmid => $message) {
     // Set message as read and theme it.
-    if (!empty($message['is_new'])) {
+    if (!empty($message->is_new)) {
       privatemsg_message_change_status($pmid, PRIVATEMSG_READ, $thread['user']);
     }
     $content['messages'][$pmid] = array(

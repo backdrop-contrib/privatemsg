@@ -307,7 +307,7 @@ function hook_privatemsg_message_validate($message, $form = FALSE) {
 
   $errors = array();
 
-  foreach ($message['recipients'] as $recipient) {
+  foreach ($message->recipients as $recipient) {
     if ($recipient->name == 'blocked user') {
       $_privatemsg_invalid_recipients[] = $recipient->uid;
       $errors[] = t('%name has chosen to not recieve any more messages from you.', array('%name' => $recipient->name));
@@ -328,7 +328,7 @@ function hook_privatemsg_message_presave_alter(&$message) {
   // delete recipients which have been marked as invalid
   global $_privatemsg_invalid_recipients;
   foreach ($_privatemsg_invalid_recipients as $invalid) {
-    unset($message['recipients'][$invalid]);
+    unset($message->recipients[$invalid]);
   }
 }
 /**
@@ -355,7 +355,7 @@ function hook_privatemsg_message_view_alter(&$var) {
  *   Message array
  */
 function hook_privatemsg_message_insert($message) {
-  _mymodule_save_data($message['mid']);
+  _mymodule_save_data($message->mid);
 }
 
 /**

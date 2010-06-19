@@ -57,14 +57,14 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
     $this->drupalGet('messages');
     $this->assertResponse(200, t('HTTP Response 200: Access to mailbox was authorized to user with "<em>read privatemsg</em>" permission'));
 
-    $this->drupalGet('messages/view/' . $response['message']['thread_id']);
+    $this->drupalGet('messages/view/' . $response['message']->thread_id);
     $this->assertResponse(403, t('HTTP Response 403: Access to thread is blocked for non-recipients.'));
 
     $this->drupalLogin($recipient);
-    $this->drupalGet('messages/view/' . $response['message']['thread_id']);
+    $this->drupalGet('messages/view/' . $response['message']->thread_id);
     $this->assertText($subject, t('Access to thread for recipient allowed.'));
 
-    $this->drupalGet('messages/view/' . $response['message']['thread_id'] + 1);
+    $this->drupalGet('messages/view/' . $response['message']->thread_id + 1);
     $this->assertResponse(404, t('Non-existing thread lead to HTTP Response 404.'));
 
   }
@@ -102,7 +102,7 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
     privatemsg_new_thread(array($recipient), $subject_single, $bodies[23], array('author' => $author));
     $thread = privatemsg_new_thread(array($recipient), $subject, $bodies[0], array('author' => $author));
     for ($i = 1; $i < 23; $i++) {
-      privatemsg_reply($thread['message']['thread_id'], $bodies[$i], array('author' => $author));
+      privatemsg_reply($thread['message']->thread_id, $bodies[$i], array('author' => $author));
     }
 
     $this->drupalLogin($recipient);
@@ -374,7 +374,7 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
 
     // Create a message between the users that we can use to test
     $return = privatemsg_new_thread(array($disableduser), $this->randomName(20), $this->randomName(100), array('author' => $enableduser));
-    $mid = $return['message']['thread_id'];
+    $mid = $return['message']->thread_id;
 
     $this->drupalLogin($disableduser);
     // Now disable $disabledUser.
@@ -386,8 +386,8 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
     $this->drupalGet('messages');
     $this->assertResponse(200, t('HTTP Response 200: Access to reading messages page is allowed.'));
 
-    // Verify that $disableduser can read messages but there is not reply form.
-    $this->drupalGet('messages/'. $return['message']['thread_id']);
+    // Verify that $disableduser can read messages but there is not reply form
+    $this->drupalGet('messages/'. $return['message']->thread_id);
     $this->assertResponse(200, t('HTTP Response 200: Access to message thread page is allowed.'));
     $this->assertNoText(t('Reply to thread'), 'No reply form shown.');
 
@@ -397,9 +397,10 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
 
     // Use a newly loaded user object to test the API calls.
     $disableduser_loaded = user_load($disableduser->uid, TRUE);
+  
+    // Check that $disableduser cannot submit a reply
+    $result = privatemsg_reply($return['message']->thread_id, $this->randomName(100), array('author' => $disableduser_loaded));
 
-    // Check that $disableduser cannot submit a reply.
-    $result = privatemsg_reply($return['message']['thread_id'], $this->randomName(100), array('author' => $disableduser_loaded));
     $this->assertFalse($result['success'], 'Message reply was not sent.');
 
     // Log in as $enableduser and try to send to $disabled user.
@@ -580,23 +581,23 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
 
     // Create message and response.
     $return = privatemsg_new_thread(array($recipient, $recipient2), $subject, $body1, array('author' => $author));
-    privatemsg_reply($return['message']['thread_id'], $body2, array('author' => $recipient));
+    privatemsg_reply($return['message']->thread_id, $body2, array('author' => $recipient));
 
     // Check with user without delete permission.
     $this->drupalLogin($recipient2);
-    $this->drupalGet('messages/view/' . $return['message']['thread_id']);
+    $this->drupalGet('messages/view/' . $return['message']->thread_id);
     $this->assertText($subject, 'Subject is displayed');
     $this->assertText($body1, 'First message is displayed');
     $this->assertText($body2, 'Second message is displayed');
     $this->assertNoText(t('Delete message'), 'Delete message is link is not displayed for user without permission');
 
     // Check if access for that user is denied.
-    $this->drupalGet('messages/delete/' . $return['message']['thread_id'] . '/' . $return['message']['mid']);
+    $this->drupalGet('messages/delete/' . $return['message']->thread_id . '/' . $return['message']->mid);
     $this->assertText(t('Access denied'));
 
     // Check with user with delete access.
     $this->drupalLogin($recipient);
-    $this->drupalGet('messages/view/' . $return['message']['thread_id']);
+    $this->drupalGet('messages/view/' . $return['message']->thread_id);
     $this->assertText(t('Delete message'), 'Delete message is link is displayed for user without permission');
 
     // Click delete link of the second message and cancel.
@@ -628,27 +629,27 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
 
     // Test if the message has not been deleted for other users.
     $this->drupalLogin($recipient2);
-    $this->drupalGet('messages/view/' . $return['message']['thread_id']);
+    $this->drupalGet('messages/view/' . $return['message']->thread_id);
     $this->assertText($body1, 'First message is still displayed');
     $this->assertText($body2,'First message is still displayed');
 
     // Test delete all checkbox.
     $this->drupalLogin($admin);
-    $this->drupalGet('messages/view/' . $return['message']['thread_id']);
+    $this->drupalGet('messages/view/' . $return['message']->thread_id);
     $this->clickLink(t('Delete message'), 1);
     $this->drupalPost(NULL, array('delete_options' => TRUE), t('Delete'));
     $this->assertText(t('Message has been deleted for all users.'), 'Message deleted has been deleted');
 
     // Test if the message has been deleted for all users.
     $this->drupalLogin($recipient2);
-    $this->drupalGet('messages/view/' . $return['message']['thread_id']);
+    $this->drupalGet('messages/view/' . $return['message']->thread_id);
     $this->assertText($body1, 'First message is still displayed');
     $this->assertNoText($body2, 'Second message has been deleted for all users');
 
     // Check that messages of canceled users (user_cancel_delete) are deleted too.
     $edit = array('body[value]' => $this->randomName(100));
     $this->drupalPost(NULL, $edit, t('Send message'));
-    $this->drupalGet('messages/view/' . $return['message']['thread_id']);
+    $this->drupalGet('messages/view/' . $return['message']->thread_id);
     $this->assertText($edit['body[value]'], t('New reply is displayed'));
 
     // Reload user object, don't use the cache.
@@ -670,7 +671,7 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
     $this->loggedInUser = NULL;
 
     $this->drupalLogin($admin);
-    $this->drupalGet('messages/view/' . $return['message']['thread_id']);
+    $this->drupalGet('messages/view/' . $return['message']->thread_id);
     $this->assertText($body1, 'First message is still displayed');
     $this->assertNoText($edit['body[value]'], t('Reply of deleted user is not displayed anymore'));
 
@@ -703,21 +704,21 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
   }
 
  function checkThreadDelete($message) {
-    $this->assertText($message['subject'], t('Message is displayed.'));
+    $this->assertText($message->subject, t('Message is displayed.'));
 
     $delete = array(
-      'list[' . $message['thread_id'] . ']' => 1,
+      'list[' . $message->thread_id . ']' => 1,
     );
     $this->drupalPost(NULL, $delete, t('Delete'));
     $this->assertText(t('Deleted @count thread.', array('@count' => 1)), t('Delete message displayed.'));
-    $this->assertNoText($message['subject'], t('Message is not displayed anymore.'));
+    $this->assertNoText($message->subject, t('Message is not displayed anymore.'));
     $this->assertText(t('No messages available.'), t('No messages available anymore.'));
 
     // Revert delete action.
     $this->clickLink(t('undone'));
 
     $this->assertText(t('Restored @count thread.', array('@count' => 1)), t('Restore message displayed'));
-    $this->assertText($message['subject'], t('Message is displayed again.'));
+    $this->assertText($message->subject, t('Message is displayed again.'));
     $this->assertNoText(t('No messages available.'), t('Messages are available.'));
   }
 
@@ -728,23 +729,78 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
     //we dont really need to do this. i'm adding it just to keep it in front of my eyes so i can memorize it.
     parent::tearDown();
   }
-
 }
 
+/**
+ * Tests for fields integration.
+ */
+class PrivatemsgFieldsTestCase extends DrupalWebTestCase {
+  /**
+   * Implementation of getInfo().
+   */
+  public static function getInfo() {
+    return array
+    (
+      'name' => t('Privatemsg fields.'),
+      'description' => t('Tests integration with fields.'),
+      'group' => t('Privatemsg'),
+    );
+  }
 
+  /**
+   * Implementation of setUp().
+   */
+  function setUp() {
+    parent::setUp('privatemsg');
+  }
 
+  function testSingleField() {
+    $admin = $this->drupalCreateUser(array('administer privatemsg settings', 'write privatemsg', 'read privatemsg'));
+    $user = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
 
+    $this->drupalLogin($admin);
 
+    // Create a new field.
+    $edit = array(
+      '_add_new_field[label]' => $label = $this->randomName(),
+      '_add_new_field[field_name]' => $name = strtolower($this->randomName()),
+      '_add_new_field[type]' => 'text',
+      '_add_new_field[widget_type]' => 'text_textfield',
+    );
+    $this->drupalPost('admin/config/messaging/privatemsg/fields', $edit, t('Save'));
+    $this->drupalPost(NULL, array(), t('Save field settings'));
+    $this->drupalPost(NULL, array(), t('Save settings'));
 
+    // Send message.
+    $message = array(
+      'recipient' => $user->name,
+      'subject' => $this->randomName(),
+      'body[value]'    => $this->randomName(50),
+      'field_' . $name . '[und][0][value]' => $this->randomName(50),
+    );
+    $this->drupalPost('messages/new', $message, t('Send message'));
 
+    // Check message.
+    $this->drupalLogin($user);
+    $this->drupalGet('messages');
+    $this->clickLink($message['subject']);
 
+    $this->assertText($message['body[value]'], t('Message body displayed.'));
+    $this->assertText($message['field_' . $name . '[und][0][value]'], t('Content of new field is displayed.'));
 
+    // Respond.
+    $response = array(
+      'body[value]' => $this->randomName(50),
+      'field_' . $name . '[und][0][value]' => $this->randomName(50),
+    );
+    $this->drupalPost(NULL, $response, t('Send message'));
 
+    // Check response.
+    $this->drupalLogin($admin);
+    $this->drupalGet('messages');
+    $this->clickLink($message['subject']);
 
-
-
-
-
-
-
-
+    $this->assertText($response['body[value]'], t('Message body displayed.'));
+    $this->assertText($response['field_' . $name . '[und][0][value]'], t('Content of new field is displayed.'));
+  }
+}

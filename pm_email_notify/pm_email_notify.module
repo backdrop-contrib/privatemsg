@@ -49,7 +49,7 @@ function _pm_email_notify_is_enabled($uid) {
  * Implementation of hook_privatemsg_message_insert().
  */
 function pm_email_notify_privatemsg_message_insert($message) {
-  foreach ($message['recipients'] as $recipient) {
+  foreach ($message->recipients as $recipient) {
     // check if recipient enabled email notifications
     if (_pm_email_notify_is_enabled($recipient->uid)) {
       // send them a new pm notification email if they did
@@ -87,12 +87,12 @@ function pm_email_notify_mail($key, &$message, $params) {
 function _pm_email_notify_token($recipient, $message) {
 
   $tokens = array(
-    '!author' => $message['author']->name,
-    '!pm_subject' => drupal_html_to_text(check_plain($message['subject'])),
-    '!pm_body' => drupal_html_to_text(check_markup($message['body'], $message['format'])),
-    '!thread' => $message['thread_id'],
+    '!author' => $message->author->name,
+    '!thread' => $message->thread_id,
+    '!pm_subject' => drupal_html_to_text(check_plain($message->subject)),
+    '!pm_body' => drupal_html_to_text(check_markup($message->body, $message->format)),
     '!user_uid' => $recipient->uid,
-    '!message' => url('messages/view/' . $message['thread_id'], array('absolute' => TRUE)),
+    '!message' => url('messages/view/' . $message->thread_id, array('absolute' => TRUE)),
     '!settings' => url('user/' . $recipient->uid . '/edit', array('absolute' => TRUE)),
   );
 

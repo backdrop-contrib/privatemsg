@@ -138,7 +138,7 @@ class PrivatemsgTagsTestCase extends DrupalWebTestCase {
 
     // Create a new thread through the api.
     $response = privatemsg_new_thread(array($webuser), $this->randomName(10), $this->randomName(20), array('author' => $webuser));
-    $thread_id = $response['message']['thread_id'];
+    $thread_id = $response['message']->thread_id;
 
     $edit = array(
       'tags' => 'Awesome bananas, Banana',
@@ -151,7 +151,7 @@ class PrivatemsgTagsTestCase extends DrupalWebTestCase {
 
     // Create a another thread through the api.
     $response = privatemsg_new_thread(array($webuser), $this->randomName(10), $this->randomName(20), array('author' => $webuser));
-    $thread_id = $response['message']['thread_id'];
+    $thread_id = $response['message']->thread_id;
 
     $edit = array(
       'tags' => 'Banana, Apple',
@@ -266,7 +266,7 @@ class PrivatemsgTagsTestCase extends DrupalWebTestCase {
 
     // Create a new thread through the api.
     $response = privatemsg_new_thread(array($webuser), $subject1 = $this->randomName(10), $this->randomName(20), array('author' => $webuser));
-    $thread_id = $response['message']['thread_id'];
+    $thread_id = $response['message']->thread_id;
 
     $edit = array(
       'tags' => 'Awesome bananas, Banana',
@@ -278,7 +278,7 @@ class PrivatemsgTagsTestCase extends DrupalWebTestCase {
 
     // Create another thread.
     $response = privatemsg_new_thread(array($webuser), $subject2 = $this->randomName(10), $this->randomName(20), array('author' => $webuser));
-    $thread_id2 = $response['message']['thread_id'];
+    $thread_id2 = $response['message']->thread_id;
 
     $this->drupalGet('messages');
     $rows = $this->xpath('//tbody/tr');

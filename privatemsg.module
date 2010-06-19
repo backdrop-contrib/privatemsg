@@ -483,7 +483,7 @@ function privatemsg_thread_load($thread_id, $account = NULL, $start = NULL, $use
         // General data, assume subject is the same for all messages of that thread.
         $thread['user'] = $account;
         $message = current($thread['messages']);
-        $thread['subject'] = $message['subject'];
+        $thread['subject'] = $message->subject;
       }
       $threads[$account->uid][$thread_id] = $thread;
     }
@@ -580,20 +580,24 @@ function privatemsg_preprocess_privatemsg_view(&$vars) {
 //  drupal_set_message('<pre>'. print_r($vars,1 ) . '</pre>');
 
   $message = $vars['message'];
-  $vars['mid'] = isset($message['mid']) ? $message['mid'] : NULL;
-  $vars['thread_id'] = isset($message['thread_id']) ? $message['thread_id'] : NULL;
-  $vars['author_picture'] = theme('user_picture', array('account' => $message['author']));
-  $vars['author_name_link'] = theme('username', array('account' => $message['author']));
+  $vars['mid'] = isset($message->mid) ? $message->mid : NULL;
+  $vars['thread_id'] = isset($message->thread_id) ? $message->thread_id : NULL;
+  $vars['author_picture'] = theme('user_picture', array('account' => $message->author));
+  $vars['author_name_link'] = theme('username', array('account' => $message->author));
   /**
    * @todo perhaps make this timestamp configurable via admin UI?
    */
-  $vars['message_timestamp'] = format_date($message['timestamp'], 'small');
-  $vars['message_body'] = check_markup($message['body'], $message['format']);
+  $vars['message_timestamp'] = format_date($message->timestamp, 'small');
+  // Build fields content.
+  field_attach_prepare_view('privatemsg_message', array($vars['mid'] => $message), 'message');
+  $content = drupal_render(field_attach_view('privatemsg_message', $message, 'message'));
+
+  $vars['message_body'] = check_markup($message->body, $message->format) . $content;
   if (isset($vars['mid']) && isset($vars['thread_id']) && privatemsg_user_access('delete privatemsg')) {
     $vars['message_actions'][] = array('title' => t('Delete message'), 'href' => 'messages/delete/' . $vars['thread_id'] . '/' . $vars['mid']);
   }
   $vars['message_anchors'][] = 'privatemsg-mid-' . $vars['mid'];
-  if (!empty($message['is_new'])) {
+  if (!empty($message->is_new)) {
     $vars['message_anchors'][] = 'new';
     $vars['new'] = drupal_ucfirst(t('new'));
   }
@@ -1209,25 +1213,25 @@ function privatemsg_new_thread($recipients, $subject, $body = NULL, $options = a
   global $user;
   $author = clone $user;
 
-  $message = array();
-  $message['subject'] = $subject;
-  $message['body'] = $body;
+  $message = (object)$options;
+  $message->subject = $subject;
+  $message->body = $body;
   // Make sure that recipients are keyed by user id and are not added
   // multiple times.
   foreach ($recipients as $recipient) {
-    $message['recipients'][$recipient->uid] = $recipient;
+    $message->recipients[$recipient->uid] = $recipient;
   }
 
-  // Set custom options, if any.
-  if (!empty($options)) {
-    $message += $options;
-  }
   // Apply defaults - this will not overwrite existing keys.
-  $message += array(
-    'author' => $author,
-    'timestamp' => time(),
-    'format' => filter_default_format($author),
-  );
+  if (!isset($message->author)) {
+    $message->author = $author;
+  }
+  if (!isset($message->timestamp)) {
+    $message->timestamp = time();
+  }
+  if (!isset($message->format)) {
+    $message->format = filter_default_format($author);
+  }
 
   $validated = _privatemsg_validate_message($message);
   if ($validated['success']) {
@@ -1274,23 +1278,23 @@ function privatemsg_reply($thread_id, $body, $options = array()) {
   global $user;
   $author = clone $user;
 
-  $message = array();
-  $message['body'] = $body;
+  $message = (object)$options;
+  $message->body = $body;
 
-  // set custom options, if any
-  if (!empty($options)) {
-    $message += $options;
+  // Apply defaults - this will not overwrite existing keys.
+  if (!isset($message->author)) {
+    $message->author = $author;
   }
-  // apply defaults
-  $message += array(
-    'author' => $author,
-    'timestamp' => time(),
-    'format' => filter_default_format($author),
-  );
+  if (!isset($message->timestamp)) {
+    $message->timestamp = time();
+  }
+  if (!isset($message->format)) {
+    $message->format = filter_default_format($author);
+  }
 
   // We don't know the subject and the recipients, so we need to load them..
   // thread_id == mid on the first message of the thread
-  $first_message = privatemsg_message_load($thread_id, $message['author']);
+  $first_message = privatemsg_message_load($thread_id, $message->author);
   if (!$first_message) {
     return array(
       'success'  => FALSE,
@@ -1298,16 +1302,14 @@ function privatemsg_reply($thread_id, $body, $options = array()) {
     );
   }
 
-  $message['thread_id'] = $thread_id;
+  $message->thread_id = $thread_id;
 
-  // Load participants.
-  $message['recipients'] = _privatemsg_load_thread_participants($thread_id);
+  $message->recipients = _privatemsg_load_thread_participants($thread_id);
   // Remove author.
-  if (isset($message['recipients'][$message['author']->uid]) && count($message['recipients']) > 1) {
-    unset($message['recipients'][$message['author']->uid]);
+  if (isset($message->recipients[$message->author->uid]) && count($message->recipients) > 1) {
+    unset($message->recipients[$message->author->uid]);
   }
-  $message['subject'] = $first_message['subject'];
-
+  $message->subject = $first_message->subject;
   $validated = _privatemsg_validate_message($message);
   if ($validated['success']) {
     $validated['message'] = _privatemsg_send($message);
@@ -1317,17 +1319,17 @@ function privatemsg_reply($thread_id, $body, $options = array()) {
 
 function _privatemsg_validate_message(&$message, $form = FALSE) {
   $messages = array('error' => array(), 'warning' => array());
-  if (!privatemsg_user_access('write privatemsg', $message['author'])) {
+  if (!privatemsg_user_access('write privatemsg', $message->author)) {
     // no need to do further checks in this case...
     if ($form) {
-      form_set_error('author', t('User @user is not allowed to write messages', array('@user' => $message['author']->name)));
+      form_set_error('author', t('User @user is not allowed to write messages', array('@user' => $message->author->name)));
       return array(
         'success'  => FALSE,
         'messages'   => $messages,
       );
     }
     else {
-      $messages['error'][] = t('User @user is not allowed to write messages', array('@user' => $message['author']->name));
+      $messages['error'][] = t('User @user is not allowed to write messages', array('@user' => $message->author->name));
       return array(
          'success'  => FALSE,
          'messages'   => $messages,
@@ -1335,7 +1337,7 @@ function _privatemsg_validate_message(&$message, $form = FALSE) {
     }
   }
 
-  if (empty($message['subject'])) {
+  if (empty($message->subject)) {
     if ($form) {
       form_set_error('subject', t('Disallowed to send a message without a subject'));
     }
@@ -1345,7 +1347,7 @@ function _privatemsg_validate_message(&$message, $form = FALSE) {
   }
 
   // Don't allow replies without a body.
-  if (!empty($message['thread_id']) && empty($message['body'])) {
+  if (!empty($message->thread_id) && empty($message->body)) {
     if ($form) {
       form_set_error('body', t('Disallowed to send reply without a message.'));
     }
@@ -1355,16 +1357,16 @@ function _privatemsg_validate_message(&$message, $form = FALSE) {
   }
 
   // Check if an allowed format is used.
-  if (!filter_access(filter_format_load($message['format']), $message['author'])) {
+  if (!filter_access(filter_format_load($message->format), $message->author)) {
     if ($form) {
       form_set_error('format', t('You are not allowed to use the specified input format.'));
     }
     else {
-      $messages['error'][] = t('User @user is not allowed to use the specified input format.', array('@user' => $message['author']->name));
+      $messages['error'][] = t('User @user is not allowed to use the specified input format.', array('@user' => $message->author->name));
     }
   }
 
-  if (empty($message['recipients']) || !is_array($message['recipients'])) {
+  if (empty($message->recipients) || !is_array($message->recipients)) {
     if ($form) {
       form_set_error('to', t('Disallowed to send a message without at least one valid recipient'));
     }
@@ -1373,9 +1375,9 @@ function _privatemsg_validate_message(&$message, $form = FALSE) {
     }
   }
 
-  if (!empty($message['recipients']) && is_array($message['recipients'])) {
-    foreach(module_invoke_all('privatemsg_block_message', $message['author'], $message['recipients']) as $blocked) {
-      unset($message['recipients'][$blocked['uid']]);
+  if (!empty($message->recipients) && is_array($message->recipients)) {
+    foreach(module_invoke_all('privatemsg_block_message', $message->author, $message->recipients) as $blocked) {
+      unset($message->recipients[$blocked['uid']]);
       if ($form) {
         drupal_set_message($blocked['message'], 'warning');
       } else {
@@ -1385,7 +1387,7 @@ function _privatemsg_validate_message(&$message, $form = FALSE) {
   }
 
   // Check again, give another error message if all recipients are blocked
-  if (empty($message['recipients'])) {
+  if (empty($message->recipients)) {
     if ($form) {
       form_set_error('to', t('Disallowed to send message because all recipients are blocked'));
     }
@@ -1418,17 +1420,18 @@ function _privatemsg_send($message) {
   $transaction = db_transaction();
   try {
     drupal_alter('privatemsg_message_presave', $message);
+    field_attach_presave('privatemsg_message', $message);
 
     $query = db_insert('pm_index')->fields(array('mid', 'thread_id', 'uid', 'is_new', 'deleted'));
-    if (isset($message['read_all']) && $message['read_all']) {
+    if (isset($message->read_all) && $message->read_all) {
       // The message was sent in read all mode, add the author as recipient to all
       // existing messages.
-      $query_messages = _privatemsg_assemble_query('messages', array($message['thread_id']), NULL);
+      $query_messages = _privatemsg_assemble_query('messages', array($message->thread_id), NULL);
       foreach ($query_messages->execute()->fetchCol() as $mid) {
         $query->values(array(
           'mid' => $mid,
-          'thread_id' => $message['thread_id'],
-          'uid' => $message['author']->uid,
+          'thread_id' => $message->thread_id,
+          'uid' => $message->author->uid,
           'is_new' => 0,
           'deleted' => 0,
         ));
@@ -1437,27 +1440,27 @@ function _privatemsg_send($message) {
 
     // 1) Save the message body first.
     $args = array();
-    $args['subject'] = $message['subject'];
-    $args['author'] = $message['author']->uid;
-    $args['body'] = $message['body'];
-    $args['format'] = $message['format'];
-    $args['timestamp'] = $message['timestamp'];
+    $args['subject'] = $message->subject;
+    $args['author'] = $message->author->uid;
+    $args['body'] = $message->body;
+    $args['format'] = $message->format;
+    $args['timestamp'] = $message->timestamp;
     $mid = db_insert('pm_message')
       ->fields($args)
       ->execute();
-    $message['mid'] = $mid;
+    $message->mid = $mid;
 
     // Thread ID is the same as the mid if it's the first message in the thread.
-    if (!isset($message['thread_id'])) {
-      $message['thread_id'] = $mid;
+    if (!isset($message->thread_id)) {
+      $message->thread_id = $mid;
     }
 
     // 2) Save message to recipients.
     // Each recipient gets a record in the pm_index table.
-    foreach ($message['recipients'] as $recipient) {
+    foreach ($message->recipients as $recipient) {
       $query->values(array(
         'mid' => $mid,
-        'thread_id' => $message['thread_id'],
+        'thread_id' => $message->thread_id,
         'uid' => $recipient->uid,
         'is_new' => 1,
         'deleted' => 0,
@@ -1466,19 +1469,20 @@ function _privatemsg_send($message) {
 
     // When author is also the recipient, we want to set message to UNREAD.
     // All other times the message is set to READ.
-    $is_new = isset($message['recipients'][$message['author']->uid]) ? 1 : 0;
+    $is_new = isset($message->recipients[$message->author->uid]) ? 1 : 0;
 
     // Also add a record for the author to the pm_index table.
     $query->values(array(
       'mid' => $mid,
-      'thread_id' => $message['thread_id'],
-      'uid' => $message['author']->uid,
+      'thread_id' => $message->thread_id,
+      'uid' => $message->author->uid,
       'is_new' => $is_new,
       'deleted' => 0,
     ));
     $query->execute();
 
     module_invoke_all('privatemsg_message_insert', $message);
+    field_attach_insert('privatemsg_message', $message);
 
   } catch (Exception $exception) {
     $transaction->rollback();
@@ -1577,19 +1581,20 @@ function privatemsg_message_load_multiple($pmids, $account = NULL) {
   $result = _privatemsg_assemble_query('load', $pmids, $account)->execute();
 
   $messages = array();
-  while ($message = $result->fetchAssoc()) {
-    $message['user'] = $account;
+  foreach ($result as $message) {
+    $message->user = $account;
     // Load author of message.
-    if (!($message['author'] = user_load($message['author']))) {
+    if (!($message->author = user_load($message->author))) {
       // If user does not exist, load anonymous user.
-      $message['author'] = user_load(0);
+      $message->author = user_load(0);
     }
-    $returned = module_invoke_all('privatemsg_message_load', $message);
     if (!empty($returned)) {
       $message = array_merge_recursive($returned, $message);
     }
-    $messages[$message['mid']] = $message;
+    $messages[$message->mid] = $message;
   }
+  field_attach_load('privatemsg_message', $messages);
+  module_invoke_all('privatemsg_message_load', $messages);
   return $messages;
 }
 
@@ -1600,7 +1605,7 @@ function privatemsg_message_load_multiple($pmids, $account = NULL) {
  *   Either be a string ('some_id') or an array('group_name', 'query_id'),
  *   if a string is supplied, group_name defaults to 'privatemsg'.
  *
- * @return
+ * @return SelectQuery
  *    Array with the keys query and count. count can be used to count the
  *    elements which would be returned by query. count can be used together
  *    with pager_query().
@@ -1901,6 +1906,42 @@ function privatemsg_privatemsg_thread_operations() {
     );
   }
   return $operations;
+}
+
+/**
+ * Implements hook_entity_info().
+ */
+function privatemsg_entity_info() {
+  return array(
+    'privatemsg_message' => array(
+      'label' => t('Privatemsg'),
+      'base table' => 'pm_message',
+      'fieldable' => TRUE,
+      'entity keys' => array(
+        'id' => 'mid',
+      ),
+      'bundles' => array(
+        'privatemsg_message' => array(
+          'label' => t('Private message'),
+          'admin' => array(
+            'path' => 'admin/config/messaging/privatemsg',
+            'access arguments' => array('administer privatemsg settings'),
+          ),    
+        ),
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_build_modes().
+ */
+function privatemsg_build_modes($obj_type) {
+  $modes = array();
+  if ($obj_type == 'privatemsg_message') {
+    $modes['message'] = t('Message');
+  }
+  return $modes;
 }
 
 /**

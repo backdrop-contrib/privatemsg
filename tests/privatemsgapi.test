@@ -45,7 +45,7 @@ class PrivatemsgAPITestCase extends DrupalWebTestCase {
 
     $message = $this->getMessageFromSubject('normal message');
     $this->assertFalse(empty($message), 'Message was saved in database');
-    $this->assertEqual($message['author'], $author->uid, 'Message was sent by author');
+    $this->assertEqual($message->author, $author->uid, 'Message was sent by author');
 
     $resultok2 = privatemsg_new_thread(array($recipient1, $recipient2, $recipient3), 'empty body', '', array('author' => $author));
     $this->assertTrue($resultok2['success'], 'API allowed to send message without body');
@@ -81,7 +81,7 @@ class PrivatemsgAPITestCase extends DrupalWebTestCase {
   }
 
   function getMessageFromSubject($subject) {
-    return db_query("SELECT * FROM {pm_message} WHERE subject = :subject", array(':subject' => $subject))->fetchAssoc();
+    return db_query("SELECT * FROM {pm_message} WHERE subject = :subject", array(':subject' => $subject))->fetchObject();
   }
 
   function testPrivatemsgApiReply() {
@@ -98,17 +98,17 @@ class PrivatemsgAPITestCase extends DrupalWebTestCase {
 
     $thread_row = $this->getMessageFromSubject('test reply');
 
-    $resultok = privatemsg_reply($thread_row['mid'], 'Test Body', array('author' => $author));
+    $resultok = privatemsg_reply($thread_row->mid, 'Test Body', array('author' => $author));
     $this->assertTrue($resultok['success'], 'Reply could be sent successfully');
 
-    $resultok = privatemsg_reply($thread_row['mid'], 'Test Body', array('author' => $recipient1));
+    $resultok = privatemsg_reply($thread_row->mid, 'Test Body', array('author' => $recipient1));
     $this->assertTrue($resultok['success'], 'Reply could be sent successfully');
 
-    $resultf1 = privatemsg_reply($thread_row['mid'], '', array('author' => $recipient2));
+    $resultf1 = privatemsg_reply($thread_row->mid, '', array('author' => $recipient2));
     $this->assertFalse($resultf1['success'], 'API denied to send message without body.');
     $this->assertEqual($resultf1['messages']['error'][0], t('Disallowed to send reply without a message.'), 'Correct error returned when replying with an empty body.');
 
-    $resultf2 = privatemsg_reply($thread_row['mid'], 'Test Body', array('author' => $recipient3));
+    $resultf2 = privatemsg_reply($thread_row->mid, 'Test Body', array('author' => $recipient3));
     $errormessage = 'User '. $recipient3->name .' is not allowed to write messages';
     $this->assertEqual($errormessage, $resultf2['messages']['error'][0], 'API denied to send message from user without permission');
 
