@@ -1415,69 +1415,75 @@ function _privatemsg_validate_message(&$message, $form = FALSE) {
  *   The updated $message array.
  */
 function _privatemsg_send($message) {
+  $transaction = db_transaction();
+  try {
+    drupal_alter('privatemsg_message_presave', $message);
 
-  drupal_alter('privatemsg_message_presave', $message);
+    $query = db_insert('pm_index')->fields(array('mid', 'thread_id', 'uid', 'is_new', 'deleted'));
+    if (isset($message['read_all']) && $message['read_all']) {
+      // The message was sent in read all mode, add the author as recipient to all
+      // existing messages.
+      $query_messages = _privatemsg_assemble_query('messages', array($message['thread_id']), NULL);
+      foreach ($query_messages->execute()->fetchCol() as $mid) {
+        $query->values(array(
+          'mid' => $mid,
+          'thread_id' => $message['thread_id'],
+          'uid' => $message['author']->uid,
+          'is_new' => 0,
+          'deleted' => 0,
+        ));
+       }
+    }
 
-  $query = db_insert('pm_index')->fields(array('mid', 'thread_id', 'uid', 'is_new', 'deleted'));
-  if (isset($message['read_all']) && $message['read_all']) {
-    // The message was sent in read all mode, add the author as recipient to all
-    // existing messages.
-    $query_messages = _privatemsg_assemble_query('messages', array($message['thread_id']), NULL);
-    foreach ($query_messages->execute()->fetchCol() as $mid) {
+    // 1) Save the message body first.
+    $args = array();
+    $args['subject'] = $message['subject'];
+    $args['author'] = $message['author']->uid;
+    $args['body'] = $message['body'];
+    $args['format'] = $message['format'];
+    $args['timestamp'] = $message['timestamp'];
+    $mid = db_insert('pm_message')
+      ->fields($args)
+      ->execute();
+    $message['mid'] = $mid;
+
+    // Thread ID is the same as the mid if it's the first message in the thread.
+    if (!isset($message['thread_id'])) {
+      $message['thread_id'] = $mid;
+    }
+
+    // 2) Save message to recipients.
+    // Each recipient gets a record in the pm_index table.
+    foreach ($message['recipients'] as $recipient) {
       $query->values(array(
         'mid' => $mid,
         'thread_id' => $message['thread_id'],
-        'uid' => $message['author']->uid,
-        'is_new' => 0,
+        'uid' => $recipient->uid,
+        'is_new' => 1,
         'deleted' => 0,
       ));
-     }
-  }
+    }
 
-  // 1) Save the message body first.
-  $args = array();
-  $args['subject'] = $message['subject'];
-  $args['author'] = $message['author']->uid;
-  $args['body'] = $message['body'];
-  $args['format'] = $message['format'];
-  $args['timestamp'] = $message['timestamp'];
-  $mid = db_insert('pm_message')
-    ->fields($args)
-    ->execute();
-  $message['mid'] = $mid;
+    // When author is also the recipient, we want to set message to UNREAD.
+    // All other times the message is set to READ.
+    $is_new = isset($message['recipients'][$message['author']->uid]) ? 1 : 0;
 
-  // Thread ID is the same as the mid if it's the first message in the thread.
-  if (!isset($message['thread_id'])) {
-    $message['thread_id'] = $mid;
-  }
-
-  // 2) Save message to recipients.
-  // Each recipient gets a record in the pm_index table.
-  foreach ($message['recipients'] as $recipient) {
+    // Also add a record for the author to the pm_index table.
     $query->values(array(
       'mid' => $mid,
       'thread_id' => $message['thread_id'],
-      'uid' => $recipient->uid,
-      'is_new' => 1,
+      'uid' => $message['author']->uid,
+      'is_new' => $is_new,
       'deleted' => 0,
     ));
+    $query->execute();
+
+    module_invoke_all('privatemsg_message_insert', $message);
+
+  } catch (Exception $exception) {
+    $transaction->rollback();
+    watchdog_exception('privatemsg', $exception);
   }
-
-  // When author is also the recipient, we want to set message to UNREAD.
-  // All other times the message is set to READ.
-  $is_new = isset($message['recipients'][$message['author']->uid]) ? 1 : 0;
-
-  // Also add a record for the author to the pm_index table.
-  $query->values(array(
-    'mid' => $mid,
-    'thread_id' => $message['thread_id'],
-    'uid' => $message['author']->uid,
-    'is_new' => $is_new,
-    'deleted' => 0,
-  ));
-  $query->execute();
-
-  module_invoke_all('privatemsg_message_insert', $message);
 
   // If we reached here that means we were successful at writing all messages to db.
   return $message;
