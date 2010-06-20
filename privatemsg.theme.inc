@@ -230,6 +230,7 @@ function phptemplate_privatemsg_list_header__thread_started() {
  * Theme a block which displays the number of new messages a user has.
  */
 function theme_privatemsg_new_block($count) {
+  $count = $count['count'];
   $text = format_plural($count, 'You have a new message, click here to read it',
                         'You have @count new messages, click here to read them',
                         array('@count' => $count));
