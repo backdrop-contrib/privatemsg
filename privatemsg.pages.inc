@@ -278,23 +278,23 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
     $body      = $form_state['values']['body'];
   }
   if (!$thread_id && !empty($recipients_string)) {
-    drupal_set_title(t('Write new message to %recipient', array('%recipient' => $recipients_string)));
+    drupal_set_title(t('Write new message to @recipient', array('@recipient' => $recipients_string)));
   } elseif (!$thread_id) {
     drupal_set_title(t('Write new message'));
   }
 
-  $form = array();
+  $form = array(
+    '#type'     => 'fieldset',
+    '#access'   => privatemsg_user_access('write privatemsg'),
+  );
   if (isset($form_state['privatemsg_preview'])) {
     $form['message_header'] = array(
       '#type' => 'fieldset',
       '#attributes' => array('class' => array('preview')),
+      '#weight' => -20,
     );
     $form['message_header']['message_preview'] = $form_state['privatemsg_preview'];
   }
-  $form = array(
-    '#type'               => 'fieldset',
-    '#access'             => privatemsg_user_access('write privatemsg'),
-  );
   $form['author'] = array(
     '#type' => 'value',
     '#value' => $user,

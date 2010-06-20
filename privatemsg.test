@@ -723,7 +723,24 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
   }
 
   /**
-   * Implementation of tearDown().
+   * Test preview functionality.
+   */
+  function testPreview() {
+    $user = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg'));
+
+    $message = array(
+      'recipient' => $user->name,
+      'subject' => $this->randomName(),
+      'body[value]' => $this->randomName(50),
+    );
+    $this->drupalLogin($user);
+    $this->drupalPost('messages/new', $message, t('Preview message'));
+    $this->assertTitle(t('Write new message to @user', array('@user' => $user->name)) . ' | Drupal', t('Correct title is displayed.'));
+    $this->assertFieldByXPath($this->buildXPathQuery('//div[@class=:class]/p', array(':class' => 'privatemsg-message-body')), $message['body[value]'], t('Message body is previewed'));
+  }
+
+  /**
+   * Implements tearDown().
    */
   function tearDown() {
     //we dont really need to do this. i'm adding it just to keep it in front of my eyes so i can memorize it.
