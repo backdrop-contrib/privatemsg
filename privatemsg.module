@@ -1423,7 +1423,7 @@ function _privatemsg_send($message) {
     field_attach_presave('privatemsg_message', $message);
 
     $query = db_insert('pm_index')->fields(array('mid', 'thread_id', 'uid', 'is_new', 'deleted'));
-    if (isset($message->read_all) && $message->read_all) {
+    if (isset($message->read_all) && $message->read_all && isset($message->thread_id)) {
       // The message was sent in read all mode, add the author as recipient to all
       // existing messages.
       $query_messages = _privatemsg_assemble_query('messages', array($message->thread_id), NULL);
