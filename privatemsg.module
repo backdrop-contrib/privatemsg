@@ -998,7 +998,7 @@ function _privatemsg_delete_data($account) {
 function privatemsg_form_alter(&$form, &$form_state, $form_id) {
   // We have to use user_acces() because privatemsg_user_access() would
   // return FALSE when privatemsg is disabled.
-  if (($form_id == 'user_register_form' || $form_id == 'user_profile_form') && $form['#user_category'] == 'account' && user_access('write privatemsg') && user_access('allow disabling privatemsg')) {
+  if (($form_id == 'user_register_form' || $form_id == 'user_profile_form') && $form['#user_category'] == 'account' && (user_access('write privatemsg') || user_access('read privatemsg')) && user_access('allow disabling privatemsg')) {
     $form['privatemsg'] = array(
       '#type' => 'fieldset',
       '#title' => t('Privatemsg settings'),
@@ -1020,7 +1020,7 @@ function privatemsg_form_alter(&$form, &$form_state, $form_id) {
  * Implements hook_user_insert().
  */
 function privatemsg_user_update(&$edit, $account, $category) {
-  if ($category == 'account' && isset($edit['pm_enable']) && user_access('write privatemsg') && user_access('allow disabling privatemsg')) {
+  if ($category == 'account' && isset($edit['pm_enable']) && (user_access('write privatemsg') || user_access('read privatemsg')) && user_access('allow disabling privatemsg')) {
     $current = privatemsg_is_disabled($account);
     $disabled = (!$edit['pm_enable']);
     $edit['pm_enable'] = NULL;
