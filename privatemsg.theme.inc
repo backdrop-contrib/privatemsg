@@ -23,13 +23,13 @@
  *
  * For each field in the query, Privatemsg will try to call a theme pattern for
  * the header. That theme function can return a table header definition and
- * has the following structure: phptemplate_privatemsg_header_fieldname.
+ * has the following structure: theme_privatemsg_list_header_fieldname.
  * @see theme_privatemsg_list_header()
  *
  * Privatemsg will then do the same for each row, with the field theme pattern.
  * That theme function should return a table field compatible structure, either
  * just a string or an array. The theme function has to have the following
- * name: phptemplate_privatemsg_header_fieldname.
+ * name: theme_privatemsg_list_field_fieldname.
  * @see theme_privatemsg_list_field()
  *
  * To override an already existing theme function, use the following structure:
@@ -76,7 +76,8 @@ function theme_privatemsg_list_field($thread) {
  *
  * @see theme_privatemsg_list_field()
  */
-function phptemplate_privatemsg_list_field__participants($thread) {
+function theme_privatemsg_list_field__participants($variables) {
+  $thread = $variables['thread'];
   $participants = _privatemsg_generate_user_array($thread['participants'], -4);
   $field = array();
   $field['data'] = _privatemsg_format_participants($participants, 3, TRUE);
@@ -89,12 +90,13 @@ function phptemplate_privatemsg_list_field__participants($thread) {
  *
  * @see theme_privatemsg_list_field()
  */
-function phptemplate_privatemsg_list_field__subject($thread) {
+function theme_privatemsg_list_field__subject($variables) {
+  $thread = $variables['thread'];
   $field = array();
   $options = array();
   $is_new = '';
   if (!empty($thread['is_new'])) {
-    $is_new = theme_mark(MARK_NEW);
+    $is_new = theme('mark', array('type' => MARK_NEW));
     $options['fragment'] = 'new';
   }
   $field['data'] = l($thread['subject'], 'messages/view/' . $thread['thread_id'], $options) . $is_new;
@@ -107,7 +109,8 @@ function phptemplate_privatemsg_list_field__subject($thread) {
  *
  * @see theme_privatemsg_list_field()
  */
-function phptemplate_privatemsg_list_field__count($thread) {
+function theme_privatemsg_list_field__count($variables) {
+  $thread = $variables['thread'];
   $field = array();
   $field['data'] = $thread['count'];
   $options = array();
@@ -124,8 +127,8 @@ function phptemplate_privatemsg_list_field__count($thread) {
  *
  * @see theme_privatemsg_list_field()
  */
-function phptemplate_privatemsg_list_field__last_updated($thread) {
-  $field = array();
+function theme_privatemsg_list_field__last_updated($variables) {
+  $thread = $variables['thread'];
   $field['data'] = format_date($thread['last_updated'], 'small');
   $field['class'][] = 'privatemsg-list-date';
   return $field;
@@ -136,7 +139,8 @@ function phptemplate_privatemsg_list_field__last_updated($thread) {
  *
  * @see theme_privatemsg_list_field()
  */
-function phptemplate_privatemsg_list_field__thread_started($thread) {
+function theme_privatemsg_list_field__thread_started($variables) {
+  $thread = $variables['thread'];
   $field = array();
   $field['data'] = format_date($thread['thread_started'], 'small');
   $field['class'][] = 'privatemsg-list-date-started';
@@ -162,7 +166,7 @@ function theme_privatemsg_list_header() {
  *
  * @see theme_privatemsg_list_header()
  */
-function phptemplate_privatemsg_list_header__subject() {
+function theme_privatemsg_list_header__subject() {
   return array(
     'data'    => t('Subject'),
     'field'   => 'subject',
@@ -176,7 +180,7 @@ function phptemplate_privatemsg_list_header__subject() {
  *
  * @see theme_privatemsg_list_header()
  */
-function phptemplate_privatemsg_list_header__count() {
+function theme_privatemsg_list_header__count() {
   return array(
     'data'    => t('Messages'),
     'class'   => array('privatemsg-header-count'),
@@ -189,7 +193,7 @@ function phptemplate_privatemsg_list_header__count() {
  *
  * @see theme_privatemsg_list_header()
  */
-function phptemplate_privatemsg_list_header__participants() {
+function theme_privatemsg_list_header__participants() {
   return array(
     'data'    => t('Participants'),
     'class'   => array('privatemsg-header-participants'),
@@ -202,7 +206,7 @@ function phptemplate_privatemsg_list_header__participants() {
  *
  * @see theme_privatemsg_list_header()
  */
-function phptemplate_privatemsg_list_header__last_updated() {
+function theme_privatemsg_list_header__last_updated() {
   return array(
     'data'    => t('Last Updated'),
     'field'   => 'last_updated',
@@ -217,7 +221,7 @@ function phptemplate_privatemsg_list_header__last_updated() {
  *
  * @see theme_privatemsg_list_header()
  */
-function phptemplate_privatemsg_list_header__thread_started() {
+function theme_privatemsg_list_header__thread_started() {
   return array(
     'data'    => t('Started'),
     'field'   => 'thread_started',

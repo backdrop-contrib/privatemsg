@@ -537,7 +537,7 @@ function privatemsg_cron() {
 }
 
 function privatemsg_theme() {
-  return array(
+  $templates = array(
     'privatemsg_view'    => array(
       'variables'        => array('message' => NULL),
       'template'         => variable_get('private_message_view_template', 'privatemsg-view'), // 'privatemsg',
@@ -560,20 +560,24 @@ function privatemsg_theme() {
       'file'                  => 'privatemsg.theme.inc',
       'path'                  => drupal_get_path('module', 'privatemsg'),
       'pattern'               => 'privatemsg_list_header__',
-      'arguments'             => array(),
+      'variables'             => array(),
     ),
     'privatemsg_list_field'   => array(
       'file'                  => 'privatemsg.theme.inc',
       'path'                  => drupal_get_path('module', 'privatemsg'),
       'pattern'               => 'privatemsg_list_field__',
-      'arguments'             => array('thread'),
+      'variables'             => array('thread' => array()),
     ),
     'privatemsg_new_block'  => array(
       'file'                  => 'privatemsg.theme.inc',
       'path'                  => drupal_get_path('module', 'privatemsg'),
-      'arguments'             => array('count'),
+      'variables'             => array('count'),
     ),
   );
+  // Include the theme file to load the theme suggestions.
+  module_load_include('inc', 'privatemsg', 'privatemsg.theme');
+  $templates += drupal_find_theme_functions($templates, array('theme'));
+  return $templates;
 }
 
 function privatemsg_preprocess_privatemsg_view(&$vars) {
@@ -1702,33 +1706,11 @@ function _privatemsg_list_headers($keys) {
   $header = array();
   foreach ($keys as $key) {
     // First, try to load a specific theme for that header, if not present, use the default.
-    if ($return = theme(array('privatemsg_list_header__' . $key , 'privatemsg_list_header'))) {
+    if ($return = theme('privatemsg_list_header__' . $key)) {
       // The default theme returns nothing, only store the value if we have something.
       $header[$key] = $return;
     }
   }
-  if (count($header) == 0) {
-    // No header definition returned, fallback to the default.
-    $header += _privatemsg_list_headers_fallback($keys);
-  }
-  return $header;
-}
-
-/**
- * Table header definition for themes that don't support theme patterns.
- *
- * @return
- *   Array with the correct headers.
- */
-function _privatemsg_list_headers_fallback($keys) {
-  $header = array();
-  foreach ($keys as $key) {
-    $theme_function = 'phptemplate_privatemsg_list_header__' .$key;
-    if (function_exists($theme_function)) {
-      $header[$key] = $theme_function();
-    }
-  }
-
   return $header;
 }
 
@@ -1751,35 +1733,14 @@ function _privatemsg_list_thread($tableselect) {
     }
     foreach ($thread as $key => $data) {
       // First, try to load a specific theme for that field, if not present, use the default.
-      if ($return = theme(array('privatemsg_list_field__'. $key, 'privatemsg_list_field'), $thread)) {
+      if ($return = theme('privatemsg_list_field__' . $key, array('thread' => $thread))) {
         // The default theme returns nothing, only store the value if we have something.
-        $row['data'][$key] = $return;
+        $row[$key] = $return;
       }
-    }
-    if (empty($row['data'])) {
-      $row = _privatemsg_list_thread_fallback($thread);
     }
     $tableselect['#options'][$id] = $row;
   }
   return $tableselect;
-}
-
-/**
- * Table row definition for themes that don't support theme patterns.
- *
- * @return
- *   Array with row data.
- */
-function _privatemsg_list_thread_fallback($thread) {
-  $row_data = array();
-  foreach ($thread as $key => $data) {
-    $theme_function = 'phptemplate_privatemsg_list_field__' .$key;
-    if (function_exists($theme_function)) {
-      $row_data[$key] = $theme_function($thread);
-    }
-  }
-
-  return $row_data;
 }
 
 /**

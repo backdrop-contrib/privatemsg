@@ -563,7 +563,7 @@ function privatemsg_filter_archive_submit($form, &$form_state) {
  *
  * @see theme_privatemsg_list_header()
  */
-function phptemplate_privatemsg_list_header__tags() {
+function theme_privatemsg_list_header__tags() {
    return array(
     'data' => t('Tags'),
     'key' => 'tags',
@@ -578,7 +578,8 @@ function phptemplate_privatemsg_list_header__tags() {
  * 
  * @see theme_privatemsg_list_field()
  */
-function phptemplate_privatemsg_list_field__tags($thread) {
+function theme_privatemsg_list_field__tags($arguments) {
+  $thread = $arguments['thread'];
   if (!empty($thread['tags'])) {
     $tags = array();
 
@@ -590,9 +591,11 @@ function phptemplate_privatemsg_list_field__tags($thread) {
     }
     return array(
       'data'  => implode(', ', $tags),
-      'class' => 'privatemsg-list-tags',
+      'class' => array('privatemsg-list-tags'),
     );
   }
+  // Return an empty row.
+  return array('data' => '');
 }
 
 /**
