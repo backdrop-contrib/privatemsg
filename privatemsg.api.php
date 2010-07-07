@@ -8,8 +8,7 @@
 
 /**
  * @mainpage Privatemsg API Documentation
- * This is the (currently inofficial) API documentation of the privatemsg 6.x
- * API.
+ * This is the API documentation of Privatemsg.
  *
  * - Topics:
  *  - @link api API functions @endlink
@@ -17,6 +16,7 @@
  *  - @link message_hooks Message hooks @endlink
  *  - @link generic_hooks Generic hooks @endlink
  *  - @link theming Theming @endlink
+ *  - @link types Types of recipients @endlink
  */
 
 /**
@@ -181,7 +181,7 @@ function hook_privatemsg_sql_messages_alter(&$fragment, $threads, $account = NUL
 }
 
 /**
- * Load the participants of a thread.
+ * Alter the query that loads the participants of a thread.
  *
  * @param $fragments
  *   Query fragments
@@ -240,6 +240,8 @@ function hook_privatemsg_sql_unread_count_alter(&$fragment, $account) {
  *   going to be deleted, parameter: $message
  * - @link hook_privatemsg_message_view_alter view_alter @endlink: the message
  *   is going to be displayed, parameter: $vars
+ * - @link hook_privatemsg_message_recipient_change recipient changed @endlink:
+ *   a recipient is added or removed from/to a message.
  *
  * In hooks with _alter suffix, $message is by reference.
  *
@@ -359,6 +361,29 @@ function hook_privatemsg_message_insert($message) {
 }
 
 /**
+ * This hook is invoked when a recipient is added to a message.
+ *
+ * Since the hook might be invoked hundreds of times during batch or cron, only
+ * ids are passed and not complete user/message objects.
+ *
+ * @param $mid
+ *   Id of the message.
+ * @param $thread_id
+ *   Id of the thread the message belongs to.
+ * @param $recipient
+ *   Recipient id, a user id if type is user or hidden.
+ * @param $type
+ *   Type of the recipient.
+ * @param $added
+ *   TRUE if the recipient is added, FALSE if he is removed.
+ */
+function hook_privatemsg_message_recipient_changed($mid, $thread_id, $recipient, $type, $added) {
+  if ($added && ($type == 'user' || $type == 'hidden')) {
+    privatemsg_filter_add_tags(array($thread_id), variable_get('privatemsg_filter_inbox_tag', ''), (object)array('uid' => $recipient));
+  }
+}
+
+/**
  * @}
  */
 
@@ -370,18 +395,32 @@ function hook_privatemsg_message_insert($message) {
  */
 
 /**
- * Check if $author can send $recipient a message.
+ * Check if the author can send a message to the recipients.
  *
- * Return a message if it is not alled, nothing if it is. This hook is executed
- * for each recipient.
+ * This can be used to limit who can write whom based on other modules and/or
+ * settings.
  *
  * @param $author
  *   Author of the message to be sent
  * @param $recipient
  *   Recipient of the message
+ * @return
+ *   An indexed array of arrays with the keys recipient ({type}_{key}) and
+ *   message (The reason why the recipient has been blocked).
  */
-function hook_privatemsg_block_message($author, $recipient) {
-
+function hook_privatemsg_block_message($author, $recipients) {
+  $blocked = array();
+  foreach($recipients as $recipient_id => $recipient) {
+    // Deny/block if the recipient type is role and the account does not have
+    // the necessary permission.
+    if ($recipient->type == 'role' && $recipient->recipient == 2) {
+      $blocked[] = array(
+        'recipient' => $recipient_id,
+        'message' => t('Not allowed to write private messages to the role authenticated user'),
+      );
+    }
+  }
+  return $blocked;
 }
 /**
  * Add content to the view thread page.
@@ -428,6 +467,106 @@ function hook_privatemsg_thread_operations() {
 }
 
 /**
+ * @}
+ */
+
+/**
+ * @defgroup types Types of recipients
+ *
+ * It is possible to define other types of recipients than the usual single
+ * user. These types are defined through a hook and a few callbacks and are
+ * stored in the {pm_index} table for each recipient entry.
+ *
+ * Because of that, only the combination of type and recipient (was uid in older
+ * versions) defines a unique recipient.
+ *
+ * This feature is usually used to define groups of recipients. Privatemsg
+ * comes with the privatemsg_roles sub-module, which allows to send messages to
+ * all members of a specific group.
+ *
+ * When sending a new message with a recipient type other than user, Privatemsg
+ * only inserts a single entry for that recipient type. However, when looking
+ * for messages for a user, Privatemsg only looks for recipient types user and
+ * hidden. To fill the gap, Privatemsg defines three ways how a non-user
+ * type is converted to hidden recipient entries.
+ *
+ * - For small recipient types (by default <100 recipients, configurable), the
+ *   entries are added directly after saving the original private message.
+ * - When sending messages through the UI, bigger recipient types are handled
+ *   with batch API.
+ * - For messages sent by the API, the hidden recipients are generated during
+ *   cron runs.
+ *
+ * Once all hidden recipients are added, the original recipient type is marked
+ * as read so Privatemsg knows that he has been processed.
+ *
+ * Privatemsg defines the following types:
+ *
+ * - user: This is the default recipient type which is used for a single user.
+ * - hidden: Used to add internal recipient entries for other recipient types.
+ * - role: The sub-module privatemsg_roles defines an additional type called
+ *   role. This allows to send messages to all members of a role.
+ *
+ * To implement a new type, the following hooks need to be implemented. Note
+ * that most of these hooks can also be used alone for other functionality than
+ * defining recipient types.
+ *
+ * - hook_privatemsg_recipient_type_info() - Tell Privatemsg about your
+ *   recipient type(s).
+ * - hook_privatemsg_name_lookup() - Convert a string to an
+ *   recipient object
+ *
+ * Additionaly, there is also a hook_privatemsg_recipient_type_info_alter() that
+ * allows to alter recipient type definitions.
+ */
+
+/**
+ * @addtogroup types
+ * @{
+ */
+
+
+/**
+ * This hook is used to tell privatemsg about the recipient types defined by a
+ * module. Each type consists of an array keyed by the internal recipient type
+ * name and the following keys must be defined.
+ *
+ * * name: Translated name of the recipient type.
+ * * description: A short description of how to send messages to to that
+ *   recipient type. This is displayed below the To: field when sending a
+ *   message.
+ * * load: A callback function that can load recipients based on their id,
+ *   example: privatemsg_roles_load_multiple().
+ * * format: Theme function to format the recipient before displaying. Must be
+ *   defined with hook_theme(), example: theme_privatemsg_roles_format().
+ * * autocomplete: Function callback to return possible autocomplete matches,
+ *   example: privatemsg_roles_autocomplete().
+ * * generate recipients: Function callback to return user ids which belong to a
+ *   recipient type, example: privatemsg_roles_load_recipients().
+ * * max: Function callback to return the highest user id of a recipient type,
+ *   example: privatemsg_roles_count_recipients().
+ * * write access: Optionally define a permission which controls write access
+ *   to that recipient type.
+ * * view access: Optionally define a permission which controls if the user is
+ *   able to see the recipient when he is looking at a thread.
+ */
+function hook_privatemsg_recipient_type_info() {
+  return array(
+    'role' => array(
+      'name' => t('Role'),
+      'description' => t('Enter the name of a role to write a message to all users which have that role. Example: authenticated user.'),
+      'load' => 'privatemsg_roles_load_multiple',
+      'format' => 'privatemsg_roles_format',
+      'autocomplete' => 'privatemsg_roles_autocomplete',
+      'generate recipients' => 'privatemsg_roles_load_recipients',
+      'count' => 'privatemsg_roles_count_recipients',
+      'write access' => 'write privatemsg to roles',
+      'view access' => 'view roles recipients',
+    ),
+  );
+}
+
+/**
  * Hook which allows to look up a user object.
  *
  * You can try to look up a user object based on the information passed to the
@@ -437,12 +576,23 @@ function hook_privatemsg_thread_operations() {
  * up the string.
  */
 function hook_privatemsg_name_lookup($string) {
-  if ((int)$string > 0) {
-    // This is a possible uid, try to load a matching user.
-    if ($recipient = user_load(array('uid' => $string))) {
-      return $recipient;
-    }
+  $result = db_query("SELECT *, rid AS recipient FROM {role} WHERE name = '%s'", trim($role));
+  if ($role = db_fetch_object($result)) {
+    $role->type = 'role';
+    return $role;
   }
+}
+
+/**
+ * Allows to alter the defined recipient types.
+ *
+ * @param $types
+ *   Array with the recipient types.
+ *
+ * @see hook_privatemsg_recipient_type_info()
+ */
+function hook_privatemsg_recipient_type_info_alter(&$types) {
+  
 }
 
 /**

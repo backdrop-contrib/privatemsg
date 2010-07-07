@@ -51,7 +51,7 @@ function _pm_email_notify_is_enabled($uid) {
 function pm_email_notify_privatemsg_message_insert($message) {
   foreach ($message->recipients as $recipient) {
     // check if recipient enabled email notifications
-    if (_pm_email_notify_is_enabled($recipient->uid)) {
+    if (isset($recipient->uid) && _pm_email_notify_is_enabled($recipient->uid)) {
       // send them a new pm notification email if they did
       $params['recipient'] = $recipient;
       $params['message'] = $message;

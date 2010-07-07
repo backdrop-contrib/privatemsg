@@ -451,7 +451,7 @@ function privatemsg_filter_create_get_query($filter)
       if (is_object($author) && isset($author->uid) && isset($author->name)) {
         $query['author'][] = $author->name;
       }
-      elseif ($author_obj = user_load($author)) {
+      elseif ($author_obj = _privatemsg_user_load($author)) {
         $query['author'][] = $author_obj->name;
       }
     }
@@ -645,24 +645,22 @@ function privatemsg_filter_query_privatemsg_list_alter($query) {
 
   // Filter the message listing by any set tags.
   if ($filter) {
-    $count = 0;
-    if (isset($filter['tags']) && !empty($filter['tags'])) {
+    if (!empty($filter['tags'])) {
       foreach ($filter['tags'] as $tag) {
-        $query->join('pm_tags_index', "pmti$count", "pmti$count.thread_id = pmi.thread_id AND pmti$count.uid = pmi.uid");
-        $query->condition("pmti$count.tag_id", $tag);
-        $count++;
+        $alias = $query->join('pm_tags_index', 'pmti',"%alias.thread_id = pmi.thread_id AND %alias.uid = pmi.recipient AND pmi.type IN ('user', 'hidden')");
+        $query->condition($alias . '.tag_id', $tag);
       }
     }
 
     if (isset($filter['author']) && !empty($filter['author'])) {
       foreach ($filter['author'] as $author) {
-        $query->join('pm_index', 'pmi' . $count, "pmi$count.mid = pm.mid");
-        $query->condition("pmi$count.uid", $author->uid);
-        $count++;
+        $alias = $query->join('pm_index', 'pmi', '%alias.mid = pm.mid');
+        $query->condition($alias . '.recipient', $author->uid);
+        $query->condition($alias . '.type', 'user');
       }
     }
 
-    if (isset($filter['search']) && !empty($filter['search'])) {
+    if (!empty($filter['search'])) {
       if (variable_get('privatemsg_filter_searchbody', FALSE)) {
         $query->condition(db_or()
           ->condition('pm.subject', '%'. $filter['search'] .'%', 'LIKE')
@@ -756,8 +754,8 @@ function privatemsg_filter_form_submit($form, &$form_state) {
 function privatemsg_filter_query_privatemsg_autocomplete_alter($query) {
   global $user;
   if (arg(1) == 'filter') {
-    $query->join('pm_index', 'pip', 'pip.uid = u.uid');
-    $query->join('pm_index', 'piu', 'piu.uid = :uid_index AND pip.mid = piu.mid', array(':uid_index' => $user->uid));
+    $query->join('pm_index', 'pip', "pip.recipient = u.uid AND pip.type = 'user'");
+    $query->join('pm_index', 'piu', "piu.recipient = :uid_index AND piu.type = 'user' AND pip.mid = piu.mid", array(':uid_index' => $user->uid));
   }
 }
 
@@ -852,6 +850,16 @@ function privatemsg_filter_user_cancel($edit, $account, $method) {
  */
 function privatemsg_filter_privatemsg_message_insert($message) {
   foreach ($message->recipients as $recipient) {
-    privatemsg_filter_add_tags(array($message->thread_id), variable_get('privatemsg_filter_inbox_tag', ''), $recipient);
+    if ($recipient->type == 'user' || $recipient->type == 'hidden') {
+      privatemsg_filter_add_tags(array($message->thread_id), variable_get('privatemsg_filter_inbox_tag', ''), $recipient);
+    }
+  }
+}
+/**
+ * Implements hook_privatemsg_message_recipient_changed().
+ */
+function privatemsg_filter_privatemsg_message_recipient_changed($mid, $thread_id, $recipient, $type, $added) {
+  if ($added && ($type == 'user' || $type == 'hidden')) {
+    privatemsg_filter_add_tags(array($thread_id), variable_get('privatemsg_filter_inbox_tag', ''), (object)array('uid' => $recipient));
   }
 }

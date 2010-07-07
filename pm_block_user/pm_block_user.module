@@ -218,37 +218,58 @@ function pm_block_user_privatemsg_block_message($author, $recipients) {
   $blocked = array();
   // Loop through each recipient and ensure there is no rule blocking this
   // author from sending them private messages. Use a reference, so when
-  // user_load() is needed here the array is updated, negating the need for
-  // further calls to user_load() later in the code.
-  foreach ($recipients as $recipient) {
+  // _privatemsg_user_load() is needed here the array is updated, negating the
+  // need for further calls to _privatemsg_user_load() later in the code.
+  foreach (array_keys($recipients) as $id) {
+    // Only recipients of type user are currently supported.
+    if (isset($recipients[$id]->type) && $recipients[$id]->type != 'user') {
+      continue;
+    }
     // Ensure we have a recipient user object which includes roles.
-    if (!isset($recipient->roles)) {
-      $recipient = user_load($recipient->uid);
+    if (!isset($recipients[$id]->roles)) {
+      $uid = str_replace('user_', '', $id);
+      $recipients[$id] = _privatemsg_user_load($uid);
     }
     // Note: this is checks whether the author may send the message (see third
     // parameter). Further below is a check whether the recipient may block it.
-    if (_pm_block_user_rule_exists($author, $recipient, PM_BLOCK_USER_DISALLOW_SENDING)) {
+    if (_pm_block_user_rule_exists($author, $recipients[$id], PM_BLOCK_USER_DISALLOW_SENDING)) {
       $blocked[] = array(
-        'uid' => $recipient->uid,
-        'message' => t('Sorry, private messaging rules forbid sending messages to !name.', array('!name' => $recipient->name)),
+        'recipient' => $id,
+        'message' => t('Sorry, private messaging rules forbid sending messages to !name.', array('!name' => $recipients[$id]->name)),
       );
     }
   }
 
+  // Only user recipients are supported for now, remove others.
+  $user_recipients = array();
+  foreach ($recipients as $key => $recipient) {
+    if (empty($recipient->type)) {
+      $recipient->type = 'user';
+      $recipient->recipient = $recipient->uid;
+    }
+    if ($recipient->type == 'user') {
+      $user_recipients[$recipient->recipient] = $recipient;
+    }
+  }
+
+  if (empty($user_recipients)) {
+    return $blocked;
+  }
+
   $args = array(
     ':author' => $author->uid,
-    ':recipients' => array_keys($recipients)
+    ':recipients' => array_keys($user_recipients)
   );
   $result = db_query('SELECT recipient FROM {pm_block_user} WHERE author = :author AND recipient IN (:recipients) GROUP BY recipient', $args);
   foreach ($result as $row) {
-    $recipient = $recipients[$row->recipient];
+    $recipient = $user_recipients[$row->recipient];
     // If there's a rule disallowing blocking of this message, send it anyway.
     if (_pm_block_user_rule_exists($author, $recipient, PM_BLOCK_USER_DISALLOW_BLOCKING)) {
       continue;
     }
     $blocked[] = array(
-      'uid' => $row->recipient,
-      'message' => t('%name has chosen to not recieve any more messages from you.', array('%name' => $recipients[$row->recipient]->name))
+      'recipient' => privatemsg_recipient_key($recipient),
+      'message' => t('%name has chosen to not recieve any more messages from you.', array('%name' => $recipient->name))
     );
   }
   return $blocked;
@@ -256,7 +277,7 @@ function pm_block_user_privatemsg_block_message($author, $recipients) {
 
 function pm_block_user_query_privatemsg_load_alter($query) {
   $query->addField('pmbu', 'recipient', 'is_blocked');
-  $query->leftJoin('pm_block_user', 'pmbu', 'pm.author = pmbu.author AND pmi.uid = pmbu.recipient');
+  $query->leftJoin('pm_block_user', 'pmbu', "pm.author = pmbu.author AND pmi.recipient = pmbu.recipient AND pmi.type = 'user'");
 }
 
 /**

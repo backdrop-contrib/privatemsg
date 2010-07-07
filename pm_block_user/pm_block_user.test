@@ -114,7 +114,6 @@ class PrivatemsgBlockUserCase extends DrupalWebTestCase {
     $this->assertText(t('Recipients: @user', array('@user' => $user3->name)), t('User1 is not displayed as recipient'));
     $edit = array('body[value]' => $reply = $this->randomName(50));
     $this->drupalPost(NULL, $edit, t('Send message'));
-    $this->assertRaw(t('%user has chosen to not recieve any more messages from you.', array('%user' => $user1->name)), t('User 1 blocks user 2 message displayed'));
     $this->assertText(t('A message has been sent to @user.', array('@user' => $user3->name)), t('Message sent to user 3'));
   
     // Login as user1 again and check that we didn't recieve the messages.

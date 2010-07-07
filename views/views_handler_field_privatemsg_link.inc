@@ -136,7 +136,7 @@ class views_handler_field_privatemsg_link extends views_handler_field {
     }
 
     $data = '';
-    if (($recipient = user_load($uid)) && ($url = privatemsg_get_link(array($recipient), NULL, $subject))) {
+    if (($recipient = _privatemsg_user_load($uid)) && ($url = privatemsg_get_link(array($recipient), NULL, $subject))) {
       $data = l($text, $url, $options);
     }
     return $data;

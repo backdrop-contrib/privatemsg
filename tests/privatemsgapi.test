@@ -93,7 +93,7 @@ class PrivatemsgAPITestCase extends DrupalWebTestCase {
     // Reset user_access cache
     user_access('', $author, TRUE);
 
-    $resultok = privatemsg_new_thread( array($recipient2, $recipient1, $recipient3), 'test reply', 'body text', array('author' => $author));
+    $resultok = privatemsg_new_thread(array($recipient2, $recipient1, $recipient3), 'test reply', 'body text', array('author' => $author));
     $this->assertTrue($resultok['success'], 'Private message could be sent successfully');
 
     $thread_row = $this->getMessageFromSubject('test reply');
