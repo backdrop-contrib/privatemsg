@@ -919,7 +919,7 @@ class PrivatemsgLinksTestCase extends DrupalWebTestCase {
      */
 
     $this->drupalGet('');
-    $this->assertRaw('<h2 class="title">Private messages</h2>', t('Privatemsg menu block title displayed.'));
+    $this->assertText(t('Private messages'), t('Privatemsg menu block title displayed.'));
     $this->assertText('Write new message', t('Write new message link displayed.'));
 
     $message = array(
@@ -949,7 +949,7 @@ class PrivatemsgLinksTestCase extends DrupalWebTestCase {
     $this->drupalPost('admin/structure/block', $blocks, t('Save blocks'));
 
     $this->drupalGet('');
-    $this->assertNoRaw('<h2 class="title">New messages</h2>', t('Privatemsg new block title not displayed.'));
+    $this->assertNoText(t('New message'), t('Privatemsg new block title not displayed.'));
 
     $message = array(
       'recipient' => $user->name,
@@ -959,7 +959,7 @@ class PrivatemsgLinksTestCase extends DrupalWebTestCase {
     $this->drupalPost('messages/new', $message, t('Send message'));
 
     $this->drupalLogin($user);
-    $this->assertRaw('<h2 class="title">New message</h2>', t('Privatemsg new block title displayed.'));
+    $this->assertText(t('New message'), t('Privatemsg new block title displayed.'));
 
     $this->assertText(t('You have a new message, click here to read it'), t('New message indication displayed.'));
   }
