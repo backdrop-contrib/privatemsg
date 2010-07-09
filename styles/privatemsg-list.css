@@ -1,4 +1,4 @@
-.privatemsg-unread .privatemsg-list-subject {
+.privatemsg-unread td {
   font-weight: bold;
 }
 

@@ -210,7 +210,7 @@ function theme_privatemsg_list_header__last_updated() {
   return array(
     'data'    => t('Last Updated'),
     'field'   => 'last_updated',
-    'sort'    => 'desc',
+    'sort'    => 'asc',
     'class'   => array('privatemsg-header-lastupdated'),
     '#weight' => -20,
   );
