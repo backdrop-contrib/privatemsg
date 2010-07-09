@@ -551,10 +551,10 @@ function privatemsg_filter_archive_submit($form, &$form_state) {
   $operation = array(
     'callback' => 'privatemsg_filter_remove_tags',
     'callback arguments' => array('tag_id' => variable_get('privatemsg_filter_inbox_tag', '')),
+    'success message' => t('The messages have been archived.'),
     'undo callback' => 'privatemsg_filter_add_tags',
     'undo callback arguments' => array('tag_id' => variable_get('privatemsg_filter_inbox_tag', '')),
   );
-  drupal_set_message(t('The messages have been archived.'));
   privatemsg_operation_execute($operation, $form_state['values']['list']);
 }
 

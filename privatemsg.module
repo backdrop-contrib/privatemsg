@@ -1935,7 +1935,8 @@ function privatemsg_operation_execute($operation, $threads, $account = null) {
 
   if (empty($threads)) {
     // Do not execute anything if there are no checked threads.
-    return;
+    drupal_set_message(t('You must first select one (or more) messages before you can take that action.'), 'warning');
+    return FALSE;
   }
   // Add in callback arguments if present.
   if (isset($operation['callback arguments'])) {
@@ -1952,6 +1953,10 @@ function privatemsg_operation_execute($operation, $threads, $account = null) {
 
   // Execute the chosen action and pass the defined arguments.
   call_user_func_array($operation['callback'], $args);
+
+  if (!empty($operation['success message'])) {
+    drupal_set_message($operation['success message']);
+  }
 
   // Check if that operation has defined an undo callback.
   if (isset($operation['undo callback']) && $undo_function = $operation['undo callback']) {
@@ -1974,6 +1979,7 @@ function privatemsg_operation_execute($operation, $threads, $account = null) {
     
     drupal_set_message(t('The previous action can be <a href="!undo">undone</a>.', array('!undo' => $undo)));
   }
+  return TRUE;
 }
 
 /**
