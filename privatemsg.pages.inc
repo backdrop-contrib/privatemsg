@@ -295,6 +295,7 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
   if (isset($form_state['privatemsg_preview'])) {
     $form['message_header'] = array(
       '#type' => 'fieldset',
+      '#title' => empty($form_state['validate_built_message']->thread_id) ? check_plain($form_state['validate_built_message']->subject) : t('Preview'),
       '#attributes' => array('class' => array('preview')),
       '#weight' => -20,
     );
