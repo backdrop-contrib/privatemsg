@@ -353,7 +353,7 @@ function privatemsg_filter_dropdown(&$form_state, $account) {
 
   $form['filter']['save'] = array(
     '#type'     => 'submit',
-    '#value'    => t('Save Filter'),
+    '#value'    => t('Save filter'),
     '#suffix'   => '</div>',
     '#weight'   => 11,
     '#submit'   => array('privatemsg_filter_dropdown_submit'),
@@ -401,7 +401,7 @@ function privatemsg_filter_dropdown_submit($form, &$form_state) {
   }
 
   switch ($form_state['values']['op']) {
-    case t('Save Filter'):
+    case t('Save filter'):
       $filter = array();
       if (!empty($form_state['values']['tags'])) {
         $filter['tags'] = $form_state['values']['tags'];
@@ -415,7 +415,7 @@ function privatemsg_filter_dropdown_submit($form, &$form_state) {
       $_SESSION['privatemsg_filter'] = $filter;
       break;
     case t('Filter'):
-      drupal_goto($_GET['q'], privatemsg_filter_create_get_query($form_state['values']));
+      drupal_goto($_GET['q'], array('query' => privatemsg_filter_create_get_query($form_state['values'])));
       return;
       break;
     case t('Reset'):
@@ -471,7 +471,7 @@ function privatemsg_filter_create_get_query($filter)
  */
 function privatemsg_filter_form_privatemsg_list_alter(&$form, $form_state) {
   global $user;
-  if (privatemsg_user_access('filter private messages') && !empty($form['list']['#options'])) {
+  if (privatemsg_user_access('filter private messages') && !empty($form['list']['#options']) || privatemsg_filter_get_filter($user)) {
     $form += privatemsg_filter_dropdown($form_state, $form['#account']);
   }
 

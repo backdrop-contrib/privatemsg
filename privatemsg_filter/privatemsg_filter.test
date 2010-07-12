@@ -332,3 +332,88 @@ class PrivatemsgTagsTestCase extends DrupalWebTestCase {
     $this->assertNoText('Banana', t('Banana tag is not displayed anymore'));
   }
 }
+
+/**
+ * Test filters, tags and inbox/sent handling.
+ */
+class PrivatemsgFilterWidgetTestCase extends DrupalWebTestCase {
+  /**
+   * Implements getInfo().
+   */
+  function getInfo() {
+    return array(
+      'name' => t('Privatemsg filter widget'),
+      'description' => t('Tests the Privatemsg filter widget displayed on message listings'),
+      'group' => t('Privatemsg'),
+    );
+  }
+
+  /**
+   * Implements setUp().
+   */
+  function setUp() {
+    parent::setUp('privatemsg', 'privatemsg_filter');
+  }
+
+  /**
+   * Generic filter widget tests.
+   */
+  function testAuthorSearch() {
+    $user1 = $this->drupalCreateuser(array('read privatemsg', 'write privatemsg', 'tag private messages', 'create private message tags', 'filter private messages'));
+    $user2 = $this->drupalCreateuser(array('read privatemsg', 'write privatemsg', 'tag private messages', 'create private message tags', 'filter private messages'));
+    $user3 = $this->drupalCreateuser(array('read privatemsg', 'write privatemsg', 'tag private messages', 'create private message tags', 'filter private messages'));
+
+    $this->drupalLogin($user2);
+    $this->drupalGet('messages');
+
+    // Make sure the widget is not displayed when there are no messages.
+    $this->assertNoFieldById('edit-author');
+
+    // Create a new thread from user 1 through the api.
+    $response = privatemsg_new_thread(array($user2), $subject = $this->randomName(10), $body = $this->randomName(20), array('author' => $user1));
+    $thread_id = $response['message']->thread_id;
+
+    $this->drupalGet('messages');
+
+    // Make sure the widget is now displayed and the message is too.
+    $this->assertText($subject);
+    $this->assertFieldById('edit-author');
+
+    // Search for user 3 which will find no results but the widget should still be displayed.
+    $this->drupalPost(NULL, array('author' => $user3->name), t('Filter'));
+    $this->assertNoText($subject);
+    $this->assertFieldById('edit-author', $user3->name . ', ');
+
+    // Reset filter widget.
+    $this->drupalPost(NULL, array(), t('Reset'));
+    $this->assertFieldById('edit-author');
+    $this->assertText($subject);
+
+    // Create a new thread through the api.
+    $response = privatemsg_new_thread(array($user2), $subject2 = $this->randomName(10), $body2 = $this->randomName(20), array('author' => $user3));
+    $thread_id = $response['message']->thread_id;
+
+    // Make sure that the new message is displayed.
+    $this->drupalGet('messages');
+    $this->assertText($subject2);
+
+    // Search for user 1 which should only display his message.
+    $this->drupalPost(NULL, array('author' => $user1->name), t('Filter'));
+    $this->assertText($subject);
+    $this->assertNoText($subject2);
+
+    // Save the filter and access /messages again - The filter should still be
+    // active.
+    $this->drupalPost(NULL, array(), t('Save filter'));
+    $this->drupalGet('messages');
+    $this->assertFieldById('edit-author', $user1->name . ', ');
+    $this->assertText($subject);
+    $this->assertNoText($subject2);
+
+    // Reset filter widget.
+    $this->drupalPost(NULL, array(), t('Reset'));
+    $this->assertFieldById('edit-author');
+    $this->assertText($subject);
+    $this->assertText($subject2);
+  }
+}
