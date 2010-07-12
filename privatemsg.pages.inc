@@ -411,6 +411,7 @@ function privatemsg_new_validate($form, &$form_state) {
   // The actual message that is being sent, we create this during validation and
   // pass to submit to send out.
   $message = (object)$form_state['values'];
+  $message->mid       = 0;
   $message->format    = $message->body['format'];
   $message->body      = $message->body['value'];
   $message->timestamp = time();
@@ -441,15 +442,17 @@ function privatemsg_new_validate($form, &$form_state) {
 }
 
 function privatemsg_new_preview($form, &$form_state) {
-
-  drupal_validate_form($form['form_id']['#value'], $form, $form_state);
-  if (!form_get_errors()) {
-    $form_state['privatemsg_preview'] = array(
-        '#markup' => theme('privatemsg_view', array('message' => $form_state['validate_built_message'])),
-    );
-  }
-
-  $form_state['rebuild'] = TRUE; // this forces our form to be rebuilt instead of being submitted.
+  $message = $form_state['validate_built_message'];
+  // Execute submit hook, removes empty fields.
+  field_attach_submit('privatemsg_message', $message, $form, $form_state);
+  // Load information attached to the message. Use an internal function
+  // to avoid the internal field cache.
+  _field_invoke_multiple('load', 'privatemsg_message', array($message->mid => $message));
+  $form_state['privatemsg_preview'] = array(
+    '#markup' => theme('privatemsg_view', array('message' => $message)),
+  );
+  // This forces the form to be rebuilt instead of being submitted.
+  $form_state['rebuild'] = TRUE;
 }
 
 
@@ -457,18 +460,28 @@ function privatemsg_new_preview($form, &$form_state) {
  * Submit callback for the privatemsg_new form.
  */
 function privatemsg_new_submit($form, &$form_state) {
-  $status = _privatemsg_send($form_state['validate_built_message']);
+  $message = $form_state['validate_built_message'];
+  field_attach_submit('privatemsg_message', $message, $form, $form_state);
+
   // Format each recipient.
   $recipient_names = array();
-  foreach ($form_state['validate_built_message']->recipients as $recipient) {
+  foreach ($message->recipients as $recipient) {
     $recipient_names[] = privatemsg_recipient_format($recipient);
   }
-  if ($status !== FALSE )  {
-    _privatemsg_handle_recipients($status->mid, $status->recipients);
+  try {
+    $message = _privatemsg_send($message);
+    _privatemsg_handle_recipients($message->mid, $message->recipients);
     drupal_set_message(t('A message has been sent to !recipients.', array('!recipients' => implode(', ', $recipient_names))));
   }
-  else {
-    drupal_set_message(t('An attempt to send a message <em>may have failed</em> when sending to !recipients.', array('!recipients' => implode(', ', $recipient_names))), 'error');
+  catch (Exception $e) {
+    if (error_displayable()) {
+      require_once DRUPAL_ROOT . '/includes/errors.inc';
+      $variables = _drupal_decode_exception($e);
+      drupal_set_message(t('Failed to send a message to !recipients. %type: %message in %function (line %line of %file).', array('!recipients' => implode(', ', $recipient_names)) + $variables), 'error');
+    }
+    else {
+      drupal_set_message(t('Failed to send a message to !recipients. Contact your site administrator.', array('!recipients' => implode(', ', $recipient_names))), 'error');
+    }
   }
 }
 

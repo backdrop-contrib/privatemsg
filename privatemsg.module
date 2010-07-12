@@ -1767,9 +1767,6 @@ function privatemsg_message_load_multiple($pmids, $account = NULL) {
       // If user does not exist, load anonymous user.
       $message->author = _privatemsg_user_load(0);
     }
-    if (!empty($returned)) {
-      $message = array_merge_recursive($returned, $message);
-    }
     $messages[$message->mid] = $message;
   }
   field_attach_load('privatemsg_message', $messages);

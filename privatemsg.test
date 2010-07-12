@@ -788,14 +788,17 @@ class PrivatemsgFieldsTestCase extends DrupalWebTestCase {
     $this->drupalPost(NULL, array(), t('Save field settings'));
     $this->drupalPost(NULL, array(), t('Save settings'));
 
-    // Send message.
+    // Preview message.
     $message = array(
       'recipient' => $user->name,
       'subject' => $this->randomName(),
       'body[value]'    => $this->randomName(50),
       'field_' . $name . '[und][0][value]' => $this->randomName(50),
     );
-    $this->drupalPost('messages/new', $message, t('Send message'));
+    $this->drupalPost('messages/new', $message, t('Preview message'));
+
+    // Send message.
+    $this->drupalPost(NULL, array(), t('Send message'));
 
     // Check message.
     $this->drupalLogin($user);
@@ -819,6 +822,45 @@ class PrivatemsgFieldsTestCase extends DrupalWebTestCase {
 
     $this->assertText($response['body[value]'], t('Message body displayed.'));
     $this->assertText($response['field_' . $name . '[und][0][value]'], t('Content of new field is displayed.'));
+  }
+
+  /**
+   * Verify that a message with an empty image can be sent.
+   */
+  function testEmptyImage() {
+    $admin = $this->drupalCreateUser(array('administer privatemsg settings', 'write privatemsg', 'read privatemsg'));
+    $user = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
+
+    $this->drupalLogin($admin);
+
+    // Create a new field.
+    $edit = array(
+      '_add_new_field[label]' => $label = $this->randomName(),
+      '_add_new_field[field_name]' => $name = strtolower($this->randomName()),
+      '_add_new_field[type]' => 'image',
+      '_add_new_field[widget_type]' => 'image_image',
+    );
+    $this->drupalPost('admin/config/messaging/privatemsg/fields', $edit, t('Save'));
+    $this->drupalPost(NULL, array(), t('Save field settings'));
+    $this->drupalPost(NULL, array(), t('Save settings'));
+
+    // Preview message.
+    $message = array(
+      'recipient' => $user->name,
+      'subject' => $this->randomName(),
+      'body[value]'    => $this->randomName(50),
+    );
+    $this->drupalPost('messages/new', $message, t('Preview message'));
+
+    // Send message.
+    $this->drupalPost(NULL, array(), t('Send message'));
+
+    // Check message.
+    $this->drupalLogin($user);
+    $this->drupalGet('messages');
+    $this->clickLink($message['subject']);
+
+    $this->assertText($message['body[value]'], t('Message body displayed.'));
   }
 }
 
