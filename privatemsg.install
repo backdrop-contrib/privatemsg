@@ -138,5 +138,6 @@ function privatemsg_uninstall() {
   variable_del('privatemsg_display_profile_links');
   variable_del('privatemsg_link_node_types');
   variable_del('privatemsg_display_on_teaser');
+  variable_del('privatemsg_no_messages_notification');
   variable_del('privatemsg_display_on_comments');
 }

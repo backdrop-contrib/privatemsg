@@ -1247,6 +1247,9 @@ function privatemsg_block_info() {
   return $blocks;
 }
 
+/**
+ * Implements hook_block_view().
+ */
 function privatemsg_block_view($delta) {
   $block = array();
   switch ($delta) {
@@ -1258,6 +1261,30 @@ function privatemsg_block_view($delta) {
       break;
   }
   return $block;
+}
+
+/**
+ * Implements hook_block_configure().
+ */
+function privatemsg_block_configure($delta = '') {
+  if ($delta == 'privatemsg-new') {
+    $form['notification'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Display block when there are no new messages'),
+      '#default_value' => variable_get('privatemsg_no_messages_notification', 0),
+      '#description' => t('Enable this to have this block always displayed, even if there are no new messages'),
+    );
+    return $form;
+  }
+}
+
+/**
+ * Implements hook_block_save().
+ */
+function privatemsg_block_save($delta = '', $edit = array()) {
+  if ($delta == 'privatemsg-new') {
+    variable_set('privatemsg_no_messages_notification', $edit['notification']);
+  }
 }
 
 function privatemsg_title_callback($title = NULL) {
@@ -1278,9 +1305,9 @@ function _privatemsg_block_new() {
   }
 
   $count = privatemsg_unread_count();
-  if ($count) {
+  if ($count || variable_get('privatemsg_no_messages_notification', 0)) {
     $block = array(
-      'subject' => format_plural($count, 'New message', 'New messages'),
+      'subject' => $count ? format_plural($count, 'New message', 'New messages') : t('No new messages'),
       'content' => theme('privatemsg_new_block', array('count' => $count)),
     );
     return $block;

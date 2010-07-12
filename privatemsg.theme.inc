@@ -235,9 +235,14 @@ function theme_privatemsg_list_header__thread_started() {
  */
 function theme_privatemsg_new_block($count) {
   $count = $count['count'];
-  $text = format_plural($count, 'You have a new message, click here to read it',
-                        'You have @count new messages, click here to read them',
-                        array('@count' => $count));
+  if ($count == 0) {
+    $text = t('Click here to go to your messages.');
+  }
+  else {
+    $text = format_plural($count, 'You have a new message, click here to read it',
+                         'You have @count new messages, click here to read them',
+                         array('@count' => $count));
+  }
 
   return l($text, 'messages', array('attributes' => array('id' => 'privatemsg-new-link')));
 }
