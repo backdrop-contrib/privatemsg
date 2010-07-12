@@ -740,6 +740,44 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
   }
 
   /**
+   * Test autocomplete.
+   */
+  function testAutocomplete() {
+    $current = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg'));
+    $user1 = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg'));
+    $user2 = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg'));
+    $user3 = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg'));
+
+    $this->drupalLogin($current);
+
+    // Use specific names to be able to test for specific name combinations.
+    user_save($current, array('name' => 'wathever'));
+    user_save($user1, array('name' => 'aaaa'));
+    user_save($user2, array('name' => 'aaab'));
+    user_save($user3, array('name' => 'bbbb'));
+
+    $json = $this->drupalGet('messages/user-name-autocomplete/aa');
+    $autocomplete = (array)json_decode($json);
+    $this->assertEqual(count($autocomplete), 2, t('Autocomplete object contains two suggestions.'));
+    $this->assertEqual($autocomplete['aaaa, '], 'aaaa');
+    $this->assertEqual($autocomplete['aaab, '], 'aaab');
+
+    $json = $this->drupalGet('messages/user-name-autocomplete/bb');
+    $autocomplete = (array)json_decode($json);
+    $this->assertEqual(count($autocomplete), 1, t('Autocomplete object contains one suggestion.'));
+    $this->assertEqual($autocomplete['bbbb, '], 'bbbb');
+
+    $json = $this->drupalGet('messages/user-name-autocomplete/cc');
+    $autocomplete = (array)json_decode($json);
+    $this->assertEqual(count($autocomplete), 0, t('Autocomplete object contains no suggestions.'));
+
+    $json = $this->drupalGet('messages/user-name-autocomplete/aaaa, a');
+    $autocomplete = (array)json_decode($json);
+    $this->assertEqual(count($autocomplete), 1, t('Autocomplete object contains one suggestion.'));
+    $this->assertEqual($autocomplete['aaaa, aaab, '], 'aaab');
+  }
+
+  /**
    * Implements tearDown().
    */
   function tearDown() {

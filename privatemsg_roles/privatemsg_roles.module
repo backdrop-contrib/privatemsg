@@ -103,10 +103,14 @@ function privatemsg_roles_count_recipients($recipient) {
  * Provides autocomplete suggestions for roles.
  */
 function privatemsg_roles_autocomplete($fragment, $names, $limit) {
-  return (array)_privatemsg_assemble_query(array('autocomplete_roles', 'privatemsg_roles'), $fragment, $names)
+  $result = _privatemsg_assemble_query(array('autocomplete_roles', 'privatemsg_roles'), $fragment, $names)
     ->range(0, $limit)
-    ->execute()
-    ->fetchCol();
+    ->execute();
+  $roles = array();
+  foreach ($result->fetchCol() as $role) {
+    $roles[] = $role . ' ' . t('[role]');
+  }
+  return $roles;
 }
 
 /**
@@ -114,7 +118,7 @@ function privatemsg_roles_autocomplete($fragment, $names, $limit) {
  */
 function privatemsg_roles_privatemsg_name_lookup($string) {
   // Remove optonal role specifier.
-  $string = str_replace('[role]', '', $string);
+  $string = str_replace(t('[role]'), '', $string);
   $role = db_query("SELECT *, rid AS recipient FROM {role} WHERE name = :name", array(':name' => trim($string)))->fetchObject();
   if ($role) {
     $role->type = 'role';
@@ -139,7 +143,7 @@ function privatemsg_roles_sql_autocomplete_roles($search, $names) {
     ->condition('role.rid', DRUPAL_ANONYMOUS_RID, '<>')
     ->orderBy('role.name', 'ASC');
   if (!empty($names)) {
-    $query->condition('role_name', $names, 'NOT IN');
+    $query->condition('role.name', $names, 'NOT IN');
   }
   return $query;
 }

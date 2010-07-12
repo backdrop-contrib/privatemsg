@@ -2461,5 +2461,5 @@ function privatemsg_user_autocomplete($fragment, $names, $limit) {
   return _privatemsg_assemble_query('autocomplete', $fragment, $names)
     ->range(0, 10)
     ->execute()
-    ->fetchField();
+    ->fetchCol();
 }

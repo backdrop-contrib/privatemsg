@@ -313,7 +313,7 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
       }
     }
     $description = t('Enter the recipient, separate recipients with commas.');
-    $description .= theme('item_list', $description_array);
+    $description .= theme('item_list', array('items' => $description_array));
 
     $form['recipient'] = array(
       '#type'               => 'textfield',
@@ -534,8 +534,8 @@ function privatemsg_user_name_autocomplete($string) {
       if (isset($type['autocomplete']) && is_callable($type['autocomplete']) && privatemsg_recipient_access($name, 'write')) {
         $function = $type['autocomplete'];
         $return = $function($fragment, $names, $remaining);
-        if (is_array($return)) {
-          $matches += $return;
+        if (is_array($return) && !empty($return)) {
+          $matches = array_merge($matches, $return);
         }
         $remaining = 10 - count($matches);
         if ($remaining <= 0) {
