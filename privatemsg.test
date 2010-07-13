@@ -209,9 +209,9 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
     $this->drupalLogin($author);
     $this->drupalGet('messages/new');
 
-    // Prepare edit arrays, single recipient.
+    // Prepare edit arrays, single recipient with [user].
     $edit = array(
-      'recipient'   => $recipient->name,
+      'recipient'   => $recipient->name . ' [user]',
       'subject'     => $this->randomName(20),
       'body[value]' => $this->randomName(100),
     );
