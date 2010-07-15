@@ -85,8 +85,8 @@ function privatemsg_filter_menu() {
   );
   $items['messages/inbox'] = array(
     'title'            => 'Inbox',
-    'page callback'    => 'drupal_get_form',
-    'page arguments'   => array('privatemsg_list', 'inbox'),
+    'page callback'    => 'privatemsg_list_page',
+    'page arguments'   => array('inbox'),
     'file'             => 'privatemsg.pages.inc',
     'file path'        => drupal_get_path('module', 'privatemsg'),
     'access callback'  => 'privatemsg_user_access',
@@ -96,8 +96,8 @@ function privatemsg_filter_menu() {
   );
   $items['messages/sent'] = array(
     'title'            => 'Sent Messages',
-    'page callback'    => 'drupal_get_form',
-    'page arguments'   => array('privatemsg_list', 'sent'),
+    'page callback'    => 'privatemsg_list_page',
+    'page arguments'   => array('sent'),
     'file'             => 'privatemsg.pages.inc',
     'file path'        => drupal_get_path('module', 'privatemsg'),
     'access callback'  => 'privatemsg_user_access',
@@ -134,7 +134,7 @@ function privatemsg_filter_menu_alter(&$items) {
 
   if(variable_get('privatemsg_filter_default_list', 0) == 0) {
     // Change default argument of /messages to inbox. and set the task to MENU_LOCAL_TASK.
-    $items['messages']['page arguments'] = array('privatemsg_list', 'inbox');
+    $items['messages']['page arguments'] = array('inbox');
     $items['messages/list']['type'] = MENU_LOCAL_TASK;
   }
 }

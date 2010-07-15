@@ -140,8 +140,8 @@ function privatemsg_menu() {
   $items['messages'] = array(
     'title'            => 'Messages',
     'title callback'   => 'privatemsg_title_callback',
-    'page callback'    => 'drupal_get_form',
-    'page arguments'   => array('privatemsg_list', 'list'),
+    'page callback'    => 'privatemsg_list_page',
+    'page arguments'   => array('list'),
     'file'             => 'privatemsg.pages.inc',
     'access callback'  => 'privatemsg_user_access',
     'type'             => MENU_NORMAL_ITEM,
@@ -149,8 +149,8 @@ function privatemsg_menu() {
   );
   $items['messages/list'] = array(
     'title'            => 'Messages',
-    'page callback'    => 'drupal_get_form',
-    'page arguments'   => array('privatemsg_list', 'list'),
+    'page callback'    => 'privatemsg_list_page',
+    'page arguments'   => array('list'),
     'file'             => 'privatemsg.pages.inc',
     'access callback'  => 'privatemsg_user_access',
     'type'             => MENU_DEFAULT_LOCAL_TASK,
@@ -239,8 +239,8 @@ function privatemsg_menu() {
   );
   $items['user/%/messages'] = array(
     'title' => 'Messages',
-    'page callback'    => 'drupal_get_form',
-    'page arguments'   => array('privatemsg_list', 'list', 1),
+    'page callback'    => 'privatemsg_list_page',
+    'page arguments'   => array('list', 1),
     'file'             => 'privatemsg.pages.inc',
     'access callback'  => 'privatemsg_user_access',
     'access arguments' => array('read all private messages'),

@@ -107,12 +107,9 @@ function privatemsg_delete_submit($form, &$form_state) {
   $form_state['redirect'] = $form_state['values']['delete_destination'];
 }
 
-
 /**
  * List messages.
  *
- * @param $form_state
- *   Form state array
  * @param $argument
  *   An argument to pass through to the query builder.
  * @param $uid
@@ -121,7 +118,7 @@ function privatemsg_delete_submit($form, &$form_state) {
  * @return
  *   Form array
  */
-function privatemsg_list($form, &$form_state, $argument = 'list', $uid = NULL) {
+function privatemsg_list_page($argument = 'list', $uid = NULL) {
   global $user;
 
   // Setting default behavior...
@@ -129,16 +126,20 @@ function privatemsg_list($form, &$form_state, $argument = 'list', $uid = NULL) {
   // Because uid is submitted by the menu system, it's a string not a integer.
   if ((int)$uid > 0 && $uid != $user->uid) {
     // Trying to view someone else's messages...
+    if (!$account_check = _privatemsg_user_load($uid)) {
+      return MENU_NOT_FOUND;
+    }
     if (!privatemsg_user_access('read all private messages')) {
-      drupal_set_message(t("You do not have sufficient rights to view someone else's messages"), 'warning');
+      return MENU_ACCESS_DENIED;
     }
-    elseif ($account_check = _privatemsg_user_load($uid)) {
-      // Has rights and user_load return an array so user does exist
-      $account = $account_check;
-    }
+    // Has rights and user_load return an array so user does exist
+    $account = $account_check;
   }
-  // By this point we have figured out for which user we are listing messages and now it is safe to use $account->uid in the listing query.
 
+  return drupal_get_form('privatemsg_list', $argument, $account);
+}
+
+function privatemsg_list($form, &$form_state, $argument, $account) {
   drupal_add_css(drupal_get_path('module', 'privatemsg') .'/styles/privatemsg-list.css');
 
   // Load the table columns.
@@ -174,7 +175,6 @@ function privatemsg_list($form, &$form_state, $argument = 'list', $uid = NULL) {
 
   // Define checkboxes, pager and theme
   $form['pager'] = array('#theme' => 'pager', '#weight' => 20);
-  //$form['#theme'] = 'privatemsg_list';
 
   // Store the account for which the threads are displayed.
   $form['#account'] = $account;
