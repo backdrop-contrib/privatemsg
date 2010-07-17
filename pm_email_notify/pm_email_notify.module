@@ -110,7 +110,7 @@ function _pm_email_notify_default_body() {
 /**
  * Implements hook_form_alter().
  */
-function privatemsg_form_alter(&$form, &$form_state, $form_id) {
+function pm_email_notify_form_alter(&$form, &$form_state, $form_id) {
   // We have to use user_acces() because privatemsg_user_access() would
   // return FALSE when privatemsg is disabled.
   if (($form_id == 'user_register_form' || $form_id == 'user_profile_form') && $form['#user_category'] == 'account' && privatemsg_user_access('read privatemsg')) {
