@@ -83,7 +83,7 @@ function pm_block_user_theme() {
       'file'      => 'pm_block_user.pages.inc',
     ),
     'pm_block_user_actions' => array(
-      'arguments' => array('form' => NULL),
+      'render element' => 'form',
       'file'      => 'pm_block_user.admin.inc',
     ),
   );
