@@ -353,16 +353,17 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
     '#resizable'          => TRUE,
     '#format'             => isset($format) ? $format : NULL,
   );
-  $form['preview'] = array(
+  $form['actions'] = array('#type' => 'actions');
+  $form['actions']['preview'] = array(
     '#type'               => 'submit',
     '#value'              => t('Preview message'),
     '#submit'             => array('privatemsg_new_preview'),
-    '#weight'             => 10,
+    '#weight'             => 48,
   );
-  $form['submit'] = array(
+  $form['actions']['submit'] = array(
     '#type'               => 'submit',
     '#value'              => t('Send message'),
-    '#weight'             => 15,
+    '#weight'             => 49,
   );
   $url = 'messages';
   $title = t('Cancel');
@@ -374,9 +375,9 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
     $title = t('Clear');
   }
 
-  $form['cancel'] = array(
-    '#value'              => l($title, $url, array('attributes' => array('id' => 'edit-cancel'))),
-    '#weight'             => 20,
+  $form['actions']['cancel'] = array(
+    '#markup'              => l($title, $url, array('attributes' => array('id' => 'edit-cancel'))),
+    '#weight'             => 50,
   );
 
   if (!is_null($thread_id)) {

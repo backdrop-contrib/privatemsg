@@ -667,11 +667,21 @@ function privatemsg_preprocess_privatemsg_view(&$vars) {
    * @todo perhaps make this timestamp configurable via admin UI?
    */
   $vars['message_timestamp'] = format_date($message->timestamp, 'small');
+
+  $message->content = array(
+    '#view_mode' => 'message',
+    'body' => array(
+      '#markup' => check_markup($message->body, $message->format),
+      '#weight' => -4,
+    ),
+  );
+
   // Build fields content.
   field_attach_prepare_view('privatemsg_message', array($vars['mid'] => $message), 'message');
-  $content = drupal_render(field_attach_view('privatemsg_message', $message, 'message'));
+  $message->content += field_attach_view('privatemsg_message', $message, 'message');
 
-  $vars['message_body'] = check_markup($message->body, $message->format) . $content;
+  // Render message body.
+  $vars['message_body'] =  drupal_render($message->content);
   if (isset($vars['mid']) && isset($vars['thread_id']) && privatemsg_user_access('delete privatemsg')) {
     $vars['message_actions'][] = array('title' => t('Delete message'), 'href' => 'messages/delete/' . $vars['thread_id'] . '/' . $vars['mid']);
   }
@@ -2475,4 +2485,37 @@ function privatemsg_user_autocomplete($fragment, $names, $limit) {
     ->range(0, 10)
     ->execute()
     ->fetchCol();
+}
+
+/**
+ * Implements hook_field_extra_fields().
+ */
+function privatemsg_field_extra_fields() {
+  $extra['privatemsg_message']['privatemsg_message'] = array(
+    'form' => array(
+      'recipient' => array(
+        'label' => t('To'),
+        'description' => t('Recipient field'),
+        'weight' => -10,
+      ),
+      'subject' => array(
+        'label' => t('Message subject'),
+        'description' => t('Message subject'),
+        'weight' => -5,
+      ),
+      'body' => array(
+        'label' => t('Message body'),
+        'description' => t('Message body'),
+        'weight' => -4,
+      ),
+    ),
+    'display' => array(
+      'body' => array(
+        'label' => t('Message body'),
+        'description' => t('Message body'),
+        'weight' => -4,
+      ),
+    )
+  );
+  return $extra;
 }
