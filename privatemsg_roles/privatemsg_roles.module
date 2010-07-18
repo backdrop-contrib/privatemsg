@@ -68,6 +68,10 @@ function privatemsg_roles_load_multiple($rids) {
  */
 function theme_privatemsg_roles_format($variables) {
   $role = $variables['recipient'];
+  $options = $variables['options'];
+  if (!empty($options['plain'])) {
+    return $role->name . ' ' . t('[role]');
+  }
   return t('%role (role)', array('%role' => $role->name));
 }
 

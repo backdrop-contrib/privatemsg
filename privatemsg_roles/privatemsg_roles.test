@@ -163,13 +163,15 @@ class PrivatemsgRolesTestCase extends DrupalWebTestCase {
     $autocomplete = (array)json_decode($json);
     $this->assertEqual($autocomplete[$role_name . ' [role], '], $role_name . ' [role]');
 
+    // Access the form through a url that pre-fills the recipient field.
+    $this->drupalGet('messages/new/role_5');
+
     // Send a message to the role of user 1 and 2.
     $edit = array(
-      'recipient' => $role_name . '[role]',
       'subject' => $this->randomName(10),
       'body[value]' => $this->randomName(50),
     );
-    $this->drupalPost('messages/new', $edit, t('Send message'));
+    $this->drupalPost(NULL, $edit, t('Send message'));
     $this->assertText(t('A message has been sent to @role (role).', array('@role' => user_role_load($user1->roles[5])->name)));
 
     // Log in as user1 and check that the message is listed, is marked as new

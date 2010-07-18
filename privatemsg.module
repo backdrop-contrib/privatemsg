@@ -61,21 +61,30 @@ function privatemsg_permission() {
  * @return
  *   Array with user objects.
  */
-function _privatemsg_generate_user_array($userstring, $slice = NULL) {
-
+function _privatemsg_generate_user_array($string, $slice = NULL) {
   // Convert user uid list (uid1,uid2,uid3) into an array. If $slice is not NULL
   // pass that as argument to array_slice(). For example, -4 will only load the
   // last four users.
   // This is done to avoid loading user objects that are not displayed, for
   // obvious performance reasons.
-  $users = explode(',', $userstring);
+  $users = explode(',', $string);
   if (!is_null($slice)) {
     $users = array_slice($users, $slice);
   }
   $participants = array();
   foreach ($users as $uid) {
-    if ($account = _privatemsg_user_load($uid)) {
+    // If it is an integer, it is a user id.
+   if ((int)$uid > 0 && ($account = _privatemsg_user_load($uid))) {
       $participants[privatemsg_recipient_key($account)] = $account;
+    }
+   elseif (strpos($uid, '_') !== FALSE) {
+      list($type, $id) = explode('_', $uid);
+      $type_info = privatemsg_recipient_get_type($type);
+      if ($type_info && isset($type_info['load']) && is_callable($type_info['load'])) {
+        if ($participant = reset($type_info['load'](array($id)))) {
+          $participants[privatemsg_recipient_key($participant)] = $participant;
+        }
+      }
     }
   }
   return $participants;
@@ -2422,17 +2431,20 @@ function privatemsg_recipient_access($type_name, $permission, $recipient = NULL)
  *
  * @ingroup types.
  */
-function privatemsg_recipient_format($participant) {
+function privatemsg_recipient_format($participant, $options = array()) {
   if ((!isset($participant->type) || $participant->type == 'user') && (!empty($participant->name) || isset($participant->uid) && $participant->uid === '0')) {
     if (!isset($participant->uid)) {
       $participant->uid = $participant->recipient;
+    }
+    if (isset($options['plain']) && $options['plain']) {
+      return $participant->name;
     }
     return theme('username', array('account' => $participant));
   }
   else {
     $type = privatemsg_recipient_get_type($participant->type);
     if (isset($type['format'])) {
-      return theme($type['format'], array('recipient' => $participant, 'options' => array()));
+      return theme($type['format'], array('recipient' => $participant, 'options' => $options));
     }
     return NULL;
   }

@@ -970,9 +970,20 @@ class PrivatemsgLinksTestCase extends DrupalWebTestCase {
     $this->clickLink($node1['title']);
     $this->assertNoUniqueText(t('Send author a message'), t('Send author a message link displayed.'));
 
+    $this->clickLink(t('Send author a message'));
+    // To field and subject should be correctly pre-filled now.
+    $this->drupalPost(NULL, array(), t('Send message'));
+
+    // Make sure the message was sent to the correct user.
+    $this->assertText(t('A message has been sent to @user', array('@user' => $admin->name)));
+
     // @todo: Do not guess nid.
     $this->drupalGet('node/2');
     $this->assertNoText(t('Send author a message'), t('Send author a message link not displayed.'));
+
+    $this->drupalLogin($admin);
+    $this->drupalGet('messages');
+    $this->assertText(t('Message regarding @node', array('@node' => $node1['title'])));
   }
 
   /**
