@@ -124,20 +124,19 @@ function pm_email_notify_form_alter(&$form, &$form_state, $form_id) {
     $form['enable_pm_mail']['pm_send_notifications'] = array(
       '#type' => 'checkbox',
       '#title' => t('Receive email notification for incoming private messages'),
-      '#default_value' => _pm_email_notify_is_enabled($account->uid),
+      '#default_value' => _pm_email_notify_is_enabled($form['#user']->uid),
     );
   }
 }
 
 /**
- * Implement hook_user_form().
+ * Implements hook_user_update().
  */
-function pm_email_notify_user_submit(&$edit, &$account, $category = NULL) {
+function pm_email_notify_user_update(&$edit, $account, $category) {
   if ($category == 'account' && privatemsg_user_access('read privatemsg')) {
     db_merge('pm_email_notify')
       ->fields(array('email_notify_is_enabled' => $edit['pm_send_notifications']))
       ->key(array('user_id' => $account->uid))
       ->execute();
-    unset($edit['pm_send_notifications']);
   }
 }
