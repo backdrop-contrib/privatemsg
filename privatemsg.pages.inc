@@ -161,9 +161,13 @@ function privatemsg_list($form, &$form_state, $argument, $account) {
   );
 
   $query = _privatemsg_assemble_query('list', $account, $argument);
+  $i = 0;
   foreach ($query->execute() as $row) {
     // Store the raw row data.
     $form['list']['#options'][$row->thread_id] = (array)$row;
+    // Tableselect sorts the options, set a weight so that the order doesn't get
+    // changed.
+    $form['list']['#options'][$row->thread_id]['#weight'] = $i++;
   }
 
   if (!empty($form['list']['#options'])) {
