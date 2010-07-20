@@ -65,12 +65,11 @@ function pm_email_notify_privatemsg_message_insert($message) {
  */
 function pm_email_notify_mail($key, &$message, $params) {
   $language = $message['language'];
-  $variables = user_mail_tokens($params['recipient'], $language);
-  $variables = array_merge($variables, _pm_email_notify_token($params['recipient'], $params['message']));
+  $variables = _pm_email_notify_token($params['recipient'], $params['message']);
   switch ($key) {
     case 'notice':
       $message['subject'] = trim(t(variable_get('pm_email_notify_subject', 'New private message at !site.'), $variables, array('langcode' => $language->language)));
-      $message['body'] = trim(t(variable_get('pm_email_notify_body', _pm_email_notify_default_body()), $variables, array('langcode' => $language->language)));
+      $message['body'] = array(trim(t(variable_get('pm_email_notify_body', _pm_email_notify_default_body()), $variables, array('langcode' => $language->language))));
       break;
   }
 }
