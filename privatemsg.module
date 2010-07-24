@@ -45,8 +45,12 @@ function privatemsg_permission() {
       'description' => t('Delete private messages'),
     ),
     'allow disabling privatemsg' => array(
-      'title' => t('Allow disabling privatemsg'),
-      'description' => t("Allows user to disable privatemsg so that they can't recieve any private messages.")
+      'title' => t('Allow disabling private messages'),
+      'description' => t("Allows user to disable privatemsg so that they can't recieve or send any private messages.")
+    ),
+    'reply only privatemsg' => array(
+      'title' => t('Reply to private messages'),
+      'description' => t('Allows to reply to private messages but not send new ones. Note that the write new private messages permission includes replies.')
     ),
   );
 }
@@ -1541,7 +1545,7 @@ function privatemsg_reply($thread_id, $body, $options = array()) {
 
 function _privatemsg_validate_message(&$message, $form = FALSE, $display_block_messages = TRUE) {
   $messages = array('error' => array(), 'warning' => array());
-  if (!privatemsg_user_access('write privatemsg', $message->author)) {
+  if (!(privatemsg_user_access('write privatemsg', $message->author) || (privatemsg_user_access('reply only privatemsg', $message->author) && isset($message->thread_id)))) {
     // no need to do further checks in this case...
     if ($form) {
       form_set_error('author', t('User @user is not allowed to write messages', array('@user' => $message->author->name)));

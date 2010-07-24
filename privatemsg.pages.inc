@@ -297,7 +297,7 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
   }
 
   $form = array(
-    '#access'   => privatemsg_user_access('write privatemsg') && (!empty($recipients_string) || !$thread_id),
+    '#access'   => (privatemsg_user_access('write privatemsg') || privatemsg_user_access('reply only privatemsg')) && (!empty($recipients_string) || !$thread_id),
   );
   if (isset($form_state['privatemsg_preview'])) {
     $form['message_header'] = array(
@@ -636,7 +636,7 @@ function privatemsg_view($thread) {
   }
 
   // Display the reply form if user is allowed to use it.
-  if (privatemsg_user_access('write privatemsg')) {
+  if (privatemsg_user_access('write privatemsg') || privatemsg_user_access('reply only privatemsg')) {
     $content['reply'] = drupal_get_form('privatemsg_new', $thread['participants'], $thread['subject'], $thread['thread_id'], $thread['read_all']);
     $content['reply']['#weight'] = 5;
   }
