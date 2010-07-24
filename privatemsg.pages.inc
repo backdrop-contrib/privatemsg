@@ -479,6 +479,17 @@ function privatemsg_new_submit($form, &$form_state) {
     $message = _privatemsg_send($message);
     _privatemsg_handle_recipients($message->mid, $message->recipients);
     drupal_set_message(t('A message has been sent to !recipients.', array('!recipients' => implode(', ', $recipient_names))));
+    // Only redirect on new threads.
+    if ($message->mid == $message->thread_id || variable_get('privatemsg_default_redirect_reply', FALSE)) {
+      $redirect = variable_get('privatemsg_default_redirect', '<new-message>');
+      if ($redirect == '<new-message>') {
+        // Forward to the new message in the thread.
+        $form_state['redirect'] = array('messages/view/' . $message->thread_id, array('fragment' => 'privatemsg-mid-' . $message->mid));
+      }
+      elseif (!empty($redirect)) {
+        $form_state['redirect'] = $redirect;
+      }
+    }
   }
   catch (Exception $e) {
     if (error_displayable()) {

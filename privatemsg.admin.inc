@@ -36,6 +36,20 @@ function privatemsg_admin_settings() {
     '#description' => t('Users can (if given the permission) disable Privatemsg which disallows writing messages to them and they can not write messages themself. If enabled, those users are informed on the relevant pages why they are not allowed to write messages.'),
     '#weight'      => -8,
   );
+  $form['display_settings']['privatemsg_default_redirect'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Default redirection URL'),
+    '#default_value' => variable_get('privatemsg_default_redirect', '<new-message>'),
+    '#description' => t('Defines to which page users are sent after sending a new message. &lt;front&gt; can be used for the defined front page and &lt;new-message&gt; to redirect to the new message. Leave empty to disable the redirect.'),
+    '#weight'      => 0,
+  );
+  $form['display_settings']['privatemsg_default_redirect_reply'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Redirect replies too'),
+    '#default_value' => variable_get('privatemsg_default_redirect_reply', FALSE),
+    '#description' => t('Also redirect to the defined page when replying.'),
+    '#weight'      => 1,
+  );
 
   $form['flush_deleted'] = array(
     '#type'        => 'fieldset',
