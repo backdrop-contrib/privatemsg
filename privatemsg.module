@@ -1698,19 +1698,18 @@ function _privatemsg_send($message) {
       ));
     }
 
-    // When author is also the recipient, we want to set message to UNREAD.
-    // All other times the message is set to READ.
-    $is_new = isset($message->recipients['user_' . $message->author->uid]) ? 1 : 0;
-
-    // Also add a record for the author to the pm_index table.
-    $query->values(array(
-      'mid' => $mid,
-      'thread_id' => $message->thread_id,
-      'recipient' => $message->author->uid,
-      'type' => 'user',
-      'is_new' => $is_new,
-      'deleted' => 0,
-    ));
+    // We only want to add the author to the pm_index table, if the message has
+    // not been sent directly to him.
+    if (!isset($message->recipients['user_' . $message->author->uid])) {
+      $query->values(array(
+        'mid' => $mid,
+        'thread_id' => $message->thread_id,
+        'recipient' => $message->author->uid,
+        'type' => 'user',
+        'is_new' => 0,
+        'deleted' => 0,
+      ));
+    }
     $query->execute();
 
     module_invoke_all('privatemsg_message_insert', $message);

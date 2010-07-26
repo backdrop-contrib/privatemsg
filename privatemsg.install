@@ -51,8 +51,8 @@ function privatemsg_schema() {
         'not null' => TRUE,
         'default' => 'user'
       ),
-
     ),
+    'primary key'     => array('mid', 'recipient', 'type'),
     'indexes'         => array(
       'mid'               => array('mid'),
       'thread_id'         => array('thread_id'),
