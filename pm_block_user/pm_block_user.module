@@ -161,10 +161,26 @@ function _pm_block_user_access($account) {
   if (!privatemsg_user_access('read privatemsg', $user)) {
     return FALSE;
   }
-  if (_pm_block_user_rule_exists($account, $user, PM_BLOCK_USER_DISALLOW_BLOCKING)) {
+  // Allow to unblock users that are already blocked but the user is now not
+  // allowed to block anymore.
+  if (_pm_block_user_rule_exists($account, $user, PM_BLOCK_USER_DISALLOW_BLOCKING) && !pm_block_user_has_blocked($account, $user)) {
     return FALSE;
   }
   return TRUE;
+}
+
+/**
+ * Checks if author is blocked by the recipient.
+ *
+ * @param $author
+ *   The user that would send a message.
+ * @param $recipient
+ *   The user that would receive the message.
+ * @return
+ *   TRUE if the recipient has blocked the author.
+ */
+function pm_block_user_has_blocked($author, $recipient) {
+  return db_query('SELECT 1 FROM {pm_block_user} WHERE author = :author AND recipient = :recipient', array(':author' => $author->uid, ':recipient' => $recipient->uid))->fetchField();
 }
 
 /**
