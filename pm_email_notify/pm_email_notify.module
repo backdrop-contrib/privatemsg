@@ -65,7 +65,7 @@ function pm_email_notify_privatemsg_message_insert($message) {
  */
 function pm_email_notify_mail($key, &$message, $params) {
   $language = $message['language'];
-  $variables = _pm_email_notify_token($params['recipient'], $params['message']);
+  $variables = _pm_email_notify_token($params['recipient'], $params['message'], $language);
   switch ($key) {
     case 'notice':
       $message['subject'] = trim(t(variable_get('pm_email_notify_subject', 'New private message at !site.'), $variables, array('langcode' => $language->language)));
@@ -83,7 +83,7 @@ function pm_email_notify_mail($key, &$message, $params) {
  * @return
  *  Array of mappings from token names to values (for use with strtr()).
  */
-function _pm_email_notify_token($recipient, $message) {
+function _pm_email_notify_token($recipient, $message, $language) {
 
   $tokens = array(
     '!author' => $message->author->name,
@@ -91,8 +91,8 @@ function _pm_email_notify_token($recipient, $message) {
     '!pm_subject' => drupal_html_to_text(check_plain($message->subject)),
     '!pm_body' => drupal_html_to_text(check_markup($message->body, $message->format)),
     '!user_uid' => $recipient->uid,
-    '!message' => url('messages/view/' . $message->thread_id, array('absolute' => TRUE)),
-    '!settings' => url('user/' . $recipient->uid . '/edit', array('absolute' => TRUE)),
+    '!message' => url('messages/view/' . $message->thread_id, array('absolute' => TRUE, 'language' => $language)),
+    '!settings' => url('user/' . $recipient->uid . '/edit', array('absolute' => TRUE, 'language' => $language)),
   );
 
   return $tokens;
