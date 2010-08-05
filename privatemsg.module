@@ -1211,7 +1211,7 @@ function privatemsg_form_alter(&$form, &$form_state, $form_id) {
  * Implements hook_user_insert().
  */
 function privatemsg_user_update(&$edit, $account, $category) {
-  if ($category == 'account' && isset($edit['pm_enable']) && (user_access('write privatemsg') || user_access('read privatemsg')) && user_access('allow disabling privatemsg')) {
+  if (isset($edit['pm_enable']) && (user_access('write privatemsg') || user_access('read privatemsg')) && user_access('allow disabling privatemsg')) {
     $current = privatemsg_is_disabled($account);
     $disabled = (!$edit['pm_enable']);
     $edit['pm_enable'] = NULL;
