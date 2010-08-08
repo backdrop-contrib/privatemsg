@@ -335,3 +335,56 @@ function pm_block_user_user_cancel($edit, $account, $method) {
     )
     ->delete();
 }
+
+/**
+ * Implememts hook_query_TAG_alter().
+ *
+ * Remove blocked users.
+ */
+function pm_block_user_query_privatemsg_autocomplete_alter($query) {
+  global $user;
+
+  // Assume the users don't have blocked more than a few dozen other users
+  // but there can be hundreds of thousends of users and make the subquery
+  // unrelated.
+
+  // Create a subquery that gets all users which have blocked the current user.
+  $blocked = db_select('pm_block_user', 'pmbu')
+    ->fields('pmbu', array('recipient'))
+    ->condition('pmbu.author', $user->uid);
+
+  // Exclude these from the possible recipients.
+  $query->condition('u.uid', $blocked, 'NOT IN');
+
+  // Block role configurations.
+  if ($user->uid != 1) {
+    $rids = array();
+    $block_actions = variable_get('pm_block_user_actions', array());
+    foreach ($block_actions as $delta => $details) {
+      // Only continue if the rule is enabled and is a disallow sending rule.
+      if ($details['action'] != PM_BLOCK_USER_DISALLOW_SENDING || !$details['enabled']) {
+        continue;
+      }
+      // The author (current user) does have a matching role.
+      if (isset($user->roles[$details['author']])) {
+        // authenticated user role is not stored in the database but all users
+        // have it so there can be no valid recipients. Add a condition that is
+        // always false and bail out because no other rules need to be checked.
+        if ($details['recipient'] == DRUPAL_AUTHENTICATED_RID) {
+          $query->addExpression('1 = 0');
+          return;
+        }
+        // Keep role id, will be added to the query later on.
+        $rids[] = $details['recipient'];;
+      }
+    }
+    // If there are any, add role limitation to the query.
+    if (!empty($rids)) {
+      $join_alias = $query->leftJoin('users_roles', 'ur', 'u.uid = ur.uid');
+      $query->condition(db_or()
+        ->condition($join_alias . '.rid', $rids, 'NOT IN')
+        ->isNull($join_alias . '.rid')
+      );
+    }
+  }
+}
