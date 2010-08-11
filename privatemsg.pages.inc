@@ -444,7 +444,7 @@ function privatemsg_new_validate($form, &$form_state) {
   }
   $form_state['validate_built_message'] = $message;
   if (!empty($invalid)) {
-    drupal_set_message(t('The following users will not receive this private message: !invalid', array('!invalid' => implode(", ", $invalid))), 'error');
+    drupal_set_message(t('The following users will not receive this private message: @invalid', array('@invalid' => implode(", ", $invalid))), 'error');
   }
 }
 
