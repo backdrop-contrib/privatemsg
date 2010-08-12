@@ -47,6 +47,15 @@ function privatemsg_filter_menu() {
     'access arguments' => array('administer privatemsg settings'),
     'type'             => MENU_LOCAL_TASK,
   );
+  $items['admin/config/messaging/privatemsg/tags/list'] = array(
+    'title'            => 'List',
+    'description'      => 'Configure tags.',
+    'page callback'    => 'privatemsg_tags_admin',
+    'file'             => 'privatemsg_filter.admin.inc',
+    'access arguments' => array('administer privatemsg settings'),
+    'type'             => MENU_DEFAULT_LOCAL_TASK,
+    'weight'           => -5,
+  );
   $items['admin/config/messaging/privatemsg/tags/add'] = array(
     'title'            => 'Add tag',
     'description'      => 'Configure tags.',
