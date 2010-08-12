@@ -216,25 +216,29 @@ function privatemsg_filter_create_tags($tags) {
  * @param $threads A single thread id or an array of thread ids.
  * @param $tag_id Id of the tag.
  */
-function privatemsg_filter_add_tags($threads, $tag_id, $account = NULL) {
+function privatemsg_filter_add_tags($threads, $tag_ids, $account = NULL) {
   if (!is_array($threads)) {
     $threads = array($threads);
+  }
+  if (!is_array($tag_ids)) {
+    $tag_ids = array($tag_ids);
   }
   if (empty($account)) {
     global $user;
     $account = clone $user;
   }
-
-  foreach ($threads as $thread) {
-    // Make sure that we don't add a tag to a thread twice,
-    // only insert if there is no such tag yet.
-      db_merge('pm_tags_index')
-        ->key(array(
-          'tag_id' => $tag_id,
-          'uid' => $account->uid,
-          'thread_id' => $thread,
-        ))
-        ->execute();
+  foreach ($tag_ids as $tag_id) {
+    foreach ($threads as $thread) {
+      // Make sure that we don't add a tag to a thread twice,
+      // only insert if there is no such tag yet.
+        db_merge('pm_tags_index')
+          ->key(array(
+            'tag_id' => $tag_id,
+            'uid' => $account->uid,
+            'thread_id' => $thread,
+          ))
+          ->execute();
+    }
   }
 }
 
@@ -244,16 +248,19 @@ function privatemsg_filter_add_tags($threads, $tag_id, $account = NULL) {
  * @param $threads A single thread id or an array of thread ids.
  * @param $tag_id Id of the tag - set to NULL to remove all tags.
  */
-function privatemsg_filter_remove_tags($threads, $tag_id = NULL, $account = NULL) {
+function privatemsg_filter_remove_tags($threads, $tag_ids = NULL, $account = NULL) {
   if (!is_array($threads)) {
     $threads = array($threads);
+  }
+  if (!is_array($tag_ids)) {
+    $tag_ids = array($tag_ids);
   }
   if (empty($account)) {
     global $user;
     $account = $user;
   }
 
-  if (is_null($tag_id)) {
+  if (is_null($tag_ids)) {
     //Delete all tag mapping - all except for the inbox tag if it exists.
     db_delete('pm_tags_index')
       ->condition('uid', $account->uid)
@@ -266,7 +273,7 @@ function privatemsg_filter_remove_tags($threads, $tag_id = NULL, $account = NULL
     db_delete('pm_tags_index')
       ->condition('uid', $account->uid)
       ->condition('thread_id', $threads)
-      ->condition('tag_id', $tag_id)
+      ->condition('tag_id', $tag_ids)
       ->execute();
   }
 }
@@ -513,40 +520,36 @@ function privatemsg_filter_form_privatemsg_list_alter(&$form, $form_state) {
     );
   }
 
-  $tags = privatemsg_filter_get_tags_data($user);
-  if (privatemsg_user_access('tag private messages') && !empty($tags) && !empty( $form['list']['#options'])) {
-    $options = array();
-    $options[] = t('Apply Tag...');
-    foreach ($tags as $tag_id => $tag) {
-      $options[$tag_id] = $tag;
-    }
+  if (privatemsg_user_access('tag private messages') && !empty( $form['list']['#options'])) {
     $form['actions']['tag-add'] = array(
-      '#type'          => 'select',
-      '#options'       => $options,
-      '#default_value' => 0,
-      // Execute the submit button if a operation has been selected.
-      '#attributes'    => array('onchange' => "(function ($) { $('#edit-tag-add-submit').click() })(jQuery);"),
+     '#type'               => 'textfield',
+     '#size'               => 15,
+     '#autocomplete_path'  => 'messages/filter/tag-autocomplete',
     );
     $form['actions']['tag-add-submit'] = array(
-        '#prefix'     => '<div class="privatemsg-tag-add-submit">',
-        '#suffix'    => '</div>',
         '#type'       => 'submit',
         '#value'      => t('Apply Tag'),
         '#submit'     => array('privatemsg_filter_add_tag_submit'),
     );
-    $options[0] = t('Remove Tag...');
-    $form['actions']['tag-remove'] = array(
-      '#type'          => 'select',
-      '#options'       => $options,
-      '#default_value' => 0,
-    );
-    $form['actions']['tag-remove-submit'] = array(
+    $tags = privatemsg_filter_get_tags_data($user);
+    if (!empty($tags)) {
+      $options[0] = t('Remove Tag...');
+      foreach ($tags as $tag_id => $tag) {
+        $options[$tag_id] = $tag;
+      }
+      $form['actions']['tag-remove'] = array(
+        '#type'          => 'select',
+        '#options'       => $options,
+        '#default_value' => 0,
+      );
+      $form['actions']['tag-remove-submit'] = array(
         '#prefix'     => '<div class="privatemsg-tag-remove-submit">',
         '#suffix'    => '</div>',
         '#type'       => 'submit',
         '#value'      => t('Remove Tag'),
         '#submit'     => array('privatemsg_filter_remove_tag_submit'),
-    );
+      );
+    }
 
     // JS for hiding the submit buttons.
     drupal_add_js(drupal_get_path('module', 'privatemsg_filter') .'/privatemsg-filter-list.js');
@@ -611,12 +614,24 @@ function theme_privatemsg_list_field__tags($arguments) {
  * Form callback for adding a tag to threads.
  */
 function privatemsg_filter_add_tag_submit($form, &$form_state) {
+
+  // Check if textfield is not empty.
+  if (empty($form_state['values']['tag-add'])) {
+    return;
+  }
+
+  $tags = explode(',', $form_state['values']['tag-add']);
+  $tag_ids = privatemsg_filter_create_tags($tags);
+  if (empty($tag_ids)) {
+    return;
+  }
+
   $operation = array(
     'callback' => 'privatemsg_filter_add_tags',
-    'callback arguments' => array('tag_id' => $form_state['values']['tag-add']),
+    'callback arguments' => array('tag_id' => $tag_ids),
     'success message' => t('The selected conversations have been tagged.'),
     'undo callback' => 'privatemsg_filter_remove_tags',
-    'undo callback arguments' => array('tag_id' => $form_state['values']['tag-add']),
+    'undo callback arguments' => array('tag_id' => $tag_ids),
   );
   privatemsg_operation_execute($operation, $form_state['values']['list']);
 }

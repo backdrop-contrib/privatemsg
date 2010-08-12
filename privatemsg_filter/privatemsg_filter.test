@@ -296,7 +296,7 @@ class PrivatemsgTagsTestCase extends DrupalWebTestCase {
 
     $add_tag = array(
       'list[' . $thread_id2 . ']' => 1,
-      'tag-add' => 3,
+      'tag-add' => 'Banana',
     );
     $this->drupalPost(NULL, $add_tag, t('Apply Tag'));
     $rows = $this->xpath('//tbody/tr');

@@ -494,7 +494,6 @@ function privatemsg_new_submit($form, &$form_state) {
       elseif (!empty($redirect)) {
         $form_state['redirect'] = $redirect;
       }
-      dpm($form_state);
     }
   }
   catch (Exception $e) {
