@@ -27,6 +27,7 @@ class views_handler_field_privatemsg_link extends views_handler_field {
     $options['text'] = array('default' => t('Send message'), 'translatable' => TRUE);
     $options['subject'] = array('default' => '', 'translatable' => TRUE);
     $options['return'] = array('default' => TRUE, 'translatable' => FALSE);
+    $options['custom_destination'] = array('default' => '', 'translatable' => FALSE);
     return $options;
   }
 
@@ -55,53 +56,69 @@ class views_handler_field_privatemsg_link extends views_handler_field {
       '#description' => t('Define the subject that will be pre-filled in the send message form. You can use replacement tokens to insert any existing field output.'),
     );
 
-       // Get a list of the available fields and arguments for token replacement.
-      $options = array();
-      foreach ($this->view->display_handler->get_handlers('field') as $field => $handler) {
-        $options[t('Fields')]["[$field]"] = $handler->ui_name();
-        // We only use fields up to (and including) this one.
-        if ($field == $this->options['id']) {
-          break;
-        }
-      }
-      $count = 0; // This lets us prepare the key as we want it printed.
-      foreach ($this->view->display_handler->get_handlers('argument') as $arg => $handler) {
-        $options[t('Arguments')]['%' . ++$count] = t('@argument title', array('@argument' => $handler->ui_name()));
-        $options[t('Arguments')]['!' . $count] = t('@argument input', array('@argument' => $handler->ui_name()));
-      }
-
-      $this->document_self_tokens($options[t('Fields')]);
-
-      // Default text.
-      $output = t('<p>You must add some additional fields to this display before using this field. These fields may be marked as <em>Exclude from display</em> if you prefer. Note that due to rendering order, you cannot use fields that come after this field; if you need a field not listed here, rearrange your fields.</p>');
-      // We have some options, so make a list.
-      if (!empty($options)) {
-        $output = t('<p>The following substitution patterns are available for this display. Use the pattern shown on the left to display the value indicated on the right. Note that due to rendering order, you cannot use fields that come after this field; if you need a field not listed here, rearrange your fields.</p>');
-        foreach (array_keys($options) as $type) {
-          if (!empty($options[$type])) {
-            $items = array();
-            foreach ($options[$type] as $key => $value) {
-              $items[] = $key . ' == ' . $value;
-            }
-            $output .= theme('item_list',
-              array(
-                'items' => $items,
-                'type' => $type
-              ));
-          }
-        }
-      }
-
-    $form['help'] = array(
-      '#id' => 'views-tokens-help',
-      '#markup' => '<div><fieldset id="views-tokens-help"><legend>' . t('Replacement patterns') . '</legend>' . $output . '</fieldset></div>',
-    );
-
     $form['return'] = array(
       '#type' => 'checkbox',
       '#title' => t('Return to view after message was sent.'),
       '#default_value' => $this->options['return'],
       '#description' => t('Should the user be redirected back to the current view when the message was sent.'),
+    );
+
+    $form['custom_destination'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Custom destination'),
+      '#default_value' => $this->options['custom_destination'],
+      '#description' => t('If non-empty, users will be forwared to the given url. You can use replacement tokens to insert any existing field output.'),
+      '#process' => array('views_process_dependency'),
+      '#dependency' => array(
+        'edit-options-return' => array(1)
+      ),
+    );
+
+    // Get a list of the available fields and arguments for token replacement.
+    $options = array();
+    foreach ($this->view->display_handler->get_handlers('field') as $field => $handler) {
+      $options[t('Fields')]["[$field]"] = $handler->ui_name();
+      // We only use fields up to (and including) this one.
+      if ($field == $this->options['id']) {
+        break;
+      }
+    }
+    $count = 0; // This lets us prepare the key as we want it printed.
+    foreach ($this->view->display_handler->get_handlers('argument') as $arg => $handler) {
+      $options[t('Arguments')]['%' . ++$count] = t('@argument title', array('@argument' => $handler->ui_name()));
+      $options[t('Arguments')]['!' . $count] = t('@argument input', array('@argument' => $handler->ui_name()));
+    }
+
+    // Add documentation about the new message token. Note that this is not
+    // a real token that will be replaced but it is handled in
+    // privatemsg_send_submit().
+    $options[t('Privatemsg')]['[new-message]'] = t('This will redirect to the newly sent message.');
+
+    $this->document_self_tokens($options[t('Fields')]);
+
+    // Default text.
+    $output = t('<p>You must add some additional fields to this display before using this field. These fields may be marked as <em>Exclude from display</em> if you prefer. Note that due to rendering order, you cannot use fields that come after this field; if you need a field not listed here, rearrange your fields.</p>');
+    // We have some options, so make a list.
+    if (!empty($options)) {
+      $output = t('<p>The following substitution patterns are available for this display. Use the pattern shown on the left to display the value indicated on the right. Note that due to rendering order, you cannot use fields that come after this field; if you need a field not listed here, rearrange your fields.</p>');
+      foreach (array_keys($options) as $type) {
+        if (!empty($options[$type])) {
+          $items = array();
+          foreach ($options[$type] as $key => $value) {
+            $items[] = $key . ' == ' . $value;
+          }
+          $output .= theme('item_list',
+            array(
+              'items' => $items,
+              'type' => $type
+            ));
+        }
+      }
+    }
+
+    $form['help'] = array(
+      '#id' => 'views-tokens-help',
+      '#markup' => '<div><fieldset id="views-tokens-help"><legend>' . t('Replacement patterns') . '</legend>' . $output . '</fieldset></div>',
     );
   }
 
@@ -132,7 +149,14 @@ class views_handler_field_privatemsg_link extends views_handler_field {
 
     $options = array();
     if ($this->options['return']) {
-      $options['query'] = drupal_get_destination();
+      if (!empty($this->options['custom_destination'])) {
+        $tokens = $this->get_render_tokens($this);
+        $destination = strip_tags(strtr($this->options['custom_destination'], $tokens));
+        $options['query'] = array('destination' => $destination);
+      }
+      else {
+        $options['query'] = drupal_get_destination();
+      }
     }
 
     $data = '';

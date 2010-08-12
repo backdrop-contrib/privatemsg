@@ -482,13 +482,19 @@ function privatemsg_new_submit($form, &$form_state) {
     // Only redirect on new threads.
     if ($message->mid == $message->thread_id || variable_get('privatemsg_default_redirect_reply', FALSE)) {
       $redirect = variable_get('privatemsg_default_redirect', '<new-message>');
-      if ($redirect == '<new-message>') {
+      if ($redirect == '<new-message>' || (!empty($_REQUEST['destination']) && $_REQUEST['destination'] == '[new-message]')) {
+        if (!empty($_REQUEST['destination']) && $_REQUEST['destination'] == '[new-message]') {
+          // Remove GET param so that drupal_goto() uses the redirect from
+          // $form_state.
+          unset($_GET['destination']);
+        }
         // Forward to the new message in the thread.
         $form_state['redirect'] = array('messages/view/' . $message->thread_id, array('fragment' => 'privatemsg-mid-' . $message->mid));
       }
       elseif (!empty($redirect)) {
         $form_state['redirect'] = $redirect;
       }
+      dpm($form_state);
     }
   }
   catch (Exception $e) {
