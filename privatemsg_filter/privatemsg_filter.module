@@ -815,7 +815,7 @@ function privatemsg_filter_sql_tags($user = NULL, $threads = NULL, $limit = NULL
   }
 
   if (!$showHidden) {
-    $query->condition(db_or()->condition('t.hidden', '')->isNull('t.hidden'));
+    $query->condition(db_or()->condition('t.hidden', 0)->isNull('t.hidden'));
   }
 
   // Only select n tags per thread (ordered per tag_id), see
