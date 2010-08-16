@@ -230,7 +230,7 @@ function _pm_block_user_rule_exists($author, $recipient, $action = PM_BLOCK_USER
 /**
  * Implementation of hook_privatemsg_block_message.
  */
-function pm_block_user_privatemsg_block_message($author, $recipients) {
+function pm_block_user_privatemsg_block_message($author, $recipients, $context = array()) {
   $blocked = array();
   // Loop through each recipient and ensure there is no rule blocking this
   // author from sending them private messages. Use a reference, so when

@@ -1237,7 +1237,7 @@ function privatemsg_user_update(&$edit, $account, $category) {
 /**
  * Implementation of hook_privatemsg_block_message().
  */
-function privatemsg_privatemsg_block_message($author, $recipients) {
+function privatemsg_privatemsg_block_message($author, $recipients, $context = array()) {
   $blocked = array();
   if (privatemsg_is_disabled($author)) {
     $blocked[] = array(
@@ -1602,7 +1602,7 @@ function _privatemsg_validate_message(&$message, $form = FALSE, $display_block_m
   }
 
   if (!empty($message->recipients) && is_array($message->recipients)) {
-    foreach(module_invoke_all('privatemsg_block_message', $message->author, $message->recipients) as $blocked) {
+    foreach(module_invoke_all('privatemsg_block_message', $message->author, $message->recipients, (array)$message) as $blocked) {
       unset($message->recipients[$blocked['recipient']]);
       if ($form) {
         // Don't display information about blocked users when replying.

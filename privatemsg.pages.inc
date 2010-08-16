@@ -257,7 +257,7 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
     }
 
     // Check if another module is blocking the sending of messages to the recipient by current user.
-    $user_blocked = module_invoke_all('privatemsg_block_message', $user, array(privatemsg_recipient_key($recipient) => $recipient));
+    $user_blocked = module_invoke_all('privatemsg_block_message', $user, array(privatemsg_recipient_key($recipient) => $recipient), array('thread_id' => $thread_id));
     if (!count($user_blocked) <> 0 && $recipient->recipient) {
       if ($recipient->type == 'user' && $recipient->recipient == $user->uid) {
         $usercount++;
