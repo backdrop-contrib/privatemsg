@@ -251,7 +251,7 @@ function pm_block_user_privatemsg_block_message($author, $recipients, $context =
     if (_pm_block_user_rule_exists($author, $recipients[$id], PM_BLOCK_USER_DISALLOW_SENDING)) {
       $blocked[] = array(
         'recipient' => $id,
-        'message' => t('Sorry, private messaging rules forbid sending messages to !name.', array('!name' => $recipients[$id]->name)),
+        'message' => t('You are not permitted to send messages to !user.', array('!user' => privatemsg_recipient_format($recipients[$id]))),
       );
     }
   }
@@ -285,7 +285,7 @@ function pm_block_user_privatemsg_block_message($author, $recipients, $context =
     }
     $blocked[] = array(
       'recipient' => privatemsg_recipient_key($recipient),
-      'message' => t('%name has chosen to not recieve any more messages from you.', array('%name' => $recipient->name))
+      'message' => t('%name has chosen to block messages from you.', array('%name' => $recipient->name))
     );
   }
   return $blocked;

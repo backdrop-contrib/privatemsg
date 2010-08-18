@@ -144,7 +144,7 @@ class PrivatemsgRolesTestCase extends DrupalWebTestCase {
       'body[value]' => $this->randomName(50),
     );
     $this->drupalPost('messages/new', $edit, t('Send message'));
-    $this->assertText(t('Disallowed to send a message without at least one valid recipient'));
+    $this->assertText(t('You must include at least one valid recipient.'));
   }
 
   function testSendMessageToRole() {

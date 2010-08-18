@@ -94,8 +94,8 @@ class PrivatemsgBlockUserCase extends DrupalWebTestCase {
       'body[value]'    => $this->randomName(50),
     );
     $this->drupalPost('messages/new', $edit, t('Send message'));
-    $this->assertRaw(t('%user has chosen to not recieve any more messages from you.', array('%user' => $user1->name)), t('User 1 blocks user 2 message displayed'));
-    $this->assertText(t('Disallowed to send message because all recipients are blocked'), t('Disallowed to send message displayed'));
+    $this->assertRaw(t('%user has chosen to block messages from you.', array('%user' => $user1->name)), t('User 1 blocks user 2 message displayed'));
+    $this->assertText(t('You are not allowed to send this message because all recipients are blocked.'));
 
     $edit = array(
       'recipient' => $user1->name . ', ' . $user3->name,
@@ -103,7 +103,7 @@ class PrivatemsgBlockUserCase extends DrupalWebTestCase {
       'body[value]'    => $this->randomName(50),
     );
     $this->drupalPost('messages/new', $edit, t('Send message'));
-    $this->assertRaw(t('%user has chosen to not recieve any more messages from you.', array('%user' => $user1->name)), t('User 1 blocks user 2 message displayed'));
+    $this->assertRaw(t('%user has chosen to block messages from you.', array('%user' => $user1->name)), t('User 1 blocks user 2 message displayed'));
     $this->assertText(t('A message has been sent to @user.', array('@user' => $user3->name)), t('Message sent to user 3'));
   
     

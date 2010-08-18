@@ -51,22 +51,22 @@ class PrivatemsgAPITestCase extends DrupalWebTestCase {
     $this->assertTrue($resultok2['success'], 'API allowed to send message without body');
 
     $resultf1 = privatemsg_new_thread(array($recipient1, $recipient2, $recipient3), '', 'No subject', array('author' => $author));
-    $this->assertEqual('Disallowed to send a message without a subject', $resultf1['messages']['error'][0], 'API denied to send message without a subject');
+    $this->assertEqual('A subject must be included with the message.', $resultf1['messages']['error'][0], 'API denied to send message without a subject');
 
     $resultf2 = privatemsg_new_thread(array(), 'no recipients', 'Body text', array('author' => $author));
-    $this->assertEqual('Disallowed to send a message without at least one valid recipient', $resultf2['messages']['error'][0], 'API denied to send message without recipients');
+    $this->assertEqual('At least one valid recipient must be included with the message.', $resultf2['messages']['error'][0], 'API denied to send message without recipients');
     $message = $this->getMessageFromSubject('no recipients');
     $this->assertTrue(empty($message), 'Message was not saved in database');
 
     $resultf3 = privatemsg_new_thread(array($recipient1, $recipient2, $recipient3), 'not allowed', 'Body text', array('author' => $recipient1));
-    $errormessage = 'User '. $recipient1->name .' is not allowed to write messages';
+    $errormessage = t('@user is not allowed to write messages.', array('@user' => $recipient1->name));
     $this->assertEqual($errormessage, $resultf3['messages']['error'][0], 'API denied to send message from user without permission');
     $message = $this->getMessageFromSubject('not allowed');
     $this->assertTrue(empty($message), 'Message was not saved in database');
 
     // Test with an input format that the author is not allowed to use.
     $resultf4 = privatemsg_new_thread(array($recipient1, $recipient2, $recipient3), 'input filter not allowed', 'Body text', array('author' => $author, 'format' => 3));
-    $errormessage = t('User @user is not allowed to use the specified input format.', array('@user' => $author->name));
+    $errormessage = t('@user is not allowed to use the specified input format.', array('@user' => $author->name));
     $this->assertEqual($errormessage, $resultf4['messages']['error'][0], t('User is not allowed to use the specified input format.'));
     $message = $this->getMessageFromSubject('input filter not allowed');
     $this->assertTrue(empty($message), 'Message was not saved in database');
@@ -106,10 +106,10 @@ class PrivatemsgAPITestCase extends DrupalWebTestCase {
 
     $resultf1 = privatemsg_reply($thread_row->mid, '', array('author' => $recipient2));
     $this->assertFalse($resultf1['success'], 'API denied to send message without body.');
-    $this->assertEqual($resultf1['messages']['error'][0], t('Disallowed to send reply without a message.'), 'Correct error returned when replying with an empty body.');
+    $this->assertEqual($resultf1['messages']['error'][0], t('A message must be included in your reply.'), 'Correct error returned when replying with an empty body.');
 
     $resultf2 = privatemsg_reply($thread_row->mid, 'Test Body', array('author' => $recipient3));
-    $errormessage = 'User '. $recipient3->name .' is not allowed to write messages';
+    $errormessage = t('@user is not allowed to write messages.', array('@user' => $recipient3->name));
     $this->assertEqual($errormessage, $resultf2['messages']['error'][0], 'API denied to send message from user without permission');
 
   }

@@ -1548,14 +1548,14 @@ function _privatemsg_validate_message(&$message, $form = FALSE, $display_block_m
   if (!(privatemsg_user_access('write privatemsg', $message->author) || (privatemsg_user_access('reply only privatemsg', $message->author) && isset($message->thread_id)))) {
     // no need to do further checks in this case...
     if ($form) {
-      form_set_error('author', t('User @user is not allowed to write messages', array('@user' => $message->author->name)));
+      form_set_error('author', t('You are not allowed to write messages.'));
       return array(
         'success'  => FALSE,
         'messages'   => $messages,
       );
     }
     else {
-      $messages['error'][] = t('User @user is not allowed to write messages', array('@user' => $message->author->name));
+      $messages['error'][] = t('@user is not allowed to write messages.', array('@user' => $message->author->name));
       return array(
          'success'  => FALSE,
          'messages'   => $messages,
@@ -1565,39 +1565,39 @@ function _privatemsg_validate_message(&$message, $form = FALSE, $display_block_m
 
   if (empty($message->subject)) {
     if ($form) {
-      form_set_error('subject', t('Disallowed to send a message without a subject'));
+      form_set_error('subject', t('You must include a subject line with your message.'));
     }
     else {
-      $messages['error'][] = t('Disallowed to send a message without a subject');
+      $messages['error'][] = t('A subject must be included with the message.');
     }
   }
 
   // Don't allow replies without a body.
   if (!empty($message->thread_id) && empty($message->body)) {
     if ($form) {
-      form_set_error('body', t('Disallowed to send reply without a message.'));
+      form_set_error('body', t('You must include a message in your reply.'));
     }
     else {
-      $messages['error'][] = t('Disallowed to send reply without a message.');
+      $messages['error'][] = t('A message must be included in your reply.');
     }
   }
 
   // Check if an allowed format is used.
   if (!filter_access(filter_format_load($message->format), $message->author)) {
     if ($form) {
-      form_set_error('format', t('You are not allowed to use the specified input format.'));
+      form_set_error('format', t('You are not allowed to use the specified format.'));
     }
     else {
-      $messages['error'][] = t('User @user is not allowed to use the specified input format.', array('@user' => $message->author->name));
+      $messages['error'][] = t('@user is not allowed to use the specified input format.', array('@user' => $message->author->name));
     }
   }
 
   if (empty($message->recipients) || !is_array($message->recipients)) {
     if ($form) {
-      form_set_error('to', t('Disallowed to send a message without at least one valid recipient'));
+      form_set_error('to', t('You must include at least one valid recipient.'));
     }
     else {
-      $messages['error'][] = t('Disallowed to send a message without at least one valid recipient');
+      $messages['error'][] = t('At least one valid recipient must be included with the message.');
     }
   }
 
@@ -1618,10 +1618,10 @@ function _privatemsg_validate_message(&$message, $form = FALSE, $display_block_m
   // Check again, give another error message if all recipients are blocked
   if (empty($message->recipients)) {
     if ($form) {
-      form_set_error('to', t('Disallowed to send message because all recipients are blocked'));
+      form_set_error('to', t('You are not allowed to send this message because all recipients are blocked.'));
     }
     else {
-      $messages['error'][] = t('Disallowed to send message because all recipients are blocked');
+      $messages['error'][] = t('The message cannot be sent because all recipients are blocked.');
     }
   }
 
@@ -2521,4 +2521,21 @@ function privatemsg_field_extra_fields() {
     )
   );
   return $extra;
+}
+
+/**
+ * Implements hook_file_download_acces().
+ */
+function privatemsg_file_download_access($field, $entity_type, $entity) {
+  global $user;
+
+  if ($entity_type == 'privatemsg_message') {
+    // Users with read all private messages permission can view all files too.
+    if (user_access('read all private messages')) {
+      return TRUE;
+    }
+
+    // Check if user is a recipient of this message.
+    return (bool)db_query_range("SELECT 1 FROM {pm_index} WHERE recipient = :uid AND type IN ('user', 'hidden') AND mid = :mid", 0, 1, array(':uid' => $user->uid, ':mid' => $entity->mid))->fetchField();
+  }
 }
