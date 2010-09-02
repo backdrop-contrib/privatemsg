@@ -244,6 +244,11 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
   $to_plain = array();
   $blocked = FALSE;
   foreach ($recipients as $recipient) {
+    // Allow to pass in normal user objects.
+    if (empty($recipient->type)) {
+      $recipient->type = 'user';
+      $recipient->recipient = $recipient->uid;
+    }
     if ($recipient->type == 'hidden') {
       continue;
     }
