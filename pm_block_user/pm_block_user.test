@@ -23,9 +23,9 @@ class PrivatemsgBlockUserCase extends DrupalWebTestCase {
 
   function testBlockAndUnblock() {
     // Create needed users.
-    $user1 = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
-    $user2 = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
-    $user3 = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
+    $user1 = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg', 'access user profiles'));
+    $user2 = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg', 'access user profiles'));
+    $user3 = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg', 'access user profiles'));
 
     // Set up a simple conversation.
     $return = privatemsg_new_thread(array($user2, $user3), $subject = $this->randomName(20), $this->randomString(50), array('author' => $user1));
@@ -33,6 +33,12 @@ class PrivatemsgBlockUserCase extends DrupalWebTestCase {
     privatemsg_reply($return['message']->thread_id, $this->randomString(50), array('author' => $user3));
 
     $this->drupalLogin($user1);
+
+    // Visit profile page of user 2 and verify that there is a link to write a
+    // message.
+    $this->drupalGet('user/' . $user2->uid);
+    $this->assertText(t('Send this user a message'));
+
     $this->drupalGet('messages');
     $this->clickLink($subject);
 
@@ -87,6 +93,10 @@ class PrivatemsgBlockUserCase extends DrupalWebTestCase {
 
     // Log in as user2 and try to send messages to user1.
     $this->drupalLogin($user2);
+
+    // Access profile to see if there is a write message link.
+    $this->drupalGet('user/' . $user1->uid);
+    $this->assertNoText(t('Send this user a message'));
 
     $edit = array(
       'recipient' => $user1->name,
