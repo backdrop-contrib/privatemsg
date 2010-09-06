@@ -702,7 +702,7 @@ function privatemsg_filter_query_privatemsg_list_alter($query) {
  * Hook into the view messages page to add a form for tagging purposes.
  */
 function privatemsg_filter_page_alter(&$page) {
-  if (isset($page['content']['system_main']['messages']) && count($page['content']['system_main']['messages']) && privatemsg_user_access('tag private messages')) {
+  if (isset($page['content']['system_main']['messages']) && count($page['content']['system_main']['messages']) && isset($page['content']['system_main']['participants']) && privatemsg_user_access('tag private messages')) {
     $page['content']['system_main']['tags'] = drupal_get_form('privatemsg_filter_form');
     $page['content']['system_main']['tags']['#weight'] = variable_get('privatemsg_filter_tagfield_weight', 10);
   }
