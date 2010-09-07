@@ -2144,16 +2144,11 @@ function privatemsg_node_view($node, $view_mode) {
   $types = array_filter(variable_get('privatemsg_link_node_types', array()));
   $url = privatemsg_get_link(_privatemsg_user_load($node->uid));
   if (in_array($node->type, $types) && !empty($url) && ($view_mode == 'full' || (variable_get('privatemsg_display_on_teaser', 1) && $view_mode == 'teaser'))) {
-    $links['privatemsg_link'] = array(
+    $node->content['links']['#links']['privatemsg_link'] = array(
       'title' => t('Send author a message'),
       'href' => $url . '/' . t('Message regarding @node', array('@node' => $node->title)),
       'query' => drupal_get_destination(),
-      'attributes' => array('class' => 'privatemsg-send-link privatemsg-send-link-comment'),
-    );
-    $node->content['links']['privatemsg'] = array(
-      '#theme' => 'links',
-      '#links' => $links,
-      '#attributes' => array('class' => array('privatemsg-send-link', 'privatemsg-send-link-node', 'links', 'inline')),
+      'attributes' => array('class' => 'privatemsg-send-link privatemsg-send-link-node'),
     );
   }
 }
