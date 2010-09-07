@@ -64,7 +64,7 @@ class PrivatemsgBlockUserCase extends DrupalWebTestCase {
     // one in the list and set index based on that.
     $rows = $this->xpath('//tbody/tr');
 
-    $index = (int) !($user2->name == (string)$rows[0]->td[0]->span);
+    $index = (int) !($user2->name == (string)$rows[0]->td[0]->a);
     $this->clickLink(t('unblock'), $index);
     $this->drupalPost(NULL, array(), t('Unblock @user', array('@user' => $user2->name)));
     $this->assertText(t('@user is now allowed to send you new messages.', array('@user' => $user2->name)), t('Confirmation message displayed'));
