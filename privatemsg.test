@@ -996,7 +996,7 @@ class PrivatemsgLinksTestCase extends DrupalWebTestCase {
     // Enable block.
     $this->drupalLogin($admin);
     $blocks = array(
-      'privatemsg_privatemsg-menu[region]' => 'sidebar_second',
+      'blocks[privatemsg_privatemsg-menu][region]' => 'sidebar_second',
     );
     $this->drupalPost('admin/structure/block', $blocks, t('Save blocks'));
 
@@ -1035,7 +1035,7 @@ class PrivatemsgLinksTestCase extends DrupalWebTestCase {
     // Enable block.
     $this->drupalLogin($admin);
     $blocks = array(
-      'privatemsg_privatemsg-new[region]' => 'sidebar_second',
+      'blocks[privatemsg_privatemsg-new][region]' => 'sidebar_second',
     );
     $this->drupalPost('admin/structure/block', $blocks, t('Save blocks'));
 
