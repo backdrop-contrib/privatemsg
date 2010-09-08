@@ -52,6 +52,10 @@ function privatemsg_permission() {
       'title' => t('Reply to private messages'),
       'description' => t('Allows to reply to private messages but not send new ones. Note that the write new private messages permission includes replies.')
     ),
+    'use tokens in privatemsg' => array(
+      'title' => t('Use tokens in private messages'),
+      'description' => t("Allows user to use available tokens when sending private messages.")
+    ),
   );
 }
 
@@ -508,7 +512,10 @@ function privatemsg_thread_load($thread_id, $account = NULL, $start = NULL, $use
         // General data, assume subject is the same for all messages of that thread.
         $thread['user'] = $account;
         $message = current($thread['messages']);
-        $thread['subject'] = $message->subject;
+        $thread['subject'] = $thread['subject-original'] = $message->subject;
+        if ($message->has_tokens) {
+          $thread['subject'] = privatemsg_token_replace($thread['subject'], array('privatemsg_message' => $message), array('sanitize' => TRUE, 'privatemsg-show-span' => FALSE));
+        }
       }
       $threads[$account->uid][$thread_id] = $thread;
     }
@@ -679,6 +686,12 @@ function privatemsg_preprocess_privatemsg_view(&$vars) {
       '#weight' => -4,
     ),
   );
+
+  if ($message->has_tokens) {
+    // Replace tokens including option to add a notice if the user is not a
+    // recipient.
+    $message->content['body']['#markup'] = privatemsg_token_replace($message->content['body']['#markup'], array('privatemsg_message' => $message), array('privatemsg-token-notice' => TRUE, 'sanitize' => TRUE));
+  }
 
   // Build fields content.
   field_attach_prepare_view('privatemsg_message', array($vars['mid'] => $message), 'message');
@@ -911,6 +924,7 @@ function privatemsg_sql_list($account, $argument = 'list') {
   $query->addField('pmi', 'thread_id');
   $query->addExpression('MIN(pm.subject)', 'subject');
   $query->addExpression('MAX(pm.timestamp)', 'last_updated');
+  $query->addExpression('MAX(pm.has_tokens)', 'has_tokens');
   $query->addExpression('SUM(pmi.is_new)', 'is_new');
 
   // Load enabled columns
@@ -955,7 +969,7 @@ function privatemsg_sql_list($account, $argument = 'list') {
  */
 function privatemsg_sql_load($pmids, $account = NULL) {
   $query = db_select('pm_message', 'pm')
-    ->fields('pm', array('mid', 'author', 'subject', 'body', 'timestamp', 'format'))
+    ->fields('pm', array('mid', 'author', 'subject', 'body', 'timestamp', 'format', 'has_tokens'))
     ->fields('pmi', array('is_new', 'thread_id'))
     ->condition('pmi.mid', $pmids)
     ->orderBy('pm.timestamp', 'ASC')
@@ -1625,6 +1639,9 @@ function _privatemsg_validate_message(&$message, $form = FALSE, $display_block_m
     }
   }
 
+  // Verify if message has tokens and user is allowed to use them.
+  $message->has_tokens = privatemsg_user_access('use tokens in privatemsg', $message->author) && count(token_scan($message->subject . $message->body));
+
   $messages += module_invoke_all('privatemsg_message_validate', $message, $form);
   // Check if there are errors in $messages or if $form is TRUE, there are form errors.
   $success = empty($messages['error']) || ($form && count((array)form_get_errors()) > 0);
@@ -1675,6 +1692,7 @@ function _privatemsg_send($message) {
     $args['body'] = $message->body;
     $args['format'] = $message->format;
     $args['timestamp'] = $message->timestamp;
+    $args['has_tokens'] = (int)$message->has_tokens;
     $mid = db_insert('pm_message')
       ->fields($args)
       ->execute();
@@ -2533,4 +2551,186 @@ function privatemsg_file_download_access($field, $entity_type, $entity) {
     // Check if user is a recipient of this message.
     return (bool)db_query_range("SELECT 1 FROM {pm_index} WHERE recipient = :uid AND type IN ('user', 'hidden') AND mid = :mid", 0, 1, array(':uid' => $user->uid, ':mid' => $entity->mid))->fetchField();
   }
+}
+
+/**
+ * Implements hook_token_info().
+ */
+function privatemsg_token_info() {
+  $type = array(
+    'name' => t('Private message'),
+    'description' => t('Tokens related to private messages.'),
+    'needs-data' => 'privatemsg_message',
+  );
+
+  // Core tokens for nodes.
+  $message['mid'] = array(
+    'name' => t("Message ID"),
+    'description' => t("The unique ID of the message."),
+  );
+  $message['subject'] = array(
+    'name' => t("Subject"),
+    'description' => t("The subject of the message."),
+  );
+
+  // Chained tokens for nodes.
+  $message['sent'] = array(
+    'name' => t("Date created"),
+    'description' => t("The date the message was sent."),
+    'type' => 'date',
+  );
+  $message['author'] = array(
+    'name' => t("Author"),
+    'description' => t("The author of the message."),
+    'type' => 'user',
+  );
+  $message['recipient'] = array(
+    'name' => t("Recipient"),
+    'description' => t("The recipient of the message. Tokens are only replaced when the user viewing the message is a recipient."),
+    'type' => 'user',
+  );
+
+  return array(
+    'types' => array('privatemsg_message' => $type),
+    'tokens' => array('privatemsg_message' => $message),
+  );
+}
+
+/**
+ * Implements hook_tokens().
+ */
+function privatemsg_tokens($type, $tokens, array $data = array(), array $options = array()) {
+
+  global $user;
+  if (isset($options['language'])) {
+    $url_options['language'] = $options['language'];
+    $language_code = $options['language']->language;
+  }
+  else {
+    $language_code = NULL;
+  }
+
+  $sanitize = !empty($options['sanitize']);
+  $replacements = array();
+  if ($type == 'privatemsg_message' && !empty($data['privatemsg_message'])) {
+    $message = $data['privatemsg_message'];
+
+    foreach ($tokens as $name => $original) {
+      switch ($name) {
+        // Simple key values on the node.
+        case 'mid':
+          $replacements[$original] = $message->mid;
+          break;
+
+        case 'subject':
+          // Avoid recursion.
+          if (empty($options['privatemsg_recursion'])) {
+            $subject = privatemsg_token_replace($message->subject, $data, $options + array('privatemsg_recursion' => 1));
+          }
+          else {
+            $subject = $message->subject;
+          }
+          $replacements[$original] = $sanitize ? check_plain($subject) : $subject;
+          break;
+
+        // Default values for the chained tokens handled below.
+        case 'author':
+          $replacements[$original] = $sanitize ? filter_xss($message->author->name) : $message->author->name;
+          break;
+
+        case 'recipient':
+            $replacements[$original] = $sanitize ? filter_xss($user->name) : $user->name;
+          break;
+
+        case 'sent':
+          $replacements[$original] = format_date($message->timestamp, 'medium', '', NULL, $language_code);
+          break;
+      }
+    }
+
+    if ($author_tokens = token_find_with_prefix($tokens, 'author')) {
+      $replacements += token_generate('user', $author_tokens, array('user' => $message->author), $options);
+    }
+
+    if ($recipient_tokens = token_find_with_prefix($tokens, 'recipient')) {
+      $replacements += token_generate('user', $recipient_tokens, array('user' => $user), $options);
+    }
+
+    if ($sent_tokens = token_find_with_prefix($tokens, 'sent')) {
+      $replacements += token_generate('date', $sent_tokens, array('date' => $message->timestamp), $options);
+    }
+  }
+
+  return $replacements;
+}
+
+/**
+ * Wrapper function for token_replace() that does not replace the tokens if the
+ * user viewing the message is not a recipient.
+ */
+function privatemsg_token_replace($text, $data, array $options = array()) {
+  global $user;
+
+  if (isset($options['language'])) {
+    $url_options['language'] = $options['language'];
+    $language_code = $options['language']->language;
+  }
+  else {
+    $language_code = NULL;
+  }
+
+  $message = $data['privatemsg_message'];
+  $show_span = !isset($options['privatemsg-show-span']) || $options['privatemsg-show-span'];
+
+  // We do not replace tokens if the user viewing the message is the author or
+  // not a real recipient to avoid confusion.
+  $sql = "SELECT 1 FROM {pm_index} WHERE recipient = :uid AND type IN ('hidden', 'user') AND mid = :mid";
+  $args = array(':uid' => $user->uid, ':mid' => $message->mid);
+  if ($message->author->uid == $user->uid || !db_query($sql, $args)->fetchField()) {
+    // Get all tokens of the message.
+    $tokens = token_scan($text);
+
+    if (!empty($tokens)) {
+      // Let token_replace() replace all tokens.
+      $replaced_text = token_replace($text, $data, $options);
+      $replacements = array();
+
+      // Loop over the found tokens.
+      foreach ($tokens as $type => $tokens) {
+        // token_replace() returns tokens separated by type.
+        foreach ($tokens as $name => $original) {
+          // If the token still exists in the replaced text, it is not valid.
+          if (strpos($replaced_text, $original) !== FALSE) {
+            $token = t('INVALID TOKEN @token', array('@token' => $original), array('langcode' => $language_code));
+            if (!$show_span) {
+              $replacements[$original] = '< ' . $token . ' >';
+            }
+            else {
+              $replacements[$original] = '<span class="privatemsg-token-invalid">&lt; ' . $token . ' &gt;</span>';
+            }
+          }
+          else {
+            $token = t('Token @token', array('@token' => $original), array('langcode' => $language_code));
+            if (!$show_span) {
+              $replacements[$original] = '< ' . $token . ' >';
+            }
+            else {
+              $replacements[$original] = '<span class="privatemsg-token-valid">&lt; ' . $token . ' &gt;</span>';
+            }
+          }
+        }
+      }
+      $text = str_replace(array_keys($replacements), $replacements, $text);
+
+      // If there are any tokens, add a notice that the tokens will be replaced
+      // for the recipient.
+      if (!empty($options['privatemsg-token-notice'])) {
+        $text .= '<p class="privatemsg-token-notice">' . t('Note: Valid tokens will be replaced when a recipient is reading this message.') . '</p>';
+      }
+    }
+    return $text;
+  }
+
+  // If the user is a recipient, use default token_replace() function.
+  return token_replace($text, $data, $options);
 }

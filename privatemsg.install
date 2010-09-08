@@ -101,6 +101,14 @@ function privatemsg_schema() {
         'not null'      => TRUE,
         'unsigned'      => TRUE,
       ),
+      'has_tokens'     => array(
+        'description'   => 'Indicates if the message has tokens',
+        'type'          => 'int',
+        'size'          => 'small',
+        'not null'      => TRUE,
+        'unsigned'      => TRUE,
+        'default'       => 0,
+      ),
     ),
     'primary key'     => array('mid'),
     'indexes'         => array(
@@ -140,4 +148,18 @@ function privatemsg_uninstall() {
   variable_del('privatemsg_display_on_teaser');
   variable_del('privatemsg_no_messages_notification');
   variable_del('privatemsg_display_on_comments');
+}
+
+/**
+ * Add has_tokens field to indicate if a message is using tokens.
+ */
+function privatemsg_update_7000() {
+  db_add_field('pm_message', 'has_tokens', array(
+    'description'   => 'Indicates if the message has tokens',
+    'type'          => 'int',
+    'size'          => 'small',
+    'not null'      => TRUE,
+    'unsigned'      => TRUE,
+    'default'       => 0,
+  ));
 }

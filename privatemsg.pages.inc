@@ -305,9 +305,20 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
     '#access'   => (privatemsg_user_access('write privatemsg') || privatemsg_user_access('reply only privatemsg')) && (!empty($recipients_string) || !$thread_id),
   );
   if (isset($form_state['privatemsg_preview'])) {
+
+    $preview_subject = '';
+    // Only display subject on preview for new messages.
+    if (empty($form_state['validate_built_message']->thread_id)) {
+      $preview_subject = check_plain($form_state['validate_built_message']->subject);
+      // If message has tokens, replace them.
+      if ($form_state['validate_built_message']->has_tokens) {
+        $preview_subject = privatemsg_token_replace($preview_subject, array('privatemsg_message' => $form_state['validate_built_message']), array('sanitize' => TRUE, 'privatemsg-show-span' => FALSE));
+      }
+    }
+
     $form['message_header'] = array(
       '#type' => 'fieldset',
-      '#title' => empty($form_state['validate_built_message']->thread_id) ? check_plain($form_state['validate_built_message']->subject) : t('Preview'),
+      '#title' => !empty($preview_subject) ? $preview_subject : t('Preview'),
       '#attributes' => array('class' => array('preview')),
       '#weight' => -20,
     );
@@ -362,6 +373,13 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
     '#resizable'          => TRUE,
     '#format'             => isset($format) ? $format : NULL,
   );
+  if (privatemsg_user_access('use tokens in privatemsg') && module_exists('token')) {
+    $form['token'] = array(
+      '#theme' => 'token_tree',
+      '#weight' => 99,
+      '#token_types' => array('privatemsg_message'),
+    );
+  }
   $form['actions'] = array('#type' => 'actions');
   $form['actions']['preview'] = array(
     '#type'               => 'submit',
@@ -647,7 +665,7 @@ function privatemsg_view($thread) {
 
   // Display the reply form if user is allowed to use it.
   if (privatemsg_user_access('write privatemsg') || privatemsg_user_access('reply only privatemsg')) {
-    $content['reply'] = drupal_get_form('privatemsg_new', $thread['participants'], $thread['subject'], $thread['thread_id'], $thread['read_all']);
+    $content['reply'] = drupal_get_form('privatemsg_new', $thread['participants'], $thread['subject-original'], $thread['thread_id'], $thread['read_all']);
     $content['reply']['#weight'] = 5;
   }
   // Check after calling the privatemsg_new form so that this message is only

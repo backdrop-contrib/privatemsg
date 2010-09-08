@@ -99,7 +99,12 @@ function theme_privatemsg_list_field__subject($variables) {
     $is_new = theme('mark', array('type' => MARK_NEW));
     $options['fragment'] = 'new';
   }
-  $field['data'] = l($thread['subject'], 'messages/view/' . $thread['thread_id'], $options) . $is_new;
+  $subject = $thread['subject'];
+  if ($thread['has_tokens']) {
+    $message = privatemsg_message_load($thread['thread_id']);
+    $subject = privatemsg_token_replace($subject, array('privatemsg_message' => $message), array('sanitize' => TRUE, 'privatemsg-show-span' => FALSE));
+  }
+  $field['data'] = l($subject, 'messages/view/' . $thread['thread_id'], $options) . $is_new;
   $field['class'][] = 'privatemsg-list-subject';
   return $field;
 }

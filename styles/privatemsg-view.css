@@ -62,3 +62,16 @@
   padding-left: 10px;
   width: 300px;
 }
+
+p.privatemsg-token-notice {
+  font-size: small;
+  font-style: italic;
+}
+
+span.privatemsg-token-invalid {
+  color: red;
+}
+
+span.privatemsg-token-valid {
+  font-weight: bold;
+}
