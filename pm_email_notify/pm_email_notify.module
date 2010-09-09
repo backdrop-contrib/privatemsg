@@ -110,20 +110,16 @@ function _pm_email_notify_default_body() {
  * Implements hook_form_alter().
  */
 function pm_email_notify_form_alter(&$form, &$form_state, $form_id) {
-  // We have to use user_acces() because privatemsg_user_access() would
-  // return FALSE when privatemsg is disabled.
   if (($form_id == 'user_register_form' || $form_id == 'user_profile_form') && $form['#user_category'] == 'account' && privatemsg_user_access('read privatemsg')) {
-    $form['enable_pm_mail'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Privatemsg e-mail notification'),
-      '#collapsible' => TRUE,
-      '#collapsed' => FALSE,
-      '#weight' => 10,
-    );
-    $form['enable_pm_mail']['pm_send_notifications'] = array(
+    $form['privatemsg']['pm_send_notifications'] = array(
       '#type' => 'checkbox',
       '#title' => t('Receive email notification for incoming private messages'),
       '#default_value' => _pm_email_notify_is_enabled($form['#user']->uid),
+      '#states' => array(
+        'visible' => array(
+          ':input[name="pm_enable"]' => array('checked' => TRUE),
+        ),
+      ),
     );
   }
 }
