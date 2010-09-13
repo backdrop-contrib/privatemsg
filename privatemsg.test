@@ -817,10 +817,10 @@ class PrivatemsgFieldsTestCase extends DrupalWebTestCase {
 
     // Create a new field.
     $edit = array(
-      '_add_new_field[label]' => $label = $this->randomName(),
-      '_add_new_field[field_name]' => $name = strtolower($this->randomName()),
-      '_add_new_field[type]' => 'text',
-      '_add_new_field[widget_type]' => 'text_textfield',
+      'fields[_add_new_field][label]' => $label = $this->randomName(),
+      'fields[_add_new_field][field_name]' => $name = strtolower($this->randomName()),
+      'fields[_add_new_field][type]' => 'text',
+      'fields[_add_new_field][widget_type]' => 'text_textfield',
     );
     $this->drupalPost('admin/config/messaging/privatemsg/fields', $edit, t('Save'));
     $this->drupalPost(NULL, array(), t('Save field settings'));
@@ -873,10 +873,10 @@ class PrivatemsgFieldsTestCase extends DrupalWebTestCase {
 
     // Create a new field.
     $edit = array(
-      '_add_new_field[label]' => $label = $this->randomName(),
-      '_add_new_field[field_name]' => $name = strtolower($this->randomName()),
-      '_add_new_field[type]' => 'image',
-      '_add_new_field[widget_type]' => 'image_image',
+      'fields[_add_new_field][label]' => $label = $this->randomName(),
+      'fields[_add_new_field][field_name]' => $name = strtolower($this->randomName()),
+      'fields[_add_new_field][type]' => 'image',
+      'fields[_add_new_field][widget_type]' => 'image_image',
     );
     $this->drupalPost('admin/config/messaging/privatemsg/fields', $edit, t('Save'));
     $this->drupalPost(NULL, array(), t('Save field settings'));
