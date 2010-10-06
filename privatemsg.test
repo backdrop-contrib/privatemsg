@@ -201,7 +201,7 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
    */
   function testWriteReplyPrivatemsg() {
     // Create a author and two recipients.
-    $author     = $this->drupalCreateUser(array('write privatemsg', filter_permission_name(filter_format_load(3))));
+    $author     = $this->drupalCreateUser(array('write privatemsg', 'select text format for privatemsg', filter_permission_name(filter_format_load(3))));
     $recipient  = $this->drupalCreateUser(array('read privatemsg'));
     $recipient2  = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg'));
 
@@ -728,6 +728,9 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
   function testPreview() {
     $user = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg'));
 
+    // Enable preview button.
+    variable_set('privatemsg_display_preview_button', TRUE);
+
     $message = array(
       'recipient' => $user->name,
       'subject' => $this->randomName(),
@@ -826,6 +829,9 @@ class PrivatemsgFieldsTestCase extends DrupalWebTestCase {
     $this->drupalPost(NULL, array(), t('Save field settings'));
     $this->drupalPost(NULL, array(), t('Save settings'));
 
+    // Enable preview button.
+    variable_set('privatemsg_display_preview_button', TRUE);
+
     // Preview message.
     $message = array(
       'recipient' => $user->name,
@@ -881,6 +887,9 @@ class PrivatemsgFieldsTestCase extends DrupalWebTestCase {
     $this->drupalPost('admin/config/messaging/privatemsg/fields', $edit, t('Save'));
     $this->drupalPost(NULL, array(), t('Save field settings'));
     $this->drupalPost(NULL, array(), t('Save settings'));
+
+    // Enable preview button.
+    variable_set('privatemsg_display_preview_button', TRUE);
 
     // Preview message.
     $message = array(
@@ -1088,6 +1097,9 @@ class PrivatemsgTokenTestCase extends DrupalWebTestCase {
     $recipient2 = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
 
     $this->drupalLogin($author);
+
+    // Enable preview button.
+    variable_set('privatemsg_display_preview_button', TRUE);
 
     // Create message with tokens and preview it.
     $edit = array(

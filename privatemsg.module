@@ -56,6 +56,10 @@ function privatemsg_permission() {
       'title' => t('Use tokens in private messages'),
       'description' => t("Allows user to use available tokens when sending private messages.")
     ),
+    'select text format for privatemsg' => array(
+      'title' => t('Select text format for private messages'),
+      'description' => t('Allows to choose the text format when sending private messages. Otherwise, the default is used.'),
+    ),
   );
 }
 

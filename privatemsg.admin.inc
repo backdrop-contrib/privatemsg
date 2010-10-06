@@ -21,6 +21,7 @@ function privatemsg_admin_settings() {
     '#title'         => t('Private message display template'),
     '#default_value' => variable_get('private_message_view_template', 'privatemsg-view'),
     '#options'       => privatemsg_view_options(),
+    '#weight'        => -10,
   );
   $form['display_settings']['privatemsg_display_loginmessage'] = array(
     '#type' => 'checkbox',
@@ -49,6 +50,13 @@ function privatemsg_admin_settings() {
     '#default_value' => variable_get('privatemsg_default_redirect_reply', FALSE),
     '#description' => t('Also redirect to the defined page when replying.'),
     '#weight'      => 1,
+  );
+  $form['display_settings']['privatemsg_display_preview_button'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Show preview button on compose form'),
+    '#description' => t('If checked, displays a preview button when sending new messages.'),
+    '#default_value' => variable_get('privatemsg_display_preview_button', FALSE),
+    '#weight' => 5,
   );
 
   $form['flush_deleted'] = array(

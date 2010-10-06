@@ -372,6 +372,7 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
     '#default_value'      => $body,
     '#resizable'          => TRUE,
     '#format'             => isset($format) ? $format : NULL,
+    '#after_build'        => array('privatemsg_check_format_access'),
   );
   if (privatemsg_user_access('use tokens in privatemsg') && module_exists('token')) {
     $form['token'] = array(
@@ -381,12 +382,14 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
     );
   }
   $form['actions'] = array('#type' => 'actions');
-  $form['actions']['preview'] = array(
-    '#type'               => 'submit',
-    '#value'              => t('Preview message'),
-    '#submit'             => array('privatemsg_new_preview'),
-    '#weight'             => 48,
-  );
+  if (variable_get('privatemsg_display_preview_button', FALSE)) {
+    $form['actions']['preview'] = array(
+      '#type'               => 'submit',
+      '#value'              => t('Preview message'),
+      '#submit'             => array('privatemsg_new_preview'),
+      '#weight'             => 48,
+    );
+  }
   $form['actions']['submit'] = array(
     '#type'               => 'submit',
     '#value'              => t('Send message'),
@@ -435,6 +438,16 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
   }
   field_attach_form('privatemsg_message', $message, $form, $form_state);
   return $form;
+}
+
+/**
+ * After build callback; Hide format widget if user doesn't have permission.
+ */
+function privatemsg_check_format_access($element) {
+  if (isset($element['format'])) {
+    $element['format']['#access'] = privatemsg_user_access('select text format for privatemsg');
+  }
+  return $element;
 }
 
 function privatemsg_new_validate($form, &$form_state) {
