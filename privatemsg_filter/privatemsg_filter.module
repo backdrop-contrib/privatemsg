@@ -280,25 +280,33 @@ function privatemsg_filter_remove_tags($threads, $tag_ids = NULL, $account = NUL
 
 function privatemsg_filter_get_filter($account) {
   $filter = array();
-  if (isset($_GET['tags'])) {
-    $_GET['tags'] = urldecode($_GET['tags']);
-    $tag_data = privatemsg_filter_get_tags_data($account);
-    foreach (explode(',', $_GET['tags']) as $tag) {
-      if (isset($tag_data[$tag])) {
-        $filter['tags'][$tag] = $tag;
-      }
-      elseif (in_array($tag, $tag_data)) {
-        $filter['tags'][array_search($tag, $tag_data)] = array_search($tag, $tag_data);
+  // Filtering by tags is either allowed if the user can use tags or he can
+  // filter.
+  if (privatemsg_user_access('filter private messages') || privatemsg_user_access('tag private messages')) {
+    if (isset($_GET['tags'])) {
+      $_GET['tags'] = urldecode($_GET['tags']);
+      $tag_data = privatemsg_filter_get_tags_data($account);
+      foreach (explode(',', $_GET['tags']) as $tag) {
+        if (isset($tag_data[$tag])) {
+          $filter['tags'][$tag] = $tag;
+        }
+        elseif (in_array($tag, $tag_data)) {
+          $filter['tags'][array_search($tag, $tag_data)] = array_search($tag, $tag_data);
+        }
       }
     }
   }
 
-  if (isset($_GET['author'])) {
-    list($filter['author']) = _privatemsg_parse_userstring($_GET['author']);
-  }
+  // Users can only use the text search or search by author if they have the
+  // necessary permission.
+  if (privatemsg_user_access('filter private messages')) {
+    if (isset($_GET['author'])) {
+      list($filter['author']) = _privatemsg_parse_userstring($_GET['author']);
+    }
 
-  if (isset($_GET['search'])) {
-    $filter['search'] = $_GET['search'];
+    if (isset($_GET['search'])) {
+      $filter['search'] = $_GET['search'];
+    }
   }
 
   if(!empty($filter)) {
@@ -332,6 +340,10 @@ function privatemsg_filter_dropdown(&$form_state, $account) {
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
     '#weight' => -20,
+    // The form is always called when search arguments are passed in, even if
+    // they don't have access to it. This is necessary to process the search
+    // query. But we don't want to show them the form.
+    '#access' => privatemsg_user_access('filter private messages'),
   );
   $form['filter']['search'] = array(
     '#type' => 'textfield',
@@ -376,6 +388,10 @@ function privatemsg_filter_dropdown(&$form_state, $account) {
   );
 
   if ($filter = privatemsg_filter_get_filter($account)) {
+    // Display a message if the user will not see the filter form.
+    if (!empty($filter['tags']) && !empty($_GET['tags']) && !privatemsg_user_access('filter private messages')) {
+      drupal_set_message(t('Messages tagged with %tags are currently displayed. <a href="@remove_filter_url">Click here to remove this filter</a>.', array('%tags' => $_GET['tags'], '@remove_filter_url' => url($_GET['q']))));
+    }
     privatemsg_filter_dropdown_set_active($form, $filter);
   }
 
@@ -441,8 +457,10 @@ function privatemsg_filter_dropdown_submit($form, &$form_state) {
   $form_state['redirect'] = $_GET['q'];
 }
 
-function privatemsg_filter_create_get_query($filter)
-{
+/**
+ * Creates a GET query based on the selected filters.
+ */
+function privatemsg_filter_create_get_query($filter) {
   $query = array();
   if (isset($filter['tags']) && !empty($filter['tags'])) {
     $ids = array();
@@ -455,7 +473,7 @@ function privatemsg_filter_create_get_query($filter)
       }
     }
     $sql = 'SELECT pmt.tag FROM {pm_tags} pmt WHERE pmt.tag_id IN (:tags)';
-    $query['tags'] = db_query($sql, array(':tags' => $filter['tags']))->fetchAll();
+    $query['tags'] = db_query($sql, array(':tags' => $filter['tags']))->fetchCol();
 
     if (isset($query['tags'])) {
       $query['tags'] = implode(',', $query['tags']);
@@ -467,7 +485,7 @@ function privatemsg_filter_create_get_query($filter)
       if (is_object($author) && isset($author->uid) && isset($author->name)) {
         $query['author'][] = $author->name;
       }
-      elseif ($author_obj = _privatemsg_user_load($author)) {
+      elseif (is_int($author) && $author_obj = _privatemsg_user_load($author)) {
         $query['author'][] = $author_obj->name;
       }
     }
@@ -492,7 +510,7 @@ function privatemsg_filter_form_privatemsg_list_alter(&$form, $form_state) {
   }
 
   $fields = array_filter(variable_get('privatemsg_display_fields', array('participants')));
-  if (in_array('tags', $fields) && !empty($form['list']['#options'])) {
+  if (privatemsg_user_access('tag private messages') && in_array('tags', $fields) && !empty($form['list']['#options'])) {
     // Load thread id's of the current list.
     $threads = array_keys($form['list']['#options']);
 
@@ -576,12 +594,14 @@ function privatemsg_filter_archive_submit($form, &$form_state) {
  * @see theme_privatemsg_list_header()
  */
 function theme_privatemsg_list_header__tags() {
-   return array(
-    'data' => t('Tags'),
-    'key' => 'tags',
-    'class' => 'privatemsg-header-tags',
-    '#weight' => -42,
-  );
+  if (privatemsg_user_access('tag private messages')) {
+    return array(
+      'data' => t('Tags'),
+      'key' => 'tags',
+      'class' => 'privatemsg-header-tags',
+      '#weight' => -42,
+    );
+  }
 }
 
 
@@ -658,9 +678,13 @@ function privatemsg_filter_query_privatemsg_list_alter($query) {
   $account = $query->getMetaData('arg_1');
   $argument = $query->getMetaData('arg_2');
 
+  // Add all conditions to the count query too.
+  $count_query = $query->getCountQuery();
+
   // Check if its a filtered view.
   if ($argument == 'sent') {
     $query->condition('pm.author', $account->uid);
+    $count_query->condition('pm.author', $account->uid);
   }
   $filter = privatemsg_filter_get_filter($account);
   if ($argument == 'inbox') {
@@ -673,6 +697,8 @@ function privatemsg_filter_query_privatemsg_list_alter($query) {
       foreach ($filter['tags'] as $tag) {
         $alias = $query->join('pm_tags_index', 'pmti',"%alias.thread_id = pmi.thread_id AND %alias.uid = pmi.recipient AND pmi.type IN ('user', 'hidden')");
         $query->condition($alias . '.tag_id', $tag);
+        $alias = $count_query->join('pm_tags_index', 'pmti',"%alias.thread_id = pmi.thread_id AND %alias.uid = pmi.recipient AND pmi.type IN ('user', 'hidden')");
+        $count_query->condition($alias . '.tag_id', $tag);
       }
     }
 
@@ -681,18 +707,24 @@ function privatemsg_filter_query_privatemsg_list_alter($query) {
         $alias = $query->join('pm_index', 'pmi', '%alias.mid = pm.mid');
         $query->condition($alias . '.recipient', $author->uid);
         $query->condition($alias . '.type', 'user');
+        $alias = $count_query->join('pm_index', 'pmi', '%alias.mid = pm.mid');
+        $count_query->condition($alias . '.recipient', $author->uid);
+        $count_query->condition($alias . '.type', 'user');
       }
     }
 
     if (!empty($filter['search'])) {
       if (variable_get('privatemsg_filter_searchbody', FALSE)) {
-        $query->condition(db_or()
-          ->condition('pm.subject', '%'. $filter['search'] .'%', 'LIKE')
-          ->condition('pm.body', '%'. $filter['search'] .'%', 'LIKE')
-        );
+        $search = db_or()
+          ->condition('pm.subject', '%' . $filter['search'] . '%', 'LIKE')
+          ->condition('pm.body', '%' . $filter['search'] . '%', 'LIKE');
+        // Clone the condition so that they are both compiled.
+        $query->condition(clone $search);
+        $count_query->condition($search);
       }
       else {
         $query->condition('pm.subject', '%'. $filter['search'] .'%', 'LIKE');
+        $count_query->condition('pm.subject', '%'. $filter['search'] .'%', 'LIKE');
       }
     }
   }
