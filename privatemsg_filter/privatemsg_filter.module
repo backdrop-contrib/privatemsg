@@ -114,8 +114,8 @@ function privatemsg_filter_menu() {
     'weight'           => -12,
     'menu_name'        => 'user-menu',
   );
-  $items['messages/filter/user-name-autocomplete'] = array(
-    'page callback'    => 'privatemsg_user_name_autocomplete',
+  $items['messages/filter/autocomplete'] = array(
+    'page callback'    => 'privatemsg_autocomplete',
     'file'             => 'privatemsg.pages.inc',
     'file path'        => drupal_get_path('module', 'privatemsg'),
     'access callback'  => 'privatemsg_user_access',
@@ -345,7 +345,7 @@ function privatemsg_filter_dropdown(&$form_state, $account) {
     '#description'        => t('Separate multiple names with commas.'),
     '#weight'             => -5,
     '#size'               => 50,
-    '#autocomplete_path'  => 'messages/filter/user-name-autocomplete',
+    '#autocomplete_path'  => 'messages/filter/autocomplete',
   );
 
   // Only show form if the user has some messages tagged.

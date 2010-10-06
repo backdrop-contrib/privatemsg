@@ -274,7 +274,7 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
     $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => implode(', ', array($recipient->name, $recipient2->name)))), 'Message sent confirmation displayed.');
 
     $this->drupalPost('messages/new', $editnone, t('Send message'));
-    $this->assertText(t('You must include at least one valid recipient.'), 'Message was not sent.');
+    $this->assertText(t('To field is required.'), 'Message was not sent.');
 
     $this->drupalPost('messages/new', $editinvalid, t('Send message'));
     $this->assertText(t('You must include at least one valid recipient.'), 'Message was not sent.');
@@ -756,22 +756,22 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
     user_save($user2, array('name' => 'aaab'));
     user_save($user3, array('name' => 'bbbb'));
 
-    $json = $this->drupalGet('messages/user-name-autocomplete/aa');
+    $json = $this->drupalGet('messages/autocomplete/aa');
     $autocomplete = (array)json_decode($json);
     $this->assertEqual(count($autocomplete), 2, t('Autocomplete object contains two suggestions.'));
     $this->assertEqual($autocomplete['aaaa, '], 'aaaa');
     $this->assertEqual($autocomplete['aaab, '], 'aaab');
 
-    $json = $this->drupalGet('messages/user-name-autocomplete/bb');
+    $json = $this->drupalGet('messages/autocomplete/bb');
     $autocomplete = (array)json_decode($json);
     $this->assertEqual(count($autocomplete), 1, t('Autocomplete object contains one suggestion.'));
     $this->assertEqual($autocomplete['bbbb, '], 'bbbb');
 
-    $json = $this->drupalGet('messages/user-name-autocomplete/cc');
+    $json = $this->drupalGet('messages/autocomplete/cc');
     $autocomplete = (array)json_decode($json);
     $this->assertEqual(count($autocomplete), 0, t('Autocomplete object contains no suggestions.'));
 
-    $json = $this->drupalGet('messages/user-name-autocomplete/aaaa, a');
+    $json = $this->drupalGet('messages/autocomplete/aaaa, a');
     $autocomplete = (array)json_decode($json);
     $this->assertEqual(count($autocomplete), 1, t('Autocomplete object contains one suggestion.'));
     $this->assertEqual($autocomplete['aaaa, aaab, '], 'aaab');

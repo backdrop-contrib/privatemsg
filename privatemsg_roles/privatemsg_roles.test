@@ -159,9 +159,9 @@ class PrivatemsgRolesTestCase extends DrupalWebTestCase {
 
     // Verify autocomplete feature.
     $role_name = user_role_load($user1->roles[5])->name;
-    $json = $this->drupalGet('messages/user-name-autocomplete/' . drupal_substr($role_name, 0, 2));
+    $json = $this->drupalGet('messages/autocomplete/' . drupal_substr($role_name, 0, 2));
     $autocomplete = (array)json_decode($json);
-    $this->assertEqual($autocomplete[$role_name . ' [role], '], $role_name . ' [role]');
+    $this->assertEqual($autocomplete[$role_name . ', '], $role_name);
 
     // Access the form through a url that pre-fills the recipient field.
     $this->drupalGet('messages/new/role_5');

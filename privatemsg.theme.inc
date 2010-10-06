@@ -252,5 +252,28 @@ function theme_privatemsg_new_block($count) {
 }
 
 /**
+ * Used to theme and display user recipients.
+ *
+ * Wrapper for theme_username() with a few additional options.
+ */
+function theme_privatemsg_username($variables) {
+  $recipient = $variables['recipient'];
+  $options = $variables['options'];
+  if (!isset($recipient->uid)) {
+    $recipient->uid = $recipient->recipient;
+  }
+  if (!empty($options['plain'])) {
+    $name = $recipient->name;
+    if (!empty($options['unique'])) {
+      $name .= ' [user]';
+    }
+    return $name;
+  }
+  else {
+    return theme('username', array('account' => $recipient));
+  }
+}
+
+/**
  * @}
  */

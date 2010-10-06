@@ -346,7 +346,7 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
       '#required'           => TRUE,
       '#weight'             => -10,
       '#size'               => 50,
-      '#autocomplete_path'  => 'messages/user-name-autocomplete',
+      '#autocomplete_path'  => 'messages/autocomplete',
       // Do not hardcode #maxlength, make it configurable by number of recipients, not their name length.
     );
   }
@@ -452,11 +452,43 @@ function privatemsg_new_validate($form, &$form_state) {
   }
   // Only parse the user string for a new thread.
   if (!isset($message->thread_id)) {
-    list($message->recipients, $invalid) = _privatemsg_parse_userstring($message->recipient);
+    list($message->recipients, $invalid, $duplicates, $denieds) = _privatemsg_parse_userstring($message->recipient);
   }
   else {
     // Load participants. Limit recipients to visible unless read_all is TRUE.
     $message->recipients = _privatemsg_load_thread_participants($message->thread_id, $message->read_all ? FALSE : $message->author);
+  }
+
+  if (!empty($invalid)) {
+    // Display information about invalid recipients.
+    drupal_set_message(t('The following users will not receive this private message: @invalid.', array('@invalid' => implode(", ", $invalid))), 'error');
+  }
+  if (!empty($denieds)) {
+    // Display information about denied recipients.
+    drupal_set_message(t('You do not have access to write these recipients: @denieds.', array('@denieds' => implode(", ", $denieds))), 'error');
+  }
+
+  if (!empty($duplicates)) {
+    // Add JS and CSS to allow choosing the recipient.
+    drupal_add_js(drupal_get_path('module', 'privatemsg') . '/privatemsg-alternatives.js');
+
+    // Display information about recipients that couldn't be identified
+    // uniquely.
+    $js_duplicates = array();
+    foreach ($duplicates as $string => $duplicate) {
+      $alternatives = array();
+      foreach ($duplicate as $match) {
+        $formatted_match = privatemsg_recipient_format($match, array('plain' => TRUE, 'unique' => TRUE));
+        $js_duplicates[$formatted_match] = $string;
+        $alternatives[] = '<span class="privatemsg-recipient-alternative">' . $formatted_match . '</span>';
+      }
+      // Build a formatted list of possible recipients.
+      $alternatives = theme('item_list', array('items' => $alternatives, 'attributes' => array('class' => array('action-links'))));
+      form_set_error('recipient', '<span class="privatemsg-alternative-description">' . t('The site has multiple recipients named %string. Please choose your intended recipient: !list', array('%string' => $string, '!list' => $alternatives)) . '</span>');
+    }
+
+    // Also make that information available to the javascript replacement code.
+    drupal_add_js(array('privatemsg_duplicates' => $js_duplicates), 'setting');
   }
 
   $validated = _privatemsg_validate_message($message, TRUE, !isset($message->thread_id));
@@ -466,9 +498,6 @@ function privatemsg_new_validate($form, &$form_state) {
     }
   }
   $form_state['validate_built_message'] = $message;
-  if (!empty($invalid)) {
-    drupal_set_message(t('The following users will not receive this private message: @invalid', array('@invalid' => implode(", ", $invalid))), 'error');
-  }
 }
 
 function privatemsg_new_preview($form, &$form_state) {
@@ -560,7 +589,7 @@ function privatemsg_undo_action() {
  *
  * Prevents usernames from being used and/or suggested twice.
  */
-function privatemsg_user_name_autocomplete($string) {
+function privatemsg_autocomplete($string) {
   $names = array();
   // 1: Parse $string and build list of valid user names.
   $fragments = explode(',', $string);
@@ -589,11 +618,32 @@ function privatemsg_user_name_autocomplete($string) {
       }
     }
   }
+  // Format the suggestions.
+  $themed_matches = array();
+  foreach ($matches as $key => $match) {
+    $themed_matches[$key] = privatemsg_recipient_format($match, array('plain' => TRUE));
+  }
+
+  // Check if there are any duplicates.
+  if (count(array_unique($themed_matches)) != count($themed_matches)) {
+    // Loop over matches, look for duplicates of each one.
+    foreach ($themed_matches as $key => $themed_match) {
+      $duplicate_keys = array_keys($themed_matches, $themed_match);
+      if (count($duplicate_keys) > 1) {
+        // There are duplicates, make them unique.
+        foreach ($duplicate_keys as $duplicate_key) {
+          // Reformat them with unique argument.
+          $themed_matches[$duplicate_key] = privatemsg_recipient_format($matches[$duplicate_key], array('plain' => TRUE, 'unique' => TRUE));
+        }
+      }
+    }
+  }
+
   // Prefix the matches and convert them to the correct form for the
   // autocomplete.
   $prefix = count($names) ? implode(", ", $names) .", " : '';
   $suggestions = array();
-  foreach ($matches as $match) {
+  foreach ($themed_matches as $match) {
     $suggestions[$prefix . $match . ', '] = $match;
   }
 

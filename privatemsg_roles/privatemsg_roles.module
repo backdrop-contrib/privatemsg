@@ -70,7 +70,11 @@ function theme_privatemsg_roles_format($variables) {
   $role = $variables['recipient'];
   $options = $variables['options'];
   if (!empty($options['plain'])) {
-    return $role->name . ' ' . t('[role]');
+    $name = $role->name;
+    if (!empty($options['unique'])) {
+      $name .= ' [role]';
+    }
+    return $name;
   }
   return t('%role (role)', array('%role' => $role->name));
 }
@@ -111,8 +115,10 @@ function privatemsg_roles_autocomplete($fragment, $names, $limit) {
     ->range(0, $limit)
     ->execute();
   $roles = array();
-  foreach ($result->fetchCol() as $role) {
-    $roles[] = $role . ' ' . t('[role]');
+  foreach ($result as $role) {
+    $role->type = 'role';
+    $role->recipient = $role->rid;
+    $roles[privatemsg_recipient_key($role)] = $role;
   }
   return $roles;
 }
@@ -126,7 +132,7 @@ function privatemsg_roles_privatemsg_name_lookup($string) {
   $role = db_query("SELECT *, rid AS recipient FROM {role} WHERE name = :name", array(':name' => trim($string)))->fetchObject();
   if ($role) {
     $role->type = 'role';
-    return $role;
+    return array(privatemsg_recipient_key($role) => $role);
   }
 }
 
@@ -142,7 +148,7 @@ function privatemsg_roles_privatemsg_name_lookup($string) {
  */
 function privatemsg_roles_sql_autocomplete_roles($search, $names) {
   $query = db_select('role', 'role')
-    ->fields('role', array('name'))
+    ->fields('role')
     ->condition('role.name', $search . '%', 'LIKE')
     ->condition('role.rid', DRUPAL_ANONYMOUS_RID, '<>')
     ->orderBy('role.name', 'ASC');
