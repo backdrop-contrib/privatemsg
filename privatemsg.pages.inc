@@ -368,7 +368,7 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
     '#type'               => 'text_format',
     '#title'              => t('Message'),
     '#rows'               => 6,
-    '#weight'             => 0,
+    '#weight'             => -3,
     '#default_value'      => $body,
     '#resizable'          => TRUE,
     '#format'             => isset($format) ? $format : NULL,
@@ -376,8 +376,14 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
   );
   if (privatemsg_user_access('use tokens in privatemsg') && module_exists('token')) {
     $form['token'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Token browser'),
+      '#weight' => -1,
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+    );
+    $form['token']['browser'] = array(
       '#theme' => 'token_tree',
-      '#weight' => 99,
       '#token_types' => array('privatemsg_message'),
     );
   }
@@ -419,9 +425,8 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
       '#type' => 'value',
       '#default_value' => $subject,
     );
-    $recipients_string_themed = implode(', ', $to);
-    $form['recipient_display'] = array(
-      '#markup' =>  '<p>'. t('<strong>Reply to thread</strong>:<br /> Recipients: !to', array('!to' => $recipients_string_themed)) .'</p>',
+    $form['reply'] = array(
+      '#markup' => '<h2 class="privatemsg-reply">' . t('Reply') . '</h2>',
       '#weight' => -10,
     );
   }
@@ -504,7 +509,7 @@ function privatemsg_new_validate($form, &$form_state) {
     drupal_add_js(array('privatemsg_duplicates' => $js_duplicates), 'setting');
   }
 
-  $validated = _privatemsg_validate_message($message, TRUE, !isset($message->thread_id));
+  $validated = _privatemsg_validate_message($message, TRUE);
   foreach ($validated['messages'] as $type => $texts) {
     foreach ($texts as $text) {
       drupal_set_message($text, $type);
@@ -675,38 +680,36 @@ function privatemsg_autocomplete($string) {
  *   The page content.
  * @see privatemsg_thread_load().
  */
-function privatemsg_view($thread) {
+function  privatemsg_view($thread) {
   drupal_set_title($thread['subject']);
 
-  // Generate paging links.
-  $older = '';
-  if (isset($thread['older_start'])) {
-    $options = array(
-      'query' => array('start' => $thread['older_start']),
-      'title' => t('Display older messages'),
+  if ($thread['to'] != $thread['message_count'] || !empty($thread['start'])) {
+    // Generate paging links.
+    $older = '';
+    if (isset($thread['older_start'])) {
+      $options = array(
+        'query' => array('start' => $thread['older_start']),
+        'title' => t('Display older messages'),
+      );
+       $older = l(t('<<'), 'messages/view/' . $thread['thread_id'], $options);
+    }
+    $newer = '';
+    if (isset($thread['newer_start'])) {
+      $options = array(
+        'query' => array('start' => $thread['newer_start']),
+        'title' => t('Display newer messages'),
+      );
+      $newer = l(t('>>'), 'messages/view/' . $thread['thread_id'], $options);
+    }
+    $substitutions = array('@from' => $thread['from'], '@to' => $thread['to'], '@total' => $thread['message_count'], '!previous_link' => $older, '!newer_link' => $newer);
+    $title = t('!previous_link Displaying messages @from - @to of @total !newer_link', $substitutions);
+    $content['pager'] = array(
+      '#markup'  => trim($title),
+      '#prefix' => '<div class="privatemsg-view-pager">',
+      '#suffix' => '</div>',
+      '#weight' => 3,
     );
-     $older = l(t('<<'), 'messages/view/' . $thread['thread_id'], $options);
   }
-  $newer = '';
-  if (isset($thread['newer_start'])) {
-    $options = array(
-      'query' => array('start' => $thread['newer_start']),
-      'title' => t('Display newer messages'),
-    );
-    $newer = l(t('>>'), 'messages/view/' . $thread['thread_id'], $options);
-  }
-  $substitutions = array('@from' => $thread['from'], '@to' => $thread['to'], '@total' => $thread['message_count'], '!previous_link' => $older, '!newer_link' => $newer);
-  $title = t('!previous_link Displaying messages @from - @to of @total !newer_link', $substitutions);
-  $content['pager_top'] = array(
-    '#markup'  => trim($title),
-    '#prefix' => '<div class="privatemsg-view-pager">',
-    '#suffix' => '</div>',
-    '#weight' => -10,
-  );
-
-  // Display a copy at the end.
-  $content['pager_bottom'] = $content['pager_top'];
-  $content['pager_bottom']['#weight'] = 3;
 
   // Render the participants.
   $content['participants'] = array(

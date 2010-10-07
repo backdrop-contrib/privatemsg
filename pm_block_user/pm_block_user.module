@@ -315,10 +315,10 @@ function pm_block_user_privatemsg_message_view_alter(&$vars) {
 
   if ($user->uid <> $author->uid) {
     if ($vars['message']->is_blocked) {
-      $vars['message_actions']['unblock_author'] = array('title' => t('Unblock author'), 'href' => 'messages/block/'. $author->uid, 'query' => array('destination' => 'messages/view/' . $thread_id));
+      $vars['message_actions']['unblock_author'] = array('title' => t('Unblock'), 'href' => 'messages/block/' . $author->uid, 'query' => array('destination' => 'messages/view/' . $thread_id));
     }
     else {
-      $vars['message_actions']['block_author'] = array('title' => t('Block author'), 'href' => 'messages/block/'. $author->uid, 'query' => array('destination' => 'messages/view/' . $thread_id));
+      $vars['message_actions']['block_author'] = array('title' => t('Block'), 'href' => 'messages/block/' . $author->uid, 'query' => array('destination' => 'messages/view/' . $thread_id));
     }
   }
 }
