@@ -292,8 +292,12 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
     if (isset($form_state['values']['recipient'])) {
       $recipients_plain = $form_state['values']['recipient'];
     }
-    $subject   = $form_state['values']['subject'];
-    $body      = $form_state['values']['body'];
+    if (isset($form_state['values']['subject'])) {
+      $subject   = $form_state['values']['subject'];
+    }
+    if (isset($form_state['values']['body'])) {
+      $body      = $form_state['values']['body'];
+    }
   }
   if (!$thread_id && !empty($recipients_plain)) {
     drupal_set_title(t('Write new message to @recipient', array('@recipient' => $recipients_plain)));
