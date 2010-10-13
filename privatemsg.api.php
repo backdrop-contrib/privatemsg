@@ -599,5 +599,39 @@ function hook_privatemsg_recipient_type_info_alter(&$types) {
 }
 
 /**
+ * Allows to alter the found autocompletions.
+ *
+ * @param $matches
+ *   Array of matching recipient objects.
+ * @param $names
+ *   Array of names that are already in the list.
+ * @param $fragment
+ *   Fragment that is currently searched for.
+ */
+function hook_privatemsg_autocomplete_alter(&$matches, $names, $fragment) {
+  // Remove all types other than user if accessed through
+  // messages/user/autocomplete.
+  if (arg(1) == 'user') {
+    foreach ($matches as $id => $match) {
+      if ($match->type != 'user') {
+        unset($matches[$id]);
+      }
+    }
+  }
+}
+
+/**
+ * Allows to alter found recipient types for a given string.
+ *
+ * @param $matches
+ *   Array of matching recipient objects.
+ * @param $string
+ *   String representation of the recipient.
+ */
+function hook_privatemsg_name_lookup_matches(&$matches, $string) {
+
+}
+
+/**
  * @}
  */

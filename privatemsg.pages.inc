@@ -636,6 +636,9 @@ function privatemsg_autocomplete($string) {
       }
     }
   }
+  // Allow modules to alter the autocomplete list.
+  drupal_alter('privatemsg_autocomplete', $matches, $names, $fragment);
+
   // Format the suggestions.
   $themed_matches = array();
   foreach ($matches as $key => $match) {

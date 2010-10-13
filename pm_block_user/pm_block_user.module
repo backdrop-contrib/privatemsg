@@ -70,6 +70,15 @@ function pm_block_user_menu() {
     'type'             => MENU_CALLBACK,
   );
 
+  $items['messages/user/autocomplete'] = array(
+    'page callback'    => 'privatemsg_autocomplete',
+    'file'             => 'privatemsg.pages.inc',
+    'file path'        => drupal_get_path('module', 'privatemsg'),
+    'access callback'  => 'privatemsg_user_access',
+    'access arguments' => array('write privatemsg'),
+    'type'             => MENU_CALLBACK,
+  );
+
   return $items;
 }
 
@@ -87,6 +96,18 @@ function pm_block_user_theme() {
       'file'      => 'pm_block_user.admin.inc',
     ),
   );
+}
+
+function pm_block_user_privatemsg_autocomplete_alter(&$matches, $names, $fragment) {
+  // Remove all types other than user if accessed through
+  // messages/user/autocomplete.
+  if (arg(1) == 'user') {
+    foreach ($matches as $id => $match) {
+      if ($match->type != 'user') {
+        unset($matches[$id]);
+      }
+    }
+  }
 }
 
 /**

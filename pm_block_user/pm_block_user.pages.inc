@@ -93,7 +93,7 @@ function pm_block_user_list() {
   $form['new']['name'] = array(
     '#type' => 'textfield',
     '#title' => t('Username'),
-    '#autocomplete_path' => 'messages/user-name-autocomplete',
+    '#autocomplete_path' => 'messages/user/autocomplete',
     '#description'        => t('Separate multiple names with commas.'),
     '#required'          => TRUE,
   );
@@ -141,24 +141,35 @@ function pm_block_user_list() {
  */
 function pm_block_user_block_validate($form, &$form_state) {
   global $user;
-  list($accounts, $invalid) = _privatemsg_parse_userstring($form_state['values']['name']);
+  list($accounts, $invalid) = _privatemsg_parse_userstring($form_state['values']['name'], array('user'));
   // Remove acocunts that can not be blocked.
   if (!empty($accounts)) {
     foreach ($accounts as $id => $account) {
+
+      // Only authors can be blocked.
+      if ($account->type != 'user') {
+        drupal_set_message(t('Only users can be blocked.'));
+        unset($accounts[$id]);
+        continue;
+      }
+
       // Check if the user can not be blocked because of a rule.
       if (_pm_block_user_rule_exists($account, $user, PM_BLOCK_USER_DISALLOW_BLOCKING)) {
         drupal_set_message(t('You are not allowed to block !account.', array('!account' => theme('username', array('account' => $account)))), 'warning');
         unset($accounts[$id]);
+        continue;
       }
       // Check if the user is already blocked.
       if (pm_block_user_has_blocked($account, $user)) {
         drupal_set_message(t('You have already blocked !account.', array('!account' => theme('username', array('account' => $account)))), 'warning');
         unset($accounts[$id]);
+        continue;
       }
       // Do not allow users to block themself.
       if ($user->uid == $account->uid) {
         drupal_set_message(t('You can not block yourself.'), 'warning');
         unset($accounts[$id]);
+        continue;
       }
     }
   }
