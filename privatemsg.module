@@ -1560,7 +1560,7 @@ function privatemsg_new_thread($recipients, $subject, $body = NULL, $options = a
     $message->timestamp = time();
   }
   if (!isset($message->format)) {
-    $message->format = filter_default_format($author);
+    $message->format = filter_default_format($message->author);
   }
 
   $validated = _privatemsg_validate_message($message);
@@ -1622,7 +1622,7 @@ function privatemsg_reply($thread_id, $body, $options = array()) {
     $message->timestamp = time();
   }
   if (!isset($message->format)) {
-    $message->format = filter_default_format($author);
+    $message->format = filter_default_format($message->author);
   }
 
   // We don't know the subject and the recipients, so we need to load them..
@@ -2836,4 +2836,50 @@ function privatemsg_token_replace($text, $data, array $options = array()) {
 
   // If the user is a recipient, use default token_replace() function.
   return token_replace($text, $data, $options);
+}
+
+/**
+ * Implements hook_entity_property_info().
+ */
+function privatemsg_entity_property_info() {
+  $info = array();
+  // Add meta-data about the basic node properties.
+  $properties = &$info['privatemsg_message']['properties'];
+  $properties = array(
+    'mid' => array(
+      'type'  => 'integer',
+      'label' => t('Private message ID'),
+      'description' => t('Private message ID'),
+    ),
+    'thread_id' => array(
+      'type'  => 'integer',
+      'label' => t('Private message thread ID'),
+      'description' => t('Private message thread ID'),
+      'getter callback' => 'entity_metadata_verbatim_get',
+    ),
+    'author' => array(
+      'type'  => 'user',
+      'label' => t('Private message author'),
+      'description' => t('Private message author'),
+      'setter callback' => 'entity_metadata_verbatim_set',
+    ),
+    'subject' => array(
+      'type'  => 'text',
+      'label' => t('Private message subject'),
+      'description' => t('Private message subject'),
+      'setter callback' => 'entity_metadata_verbatim_set',
+    ),
+    'body' => array(
+      'type'  => 'text',
+      'label' => t('Private message body'),
+      'description' => t('Private message body'),
+      'setter callback' => 'entity_metadata_verbatim_set',
+    ),
+    'timestamp' => array(
+      'type' => 'date',
+      'label' => t('Private message sent date'),
+      'description' => t('Private message sent date'),
+    ),
+  );
+  return $info;
 }
