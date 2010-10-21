@@ -89,10 +89,9 @@ function privatemsg_schema() {
         'size'          => 'big',
       ),
       'format'        => array(
-        'type'          => 'int',
-        'size'          => 'small',
-        'not null'      => TRUE,
-        'default'       => 0,
+        'type'          => 'varchar',
+        'length'        => 255,
+        'not null'      => FALSE,
         'description'   => 'The {filter_formats}.format of the message text.',
       ),
       'timestamp'     => array(
@@ -161,5 +160,17 @@ function privatemsg_update_7000() {
     'not null'      => TRUE,
     'unsigned'      => TRUE,
     'default'       => 0,
+  ));
+}
+
+/**
+ * Update format column to varchar.
+ */
+function privatemsg_update_7001() {
+  db_change_field('pm_message', 'format', 'format', array(
+    'type'          => 'varchar',
+    'length'        => 255,
+    'not null'      => FALSE,
+    'description'   => 'The {filter_formats}.format of the message text.',
   ));
 }

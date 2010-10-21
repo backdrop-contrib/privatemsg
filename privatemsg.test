@@ -37,7 +37,7 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
    * Create user with no 'read privatemsg' permission. Try to access mailbox and see if it gives access denied error
    * Create user with 'read privatemsg' permission. Try to access mailbox and see if it gives allows access
    */
-  function dtestPrivatemsgReadPrivatemsgPermission() {
+  function testPrivatemsgReadPrivatemsgPermission() {
     $user_no_read_msg = $this->drupalCreateUser(); // set up user with default permissions (meaning: no read privatemsg permission
     $author     = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
     $recipient  = $this->drupalCreateUser(array('read privatemsg'));
@@ -73,7 +73,7 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
    * Create user with no 'write privatemsg' permission. Try to access Write New Message page and see if it gives access denied error
    * Create user with 'write privatemsg' permission. Try to access Write New Message page and see if it gives allows access
    */
-  function dtestPrivatemsgWritePrivatemsgPermission() {
+  function testPrivatemsgWritePrivatemsgPermission() {
     $user_no_write_msg = $this->drupalCreateUser(); // set up user with default permissions (meaning: no read privatemsg permission
     $this->drupalLogin($user_no_write_msg);
     $this->drupalGet('messages/new');
@@ -85,7 +85,7 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
     $this->assertResponse(200, t('HTTP Response 200: Access to Write New Message page was authorized to user with "<em>write privatemsg</em>" permission'));
   }
 
-  function dtestPaging() {
+  function testPaging() {
     $author     = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
     $recipient  = $this->drupalCreateUser(array('read privatemsg'));
 
@@ -201,7 +201,7 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
    */
   function testWriteReplyPrivatemsg() {
     // Create a author and two recipients.
-    $author     = $this->drupalCreateUser(array('write privatemsg', 'select text format for privatemsg', filter_permission_name(filter_format_load(3))));
+    $author     = $this->drupalCreateUser(array('write privatemsg', 'select text format for privatemsg', filter_permission_name(filter_format_load('full_html'))));
     $recipient  = $this->drupalCreateUser(array('read privatemsg'));
     $recipient2  = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg'));
 
@@ -263,7 +263,7 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
       'recipient'   => $recipient2->name,
       'subject'     => $this->randomName(20),
       'body[value]' => $this->randomName(100) . '<b>formatted message #1</b>',
-      'body[format]' => 3,
+      'body[format]' => 'full_html',
     );
 
     // Submit the messages.
@@ -369,7 +369,7 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
   /**
    * Test functionality around disabling private messaging.
    */
-  function dtestDisablePrivatemsg() {
+  function testDisablePrivatemsg() {
     $admin_user = $this->drupalCreateUser(array('administer permissions'));
     $enableduser = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg')); // set up user with read/write privatemsg permissions
     $enableduser2 = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg')); // set up user with read/write privatemsg permissions
@@ -449,7 +449,7 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
   /**
    * Test correct handling of read all permissions.
    */
-  function dtestReadAllPermission() {
+  function testReadAllPermission() {
     $author    = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
     $recipient = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
     $admin     = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg', 'read all private messages'));
@@ -513,7 +513,7 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
   /**
    * Tests for the flush feature
    */
-  function dtestPrivatemsgFlush()
+  function testPrivatemsgFlush()
   {
     $author = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
     $recipient = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
@@ -569,7 +569,7 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
     $this->assertTrue(empty($message), t('Message #4 has been flushed'));
   }
 
-  function dtestDelete() {
+  function testDelete() {
     // Create users.
     $author = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg', 'delete privatemsg'));
     $recipient = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg', 'delete privatemsg'));
@@ -728,7 +728,7 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
   /**
    * Test preview functionality.
    */
-  function dtestPreview() {
+  function testPreview() {
     $user = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg'));
 
     // Enable preview button.
@@ -748,7 +748,7 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
   /**
    * Test autocomplete.
    */
-  function dtestAutocomplete() {
+  function testAutocomplete() {
     $current = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg'));
     $user1 = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg'));
     $user2 = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg'));
@@ -786,7 +786,7 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
   /**
    * Implements tearDown().
    */
-  function dtearDown() {
+  function tearDown() {
     //we dont really need to do this. i'm adding it just to keep it in front of my eyes so i can memorize it.
     parent::tearDown();
   }
@@ -815,7 +815,7 @@ class PrivatemsgFieldsTestCase extends DrupalWebTestCase {
     parent::setUp('privatemsg');
   }
 
-  function dtestSingleField() {
+  function testSingleField() {
     $admin = $this->drupalCreateUser(array('administer privatemsg settings', 'write privatemsg', 'read privatemsg'));
     $user = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
 
@@ -874,7 +874,7 @@ class PrivatemsgFieldsTestCase extends DrupalWebTestCase {
   /**
    * Verify that a message with an empty image can be sent.
    */
-  function dtestEmptyImage() {
+  function testEmptyImage() {
     $admin = $this->drupalCreateUser(array('administer privatemsg settings', 'write privatemsg', 'read privatemsg'));
     $user = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
 
@@ -940,7 +940,7 @@ class PrivatemsgLinksTestCase extends DrupalWebTestCase {
   /**
    * Tests author links displayed on nodes and comments.
    */
-  function dtestAuthorLinks() {
+  function testAuthorLinks() {
     $admin = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg', 'administer privatemsg settings', 'create article content', 'create page content'));
     $user = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg'));
 
@@ -1001,7 +1001,7 @@ class PrivatemsgLinksTestCase extends DrupalWebTestCase {
   /**
    * Tests menu block.
    */
-  function dtestMenuBlock() {
+  function testMenuBlock() {
     $admin = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg', 'administer privatemsg settings', 'administer blocks', 'administer menu'));
     $user = $this->drupalCreateUser(array('read privatemsg'));
 
@@ -1040,7 +1040,7 @@ class PrivatemsgLinksTestCase extends DrupalWebTestCase {
   /**
    * Tests menu block.
    */
-  function dtestNewBlock() {
+  function testNewBlock() {
     $admin = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg', 'administer privatemsg settings', 'administer blocks', 'administer menu'));
     $user = $this->drupalCreateUser(array('read privatemsg'));
 
@@ -1094,7 +1094,7 @@ class PrivatemsgTokenTestCase extends DrupalWebTestCase {
   /**
    * Basic token functionality.
    */
-  function dtestBasicTokens() {
+  function testBasicTokens() {
     $author = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg', 'use tokens in privatemsg'));
     $recipient1 = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
     $recipient2 = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
