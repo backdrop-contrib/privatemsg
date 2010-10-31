@@ -312,9 +312,9 @@ function pm_block_user_privatemsg_block_message($author, $recipients, $context =
   return $blocked;
 }
 
-function pm_block_user_query_privatemsg_load_alter($query) {
+function pm_block_user_query_privatemsg_message_load_multiple_alter($query) {
   $query->addField('pmbu', 'recipient', 'is_blocked');
-  $query->leftJoin('pm_block_user', 'pmbu', "pm.author = pmbu.author AND pmi.recipient = pmbu.recipient AND pmi.type = 'user'");
+  $query->leftJoin('pm_block_user', 'pmbu', "base.author = pmbu.author AND pmi.recipient = pmbu.recipient AND pmi.type IN ('user', 'hidden')");
 }
 
 /**

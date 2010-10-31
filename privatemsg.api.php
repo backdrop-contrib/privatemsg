@@ -268,18 +268,6 @@ function hook_privatemsg_sql_unread_count_alter(&$fragment, $account) {
  */
 
 /**
- * Is called after the message has been loaded.
- *
- * Return data will be merged with the $message array.
- *
- * @param $message
- *    Message array
- */
-function hook_privatemsg_message_load($message) {
-  return array('my_key' => 'my_value');
-}
-
-/**
  * Is called when a message is flushed.
  *
  * The message will be deleted from the database, remove any related data here.

@@ -503,7 +503,11 @@ function privatemsg_thread_load($thread_id, $account = NULL, $start = NULL, $use
         $thread['from'] = $start + 1;
         $query->range($start, $max_amount);
       }
-      $thread['messages'] = privatemsg_message_load_multiple($query->execute()->fetchCol(), $thread['read_all'] ? NULL : $account);
+      $conditions = array();
+      if (!$thread['read_all']) {
+        $conditions['account'] = $account;
+      }
+      $thread['messages'] = privatemsg_message_load_multiple($query->execute()->fetchCol(), $conditions);
 
       // If there are no messages, don't allow access to the thread.
       if (empty($thread['messages'])) {
@@ -1028,29 +1032,6 @@ function privatemsg_sql_list($account, $argument = 'list') {
 }
 
 /**
- * Query function for loading a single or multiple messages.
- *
- * @param $pmids
- *   Array of pmids.
- * @param $account
- *   Account for which the messages should be loaded.
- */
-function privatemsg_sql_load($pmids, $account = NULL) {
-  $query = db_select('pm_message', 'pm')
-    ->fields('pm', array('mid', 'author', 'subject', 'body', 'timestamp', 'format', 'has_tokens'))
-    ->fields('pmi', array('is_new', 'thread_id'))
-    ->condition('pmi.mid', $pmids)
-    ->orderBy('pm.timestamp', 'ASC')
-    ->orderBy('pm.mid', 'ASC');
-  if($account) {
-    $query
-      ->condition('pmi.recipient', $account->uid)
-      ->condition('pmi.type', array('hidden', 'user'));
-  }
-  $query->join('pm_index', 'pmi', 'pm.mid = pmi.mid');
-  return $query;
-}
-/**
  * Query definition to load messages of one or multiple threads.
  *
  * @param $threads
@@ -1202,7 +1183,6 @@ function privatemsg_user_login(&$edit, $account) {
  * Implements hook_user_cancel().
  */
 function privatemsg_user_cancel($edit, $account, $method) {
-  debug($method);
   switch ($method) {
     case 'user_cancel_reassign':
       db_update('pm_message')
@@ -1897,7 +1877,11 @@ function privatemsg_get_link($recipients, $account = array(), $subject = NULL) {
  * @ingroup api
  */
 function privatemsg_message_load($pmid, $account = NULL) {
-  $messages = privatemsg_message_load_multiple(array($pmid), $account);
+  $conditions = array();
+  if ($account) {
+    $conditions['account'] = $account;
+  }
+  $messages = privatemsg_message_load_multiple(array($pmid), $conditions);
   return current($messages);
 }
 
@@ -1912,26 +1896,9 @@ function privatemsg_message_load($pmid, $account = NULL) {
  *
  * @ingroup api
  */
-function privatemsg_message_load_multiple($pmids, $account = NULL) {
-  // Avoid SQL error that would happen with an empty pm.mid IN () clause.
-  if (empty($pmids)) {
-    return array();
-  }
-  $result = _privatemsg_assemble_query('load', $pmids, $account)->execute();
-
-  $messages = array();
-  foreach ($result as $message) {
-    $message->user = $account;
-    // Load author of message.
-    if (!($message->author = _privatemsg_user_load($message->author))) {
-      // If user does not exist, load anonymous user.
-      $message->author = _privatemsg_user_load(0);
-    }
-    $messages[$message->mid] = $message;
-  }
-  field_attach_load('privatemsg_message', $messages);
-  module_invoke_all('privatemsg_message_load', $messages);
-  return $messages;
+function privatemsg_message_load_multiple(array $pmids, array $conditions = array(), $reset = FALSE) {
+  $result = entity_load('privatemsg_message', $pmids, $conditions, $reset);
+  return $result;
 }
 
 /**
@@ -2217,6 +2184,8 @@ function privatemsg_entity_info() {
       'label' => t('Privatemsg'),
       'base table' => 'pm_message',
       'fieldable' => TRUE,
+      'controller class' => 'PrivatemsgMessageController',
+      'uri callback' => 'privatemsg_message_uri_callback',
       'entity keys' => array(
         'id' => 'mid',
       ),
@@ -2231,6 +2200,27 @@ function privatemsg_entity_info() {
       ),
     ),
   );
+}
+
+/**
+ * Returns the URI for a private message.
+ *
+ * @param $message
+ *   Private message object.
+ *
+ * @return
+ *   URI array as defined by hook_entity_info().
+ */
+function privatemsg_message_uri_callback($message) {
+  $uri = array(
+    'path' => 'messages/view/' . $message->thread_id,
+    'options' => array(),
+  );
+  // Add message fragment, if necessary.
+  if ($message->mid != $message->thread_id) {
+    $uri['options']['fragment'] = 'privatemsg-message-' . $message->mid;
+  }
+  return $uri;
 }
 
 /**
@@ -2666,18 +2656,30 @@ function privatemsg_token_info() {
     'needs-data' => 'privatemsg_message',
   );
 
-  // Core tokens for nodes.
+  // Tokens for private messages.
   $message['mid'] = array(
     'name' => t("Message ID"),
     'description' => t("The unique ID of the message."),
+  );
+  $message['thread-id'] = array(
+    'name' => t("Thread ID"),
+    'description' => t("The unique ID of the thread."),
+  );
+  $message['url'] = array(
+    'name' => t("URL"),
+    'description' => t("URL that points to the message."),
   );
   $message['subject'] = array(
     'name' => t("Subject"),
     'description' => t("The subject of the message."),
   );
+  $message['body'] = array(
+    'name' => t("Body"),
+    'description' => t("The body of the message."),
+  );
 
   // Chained tokens for nodes.
-  $message['sent'] = array(
+  $message['timestamp'] = array(
     'name' => t("Date created"),
     'description' => t("The date the message was sent."),
     'type' => 'date',
@@ -2689,7 +2691,7 @@ function privatemsg_token_info() {
   );
   $message['recipient'] = array(
     'name' => t("Recipient"),
-    'description' => t("The recipient of the message. Tokens are only replaced when the user viewing the message is a recipient."),
+    'description' => t("The recipient of the message."),
     'type' => 'user',
   );
 
@@ -2703,14 +2705,19 @@ function privatemsg_token_info() {
  * Implements hook_tokens().
  */
 function privatemsg_tokens($type, $tokens, array $data = array(), array $options = array()) {
-
   global $user;
+  $url_options = array('absolute' => TRUE);
   if (isset($options['language'])) {
     $url_options['language'] = $options['language'];
     $language_code = $options['language']->language;
   }
   else {
     $language_code = NULL;
+  }
+
+  $recipient = $user;
+  if (isset($data['privatemsg_recipient'])) {
+    $recipient = $data['privatemsg_recipient'];
   }
 
   $sanitize = !empty($options['sanitize']);
@@ -2720,9 +2727,12 @@ function privatemsg_tokens($type, $tokens, array $data = array(), array $options
 
     foreach ($tokens as $name => $original) {
       switch ($name) {
-        // Simple key values on the node.
         case 'mid':
           $replacements[$original] = $message->mid;
+          break;
+
+        case 'thread-id':
+          $replacements[$original] = $message->thread_id;
           break;
 
         case 'subject':
@@ -2736,16 +2746,31 @@ function privatemsg_tokens($type, $tokens, array $data = array(), array $options
           $replacements[$original] = $sanitize ? check_plain($subject) : $subject;
           break;
 
+        case 'body':
+          // Avoid recursion.
+          if (empty($options['privatemsg_recursion'])) {
+            $replacements[$original] = privatemsg_token_replace($sanitize ? check_markup($message->body, $message->format) : $message->body, $data, $options + array('privatemsg_recursion' => 1));
+          }
+          else {
+            $replacements[$original] = $sanitize ? check_markup($message->body, $message->format) : $body;
+          }
+          break;
+
+        case 'url':
+          $uri = entity_uri('privatemsg_message', $message);
+          $replacements[$original] = url($uri['path'], $url_options + $uri['options']);
+          break;
+
         // Default values for the chained tokens handled below.
         case 'author':
           $replacements[$original] = $sanitize ? filter_xss($message->author->name) : $message->author->name;
           break;
 
         case 'recipient':
-            $replacements[$original] = $sanitize ? filter_xss($user->name) : $user->name;
+            $replacements[$original] = $sanitize ? filter_xss($recipient->name) : $recipient->name;
           break;
 
-        case 'sent':
+        case 'timestamp':
           $replacements[$original] = format_date($message->timestamp, 'medium', '', NULL, $language_code);
           break;
       }
@@ -2756,10 +2781,10 @@ function privatemsg_tokens($type, $tokens, array $data = array(), array $options
     }
 
     if ($recipient_tokens = token_find_with_prefix($tokens, 'recipient')) {
-      $replacements += token_generate('user', $recipient_tokens, array('user' => $user), $options);
+      $replacements += token_generate('user', $recipient_tokens, array('user' => $recipient), $options);
     }
 
-    if ($sent_tokens = token_find_with_prefix($tokens, 'sent')) {
+    if ($sent_tokens = token_find_with_prefix($tokens, 'timpestamp')) {
       $replacements += token_generate('date', $sent_tokens, array('date' => $message->timestamp), $options);
     }
   }
@@ -2792,18 +2817,19 @@ function privatemsg_token_replace($text, $data, array $options = array()) {
   if ($message->author->uid == $user->uid || !db_query($sql, $args)->fetchField()) {
     // Get all tokens of the message.
     $tokens = token_scan($text);
+    $invalid_tokens = array();
+    if (function_exists('token_get_invalid_tokens_by_context')) {
+      $invalid_tokens = token_get_invalid_tokens_by_context($text, array('privatemsg_message'));
+    }
 
     if (!empty($tokens)) {
-      // Let token_replace() replace all tokens.
-      $replaced_text = token_replace($text, $data, $options);
       $replacements = array();
-
       // Loop over the found tokens.
-      foreach ($tokens as $type => $tokens) {
+      foreach ($tokens as $type => $tokens_type) {
         // token_replace() returns tokens separated by type.
-        foreach ($tokens as $name => $original) {
-          // If the token still exists in the replaced text, it is not valid.
-          if (strpos($replaced_text, $original) !== FALSE) {
+        foreach ($tokens_type as $name => $original) {
+          // Displaying invalid tokens only works with token.module.
+          if (in_array($original, $invalid_tokens)) {
             $token = t('INVALID TOKEN @token', array('@token' => $original), array('langcode' => $language_code));
             if (!$show_span) {
               $replacements[$original] = '< ' . $token . ' >';
@@ -2882,4 +2908,48 @@ function privatemsg_entity_property_info() {
     ),
   );
   return $info;
+}
+
+/**
+ * Private message controller, loads private messages.
+ */
+class PrivatemsgMessageController extends DrupalDefaultEntityController {
+
+  protected $account = NULL;
+
+  protected function attachLoad(&$messages, $revision_id = FALSE) {
+    global $user;
+    foreach ($messages as $message) {
+      $message->user = $this->account ? $this->account : $user;
+      // Load author of message.
+      if (!($message->author = _privatemsg_user_load($message->author))) {
+        // If user does not exist, load anonymous user.
+        $message->author = _privatemsg_user_load(0);
+      }
+    }
+    parent::attachLoad($messages, $revision_id);
+  }
+
+  protected function buildQuery($ids, $conditions = array(), $revision_id = FALSE) {
+    // Remove account from conditions.
+    if (isset($conditions['account'])) {
+      $this->account = $conditions['account'];
+      unset($conditions['account']);
+    }
+
+    $query = parent::buildQuery($ids, $conditions, $revision_id);
+    $query->fields('pmi', array('is_new', 'thread_id'));
+    if($this->account) {
+      $query
+        ->condition('pmi.recipient', $this->account->uid)
+        ->condition('pmi.type', array('hidden', 'user'));
+    }
+    else {
+      // If no account is given, at least limit the result to a single row per
+      // message.
+      $query->distinct();
+    }
+    $query->join('pm_index', 'pmi', "base.mid = pmi.mid");
+    return $query;
+  }
 }

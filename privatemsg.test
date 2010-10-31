@@ -1081,6 +1081,7 @@ class PrivatemsgTokenTestCase extends DrupalWebTestCase {
       'name' => t('Privatemsg tokens'),
       'description' => t('Tests tokens in private messages.'),
       'group' => t('Privatemsg'),
+      'dependencies' => array('token'),
     );
   }
 
@@ -1088,7 +1089,7 @@ class PrivatemsgTokenTestCase extends DrupalWebTestCase {
    * Implements setUp().
    */
   function setUp() {
-    parent::setUp('privatemsg');
+    parent::setUp('privatemsg', 'token');
   }
 
   /**

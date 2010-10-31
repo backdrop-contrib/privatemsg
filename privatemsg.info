@@ -13,3 +13,4 @@ files[] = privatemsg.pages.inc
 files[] = privatemsg.admin.inc
 configure=admin/config/messaging/privatemsg
 
+test_dependencies[] = token
