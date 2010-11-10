@@ -687,7 +687,7 @@ function privatemsg_theme() {
   return $templates;
 }
 
-function privatemsg_preprocess_privatemsg_view(&$vars) {
+function template_preprocess_privatemsg_view(&$vars) {
   global $user;
 
   $message = $vars['message'];
@@ -746,7 +746,7 @@ function privatemsg_preprocess_privatemsg_view(&$vars) {
   }
 }
 
-function privatemsg_preprocess_privatemsg_recipients(&$vars) {
+function template_preprocess_privatemsg_recipients(&$vars) {
   $vars['participants'] = ''; // assign a default empty value
   if (isset($vars['thread']['participants'])) {
     $vars['participants'] = _privatemsg_format_participants($vars['thread']['participants']);
