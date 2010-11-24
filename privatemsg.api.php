@@ -416,16 +416,13 @@ function hook_privatemsg_block_message($author, $recipients, $context = array())
 /**
  * Add content to the view thread page.
  *
- * Each element in content contains a 'value' and a '#weight' key, the weight
- * is used set the order of the different parts.
- *
  * @param $content
- *   Content array
- * @param $message_count
- *   Amount of messages
+ *   Render-able array, contains the thread object in #thread.
  */
-function hook_privatemsg_view_messages($content, $message_count) {
-
+function hook_privatemsg_view_alter($content) {
+  if (privatemsg_user_access('tag private messages')) {
+    $content['tags'] = privatemsg_filter_show_tags($content['#thread']['thread_id'], !empty($_GET['show_tags_form']));
+  }
 }
 
 /**

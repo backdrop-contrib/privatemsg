@@ -11,15 +11,11 @@ function pm_block_user_form($form, $form_state, $author) {
 
   $form['author'] = array(
     '#type' => 'value',
-    '#value' => $author->uid,
+    '#value' => $author,
   );
     $form['recipient'] = array(
     '#type' => 'value',
-    '#value' => $user->uid,
-  );
-  $form['author_name'] = array(
-    '#type' => 'value',
-    '#value' => $author->name,
+    '#value' => $user,
   );
   $form['destination'] = array(
     '#type' => 'value',
@@ -62,18 +58,18 @@ function pm_block_user_form_submit($form, &$form_state) {
       case 'block_user':
         db_insert('pm_block_user')
           ->fields(array(
-            'author' => $form_state['values']['author'],
-            'recipient' => $form_state['values']['recipient'],
+            'author' => $form_state['values']['author']->uid,
+            'recipient' => $form_state['values']['recipient']->uid,
           ))
           ->execute();
-        drupal_set_message(t('@author has been blocked from sending you any further messages.', array('@author' => $form_state['values']['author_name'])));
+        drupal_set_message(t('@author has been blocked from sending you any further messages.', array('@author' => privatemsg_recipient_format($form_state['values']['author'], array('plain' => TRUE)))));
       break;
       case 'unblock_user':
         db_delete('pm_block_user')
           ->condition('author', $form_state['values']['author'])
           ->condition('recipient', $form_state['values']['recipient'])
           ->execute();
-        drupal_set_message(t('@author is now allowed to send you new messages.', array('@author' => $form_state['values']['author_name'])));
+        drupal_set_message(t('@author is now allowed to send you new messages.', array('@author' => privatemsg_recipient_format($form_state['values']['author'], array('plain' => TRUE)))));
       break;
     }
   }

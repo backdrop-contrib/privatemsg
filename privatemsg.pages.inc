@@ -690,6 +690,10 @@ function privatemsg_autocomplete($string) {
 function  privatemsg_view($thread) {
   drupal_set_title($thread['subject']);
 
+  $content = array(
+    '#thread' => $thread,
+  );
+
   if ($thread['to'] != $thread['message_count'] || !empty($thread['start'])) {
     // Generate paging links.
     $older = '';
@@ -747,6 +751,8 @@ function  privatemsg_view($thread) {
     // User has permission to read all messages AND is not a participant of the current thread.
     drupal_set_message(t('This conversation is being viewed with escalated privileges and may not be the same as shown to normal users.'), 'warning');
   }
+
+  drupal_alter('privatemsg_view', $content);
 
   return $content;
 }

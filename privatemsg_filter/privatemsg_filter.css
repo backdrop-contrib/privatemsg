@@ -7,3 +7,24 @@ form#privatemsg-filter-dropdown #edit-author-wrapper, form#privatemsg-filter-dro
 form#privatemsg-filter-dropdown #privatemsg-filter-buttons {
   clear: left;
 }
+
+form#privatemsg-filter-form div.form-item {
+    float: left;
+    margin-right: 5px;
+}
+
+form#privatemsg-filter-form {
+    clear: both;
+}
+
+div#privatemsg-filter-tags a, span.privatemsg-filter-tags-label {
+    padding-right: 10px;
+}
+
+div#privatemsg-filter-tags {
+    margin-bottom: 15px;
+}
+
+div.privatemsg-message-participants {
+    clear:both;
+}

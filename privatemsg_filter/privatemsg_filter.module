@@ -252,9 +252,6 @@ function privatemsg_filter_remove_tags($threads, $tag_ids = NULL, $account = NUL
   if (!is_array($threads)) {
     $threads = array($threads);
   }
-  if (!is_array($tag_ids)) {
-    $tag_ids = array($tag_ids);
-  }
   if (empty($account)) {
     global $user;
     $account = $user;
@@ -269,6 +266,10 @@ function privatemsg_filter_remove_tags($threads, $tag_ids = NULL, $account = NUL
       ->execute();
   }
   else {
+    if (!is_array($tag_ids)) {
+      $tag_ids = array($tag_ids);
+    }
+
     //Delete tag mapping for the specified tag.
     db_delete('pm_tags_index')
       ->condition('uid', $account->uid)
@@ -731,77 +732,135 @@ function privatemsg_filter_query_privatemsg_list_alter($query) {
 }
 
 /**
- * Hook into the view messages page to add a form for tagging purposes.
+ * Implements hook_privatemsg_view_alter().
  */
-function privatemsg_filter_page_alter(&$page) {
-  if (isset($page['content']['system_main']['messages']) && count($page['content']['system_main']['messages']) && isset($page['content']['system_main']['participants']) && privatemsg_user_access('tag private messages')) {
-    $page['content']['system_main']['tags'] = drupal_get_form('privatemsg_filter_form');
-    $page['content']['system_main']['tags']['#weight'] = variable_get('privatemsg_filter_tagfield_weight', 10);
+function privatemsg_filter_privatemsg_view_alter(&$content) {
+  if (privatemsg_user_access('tag private messages')) {
+    $content['tags'] = privatemsg_filter_show_tags($content['#thread']['thread_id'], !empty($_GET['show_tags_form']));
+  }
+}
+
+function privatemsg_filter_show_tags($thread_id, $show_form) {
+  global $user;
+
+  drupal_add_css(drupal_get_path('module', 'privatemsg_filter') . '/privatemsg_filter.css');
+  $element = array(
+    '#prefix' => '<div id="privatemsg-filter-tags">',
+    '#suffix' => '</div>',
+    '#weight' => -10,
+  );
+
+  if (!$show_form) {
+    $query = _privatemsg_assemble_query(array('tags', 'privatemsg_filter'), $user, array($thread_id));
+    if ($query->countQuery()->execute()->fetchField() == 0) {
+      $element['link'] = array(
+        '#type' => 'link',
+        '#href' => $_GET['q'],
+        '#options' => array(
+          'query' => array('show_tags_form' => TRUE),
+          'attributes' => array('class' => array('privatemsg-filter-tags-add')),
+        ),
+        '#title' => t('Tag this conversation'),
+      );
+    }
+    else {
+      $element['label'] = array(
+        '#prefix' => '<span class="privatemsg-filter-tags-label">',
+        '#suffix' => '</span>',
+        '#markup' => t('Tags:'),
+      );
+
+      foreach ($query->execute()->fetchCol(1) as $tag) {
+        $element['tags'][] = array(
+          '#type' => 'link',
+          '#title' => $tag,
+          '#href' => 'messages',
+          '#options' => array(
+            'attributes' => array('title' => $tag),
+            'query' => array('tags' => $tag),
+          ),
+        );
+      }
+
+      $element['link'] = array(
+        '#type' => 'link',
+        '#href' => $_GET['q'],
+        '#options' => array(
+          'query' => array('show_tags_form' => TRUE),
+          'attributes' => array('class' => array('privatemsg-filter-tags-modify')),
+        ),
+        '#title' => t('(modify tags)'),
+      );
+    }
+    return $element;
+  }
+  else {
+    return drupal_get_form('privatemsg_filter_form', $thread_id) + $element;
   }
 }
 
 /**
  * Form to show and allow modification of tagging information for a conversation.
  */
-function privatemsg_filter_form($form, &$form_state) {
+function privatemsg_filter_form($form, &$form_state, $thread_id) {
   global $user;
-  $thread_id = arg(2);
 
   // Get a list of current tags for this thread
   $query = _privatemsg_assemble_query(array('tags', 'privatemsg_filter'), $user, array($thread_id));
   $count = $query->countQuery()->execute()->fetchField();
   $tags = implode(', ', $query->execute()->fetchCol(1));
 
-  $form['tags'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Tags'),
-    '#access' => privatemsg_user_access('tag private messages'),
-    '#collapsible' => TRUE,
-    '#collapsed' => empty($count) ? TRUE : FALSE,
-  );
-  $form['tags']['user_id'] = array(
+  $form['user_id'] = array(
     '#type' => 'value',
     '#value' => $user->uid,
   );
-  $form['tags']['thread_id'] = array(
+  $form['thread_id'] = array(
     '#type' => 'value',
     '#value' => $thread_id,
   );
 
-  $form['tags']['tags'] = array(
+  $form['tags'] = array(
     '#type'               => 'textfield',
     '#title'              => t('Tags for this conversation'),
-    '#description'        => t('Separate multiple tags with commas.'),
-    '#size'               => 50,
+    '#title_display'      => 'invisible',
+    '#size'               => 30,
     '#default_value'      => $tags,
     '#autocomplete_path'  => 'messages/filter/tag-autocomplete',
   );
 
-  $form['tags']['submit'] = array(
+  $form['modify_tags'] = array(
     '#type'     => 'submit',
     '#value'    => t('Tag this conversation'),
-    '#submit'   => array('privatemsg_filter_form_submit'),
+  );
+
+  $form['cancel'] = array(
+    '#type' => 'link',
+    '#href' => $_GET['q'],
+    '#title' => t('Cancel'),
+    '#attributes' => array('id' => 'privatemsg-filter-tags-cancel'),
+    '#weight' => 50,
   );
 
   return $form;
 }
 
+/**
+ * Form builder function, display a form to modify tags on a thread.
+ */
 function privatemsg_filter_form_submit($form, &$form_state) {
-  if (isset($form_state['values']['submit'])) {
-    $tags = explode(',', $form_state['values']['tags']);
+  $tags = explode(',', $form_state['values']['tags']);
 
-    // Step 1 - Delete all tag mapping. I cannot think of a better way to remove tags that are no longer in the textfield, so ideas welcome.
-    privatemsg_filter_remove_tags($form_state['values']['thread_id']);
+  // Step 1 - Delete all tag mapping.
+  privatemsg_filter_remove_tags($form_state['values']['thread_id']);
 
-    // Step 2 - Get the id for each of the tags.
-    $tag_ids = privatemsg_filter_create_tags($tags);
+  // Step 2 - Get the id for each of the tags.
+  $tag_ids = privatemsg_filter_create_tags($tags);
 
-    // Step 3 - Save all the tagging data.
-    foreach ($tag_ids as $tag_id) {
-      privatemsg_filter_add_tags($form_state['values']['thread_id'], $tag_id);
-    }
-    drupal_set_message(t('Tagging information has been saved.'));
+  // Step 3 - Save all the tagging data.
+  foreach ($tag_ids as $tag_id) {
+    privatemsg_filter_add_tags($form_state['values']['thread_id'], $tag_id);
   }
+  drupal_set_message(t('Your conversation tags have been saved.'));
 }
 
 /**
