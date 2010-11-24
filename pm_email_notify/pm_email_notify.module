@@ -64,46 +64,31 @@ function pm_email_notify_privatemsg_message_insert($message) {
  * Implementation of hook_mail().
  */
 function pm_email_notify_mail($key, &$message, $params) {
-  $language = $message['language'];
-  $variables = _pm_email_notify_token($params['recipient'], $params['message'], $language);
   switch ($key) {
     case 'notice':
-      $message['subject'] = trim(t(variable_get('pm_email_notify_subject', 'New private message at !site.'), $variables, array('langcode' => $language->language)));
-      $message['body'] = array(trim(t(variable_get('pm_email_notify_body', _pm_email_notify_default_body()), $variables, array('langcode' => $language->language))));
+      $data = array(
+        'privatemsg_message' => $params['message'],
+        'privatemsg_recipient' => $params['recipient'],
+      );
+      $options = array(
+        'language' => user_preferred_language($params['recipient']),
+        // Don't sanitize output since this is used in an email, not a browser.
+        'sanitize' => FALSE,
+        // Custom token to avoid custom token handling.
+        'privatemsg-display-invalid' => FALSE,
+      );
+
+      $message['subject'] = trim(token_replace(variable_get('pm_email_notify_subject', 'New private message at [site:name].'), $data, $options));
+      $message['body'][] = trim(token_replace(variable_get('pm_email_notify_body', _pm_email_notify_default_body()), $data, $options));
       break;
   }
-}
-
-/**
- * Return an array of token to value mappings for user e-mail messages.
- *
- * @param $message
- *  The private message array being sent.  Must contain at
- *  least the fields 'author', 'subject', 'thread_id' and 'body'.
- * @return
- *  Array of mappings from token names to values (for use with strtr()).
- */
-function _pm_email_notify_token($recipient, $message, $language) {
-
-  $tokens = array(
-    '!author' => $message->author->name,
-    '!thread' => $message->thread_id,
-    '!pm_subject' => drupal_html_to_text(check_plain($message->subject)),
-    '!pm_body' => drupal_html_to_text(check_markup($message->body, $message->format)),
-    '!user_uid' => $recipient->uid,
-    '!message' => url('messages/view/' . $message->thread_id, array('absolute' => TRUE, 'language' => $language)),
-    '!settings' => url('user/' . $recipient->uid . '/edit', array('absolute' => TRUE, 'language' => $language)),
-  );
-
-  return $tokens;
-
 }
 
 /**
  * Returns default email notification body.
  */
 function _pm_email_notify_default_body() {
-  return "Hi !username,\n\nThis is an automatic reminder from the site !site. You have received a new private message from !author.\n\nTo read your message, follow this link:\n!message\n\nIf you don't want to receive these emails again, change your preferences here:\n!settings";
+  return "Hi [privatemsg_message:recipient],\n\nThis is an automatic reminder from the site [site:name]. You have received a new private message from [privatemsg_message:author].\n\nTo read your message, follow this link:\n[privatemsg_message:url]\n\nIf you don't want to receive these emails again, change your preferences here:\n[privatemsg_message:recipient:edit-url]";
 }
 
 /**

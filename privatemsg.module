@@ -2798,6 +2798,12 @@ function privatemsg_tokens($type, $tokens, array $data = array(), array $options
  */
 function privatemsg_token_replace($text, $data, array $options = array()) {
   global $user;
+  if (empty($data['privatemsg_recipient'])) {
+    $recipient = $user;
+  }
+  else {
+    $recipient = $data['privatemsg_recipient'];
+  }
 
   if (isset($options['language'])) {
     $url_options['language'] = $options['language'];
@@ -2809,12 +2815,13 @@ function privatemsg_token_replace($text, $data, array $options = array()) {
 
   $message = $data['privatemsg_message'];
   $show_span = !isset($options['privatemsg-show-span']) || $options['privatemsg-show-span'];
+  $show_invalid = !isset($options['privatemsg-display-invalid']) || $options['privatemsg-display-invalid'];
 
   // We do not replace tokens if the user viewing the message is the author or
   // not a real recipient to avoid confusion.
   $sql = "SELECT 1 FROM {pm_index} WHERE recipient = :uid AND type IN ('hidden', 'user') AND mid = :mid";
-  $args = array(':uid' => $user->uid, ':mid' => $message->mid);
-  if ($message->author->uid == $user->uid || !db_query($sql, $args)->fetchField()) {
+  $args = array(':uid' => $recipient->uid, ':mid' => $message->mid);
+  if ($message->author->uid == $recipient->uid || !db_query($sql, $args)->fetchField()) {
     // Get all tokens of the message.
     $tokens = token_scan($text);
     $invalid_tokens = array();
