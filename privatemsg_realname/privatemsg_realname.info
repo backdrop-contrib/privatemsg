@@ -1,0 +1,8 @@
+; $Id$
+name = Privatemsg Realname Integration
+description = Provides reverse lookup for realnames
+package = Mail
+core = 7.x
+dependencies[] = privatemsg
+dependencies[] = realname
+

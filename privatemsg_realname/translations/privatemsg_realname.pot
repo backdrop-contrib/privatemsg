@@ -1,0 +1,61 @@
+# $Id$
+#
+# LANGUAGE translation of Privatemsg (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  privatemsg_realname.module: n/a
+#  privatemsg_realname.info: n/a
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Privatemsg 6.x-2.x\n"
+"POT-Creation-Date: 2010-11-21 15:41+0100\n"
+"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
+"Last-Translator: NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: privatemsg_realname.module:115
+msgid "Realname integration"
+msgstr ""
+
+#: privatemsg_realname.module:123
+msgid "Field to use as a unique identifier"
+msgstr ""
+
+#: privatemsg_realname.module:124
+msgid "Real names are often not unique. Choose which field should be used as a unique identifier when sending private messages."
+msgstr ""
+
+#: privatemsg_realname.module:127
+msgid "Username"
+msgstr ""
+
+#: privatemsg_realname.module:128
+msgid "UID"
+msgstr ""
+
+#: privatemsg_realname.module:129
+msgid "E-mail"
+msgstr ""
+
+#: privatemsg_realname.module:135
+msgid "Search usernames for autocomplete suggestions"
+msgstr ""
+
+#: privatemsg_realname.info:0
+msgid "Privatemsg Realname Integration"
+msgstr ""
+
+#: privatemsg_realname.info:0
+msgid "Provides reverse lookup for realnames"
+msgstr ""
+
+#: privatemsg_realname.info:0
+msgid "Mail"
+msgstr ""
+

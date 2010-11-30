@@ -306,7 +306,7 @@ function pm_block_user_privatemsg_block_message($author, $recipients, $context =
     }
     $blocked[] = array(
       'recipient' => privatemsg_recipient_key($recipient),
-      'message' => t('%name has chosen to block messages from you.', array('%name' => $recipient->name))
+      'message' => t('%name has chosen to block messages from you.', array('%name' => privatemsg_recipient_format($recipient, array('plain' => TRUE))))
     );
   }
   return $blocked;

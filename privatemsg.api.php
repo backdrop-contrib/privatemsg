@@ -300,7 +300,7 @@ function hook_privatemsg_message_validate($message, $form = FALSE) {
   foreach ($message->recipients as $recipient) {
     if ($recipient->name == 'blocked user') {
       $_privatemsg_invalid_recipients[] = $recipient->uid;
-      $errors[] = t('%name has chosen to not recieve any more messages from you.', array('%name' => $recipient->name));
+      $errors[] = t('%name has chosen to not recieve any more messages from you.', array('%name' => privatemsg_recipient_format($recipient, array('plain' => TRUE))));
     }
   }
 }

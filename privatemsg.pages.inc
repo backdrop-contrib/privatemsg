@@ -229,7 +229,9 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
   $body      = '';
 
   // convert recipients to array of user objects
+  $unique = FALSE;
   if (!empty($recipients) && is_string($recipients) || is_int($recipients)) {
+    $unique = TRUE;
     $recipients = _privatemsg_generate_user_array($recipients);
   }
   elseif (is_object($recipients)) {
@@ -270,7 +272,7 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
         continue;
       }
       $to[privatemsg_recipient_key($recipient)] = privatemsg_recipient_format($recipient);
-      $to_plain[privatemsg_recipient_key($recipient)] = privatemsg_recipient_format($recipient, array('plain' => TRUE));
+      $to_plain[privatemsg_recipient_key($recipient)] = privatemsg_recipient_format($recipient, array('plain' => TRUE, 'unique' => $unique));
     }
     else {
       // Recipient list contains blocked users.

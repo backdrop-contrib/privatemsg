@@ -896,7 +896,15 @@ function _privatemsg_parse_userstring($input, $types_limitations = array()) {
         $function = $module . '_privatemsg_name_lookup';
         $return = $function($string);
         if (isset($return) && is_array($return)) {
-          $matches += $return;
+         foreach ($return as $recipient) {
+           // Save recipients under their key to merge recipients which were
+           // loaded multiple times.
+           if (empty($recipient->type)) {
+             $recipient->type = 'user';
+             $recipient->recipient = $recipient->uid;
+           }
+           $matches[privatemsg_recipient_key($recipient)] = $recipient;
+         }
         }
       }
 
@@ -1335,7 +1343,7 @@ function privatemsg_privatemsg_block_message($author, $recipients, $context = ar
     if (privatemsg_is_disabled($recipient)) {
       $blocked[] = array(
         'recipient' => 'user_' . $recipient->uid,
-        'message' => t('%recipient has disabled private message receiving.', array('%recipient' => $recipient->name)),
+        'message' => t('%recipient has disabled private message receiving.', array('%recipient' => privatemsg_recipient_format($recipient, array('plain' => TRUE)))),
       );
     }
   }
@@ -1641,7 +1649,7 @@ function _privatemsg_validate_message(&$message, $form = FALSE) {
       );
     }
     else {
-      $messages['error'][] = t('@user is not allowed to write messages.', array('@user' => $message->author->name));
+      $messages['error'][] = t('@user is not allowed to write messages.', array('@user' => privatemsg_recipient_format($message->author, array('plain' => TRUE))));
       return array(
          'success'  => FALSE,
          'messages'   => $messages,
@@ -1674,7 +1682,7 @@ function _privatemsg_validate_message(&$message, $form = FALSE) {
       form_set_error('format', t('You are not allowed to use the specified format.'));
     }
     else {
-      $messages['error'][] = t('@user is not allowed to use the specified input format.', array('@user' => $message->author->name));
+      $messages['error'][] = t('@user is not allowed to use the specified input format.', array('@user' => privatemsg_recipient_format($message->author, array('plain' => TRUE))));
     }
   }
 
@@ -2763,11 +2771,11 @@ function privatemsg_tokens($type, $tokens, array $data = array(), array $options
 
         // Default values for the chained tokens handled below.
         case 'author':
-          $replacements[$original] = $sanitize ? filter_xss($message->author->name) : $message->author->name;
+          $replacements[$original] = $sanitize ? filter_xss(privatemsg_recipient_format($message->author, array('plain' => TRUE))) : privatemsg_recipient_format($message->author, array('plain' => TRUE));
           break;
 
         case 'recipient':
-            $replacements[$original] = $sanitize ? filter_xss($recipient->name) : $recipient->name;
+            $replacements[$original] = $sanitize ? filter_xss(privatemsg_recipient_format($recipient, array('plain' => TRUE))) : privatemsg_recipient_format($recipient, array('plain' => TRUE));
           break;
 
         case 'timestamp':

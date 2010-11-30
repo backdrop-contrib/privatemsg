@@ -406,7 +406,7 @@ function privatemsg_filter_dropdown_set_active(&$form, $filter) {
   if (isset($filter['author'])) {
     $string = '';
     foreach ($filter['author'] as $author) {
-      $string .= $author->name . ', ';
+      $string .= privatemsg_recipient_format($author, array('plain' => TRUE)) . ', ';
     }
     $form['filter']['author']['#default_value'] = $string;
   }
@@ -484,10 +484,10 @@ function privatemsg_filter_create_get_query($filter) {
   if (isset($filter['author']) && !empty($filter['author'])) {
     foreach ($filter['author'] as $author) {
       if (is_object($author) && isset($author->uid) && isset($author->name)) {
-        $query['author'][] = $author->name;
+        $query['author'][] = privatemsg_recipient_format($author, array('plain' => TRUE));
       }
       elseif (is_int($author) && $author_obj = _privatemsg_user_load($author)) {
-        $query['author'][] = $author_obj->name;
+        $query['author'][] = privatemsg_recipient_format($author, array('plain' => TRUE));
       }
     }
     if (isset($query['author'])) {

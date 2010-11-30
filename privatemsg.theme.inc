@@ -263,7 +263,7 @@ function theme_privatemsg_username($variables) {
     $recipient->uid = $recipient->recipient;
   }
   if (!empty($options['plain'])) {
-    $name = $recipient->name;
+    $name = format_username($recipient);
     if (!empty($options['unique'])) {
       $name .= ' [user]';
     }
