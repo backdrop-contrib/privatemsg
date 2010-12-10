@@ -20,48 +20,64 @@
  * @return
  *   The FAPI definitions for the thread action form.
  */
-function _privatemsg_action_form() {
+function _privatemsg_action_form($type) {
   $form = array(
-      '#type'        => 'fieldset',
-      '#title'       => t('Actions'),
       '#prefix'      => '<div class="container-inline">',
       '#suffix'      => '</div>',
-      '#collapsible' => TRUE,
-      '#collapsed'   => FALSE,
-      '#weight'      => 15,
+      '#weight'      => -5,
   );
-  if (privatemsg_user_access('delete privatemsg')) {
-    $form['delete'] = array(
-        '#type'   => 'submit',
-        '#value'  => t('Delete'),
-    );
-  }
   // Display all operations which have a label.
-  $options = array(0 => t('More actions...'));
-  foreach (module_invoke_all('privatemsg_thread_operations') as $operation => $array) {
-    if (isset($array['label'])) {
+  $operations = module_invoke_all('privatemsg_thread_operations', $type);
+  drupal_alter('privatemsg_thread_operations', $operations, $type);
+  foreach ($operations as $operation => $array) {
+    if (!empty($array['button'])) {
+      $form[$operation] = array(
+        '#type'   => 'submit',
+        '#value'  => $array['label'],
+        '#ajax' => array(
+          'callback' => 'privatemsg_list_js',
+          'wrapper' => 'privatemsg-list-form',
+          'effect' => 'fade',
+        ),
+      );
+    }
+    elseif (isset($array['label'])) {
       $options[$operation] = $array['label'];
     }
   }
-  $form['operation'] = array(
+  if (!empty($options)) {
+    array_unshift($options, t('Actions...'));
+    $form['operation'] = array(
       '#type'          => 'select',
       '#options'       => $options,
-      '#default_value' => 0,
-      // Execute the submit button if a operation has been selected.
-      '#attributes'    => array('onchange' => "(function ($) { $('#edit-submit').click() })(jQuery);"),
-  );
-  $form['submit'] = array(
-      '#prefix'     => '<div class="privatemsg-op-button">',
-      '#suffix'    => '</div>',
+      '#ajax' => array(
+        'callback' => 'privatemsg_list_js',
+        'wrapper' => 'privatemsg-list-form',
+        'effect' => 'fade',
+      ),
+      '#executes_submit_callback' => TRUE,
+    );
+    $form['submit'] = array(
       '#type'       => 'submit',
       '#value'      => t('Execute'),
-      '#submit'     => array('privatemsg_list_submit'),
-  );
-  // JS for hiding the execute button.
-  drupal_add_js(drupal_get_path('module', 'privatemsg') .'/privatemsg-list.js');
+      '#attributes' => array('class' => array('form-item')),
+      '#states' => array(
+        'visible' => array(
+          // This is never true, button is always hidden when JS is enabled.
+          ':input[name=operation]' => array('value' => 'fake'),
+        ),
+      ),
+    );
+  }
   return $form;
 }
 
+/**
+ * AJAX callback to return the form again.
+ */
+function privatemsg_list_js($form, $form_state) {
+  return $form['updated'];
+}
 
 function privatemsg_delete($form, $form_state, $thread, $message) {
   $form['pmid'] = array(
@@ -149,8 +165,15 @@ function privatemsg_list($form, &$form_state, $argument, $account) {
   $headers = _privatemsg_list_headers($columns);
   uasort($headers, 'element_sort');
 
-  $form = array('#list_argument' => $argument);
-  $form['list'] = array(
+  $form = array(
+    '#list_argument' => $argument,
+    '#submit' => array('privatemsg_list_submit'),
+    'updated' => array(
+      '#prefix' => '<div id="privatemsg-list-form">',
+      '#suffix' => '</div>',
+    ),
+  );
+  $form['updated']['list'] = array(
     '#type' => 'tableselect',
     '#header' => $headers,
     '#options' => array(),
@@ -164,27 +187,23 @@ function privatemsg_list($form, &$form_state, $argument, $account) {
   $i = 0;
   foreach ($query->execute() as $row) {
     // Store the raw row data.
-    $form['list']['#options'][$row->thread_id] = (array)$row;
+    $form['updated']['list']['#options'][$row->thread_id] = (array)$row;
     // Tableselect sorts the options, set a weight so that the order doesn't get
     // changed.
-    $form['list']['#options'][$row->thread_id]['#weight'] = $i++;
+    $form['updated']['list']['#options'][$row->thread_id]['#weight'] = $i++;
   }
 
-  if (!empty($form['list']['#options'])) {
-    $form['actions'] = _privatemsg_action_form();
+  if (!empty($form['updated']['list']['#options'])) {
+    $form['updated']['actions'] = _privatemsg_action_form($argument);
   }
 
   // Save the currently active account, used for actions.
   $form['account'] = array('#type' => 'value', '#value' => $account);
 
   // Define checkboxes, pager and theme
-  $form['pager'] = array('#theme' => 'pager', '#weight' => 20);
-
-  // Store the account for which the threads are displayed.
-  $form['#account'] = $account;
+  $form['updated']['pager'] = array('#theme' => 'pager', '#weight' => 20);
   return $form;
 }
-
 
 /**
  * Process privatemsg_list form submissions.
@@ -194,7 +213,8 @@ function privatemsg_list($form, &$form_state, $argument, $account) {
  */
 function privatemsg_list_submit($form, &$form_state) {
   // Load all available operation definitions.
-  $operations = module_invoke_all('privatemsg_thread_operations');
+  $operations = module_invoke_all('privatemsg_thread_operations', $form['#list_argument']);
+  drupal_alter('privatemsg_thread_operations', $operations, $for['#list_argument']);
 
   // Default "default" operation, which won't do anything.
   $operation = array('callback' => 0);
@@ -216,8 +236,19 @@ function privatemsg_list_submit($form, &$form_state) {
 
   // Only execute something if we have a valid callback and at least one checked thread.
   if (!empty($operation['callback'])) {
+    // Hack to fix destination during ajax requests.
+    if (isset($form_state['input']['ajax_page_state'])) {
+      $destination = 'messages';
+      if (!empty($form['#list_argument'])) {
+        $destination .= '/' . $form['#list_argument'];
+      }
+      $_GET['destination'] = $destination;
+    }
     privatemsg_operation_execute($operation, $form_state['values']['list'], $form_state['values']['account']);
   }
+
+  $form_state['rebuild'] = TRUE;
+  $form_state['input'] = array();
 }
 
 

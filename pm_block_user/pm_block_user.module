@@ -354,7 +354,7 @@ function pm_block_user_user_cancel($edit, $account, $method) {
       ->condition('author', $account->uid)
       ->condition('recipient', $account->uid)
     )
-    ->delete();
+    ->execute();
 }
 
 /**

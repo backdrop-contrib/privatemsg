@@ -100,8 +100,9 @@ class PrivatemsgFilterTestCase extends DrupalWebTestCase {
     // Delete all messages for author.
     $archive = array(
         'list[1]' => 1,
+        'operation' => 'archive',
     );
-    $this->drupalPost(NULL, $archive, t('Archive'));
+    $this->drupalPost(NULL, $archive, t('Execute'));
     $this->assertText(t('The messages have been archived.'), t('Confirmation message displayed'));
     $this->assertNoText($edit['subject'], t('Thread has been removed from inbox.'));
 

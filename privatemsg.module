@@ -424,7 +424,7 @@ function privatemsg_thread_load($thread_id, $account = NULL, $start = NULL, $use
     if (!isset($threads[$account->uid])) {
       $threads[$account->uid] = array();
     }
-    
+
     if (!array_key_exists($thread_id, $threads[$account->uid])) {
       // Load the list of participants.
       $thread['participants'] = _privatemsg_load_thread_participants($thread_id, $account, FALSE, 'view');
@@ -1019,12 +1019,12 @@ function privatemsg_sql_list($account, $argument = 'list') {
     if (db_driver() == 'pgsql') {
       $query->addExpression("array_to_string(array(SELECT DISTINCT pmia.recipient
                                                           FROM {pm_index} pmia
-                                                          WHERE pmia.type = 'user' AND pmia.thread_id = pmi.thread_id), ',')", 'participants');
+                                                          WHERE pmia.type = 'user' AND pmia.thread_id = pmi.thread_id AND pmia.recipient <> :current), ',')", 'participants', array(':current' => $account->uid));
     }
     else {
       $query->addExpression("(SELECT GROUP_CONCAT(DISTINCT pmia.recipient SEPARATOR ',')
                                      FROM {pm_index} pmia
-                                     WHERE pmia.type = 'user' AND pmia.thread_id = pmi.thread_id)", 'participants');
+                                     WHERE pmia.type = 'user' AND pmia.thread_id = pmi.thread_id AND pmia.recipient <> :current)", 'participants', array(':current' => $account->uid));
     }
   }
   if (in_array('thread_started', $fields)) {
@@ -2108,7 +2108,7 @@ function privatemsg_operation_execute($operation, $threads, $account = null) {
     // @todo: Provide a more flexible solution for such an undo action, operation defined string for example.
     $_SESSION['privatemsg']['undo callback'] = array('function' => $undo_function, 'args' => $undo_args);
     $undo = url('messages/undo/action', array('query' => drupal_get_destination()));
-    
+
     drupal_set_message(t('The previous action can be <a href="!undo">undone</a>.', array('!undo' => $undo)));
   }
   return TRUE;
@@ -2174,10 +2174,12 @@ function privatemsg_privatemsg_thread_operations() {
   );
   if (privatemsg_user_access('delete privatemsg')) {
     $operations['delete'] = array(
+      'label' => t('Delete'),
       'callback' => 'privatemsg_thread_change_delete',
       'callback arguments' => array('delete' => 1),
       'undo callback' => 'privatemsg_thread_change_delete',
       'undo callback arguments' => array('delete' => 0),
+      'button' => TRUE,
     );
   }
   return $operations;
@@ -2203,7 +2205,7 @@ function privatemsg_entity_info() {
           'admin' => array(
             'path' => 'admin/config/messaging/privatemsg',
             'access arguments' => array('administer privatemsg settings'),
-          ),    
+          ),
         ),
       ),
     ),

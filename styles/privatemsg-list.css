@@ -17,3 +17,7 @@
 .privatemsg-list-date {
   min-width: 20%;
 }
+
+form#privatemsg-list div.container-inline * {
+  margin: 0 2px;
+}
