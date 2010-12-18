@@ -54,10 +54,9 @@ function privatemsg_schema() {
     ),
     'primary key'     => array('mid', 'recipient', 'type'),
     'indexes'         => array(
-      'mid'               => array('mid'),
-      'thread_id'         => array('thread_id'),
-      'recipient'         => array('recipient', 'type'),
-      'is_new'            => array('mid', 'recipient', 'type', 'is_new'),
+      'list'         => array('recipient', 'type', 'deleted', 'is_new'),
+      'messages'     => array('mid', 'recipient', 'type'),
+      'participants' => array('thread_id', 'recipient', 'type', 'deleted'),
     ),
   );
 
@@ -110,11 +109,6 @@ function privatemsg_schema() {
       ),
     ),
     'primary key'     => array('mid'),
-    'indexes'         => array(
-      'author'            => array('author'),
-      'subject'           => array(array('subject', 20)),
-      'timestamp'         => array('timestamp'),
-    ),
   );
 
   $schema['pm_disable'] = array(
@@ -133,6 +127,9 @@ function privatemsg_schema() {
   return $schema;
 }
 
+/**
+ * Implements hook_uninstall().
+ */
 function privatemsg_uninstall() {
   variable_del('private_message_view_template');
   variable_del('privatemsg_per_page');
@@ -148,6 +145,23 @@ function privatemsg_uninstall() {
   variable_del('privatemsg_no_messages_notification');
   variable_del('privatemsg_display_on_comments');
 }
+
+/**
+ * Implements hook_update_dependencies().
+ */
+function privatemsg_update_dependencies() {
+  $dependencies['privatemsg']['7004']['privatemsg_filter'] = '7001';
+  return $dependencies;
+}
+
+/**
+ * Implements hook_update_last_removed().
+ */
+function privatemsg_update_last_removed() {
+  // Only upgrading from 6.x-1.3 or later is supported.
+  return 6007;
+}
+
 
 /**
  * Add has_tokens field to indicate if a message is using tokens.
@@ -173,4 +187,129 @@ function privatemsg_update_7001() {
     'not null'      => FALSE,
     'description'   => 'The {filter_formats}.format of the message text.',
   ));
+}
+
+
+/**
+ * Add {pm_disable} table.
+ */
+function privatemsg_update_7002() {
+
+  // Make sure to not run this update twice.
+  if (db_table_exists('pm_disable')) {
+    return $ret;
+  }
+
+  $schema['pm_disable'] = array(
+    'description'       => '{pm_disable} holds the list of users that have disabled private messaging',
+    'fields' => array(
+      'uid'    => array(
+        'description'   => 'ID of the user',
+        'type'          => 'int',
+        'not null'      => TRUE,
+        'unsigned'      => TRUE,
+      ),
+    ),
+    'primary key'       => array('uid'),
+  );
+
+  if (!(db_table_exists('pm_disable'))) {
+    db_create_table('pm_disable', $schema['pm_disable']);
+  }
+}
+
+/**
+ * Change schema to allow other recipients than single users.
+ */
+function privatemsg_update_7003() {
+  // Make sure to not run this update twice.
+  if (db_field_exists('pm_index', 'recipient')) {
+    return;
+  }
+  db_drop_index('pm_index', 'list');
+  db_drop_index('pm_index', 'messages');
+  db_drop_index('pm_index', 'participants');
+  db_change_field('pm_index', 'uid', 'recipient', array(
+    'description'   => 'ID of the recipient object, typically user',
+    'type'          => 'int',
+    'not null'      => TRUE,
+    'unsigned'      => TRUE,
+  ));
+  db_add_field('pm_index', 'type', array(
+    'description'   => 'Type of recipient object',
+    'type' => 'varchar',
+    'not null' => TRUE,
+    'length'  => '255',
+    'default' => 'user',
+  ), array(
+    'indexes' => array(
+      'list'         => array('recipient', 'type', 'deleted', 'is_new'),
+      'messages'     => array('mid', 'recipient', 'type'),
+      'participants' => array('thread_id', 'recipient', 'type', 'deleted'),
+    ),
+  ));
+}
+
+/**
+ * Remove duplicate entries in {pm_index}.
+ */
+function privatemsg_update_7004(&$sandbox) {
+  // If the primary key already exists, this doesn't need to run.
+  if (db_index_exists('pm_index', 'PRIMARY')) {
+    return;
+  }
+
+  // First run, initialize sandbox and check if we are ready to run.
+  if (!isset($sandbox['current_thread_id'])) {
+    $sandbox['current_thread_id'] = 0;
+    // Assume that the thread ids are distributed more or less equally over the
+    // whole data set. This allows us to calculate the approximate progress.
+    $sandbox['max'] = db_query('SELECT MAX(thread_id) FROM {pm_index}')->fetchField();
+  }
+
+  // Fetch the next 10 thread_ids.
+  $result = db_query_range('SELECT DISTINCT thread_id FROM {pm_index} WHERE thread_id > :thread_id ORDER BY thread_id ASC', 0, 20, array(':thread_id' => $sandbox['current_thread_id']));
+  $threads = $result->fetchCol();
+
+  if (!empty($threads)) {
+    // By limiting this slow query (having condition) on a specific set of
+    // threads, this allows us to process the slow having part on a relatively
+    // small subset of pm_index that can be selected based on the thread_id
+    // index. There might also be cases where is_new and/or deleted are not
+    // equal, use MAX(is_new) and MIN(deleted) for these cases.
+    $sql = 'SELECT COUNT(*) AS count, pmi.recipient, pmi.type, pmi.mid, pmi.thread_id, MAX(pmi.is_new) As is_new, MIN(pmi.deleted) AS deleted FROM {pm_index} pmi WHERE thread_id IN (:threads) GROUP BY pmi.recipient, pmi.type, pmi.mid, pmi.thread_id HAVING COUNT(*) > 1';
+    $result = db_query($sql, array(':threads' => $threads));
+    foreach ($result as $row) {
+      // Delete all occurences of these entries.
+      db_delete('pm_index')
+        ->condition('mid', $row->mid)
+        ->condition('recipient', $row->recipient)
+        ->condition('type', $row->type)
+        ->execute();
+      // Re-insert a single entry. We do this to explicitely keep messages
+      // unread and undeleted if there are conflicting entries.
+      db_insert('pm_index')
+        ->fields(array(
+          'mid' => $row->mid,
+          'thread_id' => $row->thread_id,
+          'recipient' => $row->recipient,
+          'type' => $row->type,
+          'is_new' => $row->is_new,
+          'deleted' => $row->deleted,
+        ))
+        ->execute();
+    }
+    $sandbox['current_thread_id'] = max($threads);
+  }
+  // Set #finished based on sandbox.
+  $sandbox['#finished'] = empty($sandbox['max']) ? 1 : ($sandbox['current_thread_id'] / $sandbox['max']);
+}
+
+/**
+ * Add primary key to {pm_index}.
+ */
+function privatemsg_update_7005() {
+  if (!db_index_exists('pm_index', 'PRIMARY')) {
+    db_add_primary_key('pm_index', array('mid', 'recipient', 'type'));
+  }
 }
