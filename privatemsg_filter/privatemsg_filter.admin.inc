@@ -259,7 +259,7 @@ function privatemsg_filter_inbox_rebuild_process(&$context) {
     // on a specific set of threads, this allows us to process the slow having
     // part on a relatively small subset of pm_index that can be selected based on
     // the thread_id index.
-    $sql = "SELECT pmi.thread_id, pmi.recipient, pmi.type FROM {pm_index} pmi WHERE thread_id IN (:threads) GROUP BY pmi.thread_id, pmi.recipient, pmi.type HAVING ((SELECT pmf.author FROM {pm_message} pmf WHERE pmf.mid = pmi.thread_id) = pmi.recipient AND pmi.type IN ('user', 'hidden') AND COUNT(pmi.thread_id) > 1) OR (SELECT COUNT(*) FROM {pm_message} pmf INNER JOIN pm_index pmif ON (pmf.mid = pmif.mid) WHERE pmif.thread_id = pmi.thread_id AND pmf.author <> pmi.recipient AND pmi.type IN ('user', 'hidden')) > 0";
+    $sql = "SELECT pmi.thread_id, pmi.recipient, pmi.type FROM {pm_index} pmi WHERE thread_id IN (:threads) GROUP BY pmi.thread_id, pmi.recipient, pmi.type HAVING ((SELECT pmf.author FROM {pm_message} pmf WHERE pmf.mid = pmi.thread_id) = pmi.recipient AND pmi.type IN ('user', 'hidden') AND COUNT(pmi.thread_id) > 1) OR (SELECT COUNT(*) FROM {pm_message} pmf INNER JOIN {pm_index} pmif ON (pmf.mid = pmif.mid) WHERE pmif.thread_id = pmi.thread_id AND pmf.author <> pmi.recipient AND pmi.type IN ('user', 'hidden')) > 0";
     $result = db_query($sql, array(':threads' => $threads));
     foreach ($result as $row) {
       $row->uid = $row->recipient;
