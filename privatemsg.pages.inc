@@ -163,7 +163,6 @@ function privatemsg_list($form, &$form_state, $argument, $account) {
 
   // Load the themed list headers based on the available data.
   $headers = _privatemsg_list_headers($columns);
-  uasort($headers, 'element_sort');
 
   $form = array(
     '#list_argument' => $argument,

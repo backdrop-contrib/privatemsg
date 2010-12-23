@@ -605,7 +605,6 @@ function theme_privatemsg_list_header__tags() {
   if (privatemsg_user_access('tag private messages')) {
     return array(
       'data' => t('Tags'),
-      'key' => 'tags',
       'class' => 'privatemsg-header-tags',
       '#weight' => -42,
     );

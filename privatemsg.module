@@ -1166,11 +1166,15 @@ function privatemsg_sql_deleted($days, $max) {
 function privatemsg_user_view($account) {
   if (($url = privatemsg_get_link(array($account))) && variable_get('privatemsg_display_profile_links', 1)) {
     $account->content['privatemsg_send_new_message'] = array(
-      '#type'   => 'user_profile_item',
-      '#title'  => t('Private messages'),
-      '#markup'  => l(t('Send this user a message'), $url, array('query' => drupal_get_destination(), 'title' => t('Send this user a message'), 'attributes' => array('class' => 'privatemsg-send-link privatemsg-send-link-profile'))),
+      '#type'   => 'link',
+      '#title'  => t('Send this user a private message'),
+      '#href'  => $url,
       '#weight' => 10,
-      '#attributes' => array('class' => array('privatemsg-profile-link')),
+      '#options' => array(
+        'query' => drupal_get_destination(),
+        'title' => t('Send this user a private message'),
+        'attributes' => array('class' => 'privatemsg-send-link privatemsg-send-link-profile'),
+      ),
     );
   }
 }
@@ -2017,6 +2021,13 @@ function _privatemsg_list_headers($keys) {
     if ($return = theme('privatemsg_list_header__' . $key)) {
       // The default theme returns nothing, only store the value if we have something.
       $header[$key] = $return;
+    }
+  }
+  uasort($header, 'element_sort');
+  // Remove weight column or it will show up in the markup.
+  foreach ($header as $key => $element) {
+    if (isset($header[$key]['#weight'])) {
+      unset($header[$key]['#weight']);
     }
   }
   return $header;
