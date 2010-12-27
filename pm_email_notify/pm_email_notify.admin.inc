@@ -23,6 +23,14 @@ function pm_email_notify_admin_settings_form() {
     '#weight' => 1,
   );
 
+  $form['pm_email']['pm_email_notify_from'] = array(
+    '#type' => 'textfield',
+    '#title' => t('From e-mail address for notifications'),
+    '#default_value' => variable_get('pm_email_notify_from',''),
+    '#weight' => 2,
+    '#description' => t('This is the e-mail address that notifications will come from. Leave blank to use the site default.'),
+  );
+
   $form['pm_email_notify_subject'] = array(
     '#type' => 'textfield',
     '#title' => t('Subject of notification messages'),
