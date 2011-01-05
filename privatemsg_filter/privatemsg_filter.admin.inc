@@ -55,7 +55,7 @@ function privatemsg_tags_admin() {
     // Display a message if now tags are available.
     $rows[] = array(array('data' => t('No tags available.'), 'colspan' => count($header)));
   }
-  
+
   return theme('table',  array('header' => $header, 'rows' =>  $rows)) . theme('pager');
 }
 
@@ -101,7 +101,7 @@ function privatemsg_tags_form($form, &$form_state, $tag_id = NULL) {
 
 /**
  * Form validate function for tags admin page.
- * 
+ *
  * Make sure that a tag name is unique.
  */
 function privatemsg_tags_form_validate($form, &$form_state) {
@@ -185,27 +185,6 @@ function privatemsg_filter_tags_delete_submit($form, &$form_state) {
     drupal_set_message(t('Tag has been deleted'));
   }
   $form_state['redirect'] = 'admin/config/messaging/privatemsg/tags';
-}
-
-function privatemsg_filter_admin() {
-  $form = array();
-
-  $form['privatemsg_filter_searchbody'] = array(
-    '#type'          => 'checkbox',
-    '#title'         => t('Search message body'),
-    '#description'   => t('WARNING: turning on this feature will slow down search performance by a large factor. Gets worse as your messages database increases.'),
-    '#default_value' => variable_get('privatemsg_filter_searchbody', FALSE),
-  );
-
-  $form['privatemsg_filter_tagfield_weight'] = array(
-    '#type'          => 'textfield',
-    '#title'         => t('Position of the tagging textfield'),
-    '#description'   => t('Use higher values to push the form lower down the page, lower or negative values to raise it higher.'),
-    '#size'          => 4,
-    '#default_value' => variable_get('privatemsg_filter_tagfield_weight', 10),
-  );
-
-  return system_settings_form($form);
 }
 
 /**

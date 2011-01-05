@@ -9,12 +9,17 @@
 function privatemsg_admin_settings() {
   $form = array();
 
+  $form['settings'] = array(
+    '#type' => 'vertical_tabs',
+  );
+
   $form['display_settings'] = array(
     '#type'        => 'fieldset',
     '#collapsible' => TRUE,
     '#collapsed'   => TRUE,
-    '#title'       => t('Display settings'),
+    '#title'       => t('Display'),
     '#weight'      => 5,
+    '#group'       => 'settings',
   );
   $form['display_settings']['private_message_view_template'] = array(
     '#type'          => 'radios',
@@ -63,9 +68,10 @@ function privatemsg_admin_settings() {
     '#type'        => 'fieldset',
     '#collapsible' => TRUE,
     '#collapsed'   => TRUE,
-    '#title'       => t('Flush deleted messages'),
+    '#title'       => t('Deleted messages'),
     '#description' => t('By default, deleted messages are only hidden from the user but still stored in the database. These settings control if and when messages should be removed.'),
     '#weight'    => 20,
+    '#group'       => 'settings',
   );
 
   $form['flush_deleted']['privatemsg_flush_enabled'] = array(
@@ -91,10 +97,11 @@ function privatemsg_admin_settings() {
 
   $form['privatemsg_listing'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Configure listings'),
+    '#title' => t('Message lists'),
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
     '#weight' => -5,
+    '#group'       => 'settings',
   );
 
   $form['privatemsg_listing']['privatemsg_per_page'] = array(
@@ -144,14 +151,20 @@ function privatemsg_admin_settings() {
     '#description'   => t('The number of messages to be displayed on first thread page. Displays the newest messages.'),
     '#options'       => $amounts,
     '#weight'        => 20,
+    '#states'        => array(
+      'visible' => array(
+        "input[name='privatemsg_view_use_max_as_default']" => array('checked' => TRUE),
+      )
+    )
   );
 
   $form['links'] = array(
     '#type' => 'fieldset',
-    '#title' => t('"Send private message" link settings'),
+    '#title' => t('Links'),
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
     '#weight' => 10,
+    '#group'       => 'settings',
   );
 
   $form['links']['privatemsg_display_link_self'] = array(
@@ -188,7 +201,6 @@ function privatemsg_admin_settings() {
     '#description' => t('Also display a link to send a private message to the authors of the comments of the selected content types.'),
     '#default_value' => variable_get('privatemsg_display_on_comments', 0),
   );
-  drupal_add_js(drupal_get_path('module', 'privatemsg') .'/privatemsg-admin.js');
 
   $form['#submit'][] = 'privatemsg_admin_settings_submit';
   return system_settings_form($form);

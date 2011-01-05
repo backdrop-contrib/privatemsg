@@ -30,15 +30,6 @@ function privatemsg_filter_permission() {
  * Implementation of hook_menu().
  */
 function privatemsg_filter_menu() {
-  $items['admin/config/messaging/privatemsg/filter'] = array(
-    'title'            => 'Filter',
-    'description'      => 'Configure filter settings.',
-    'page callback'    => 'drupal_get_form',
-    'page arguments'   => array('privatemsg_filter_admin'),
-    'file'             => 'privatemsg_filter.admin.inc',
-    'access arguments' => array('administer privatemsg settings'),
-    'type'             => MENU_LOCAL_TASK,
-  );
   $items['admin/config/messaging/privatemsg/tags'] = array(
     'title'            => 'Tags',
     'description'      => 'Configure tags.',
@@ -159,6 +150,14 @@ function privatemsg_filter_form_privatemsg_admin_settings_alter(&$form, $form_st
     '#title' => t('Choose the default list option'),
     '#description' => t('Choose which of the two lists are shown by default when following the messages link.'),
   );
+
+  $form['privatemsg_listing']['privatemsg_filter_searchbody'] = array(
+    '#type'          => 'checkbox',
+    '#title'         => t('Search message body'),
+    '#description'   => t('WARNING: turning on this feature will slow down search performance by a large factor. Gets worse as your messages database increases.'),
+    '#default_value' => variable_get('privatemsg_filter_searchbody', FALSE),
+  );
+
   // Add tags to the list of possible columns.
   $form['privatemsg_listing']['privatemsg_display_fields']['#options']['tags'] = t('Tags');
 

@@ -138,6 +138,7 @@ function privatemsg_realname_form_privatemsg_admin_settings_alter(&$form, &$form
     '#collapsed' => TRUE,
     '#collapsible' => TRUE,
     '#weight' => 25,
+    '#group' => 'settings',
   );
 
   $form['realname']['privatemsg_realname_unique_identifier'] = array(
