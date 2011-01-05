@@ -128,6 +128,16 @@ function privatemsg_schema() {
 }
 
 /**
+ * Implements hook_install().
+ */
+function privatemsg_install() {
+  // Define default formats for date format types.
+  variable_set("date_format_privatemsg_current_day", 'g:i a');
+  variable_set("date_format_privatemsg_current_year", 'M j');
+  variable_set("date_format_privatemsg_years", 'n/j/y');
+}
+
+/**
  * Implements hook_uninstall().
  */
 function privatemsg_uninstall() {
@@ -312,4 +322,13 @@ function privatemsg_update_7005() {
   if (!db_index_exists('pm_index', 'PRIMARY')) {
     db_add_primary_key('pm_index', array('mid', 'recipient', 'type'));
   }
+}
+
+/**
+ * Define default formats for date format types.
+ */
+function privatemsg_update_7006() {
+  variable_set("date_format_privatemsg_current_day", 'g:i a');
+  variable_set("date_format_privatemsg_current_year", 'M j');
+  variable_set("date_format_privatemsg_years", 'n/j/y');
 }

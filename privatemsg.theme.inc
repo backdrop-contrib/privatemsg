@@ -45,7 +45,7 @@
  * $form['#data']['thread_id'] = $data // Raw data of that thread
  * $form['#rows']['thread_id'] = $row // Themed fields of that thread
  * @endcode
- * 
+ *
  * Note that the information in #data can be used to populate #rows, but it will
  * not be used by the default theme function theme_privatemsg_list().
  *
@@ -134,7 +134,7 @@ function theme_privatemsg_list_field__count($variables) {
  */
 function theme_privatemsg_list_field__last_updated($variables) {
   $thread = $variables['thread'];
-  $field['data'] = format_date($thread['last_updated'], 'small');
+  $field['data'] = privatemsg_format_date($thread['last_updated']);
   $field['class'][] = 'privatemsg-list-date';
   return $field;
 }
@@ -147,7 +147,7 @@ function theme_privatemsg_list_field__last_updated($variables) {
 function theme_privatemsg_list_field__thread_started($variables) {
   $thread = $variables['thread'];
   $field = array();
-  $field['data'] = format_date($thread['thread_started'], 'small');
+  $field['data'] = privatemsg_format_date($thread['thread_started']);
   $field['class'][] = 'privatemsg-list-date-started';
   return $field;
 }

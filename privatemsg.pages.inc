@@ -200,7 +200,7 @@ function privatemsg_list($form, &$form_state, $argument, $account) {
   $form['account'] = array('#type' => 'value', '#value' => $account);
 
   // Define checkboxes, pager and theme
-  $form['updated']['pager'] = array('#theme' => 'pager', '#weight' => 20);
+  $form['updated']['pager'] = array('#markup' => theme('pager'), '#weight' => 20);
   return $form;
 }
 
