@@ -160,8 +160,10 @@ function privatemsg_uninstall() {
  * Implements hook_update_dependencies().
  */
 function privatemsg_update_dependencies() {
-  $dependencies['privatemsg']['7004']['privatemsg_filter'] = '7001';
-  return $dependencies;
+  if (module_exists('privatemsg_filter')) {
+    $dependencies['privatemsg']['7004']['privatemsg_filter'] = '7001';
+    return $dependencies;
+  }
 }
 
 /**
