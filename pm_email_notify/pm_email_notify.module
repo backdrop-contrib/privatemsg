@@ -107,11 +107,12 @@ function pm_email_notify_user_update(&$edit, $account, $category) {
 /**
  * Implements hook_form_FORM_ID_alter().
  */
-function pm_email_form_privatemsg_admin_settings_alter(&$form, &$form_state) {
+function pm_email_notify_form_privatemsg_admin_settings_alter(&$form, &$form_state) {
   $form['pm_email_notify'] = array(
     '#type' => 'fieldset',
     '#title' => t('E-mail notify'),
     '#group' => 'settings',
+    '#weight' => 22,
   );
 
   $form['pm_email_notify']['pm_email_notify_default'] = array(
