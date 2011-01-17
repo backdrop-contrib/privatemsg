@@ -2119,6 +2119,10 @@ function privatemsg_operation_execute($operation, $threads, $account = null) {
 
     drupal_set_message(t('The previous action can be <a href="!undo">undone</a>.', array('!undo' => $undo)));
   }
+
+  // Allow modules to respond to the operation.
+  module_invoke_all('privatemsg_operation_executed', $operation, $threads, $account);
+
   return TRUE;
 }
 

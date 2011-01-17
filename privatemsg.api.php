@@ -618,5 +618,24 @@ function hook_privatemsg_name_lookup_matches(&$matches, $string) {
 }
 
 /**
+ * Allows response to a successful operation.
+ *
+ * @param $operation
+ *   The operation that was executed.
+ * @param $threads
+ *   An array which contains the thread ids on which the operation
+ *   has been executed.
+ * @param $account
+ *   An user account object if an other user than the currrently logged in is
+ *   affected.
+ *
+ * @see privatemsg_operation_execute()
+ * @see hook_privatemsg_thread_operations()
+ */
+function hook_privatemsg_operation_executed($operation, $threads, $account = NULL) {
+
+}
+
+/**
  * @}
  */
