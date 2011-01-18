@@ -692,6 +692,7 @@ function template_preprocess_privatemsg_view(&$vars) {
 
   $message = $vars['message'];
   $vars['mid'] = isset($message->mid) ? $message->mid : NULL;
+  $vars['message_classes'] = $message->classes;
   $vars['thread_id'] = isset($message->thread_id) ? $message->thread_id : NULL;
   $vars['author_picture'] = theme('user_picture', array('account' => $message->author));
   // Directly address the current user if he is the author.

@@ -779,11 +779,25 @@ function  privatemsg_view($thread) {
 
   // Render the messages.
   $content['messages']['#weight'] = 0;
+  $i = 1;
+  $count = count($thread['messages']);
   foreach ($thread['messages'] as $pmid => $message) {
     // Set message as read and theme it.
-    if (!empty($message->is_new)) {
+    // Add CSS classes.
+    $message->classes = array('privatemsg-message', 'privatemsg-message-' . $i, $i % 2 == 1 ? 'privatemsg-message-even' : 'privatemsg-message-odd');
+     if (!empty($message->is_new)) {
+      // Mark message as read.
       privatemsg_message_change_status($pmid, PRIVATEMSG_READ, $thread['user']);
+      $message->classes[] = 'privatemsg-message-new';
     }
+
+    if ($i == 1) {
+      $message->classes[] = 'privatemsg-message-first';
+    }
+    if ($i == $count) {
+      $message->classes[] = 'privatemsg-message-last';
+    }
+    $i++;
     $content['messages'][$pmid] = array(
       '#markup' => theme('privatemsg_view', array('message' => $message)),
     );

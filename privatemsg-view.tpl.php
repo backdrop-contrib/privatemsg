@@ -6,7 +6,8 @@ drupal_add_css(drupal_get_path('module', 'privatemsg') . '/styles/privatemsg-vie
 drupal_add_css(drupal_get_path('module', 'privatemsg') . '/styles/privatemsg-view.theme.css');
 ?>
 <?php print $anchors; ?>
-<div class="privatemsg-message<?php echo isset($new) ? ' privatemsg-message-new' : '' ?>" id="privatemsg-mid-<?php print $mid; ?>">
+<?php dpm($message_classes); ?>
+<div class="<?php echo implode(' ', $message_classes); ?>" id="privatemsg-mid-<?php print $mid; ?>">
   <div class="privatemsg-author-avatar">
     <?php print $author_picture; ?>
   </div>
