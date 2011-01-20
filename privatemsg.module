@@ -692,7 +692,7 @@ function template_preprocess_privatemsg_view(&$vars) {
 
   $message = $vars['message'];
   $vars['mid'] = isset($message->mid) ? $message->mid : NULL;
-  $vars['message_classes'] = $message->classes;
+  $vars['message_classes'] = isset($message->classes) ? $message->classes : array();
   $vars['thread_id'] = isset($message->thread_id) ? $message->thread_id : NULL;
   $vars['author_picture'] = theme('user_picture', array('account' => $message->author));
   // Directly address the current user if he is the author.
@@ -2241,7 +2241,7 @@ function privatemsg_message_uri_callback($message) {
   );
   // Add message fragment, if necessary.
   if ($message->mid != $message->thread_id) {
-    $uri['options']['fragment'] = 'privatemsg-message-' . $message->mid;
+    $uri['options']['fragment'] = 'privatemsg-mid-' . $message->mid;
   }
   return $uri;
 }
