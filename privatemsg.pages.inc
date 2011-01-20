@@ -158,6 +158,16 @@ function privatemsg_list_page($argument = 'list', $uid = NULL) {
 function privatemsg_list($form, &$form_state, $argument, $account) {
   drupal_add_css(drupal_get_path('module', 'privatemsg') .'/styles/privatemsg-list.css');
 
+  // If this is an AJAX request, update $_GET['q'] so that table sorting and
+  // similar links are using the correct base path.
+  if ($_GET['q'] == 'system/ajax') {
+    $q = 'messages';
+    if (!empty($argument)) {
+      $q .= '/' . $argument;
+    }
+    $_GET['q'] = $q;
+  }
+
   // Load the table columns.
   $columns = array_merge(array('subject', 'last_updated'), array_filter(variable_get('privatemsg_display_fields', array('participants'))));
 
