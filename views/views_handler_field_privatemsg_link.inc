@@ -68,9 +68,10 @@ class views_handler_field_privatemsg_link extends views_handler_field {
       '#title' => t('Custom destination'),
       '#default_value' => $this->options['custom_destination'],
       '#description' => t('If non-empty, users will be forwared to the given url. You can use replacement tokens to insert any existing field output.'),
-      '#process' => array('views_process_dependency'),
-      '#dependency' => array(
-        'edit-options-return' => array(1)
+      '#states' => array(
+        'visible' => array(
+          "input[name='options[return]']" => array('checked' => TRUE),
+        ),
       ),
     );
 
@@ -126,11 +127,8 @@ class views_handler_field_privatemsg_link extends views_handler_field {
    * Renders our field, displays a link if the user is allowed to.
    */
   function render($values) {
-    if (isset($values->uid)) {
-      $uid = $values->uid;
-    }
-    elseif (isset($values->users_uid)) {
-      $uid = $values->users_uid;
+    if (isset($values->{$this->aliases['uid']})) {
+      $uid = $values->{$this->aliases['uid']};
     }
     else {
       return '';
