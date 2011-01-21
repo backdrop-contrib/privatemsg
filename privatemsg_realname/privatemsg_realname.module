@@ -116,19 +116,6 @@ function theme_privatemsg_realname_username($variables) {
 }
 
 /**
- * Implements hook_privatemsg_sql_participants_alter().
- */
-function privatemsg_realname_privatemsg_sql_participants_alter(&$fragments, $thread_id) {
-  // Select the realname.
-  $fragments['select'][]      = 'r.realname';
-  // Also select homepage to avoid php notices.
-  $fragements['select'][]     = 'u.homepage';
-
-  // Join realname table.
-  $fragments['inner_join'][]  = 'LEFT JOIN {realname} r ON (r.uid = u.uid)';
-}
-
-/**
  * Implements hook_form_FORM_ID_alter().
  */
 function privatemsg_realname_form_privatemsg_admin_settings_alter(&$form, &$form_state) {
