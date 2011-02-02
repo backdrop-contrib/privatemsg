@@ -18,7 +18,7 @@ function privatemsg_preprocess_author_pane(&$variables) {
   global $user;
   $account = $variables['account'];
 
-  if ($account_id != $user->uid) {
+  if ($account->uid != $user->uid) {
     $url = privatemsg_get_link($account);
     if (!empty($url)) {
       $variables['privatemsg'] = l('<span>' . t('Send PM') . '</span>', $url, array('attributes' => array('class' => array('author-pane-link'), 'title' => t('Send @name a private message', array('@name' => privatemsg_recipient_format($account, array('plain' => TRUE))))), 'html' => TRUE));
