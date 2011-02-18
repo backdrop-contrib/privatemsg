@@ -38,7 +38,8 @@ function pm_email_notify_privatemsg_message_insert($message) {
       // send them a new pm notification email if they did
       $params['recipient'] = $recipient;
       $params['message'] = $message;
-      drupal_mail('pm_email_notify', 'notice', $recipient->mail, user_preferred_language($recipient), $params, variable_get('pm_email_notify_from',''));
+      $from = variable_get('pm_email_notify_from', '');
+      drupal_mail('pm_email_notify', 'notice', $recipient->mail, user_preferred_language($recipient), $params, !empty($from) ? $form : NULL);
     }
   }
 }
