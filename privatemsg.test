@@ -1283,4 +1283,61 @@ class PrivatemsgAPITestCase extends DrupalWebTestCase {
     $this->assertEqual($errormessage, $resultf2['messages']['error'][0], 'API denied to send message from user without permission');
 
   }
+
+  /**
+   * Test various use cases for privatemsg_get_link().
+   */
+  function testGetLink() {
+    $author      = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
+    $recipient1  = $this->drupalCreateUser(array('read privatemsg'));
+    $recipient2  = $this->drupalCreateUser(array('read privatemsg'));
+    $recipient3  = $this->drupalCreateUser(array('read privatemsg', 'allow disabling privatemsg'));
+    $recipient4  = $this->drupalCreateUser();
+
+    $this->drupalLogin($author);
+
+    $this->drupalGet(privatemsg_get_link(array($recipient1)));
+    $this->assertFieldByName('recipient', $recipient1->name . ' [user]');
+
+    $this->drupalGet(privatemsg_get_link(array($recipient1, $recipient2)));
+    $this->assertFieldByName('recipient', $recipient1->name . ' [user], ' . $recipient2->name . ' [user]');
+
+    $this->drupalGet(privatemsg_get_link(array($recipient1, $recipient2), $author));
+    $this->assertFieldByName('recipient', $recipient1->name . ' [user], ' . $recipient2->name . ' [user]');
+
+    $this->drupalGet(privatemsg_get_link(array($recipient1, $recipient2), $author, $subject = 'Str/"ang\\w3//'));
+    $this->assertFieldByName('recipient', $recipient1->name . ' [user], ' . $recipient2->name . ' [user]');
+    $this->assertFieldByName('subject', $subject);
+
+    // Disable privatemsg for recipient 3.
+    db_insert('pm_disable')
+      ->fields(array(
+        'uid' => $recipient3->uid,
+      ))
+      ->execute();
+    $this->assertFalse(privatemsg_get_link(array($recipient3), $author));
+
+    $this->drupalGet(privatemsg_get_link(array($recipient1, $recipient3), $author));
+    $this->assertFieldByName('recipient', $recipient1->name . ' [user]');
+
+    // Disable links to self, verify that a link is only returned when the
+    // author is not the only recipient.
+    variable_set('privatemsg_display_link_self', FALSE);
+
+    $this->assertFalse(privatemsg_get_link(array($author), $author));
+
+    $this->drupalGet(privatemsg_get_link(array($recipient1, $author), $author));
+    $this->assertFieldByName('recipient', $recipient1->name . ' [user]');
+
+    // Verify that link is not shown when recipient doesn't have read
+    // permission.
+    $this->assertFalse(privatemsg_get_link(array($recipient4), $author));
+
+    $this->drupalGet(privatemsg_get_link(array($recipient1, $recipient4), $author));
+    $this->assertFieldByName('recipient', $recipient1->name . ' [user]');
+
+    // Verify that link is not shown when author does not have write permission.
+    $this->drupalLogin($recipient1);
+    $this->assertFalse(privatemsg_get_link(array($author), $recipient1));
+  }
 }

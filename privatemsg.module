@@ -1873,7 +1873,9 @@ function privatemsg_get_link($recipients, $account = array(), $subject = NULL) {
   }
   $url = 'messages/new/'. implode(',', $validated);
   if (!is_null($subject)) {
-    $url .= '/'. $subject;
+    // Explicitly encode the / so that it will be encoded twice to work around
+    // the the menu_system.
+    $url .= '/' . str_replace('/', '%2F', $subject);
   }
   return $url;
 }

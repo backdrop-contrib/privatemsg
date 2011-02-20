@@ -328,6 +328,10 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
     $to_plain['user_' . $user->uid] = privatemsg_recipient_format($user, array('plain' => TRUE));
   }
 
+  // Subject has / encoded twice if clean urls are enabled to get it through
+  // mod_rewrite and the menu system. Decode it once more.
+  $subject = str_replace('%2F', '/', $subject);
+
   if (!empty($to)) {
     $recipients_string = implode(', ', $to);
     $recipients_plain = implode(', ', $to_plain);
