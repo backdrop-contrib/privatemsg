@@ -86,14 +86,14 @@ function _privatemsg_generate_user_array($string, $slice = NULL) {
   $participants = array();
   foreach ($users as $uid) {
     // If it is an integer, it is a user id.
-   if ((int)$uid > 0 && ($account = _privatemsg_user_load($uid))) {
+   if ((int)$uid > 0 && ($account = array_shift(privatemsg_user_load_multiple(array($uid))))) {
       $participants[privatemsg_recipient_key($account)] = $account;
     }
    elseif (strpos($uid, '_') !== FALSE) {
       list($type, $id) = explode('_', $uid);
       $type_info = privatemsg_recipient_get_type($type);
       if ($type_info && isset($type_info['load']) && is_callable($type_info['load'])) {
-        if ($participant = reset($type_info['load'](array($id)))) {
+        if ($participant = array_shift($type_info['load'](array($id)))) {
           $participants[privatemsg_recipient_key($participant)] = $participant;
         }
       }
@@ -822,11 +822,6 @@ function _privatemsg_load_thread_participants($thread_id, $account, $ignore_hidd
     if ($ignore_hidden && $participant->type == 'hidden') {
       continue;
     }
-    if ($participant->type == 'user' || $participant->type == 'hidden') {
-      if ($participant = _privatemsg_user_load($participant->recipient)) {
-        $participants[privatemsg_recipient_key($participant)] = $participant;
-      }
-    }
     elseif (privatemsg_recipient_access($participant->type, $access, $participant)) {
       $to_load[$participant->type][] = $participant->recipient;
     }
@@ -1018,14 +1013,14 @@ function privatemsg_sql_list($account, $argument = 'list') {
   if (in_array('participants', $fields)) {
     // Query for a string with uid's, for example "1,6,7". This needs a subquery on PostgreSQL.
     if (db_driver() == 'pgsql') {
-      $query->addExpression("array_to_string(array(SELECT DISTINCT pmia.recipient
+      $query->addExpression("array_to_string(array(SELECT DISTINCT pmia.type || '_' || textin(int4out(pmia.recipient))
                                                           FROM {pm_index} pmia
-                                                          WHERE pmia.type = 'user' AND pmia.thread_id = pmi.thread_id AND pmia.recipient <> :current), ',')", 'participants', array(':current' => $account->uid));
+                                                          WHERE pmia.type <> 'hidden' AND pmia.thread_id = pmi.thread_id AND pmia.recipient <> :current), ',')", 'participants', array(':current' => $account->uid));
     }
     else {
-      $query->addExpression("(SELECT GROUP_CONCAT(DISTINCT pmia.recipient SEPARATOR ',')
+      $query->addExpression("(SELECT GROUP_CONCAT(DISTINCT CONCAT(pmia.type, '_', pmia.recipient) SEPARATOR ',')
                                      FROM {pm_index} pmia
-                                     WHERE pmia.type = 'user' AND pmia.thread_id = pmi.thread_id AND pmia.recipient <> :current)", 'participants', array(':current' => $account->uid));
+                                     WHERE pmia.type <> 'hidden' AND pmia.thread_id = pmi.thread_id AND pmia.recipient <> :current)", 'participants', array(':current' => $account->uid));
     }
   }
   if (in_array('thread_started', $fields)) {
@@ -2282,7 +2277,7 @@ function privatemsg_build_modes($obj_type) {
  */
 function privatemsg_node_view($node, $view_mode) {
   $types = array_filter(variable_get('privatemsg_link_node_types', array()));
-  $url = privatemsg_get_link(_privatemsg_user_load($node->uid));
+  $url = privatemsg_get_link(user_load($node->uid));
   if (in_array($node->type, $types) && !empty($url) && ($view_mode == 'full' || (variable_get('privatemsg_display_on_teaser', 1) && $view_mode == 'teaser'))) {
     $node->content['links']['#links']['privatemsg_link'] = array(
       'title' => t('Send author a message'),
@@ -2298,7 +2293,7 @@ function privatemsg_node_view($node, $view_mode) {
  */
 function privatemsg_comment_view($comment) {
   $types = array_filter(variable_get('privatemsg_link_node_types', array()));
-  $url = privatemsg_get_link(_privatemsg_user_load($comment->uid));
+  $url = privatemsg_get_link(user_load($comment->uid));
   if (in_array(node_load($comment->nid)->type, $types) && !empty($url) && variable_get('privatemsg_display_on_comments', 0)) {
     $links['privatemsg_link'] = array(
       'title' => t('Send author a message'),
@@ -2323,23 +2318,25 @@ function privatemsg_views_api() {
 }
 
 /**
- * Privatemsg wrapper function for user_load() with a static cache.
+ * Privatemsg wrapper function for user_load_multiple().
  *
- * The function additionaly also adds the privatemsg specific recipient id (uid)
+ * The function adds the privatemsg specific recipient id (uid)
  * and recipient type to the user object.
  *
  * @param $uid
- *   Which uid to load.
+ *   Which uid to load. Can either be a single id or an array of uid's.
  * @return
  *   If existing for the passed in uid, the user object with the recipient
  *   and type properties.
  */
-function _privatemsg_user_load($uid) {
-  if ($account = user_load($uid)) {
+function privatemsg_user_load_multiple($uids) {
+  $accounts = array();
+  foreach (user_load_multiple($uids) as $account) {
     $account->recipient = $account->uid;
     $account->type = 'user';
+    $accounts[privatemsg_recipient_key($account)] = $account;
   }
-  return $account;
+  return $accounts;
 }
 
 /**
@@ -2417,8 +2414,8 @@ function privatemsg_message_change_recipient($mid, $uid, $type = 'user', $add = 
   if ($add) {
     // Only add the recipient if he does not block the author.
     $author_uid = db_query('SELECT author FROM {pm_message} WHERE mid = :mid', array(':mid' => $mid))->fetchField();
-    $recipient = _privatemsg_user_load($uid);
-    $user_blocked = module_invoke_all('privatemsg_block_message', _privatemsg_user_load($author_uid), array(privatemsg_recipient_key($recipient) => $recipient));
+    $recipient = array_shift(privatemsg_user_load_multiple(array($uid)));
+    $user_blocked = module_invoke_all('privatemsg_block_message', user_load($author_uid), array(privatemsg_recipient_key($recipient) => $recipient));
     if (count($user_blocked) <> 0) {
       return;
     }
@@ -2599,7 +2596,7 @@ function privatemsg_privatemsg_recipient_type_info() {
     'user' => array(
       'name' => t('User'),
       'description' => t('Enter a user name to write a message to a user.'),
-      'load' => '_privatemsg_user_load',
+      'load' => 'privatemsg_user_load_multiple',
       'format' => 'privatemsg_username',
       'autocomplete' => 'privatemsg_user_autocomplete',
       // Make sure this comes always last.
@@ -2972,9 +2969,9 @@ class PrivatemsgMessageController extends DrupalDefaultEntityController {
     foreach ($messages as $message) {
       $message->user = $this->account ? $this->account : $user;
       // Load author of message.
-      if (!($message->author = _privatemsg_user_load($message->author))) {
+      if (!($message->author = user_load($message->author))) {
         // If user does not exist, load anonymous user.
-        $message->author = _privatemsg_user_load(0);
+        $message->author = user_load(0);
       }
     }
     parent::attachLoad($messages, $revision_id);

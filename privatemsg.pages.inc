@@ -142,7 +142,7 @@ function privatemsg_list_page($argument = 'list', $uid = NULL) {
   // Because uid is submitted by the menu system, it's a string not a integer.
   if ((int)$uid > 0 && $uid != $user->uid) {
     // Trying to view someone else's messages...
-    if (!$account_check = _privatemsg_user_load($uid)) {
+    if (!$account_check = user_load($uid)) {
       return MENU_NOT_FOUND;
     }
     if (!privatemsg_user_access('read all private messages')) {
@@ -659,7 +659,7 @@ function privatemsg_undo_action() {
     if (isset($undo['function']) && isset($undo['args'])) {
       // Load the user object.
       if (isset($undo['args']['account']) && $undo['args']['account'] > 0) {
-        $undo['args']['account'] = _privatemsg_user_load((int)$undo['args']['account']);
+        $undo['args']['account'] = user_load((int)$undo['args']['account']);
       }
       call_user_func_array($undo['function'], $undo['args']);
     }

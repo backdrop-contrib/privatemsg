@@ -255,8 +255,8 @@ function pm_block_user_privatemsg_block_message($author, $recipients, $context =
   $blocked = array();
   // Loop through each recipient and ensure there is no rule blocking this
   // author from sending them private messages. Use a reference, so when
-  // _privatemsg_user_load() is needed here the array is updated, negating the
-  // need for further calls to _privatemsg_user_load() later in the code.
+  // privatemsg_user_load_multiple() is needed here the array is updated, to
+  // avoid additional checks.
   foreach (array_keys($recipients) as $id) {
     // Only recipients of type user are currently supported.
     if (isset($recipients[$id]->type) && $recipients[$id]->type != 'user') {
@@ -265,7 +265,7 @@ function pm_block_user_privatemsg_block_message($author, $recipients, $context =
     // Ensure we have a recipient user object which includes roles.
     if (!isset($recipients[$id]->roles)) {
       $uid = str_replace('user_', '', $id);
-      $recipients[$id] = _privatemsg_user_load($uid);
+      $recipients[$id] = array_shift(privatemsg_user_load_multiple($uid));
     }
     // Note: this is checks whether the author may send the message (see third
     // parameter). Further below is a check whether the recipient may block it.

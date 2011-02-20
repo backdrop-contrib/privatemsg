@@ -484,7 +484,7 @@ function privatemsg_filter_create_get_query($filter) {
       if (is_object($author) && isset($author->uid) && isset($author->name)) {
         $query['author'][] = privatemsg_recipient_format($author, array('plain' => TRUE));
       }
-      elseif (is_int($author) && $author_obj = _privatemsg_user_load($author)) {
+      elseif (is_int($author) && $author_obj = array_shift(privatemsg_user_load_multiple(array($author)))) {
         $query['author'][] = privatemsg_recipient_format($author, array('plain' => TRUE));
       }
     }
