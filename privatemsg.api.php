@@ -455,6 +455,22 @@ function hook_privatemsg_thread_operations() {
 }
 
 /**
+ * Allows response to a status change.
+ *
+ * @param $pmid
+ *   Message id.
+ * @param $status
+ *   Either PRIVATEMSG_READ or PRIVATEMSG_UNREAD.
+ * @param $account
+ *   User object, defaults to the current user.
+ *
+ * @see privatemsg_message_change_status()
+ */
+function hook_privatemsg_message_status_changed($pmid, $status, $account) {
+
+}
+
+/**
  * @}
  */
 
