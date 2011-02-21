@@ -1019,7 +1019,7 @@ function privatemsg_sql_list($account, $argument = 'list') {
                                                           WHERE pmia.type <> 'hidden' AND pmia.thread_id = pmi.thread_id AND pmia.recipient <> :current), ',')", 'participants', array(':current' => $account->uid));
     }
     else {
-      $query->addExpression("(SELECT GROUP_CONCAT(DISTINCT CONCAT(pmia.type, '_', pmia.recipient) SEPARATOR ',')
+      $query->addExpression("(SELECT GROUP_CONCAT(DISTINCT CONCAT(pmia.type, '_', pmia.recipient))
                                      FROM {pm_index} pmia
                                      WHERE pmia.type <> 'hidden' AND pmia.thread_id = pmi.thread_id AND pmia.recipient <> :current)", 'participants', array(':current' => $account->uid));
     }
