@@ -413,7 +413,8 @@ function privatemsg_is_disabled($account) {
  */
 function privatemsg_thread_load($thread_id, $account = NULL, $start = NULL, $useAccessDenied = FALSE) {
   $threads = &drupal_static(__FUNCTION__, array());
-  if ((int)$thread_id > 0) {
+  $thread_id = (int)$thread_id;
+  if ($thread_id > 0) {
     $thread = array('thread_id' => $thread_id);
 
     if (is_null($account)) {
@@ -1013,7 +1014,7 @@ function privatemsg_sql_list($account, $argument = 'list') {
   if (in_array('participants', $fields)) {
     // Query for a string with uid's, for example "1,6,7". This needs a subquery on PostgreSQL.
     if (db_driver() == 'pgsql') {
-      $query->addExpression("array_to_string(array(SELECT DISTINCT pmia.type || '_' || textin(int4out(pmia.recipient))
+      $query->addExpression("array_to_string(array(SELECT DISTINCT pmia.type || '_' || pmia.recipient
                                                           FROM {pm_index} pmia
                                                           WHERE pmia.type <> 'hidden' AND pmia.thread_id = pmi.thread_id AND pmia.recipient <> :current), ',')", 'participants', array(':current' => $account->uid));
     }
