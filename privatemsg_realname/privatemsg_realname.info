@@ -1,4 +1,3 @@
-; $Id$
 name = Privatemsg Realname Integration
 description = Provides reverse lookup for realnames
 package = Mail

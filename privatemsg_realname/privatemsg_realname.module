@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 /**
  * Implements hook_privatemsg_name_lookup().

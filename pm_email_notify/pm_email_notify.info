@@ -1,4 +1,3 @@
-; $Id$
 name = Privatemsg Email Notification
 description = Notifies users about new Private Messages via Email.
 package = Mail

@@ -1,4 +1,3 @@
-; $Id$
 name = Privatemsg filter
 description = Allow users to filter messages using tags or other criteria.
 package = Mail
