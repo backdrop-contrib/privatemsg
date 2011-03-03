@@ -5,7 +5,9 @@
  * Install file for privatemsg.module
  */
 
-
+/**
+ * Implements hook_schema().
+ */
 function privatemsg_schema() {
   $schema = array();
   $schema['pm_index'] = array(
