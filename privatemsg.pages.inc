@@ -507,6 +507,13 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
   if (isset($form_state['validate_built_message'])) {
     $message = $form_state['validate_built_message'];
   }
+
+  // If a module (e.g. OG) adds a validate or submit callback to the form in
+  // field_attach_form, the form system will not add ours automatically
+  // anymore. Therefore, explicitly adding them here.
+  $form['#submit'] = array('privatemsg_new_submit');
+  $form['#validate'] = array('privatemsg_new_validate');
+
   field_attach_form('privatemsg_message', $message, $form, $form_state);
   return $form;
 }
