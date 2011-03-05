@@ -280,14 +280,14 @@ function hook_privatemsg_message_insert($message) {
  *   Id of the message.
  * @param $thread_id
  *   Id of the thread the message belongs to.
- * @param $recipient
+ * @param $recipient_id
  *   Recipient id, a user id if type is user or hidden.
  * @param $type
  *   Type of the recipient.
  * @param $added
  *   TRUE if the recipient is added, FALSE if he is removed.
  */
-function hook_privatemsg_message_recipient_changed($mid, $thread_id, $recipient, $type, $added) {
+function hook_privatemsg_message_recipient_changed($mid, $thread_id, $recipient_id, $type, $added) {
   if ($added && ($type == 'user' || $type == 'hidden')) {
     privatemsg_filter_add_tags(array($thread_id), variable_get('privatemsg_filter_inbox_tag', ''), (object)array('uid' => $recipient));
   }

@@ -3,5 +3,7 @@ description = Notifies users about new Private Messages via Email.
 package = Mail
 core = 7.x
 dependencies[] = privatemsg
-files[]=pm_email_notify.module
-configure=admin/config/messaging/privatemsg/notify
+
+files[]=pm_email_notify.test
+
+configure=admin/config/messaging/privatemsg
