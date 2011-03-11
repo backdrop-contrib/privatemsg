@@ -84,7 +84,7 @@ function theme_privatemsg_roles_format($variables) {
 function privatemsg_roles_load_recipients($recipient, $limit, $offset) {
   $rid = isset($recipient->recipient) ? $recipient->recipient : $recipient->rid;
   if ($rid == DRUPAL_AUTHENTICATED_RID) {
-    $result = db_query_range('SELECT uid FROM {users} ORDER BY uid ASC', $offset, $limit);
+    $result = db_query_range('SELECT uid FROM {users} WHERE uid > 0 ORDER BY uid ASC', $offset, $limit);
   }
   else {
     $result = db_query_range('SELECT uid FROM {users_roles} WHERE rid = :rid ORDER BY uid ASC', $offset, $limit, array(':rid' => $rid));
