@@ -373,17 +373,14 @@ function privatemsg_is_disabled($account) {
     return FALSE;
   }
 
-  if (!isset($account->privatemsg_disabled)) {
-    // Make sure we have a fully loaded user object and try to load it if not.
-    if ((!empty($account->roles) || $account = user_load($account->uid)) && user_access('allow disabling privatemsg', $account)) {
-      $account->privatemsg_disabled = (bool)db_query('SELECT 1 FROM {pm_disable} WHERE uid = :uid ', array(':uid' => $account->uid))->fetchField();
-    }
-    else {
-      $account->privatemsg_disabled = FALSE;
-    }
+  // Make sure we have a fully loaded user object and try to load it if not.
+  if ((!empty($account->roles) || $account = user_load($account->uid)) && user_access('allow disabling privatemsg', $account)) {
+    $ids = privatemsg_get_default_setting_ids($account);
+    return (bool)privatemsg_get_setting('disabled', $ids);
   }
-
-  return $account->privatemsg_disabled;
+  else {
+    return FALSE;
+  }
 }
 
 /**
@@ -1150,7 +1147,7 @@ function privatemsg_sql_autocomplete($search, $names) {
     ->fields('u', array('uid'))
     ->condition('u.name', $search . '%', 'LIKE')
     ->condition('u.status', 0, '<>')
-    ->where('NOT EXISTS (SELECT 1 FROM {pm_disable} pd WHERE pd.uid=u.uid)')
+    ->where("NOT EXISTS (SELECT 1 FROM {pm_setting} pms WHERE pms.id = u.uid AND pms.type = 'user' AND pms.setting = 'disabled')")
     ->orderBy('u.name', 'ASC')
     ->range(0, 10);
 
@@ -1179,6 +1176,25 @@ function privatemsg_sql_deleted($days, $max) {
     ->groupBy('pm.mid')
     ->having('MIN(pmi.deleted) > 0 AND MAX(pmi.deleted) < :old', array(':old' => REQUEST_TIME - $days * 86400))
     ->range(0, $max);
+}
+
+/**
+ * Query builder function to load user settings.
+ */
+function privatemsg_sql_settings($setting, $query_ids) {
+  $query = db_select('pm_setting', 'pms')
+    ->fields('pms', array('type', 'id', 'value'))
+    ->condition('pms.setting', $setting);
+
+  $ids_condition = db_or();
+  foreach ($query_ids as $type => $type_ids) {
+    $ids_condition->condition(db_and()
+      ->condition('pms.type', $type)
+      ->condition('pms.id', $type_ids)
+    );
+  }
+  $query->condition($ids_condition);
+  return $query;
 }
 
 /**
@@ -1242,10 +1258,6 @@ function privatemsg_user_cancel($edit, $account, $method) {
  */
 function privatemsg_user_delete($account) {
   _privatemsg_delete_data($account);
-  // Always delete user settings.
-  db_delete('pm_disable')
-    ->condition('uid', $account->uid)
-    ->execute();
 }
 
 /**
@@ -1276,10 +1288,8 @@ function _privatemsg_delete_data($account) {
     ->condition('type', array('user', 'hidden'))
     ->execute();
 
-  // DELETE any disable flag for user.
-  db_delete('pm_disable')
-    ->condition('uid', $account->uid)
-    ->execute();
+  // Delete any disable flag for user.
+  privatemsg_del_setting('user', $account->uid, 'disabled');
 }
 
 /**
@@ -1324,7 +1334,18 @@ function privatemsg_form_alter(&$form, &$form_state, $form_id) {
  * Hides the settings fieldset if there are no options to be displayed.
  */
 function privatemsg_account_fieldset_remove_if_empty($element) {
+  // If there are no children elements, deny access.
   if (count(element_children($element)) == 0) {
+    $element['#access'] = FALSE;
+  }
+  else {
+    // If there are elements, check if at least one of them is visible. Deny
+    // access.
+    foreach (element_children($element) as $key) {
+      if ($element[$key]['#type'] != 'value' && (!isset($element[$key]['#access']) || $element[$key]['#access'])) {
+        return $element;
+      }
+    }
     $element['#access'] = FALSE;
   }
   return $element;
@@ -1339,20 +1360,9 @@ function privatemsg_user_update(&$edit, $account, $category) {
     $disabled = (!$edit['pm_enable']);
     $edit['pm_enable'] = NULL;
 
-    $account->privatemsg_disabled = $disabled;
-
     // only perform the save if the value has changed
     if ($current != $disabled) {
-      if ($disabled) {
-        db_insert('pm_disable')
-          ->fields(array('uid' => $account->uid))
-          ->execute();
-      }
-      else {
-        db_delete('pm_disable')
-          ->condition('uid', $account->uid)
-          ->execute();
-      }
+      privatemsg_set_setting('user', $account->uid, 'disabled', $disabled);
     }
   }
 }
@@ -3241,4 +3251,133 @@ function privatemsg_mollom_form_info() {
   );
 
   return $form_info;
+}
+
+/**
+ * Retrieve a user setting.
+ *
+ * First, the entries in {pm_setting} are loaded. If there is no value for the
+ * global, a variable with the name privatemsg_setting_$setting is also checked.
+ *
+ * @param $setting
+ *   Name of the setting.
+ * @param $ids
+ *   For which ids should be looked. Keyed by the type, the value is an array of
+ *   ids for that type. The first key is the most specific (typically user),
+ *   followed by optional others, ordered by importance. For example roles and
+ *   then global.
+ * @param $default
+ *   The default value if none was found. Defaults to NULL.
+ *
+ * @return
+ *   The most specific value found.
+ *
+ * @see privatemsg_get_default_settings_ids().
+ */
+function privatemsg_get_setting($setting, $ids = NULL, $default = NULL) {
+  $cache = &drupal_static('privatemsg_settings', array());
+
+  if (empty($ids)) {
+    $ids = privatemsg_get_default_setting_ids();
+  }
+
+  // First, try the static cache with the most specific type only. Do not check
+  // others since there might be a more specific setting which is not yet
+  // cached.
+  $type_ids = reset($ids);
+  $type = key($ids);
+  foreach ($type_ids as $type_id) {
+    if (isset($cache[$setting][$type][$type_id]) && $cache[$setting][$type][$type_id] !== FALSE && $cache[$setting][$type][$type_id] >= 0) {
+      return $cache[$setting][$type][$type_id];
+    }
+  }
+
+  // Second, look for all uncached settings.
+  $query_ids = array();
+  foreach ($ids as $type => $type_ids) {
+    foreach ($type_ids as $type_id) {
+      if (!isset($cache[$setting][$type][$type_id])) {
+        $query_ids[$type][] = $type_id;
+        // Default to FALSE for that value in case nothing can be found.
+        $cache[$setting][$type][$type_id] = FALSE;
+      }
+    }
+  }
+
+  // If there are any, query them.
+  if (!empty($query_ids)) {
+    // Build the query and execute it.
+    $query = _privatemsg_assemble_query('settings', $setting, $query_ids);
+    foreach ($query->execute() as $row) {
+      $cache[$setting][$row->type][$row->id] = $row->value;
+    }
+
+    // If there is no global default in the database, try to get one with
+    // variable_get().
+    if ($cache[$setting]['global'][0] === FALSE) {
+      $cache[$setting]['global'][0] = variable_get('privatemsg_setting_' . $setting, FALSE);
+    }
+  }
+
+  // Now, go over all cached settings and return the first match.
+  foreach ($ids as $type => $type_ids) {
+    foreach ($type_ids as $type_id) {
+      if (isset($cache[$setting][$type][$type_id]) && $cache[$setting][$type][$type_id] !== FALSE && $cache[$setting][$type][$type_id] >= 0) {
+        return $cache[$setting][$type][$type_id];
+      }
+    }
+  }
+
+  // Nothing matched, return the provided default.
+  return $default;
+}
+
+function privatemsg_set_setting($type, $id, $setting, $value) {
+  db_merge('pm_setting')
+    ->key(array(
+      'type' => $type,
+      'id' => $id,
+      'setting' => $setting,
+    ))
+    ->fields(array('value' => $value))
+    ->execute();
+
+  // Update static cache.
+  $cache = &drupal_static('privatemsg_settings', array());
+  $cache[$setting][$type][$id] = $value;
+}
+
+function privatemsg_del_setting($type, $id, $setting) {
+  db_delete('pm_setting')
+    ->condition('type', $type)
+    ->condition('id', $id)
+    ->condition('setting', $setting)
+    ->execute();
+
+  // Update static cache.
+  $cache = &drupal_static('privatemsg_settings', array());
+  unset($cache[$setting][$type][$id]);
+}
+
+/**
+ * Extract the default ids of a user account.
+ *
+ * Defaults to the user id, role ids and the global default.
+ *
+ * @param $account
+ *   User object, defaults to the current user.
+ *
+ * @return
+ *   Array of ids to be used in privatemsg_get_setting().
+ */
+function privatemsg_get_default_setting_ids($account = NULL) {
+  if (!$account) {
+    global $user;
+    $account = $user;
+  }
+  return array(
+    'user' => array($account->uid),
+    'role' => array_keys($account->roles),
+    'global' => array(0),
+  );
 }

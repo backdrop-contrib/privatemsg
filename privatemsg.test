@@ -1326,11 +1326,8 @@ class PrivatemsgAPITestCase extends DrupalWebTestCase {
     $this->assertFieldByName('subject', $subject);
 
     // Disable privatemsg for recipient 3.
-    db_insert('pm_disable')
-      ->fields(array(
-        'uid' => $recipient3->uid,
-      ))
-      ->execute();
+    privatemsg_set_setting('user', $recipient3->uid, 'disabled', 1);
+
     $this->assertFalse(privatemsg_get_link(array($recipient3), $author));
 
     $this->drupalGet(privatemsg_get_link(array($recipient1, $recipient3), $author));
@@ -1355,5 +1352,74 @@ class PrivatemsgAPITestCase extends DrupalWebTestCase {
     // Verify that link is not shown when author does not have write permission.
     $this->drupalLogin($recipient1);
     $this->assertFalse(privatemsg_get_link(array($author), $recipient1));
+  }
+
+  /**
+   * Tests for the privatemsg_*_setting() functions.
+   */
+  function testSettings() {
+
+    $admin = user_load(1);
+    $user = $this->drupalCreateUser(array('write privatemsg'));
+    $user2 = $this->drupalCreateUser(array('write privatemsg'));
+
+    // Create some global and role default settings.
+    privatemsg_set_setting('global', 0, 'test', 1);
+    privatemsg_set_setting('role', array_shift(array_keys($user->roles)), 'test', 2);
+
+    // Add some user specific setting.
+    privatemsg_set_setting('user', $admin->uid, 'test', 3);
+    privatemsg_set_setting('user', $user->uid, 'test2', 4);
+    privatemsg_set_setting('user', $user2->uid, 'test2', -1);
+
+    // Clear the static cache.
+    drupal_static_reset('privatemsg_settings');
+
+    // Get the ids for each user.
+    $admin_ids = privatemsg_get_default_setting_ids($admin);
+    $user_ids = privatemsg_get_default_setting_ids($user);
+    $user2_ids = privatemsg_get_default_setting_ids($user2);
+
+    $this->assertEqual(privatemsg_get_setting('test', $admin_ids), 3, t('The admin has a user level setting.'));
+    $this->assertEqual(privatemsg_get_setting('test', $user_ids), 2, t('The first user has role-level default.'));
+    $this->assertEqual(privatemsg_get_setting('test', $user2_ids), 1, t('The second user defaults to the global.'));
+
+    $this->assertEqual(privatemsg_get_setting('test2', $user_ids), 4, t('The value for another setting is read correctly.'));
+    $this->assertEqual(privatemsg_get_setting('test2', $user2_ids), 0, t('Negative values are ignored.'));
+
+    // Update existing settings, verify that the updated value is used now.
+    privatemsg_set_setting('role', array_shift(array_keys($user->roles)), 'test', 5);
+    privatemsg_set_setting('user', $admin->uid, 'test', 6);
+    privatemsg_set_setting('user', $user2->uid, 'test', 7);
+
+    $this->assertEqual(privatemsg_get_setting('test', $admin_ids), 6, t('The updated user level setting is used.'));
+    $this->assertEqual(privatemsg_get_setting('test', $user_ids), 5, t('The updated role level setting is used.'));
+    $this->assertEqual(privatemsg_get_setting('test', $user2_ids), 7, t('The second user uses the new setting.'));
+
+    // Default some settings.
+    privatemsg_del_setting('role', array_shift(array_keys($user->roles)), 'test');
+    privatemsg_del_setting('user', $admin->uid, 'test');
+
+    $this->assertEqual(privatemsg_get_setting('test', $admin_ids), 1, t('The user level setting was deleted, the default is now used.'));
+    $this->assertEqual(privatemsg_get_setting('test', $user_ids), 1, t('The role level setting was deleted, the default is now used.'));
+
+    // Test variable_get() fallback.
+    variable_set('privatemsg_setting_test3', 10);
+    privatemsg_set_setting('user', $admin->uid, 'test3', 11);
+    $this->assertEqual(privatemsg_get_setting('test3', $user_ids), 10, t('The variable_get() fallback is used when no other value exists.'));
+    $this->assertEqual(privatemsg_get_setting('test3', $admin_ids),11, t('The updated user level setting is used.'));
+
+    // Explicitly set a global default now.
+    privatemsg_set_setting('global', 0, 'test3', 12);
+    $this->assertEqual(privatemsg_get_setting('test3', $user_ids), 12, t('The variable_get() fallback is not used when other values exists.'));
+
+    // Test argument fallback.
+    privatemsg_set_setting('user', $admin->uid, 'test4', 14);
+    $this->assertEqual(privatemsg_get_setting('test4', $user_ids, 13), 13, t('The argument fallback is used when no other value exists.'));
+    $this->assertEqual(privatemsg_get_setting('test4', $admin_ids),14, t('The user level setting is used.'));
+
+    // Explicitly set a global default now.
+    privatemsg_set_setting('global', 0, 'test4', 15);
+    $this->assertEqual(privatemsg_get_setting('test4', $user_ids, 13), 15, t('The variable_get() fallback is not used when other values exists.'));
   }
 }
