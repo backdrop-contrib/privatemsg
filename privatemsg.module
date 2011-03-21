@@ -980,6 +980,8 @@ function privatemsg_privatemsg_name_lookup($string) {
  *  User object for which the messages are being loaded.
  * @param $argument
  *  string argument which can be used in the query builder to modify the thread listing.
+ *
+ * @see hook_query_privatemsg_list_alter().
  */
 function privatemsg_sql_list($account, $argument = 'list') {
   $query = db_select('pm_message', 'pm')->extend('TableSort')->extend('PagerDefault');
@@ -1044,6 +1046,8 @@ function privatemsg_sql_list($account, $argument = 'list') {
  *   User object for which the messages are being loaded.
  * @param $load_all
  *   Deleted messages are only loaded if this is set to TRUE.
+ *
+ * @see hook_query_privatemsg_messages_alter().
  */
 function privatemsg_sql_messages($threads, $account = NULL, $load_all = FALSE) {
   $query = db_select('pm_index', 'pmi');
@@ -1076,6 +1080,10 @@ function privatemsg_sql_messages($threads, $account = NULL, $load_all = FALSE) {
  *
  * @param $thread_id
  *   Thread id from which the participants should be loaded.
+ * @param $account
+ *   User account that should be considered when loading participants.
+ *
+ * @see hook_query_privatemsg_participants_alter().
  */
 function privatemsg_sql_participants($thread_id, $account = NULL) {
   $query = db_select('pm_index', 'pmi');
@@ -1108,6 +1116,14 @@ function privatemsg_sql_participants($thread_id, $account = NULL) {
     ->groupBy('pmi.type');
 }
 
+/**
+ * Count threads with unread messages.
+ *
+ * @param $account
+ *   User account for which should be checked.
+ *
+ * @see hook_query_privatemsg_unread_count_alter().
+ */
 function privatemsg_sql_unread_count($account) {
   $query = db_select('pm_index', 'pmi');
   $query->addExpression('COUNT(DISTINCT thread_id)', 'unread_count');
@@ -1118,6 +1134,16 @@ function privatemsg_sql_unread_count($account) {
     ->condition('pmi.type', array('hidden', 'user'));
 }
 
+/**
+ * Looks up autocomplete suggestions for users.
+ *
+ * @param $search
+ *   The string that is being searched for.
+ * @param $names
+ *   Array of names which are already selected and should be excluded.
+ *
+ * @see hook_query_privatemsg_autocomplete_alter().
+ */
 function privatemsg_sql_autocomplete($search, $names) {
   $query = db_select('users', 'u')
     ->fields('u', array('uid'))
@@ -1140,6 +1166,8 @@ function privatemsg_sql_autocomplete($search, $names) {
  *   Select messages older than x days.
  * @param $max
  *   Select no more than $max messages.
+ *
+ * @see hook_query_privatemsg_deleted_alter().
  */
 function privatemsg_sql_deleted($days, $max) {
   $query = db_select('pm_message', 'pm');
