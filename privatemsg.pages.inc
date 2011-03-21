@@ -536,6 +536,8 @@ function privatemsg_new_validate($form, &$form_state) {
   $message->format    = $message->body['format'];
   $message->body      = $message->body['value'];
   $message->timestamp = time();
+  // Avoid subjects which only consist of a space as these can not be clicked.
+  $message->subject = trim($message->subject);
 
   $trimed_body = trim(truncate_utf8(strip_tags($message->body), 50, TRUE, TRUE));
   if (empty($message->subject) && !empty($trimed_body)) {

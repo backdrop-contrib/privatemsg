@@ -1657,6 +1657,8 @@ function _privatemsg_validate_message(&$message, $form = FALSE) {
     }
   }
 
+  // Prevent subjects which only consist of a space as these can not be clicked.
+  $message->subject = trim($message->subject);
   if (empty($message->subject)) {
     if ($form) {
       form_set_error('subject', t('You must include a subject line with your message.'));
