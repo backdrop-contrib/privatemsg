@@ -1749,7 +1749,8 @@ function _privatemsg_validate_message(&$message, $form = FALSE) {
   // Verify if message has tokens and user is allowed to use them.
   $message->has_tokens = privatemsg_user_access('use tokens in privatemsg', $message->author) && count(token_scan($message->subject . $message->body));
 
-  $messages += module_invoke_all('privatemsg_message_validate', $message, $form);
+  $messages = array_merge_recursive(module_invoke_all('privatemsg_message_validate', $message, $form), $messages);
+
   // Check if there are errors in $messages or if $form is TRUE, there are form errors.
   $success = empty($messages['error']) || ($form && count((array)form_get_errors()) > 0);
   return array(
