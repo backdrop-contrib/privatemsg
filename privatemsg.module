@@ -1697,7 +1697,7 @@ function _privatemsg_validate_message(&$message, $form = FALSE) {
   }
 
   // Don't allow replies without a body.
-  if (!empty($message->thread_id) && empty($message->body)) {
+  if (!empty($message->thread_id) && ($message->body === NULL || $message->body === '') ) {
     if ($form) {
       form_set_error('body', t('You must include a message in your reply.'));
     }
