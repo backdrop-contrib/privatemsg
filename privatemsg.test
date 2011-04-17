@@ -7,7 +7,7 @@
 
 class PrivatemsgTestCase extends DrupalWebTestCase {
   /**
-   * Implementation of getInfo().
+   * Implements getInfo().
    */
   public static function getInfo() {
     return array
@@ -25,7 +25,7 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
   }
 
   /**
-   * Implementation of setUp().
+   * Implements setUp().
    */
   function setUp() {
     parent::setUp('privatemsg');
@@ -394,16 +394,16 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
 
     $this->drupalLogin($disableduser);
     // Now disable $disabledUser.
-    $this->drupalGet('user/'. $disableduser->uid .'/edit');
+    $this->drupalGet('user/' . $disableduser->uid . '/edit');
     $edit['pm_enable'] = FALSE;
-    $this->drupalPost('user/'. $disableduser->uid .'/edit', $edit, t('Save'));
+    $this->drupalPost('user/' . $disableduser->uid . '/edit', $edit, t('Save'));
 
     // Verify that disableduser can list messages.
     $this->drupalGet('messages');
     $this->assertResponse(200, t('HTTP Response 200: Access to reading messages page is allowed.'));
 
     // Verify that $disableduser can read messages but there is not reply form
-    $this->drupalGet('messages/view/'. $return['message']->thread_id);
+    $this->drupalGet('messages/view/' . $return['message']->thread_id);
     $this->assertResponse(200, t('HTTP Response 200: Access to message thread page is allowed.'));
     $this->assertNoText(t('Reply to thread'), 'No reply form shown.');
 
@@ -434,7 +434,7 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
     // Make sure that a message to multiple recipients still works if one is
     // disabled.
     $messagemultiple = array(
-      'recipient'   => $enableduser2->name .', '. $disableduser->name,
+      'recipient'   => $enableduser2->name . ', ' . $disableduser->name,
       'subject'     => $this->randomName(20),
       'body[value]'        => $this->randomName(100),
     );
@@ -526,14 +526,13 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
   /**
    * Tests for the flush feature
    */
-  function testPrivatemsgFlush()
-  {
+  function testPrivatemsgFlush() {
     $author = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
     $recipient = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
 
     // Send 10 messages.
     for ($i = 0; $i < 10; $i++) {
-      privatemsg_new_thread(array($recipient), 'Message #'. $i, 'This is the body', array('author' => $author));
+      privatemsg_new_thread(array($recipient), 'Message #' . $i, 'This is the body', array('author' => $author));
     }
 
     // Delete message 1, 3, 4, 6, 9 for author.
@@ -553,12 +552,12 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
 
     // Set back the deleted timestamp 35 days back of mid 4.
     db_update('pm_index')
-      ->fields(array('deleted' => time() - 35 * 86400))
+      ->fields(array('deleted' => REQUEST_TIME - 35 * 86400))
       ->condition('mid', 4)
       ->execute();
     // Set back the deleted timestamp of mid 6, but only 20 days back.
     db_update('pm_index')
-      ->fields(array('deleted' => time() - 20 * 86400))
+      ->fields(array('deleted' => REQUEST_TIME - 20 * 86400))
       ->condition('mid', 6)
       ->execute();
 
@@ -647,7 +646,7 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
     $this->drupalLogin($recipient2);
     $this->drupalGet('messages/view/' . $return['message']->thread_id);
     $this->assertText($body1, 'First message is still displayed');
-    $this->assertText($body2,'First message is still displayed');
+    $this->assertText($body2, 'First message is still displayed');
 
     // Test delete all checkbox.
     $this->drupalLogin($admin);
@@ -677,7 +676,7 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
     $this->drupalPost(NULL, NULL, t('Cancel account'));
 
     // Confirm account cancellation.
-    $timestamp = time();
+    $timestamp = REQUEST_TIME;
     $this->drupalPost(NULL, NULL, t('Cancel account'));
 
     // Confirm account cancellation request.
@@ -712,14 +711,14 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
     $this->drupalPost(NULL, NULL, t('Cancel account'));
 
     // Confirm account cancellation.
-    $timestamp = time();
+    $timestamp = REQUEST_TIME;
     $this->drupalPost(NULL, NULL, t('Cancel account'));
 
     // Confirm account cancellation request.
     $this->drupalGet("user/$dummy->uid/cancel/confirm/$timestamp/" . user_pass_rehash($dummy->pass, $timestamp, $dummy->login));
   }
 
- function checkThreadDelete($message) {
+  function checkThreadDelete($message) {
     $this->assertText($message->subject, t('Message is displayed.'));
 
     $delete = array(
@@ -810,7 +809,7 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
  */
 class PrivatemsgFieldsTestCase extends DrupalWebTestCase {
   /**
-   * Implementation of getInfo().
+   * Implements getInfo().
    */
   public static function getInfo() {
     return array
@@ -822,7 +821,7 @@ class PrivatemsgFieldsTestCase extends DrupalWebTestCase {
   }
 
   /**
-   * Implementation of setUp().
+   * Implements setUp().
    */
   function setUp() {
     parent::setUp('privatemsg');
@@ -1191,7 +1190,7 @@ class PrivatemsgTokenTestCase extends DrupalWebTestCase {
  */
 class PrivatemsgAPITestCase extends DrupalWebTestCase {
   /**
-   * Implementation of getInfo().
+   * Implements getInfo().
    */
   public static function getInfo() {
     return array(
@@ -1208,7 +1207,7 @@ class PrivatemsgAPITestCase extends DrupalWebTestCase {
   }
 
   /**
-   * Implementation of setUp().
+   * Implements setUp().
    */
   function setUp() {
     parent::setUp('privatemsg');

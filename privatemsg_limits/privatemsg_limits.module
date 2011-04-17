@@ -219,7 +219,7 @@ function _privatemsg_limits_get_oldest($account, $timeframe) {
     ->execute()
     ->fetchField();
 
-  $wait_time = ($timestamp - (time() - $timeframe));
+  $wait_time = ($timestamp - (REQUEST_TIME - $timeframe));
   return format_interval($wait_time, 6);
 }
 
@@ -247,7 +247,7 @@ function _privatemsg_limits_get_amount($name, $account) {
 
   $role_max = 0;
   foreach ($account->roles as $id => $role) {
-    $new_max = variable_get("privatemsg_limits_{$name}_role_". $id, NULL);
+    $new_max = variable_get("privatemsg_limits_{$name}_role_" . $id, NULL);
     if ($new_max == 'unlimited') {
       return 0;
     }
@@ -256,7 +256,7 @@ function _privatemsg_limits_get_amount($name, $account) {
     }
   }
   if ($role_max == 0) {
-    return variable_get('privatemsg_limits_'. $name, 0);
+    return variable_get('privatemsg_limits_' . $name, 0);
   }
   return $role_max;
 }
@@ -299,7 +299,7 @@ function privatemsg_limits_sql_sent($account,  $timeframe) {
 
   return $query
     ->condition('pm.author', $account->uid)
-    ->condition('pm.timestamp', time() - $timeframe, '>')
+    ->condition('pm.timestamp', REQUEST_TIME - $timeframe, '>')
     ->orderBy('timestamp', 'ASC');
 }
 

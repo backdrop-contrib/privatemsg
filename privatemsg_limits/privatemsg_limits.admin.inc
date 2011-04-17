@@ -134,7 +134,7 @@ function _privatemsg_qota_role_override_form($name, $default) {
   foreach (user_roles(TRUE) as $id => $role) {
     $form['roles']["privatemsg_limits_{$name}_role_{$id}"] = $default + array(
       '#title' => $role,
-      '#default_value' => variable_get("privatemsg_limits_{$name}_role_". $id, 0),
+      '#default_value' => variable_get("privatemsg_limits_{$name}_role_" . $id, 0),
     );
   }
   return $form;

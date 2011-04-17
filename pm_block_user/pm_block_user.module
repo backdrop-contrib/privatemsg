@@ -16,7 +16,7 @@ define('PM_BLOCK_USER_DISALLOW_BLOCKING', 0);
 define('PM_BLOCK_USER_DISALLOW_SENDING', 1);
 
 /**
- * Implementation of hook_help().
+ * Implements hook_help().
  */
 function pm_block_user_help($path) {
   switch ($path) {
@@ -26,7 +26,7 @@ function pm_block_user_help($path) {
 }
 
 /**
- * Implementation of hook_menu().
+ * Implements hook_menu().
  */
 function pm_block_user_menu() {
   $items['messages/block/%user'] = array(
@@ -82,7 +82,7 @@ function pm_block_user_menu() {
 }
 
 /**
- * Implementation of hook_theme().
+ * Implements hook_theme().
  */
 function pm_block_user_theme() {
   return array(
@@ -248,7 +248,7 @@ function _pm_block_user_rule_exists($author, $recipient, $action = PM_BLOCK_USER
 }
 
 /**
- * Implementation of hook_privatemsg_block_message.
+ * Implements hook_privatemsg_block_message.
  */
 function pm_block_user_privatemsg_block_message($author, $recipients, $context = array()) {
   $blocked = array();
@@ -317,7 +317,7 @@ function pm_block_user_query_privatemsg_message_load_multiple_alter($query) {
 }
 
 /**
- * Implementation of hook_privatemsg_message_view_alter.
+ * Implements hook_privatemsg_message_view_alter.
  */
 function pm_block_user_privatemsg_message_view_alter(&$vars) {
   global $user;

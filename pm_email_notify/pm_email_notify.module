@@ -28,7 +28,7 @@ function _pm_email_notify_is_enabled($uid) {
 }
 
 /**
- * Implementation of hook_privatemsg_message_insert().
+ * Implements hook_privatemsg_message_insert().
  */
 function pm_email_notify_privatemsg_message_insert($message) {
   foreach ($message->recipients as $recipient) {
@@ -44,7 +44,7 @@ function pm_email_notify_privatemsg_message_insert($message) {
 }
 
 /**
- * Implementation of hook_mail().
+ * Implements hook_mail().
  */
 function pm_email_notify_mail($key, &$message, $params) {
   switch ($key) {

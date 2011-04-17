@@ -85,10 +85,10 @@ function _privatemsg_generate_user_array($string, $slice = NULL) {
   $participants = array();
   foreach ($users as $uid) {
     // If it is an integer, it is a user id.
-   if ((int)$uid > 0 && ($account = array_shift(privatemsg_user_load_multiple(array($uid))))) {
+    if ((int)$uid > 0 && ($account = array_shift(privatemsg_user_load_multiple(array($uid))))) {
       $participants[privatemsg_recipient_key($account)] = $account;
     }
-   elseif (strpos($uid, '_') !== FALSE) {
+    elseif (strpos($uid, '_') !== FALSE) {
       list($type, $id) = explode('_', $uid);
       $type_info = privatemsg_recipient_get_type($type);
       if ($type_info && isset($type_info['load']) && is_callable($type_info['load'])) {
@@ -162,7 +162,7 @@ function _privatemsg_format_participants($part_array, $limit = NULL, $no_text = 
 }
 
 /**
- * Implementation of hook_menu().
+ * Implements hook_menu().
  */
 function privatemsg_menu() {
   $items['messages'] = array(
@@ -541,7 +541,7 @@ function privatemsg_thread_load($thread_id, $account = NULL, $start = NULL, $use
 }
 
 /**
- * Implementation of hook_privatemsg_view_template().
+ * Implements hook_privatemsg_view_template().
  *
  * Allows modules to define different message view template.
  *
@@ -559,7 +559,7 @@ function privatemsg_privatemsg_view_template() {
 }
 
 /**
- * Implementation of hook_cron().
+ * Implements hook_cron().
  *
  * If the flush feature is enabled, a given amount of deleted messages that are
  * old enough are flushed.
@@ -696,7 +696,7 @@ function template_preprocess_privatemsg_view(&$vars) {
   $vars['thread_id'] = isset($message->thread_id) ? $message->thread_id : NULL;
   $vars['author_picture'] = theme('user_picture', array('account' => $message->author));
   // Directly address the current user if he is the author.
-  if ($user->uid == $message->author->uid){
+  if ($user->uid == $message->author->uid) {
     $vars['author_name_link'] = t('You');
   }
   else {
@@ -740,7 +740,7 @@ function template_preprocess_privatemsg_view(&$vars) {
 
   $vars['anchors'] = '';
   foreach ($vars['message_anchors'] as $anchor) {
-    $vars['anchors'].= '<a name="' . $anchor . '"></a>';
+    $vars['anchors'] .= '<a name="' . $anchor . '"></a>';
   }
 }
 
@@ -892,15 +892,15 @@ function _privatemsg_parse_userstring($input, $types_limitations = array()) {
         $function = $module . '_privatemsg_name_lookup';
         $return = $function($string);
         if (isset($return) && is_array($return)) {
-         foreach ($return as $recipient) {
-           // Save recipients under their key to merge recipients which were
-           // loaded multiple times.
-           if (empty($recipient->type)) {
-             $recipient->type = 'user';
-             $recipient->recipient = $recipient->uid;
-           }
-           $matches[privatemsg_recipient_key($recipient)] = $recipient;
-         }
+          foreach ($return as $recipient) {
+            // Save recipients under their key to merge recipients which were
+            // loaded multiple times.
+            if (empty($recipient->type)) {
+              $recipient->type = 'user';
+              $recipient->recipient = $recipient->uid;
+            }
+            $matches[privatemsg_recipient_key($recipient)] = $recipient;
+          }
         }
       }
 
@@ -981,7 +981,7 @@ function privatemsg_privatemsg_name_lookup($string) {
  * @param $argument
  *  string argument which can be used in the query builder to modify the thread listing.
  *
- * @see hook_query_privatemsg_list_alter().
+ * @see hook_query_privatemsg_list_alter()
  */
 function privatemsg_sql_list($account, $argument = 'list') {
   $query = db_select('pm_message', 'pm')->extend('TableSort')->extend('PagerDefault');
@@ -1047,7 +1047,7 @@ function privatemsg_sql_list($account, $argument = 'list') {
  * @param $load_all
  *   Deleted messages are only loaded if this is set to TRUE.
  *
- * @see hook_query_privatemsg_messages_alter().
+ * @see hook_query_privatemsg_messages_alter()
  */
 function privatemsg_sql_messages($threads, $account = NULL, $load_all = FALSE) {
   $query = db_select('pm_index', 'pmi');
@@ -1067,7 +1067,7 @@ function privatemsg_sql_messages($threads, $account = NULL, $load_all = FALSE) {
     // If there are multiple inserts during the same second (tests, for example)
     // sort by mid second to have them in the same order as they were saved.
     ->orderBy('pmi.mid', 'ASC');
-  if($account) {
+  if ($account) {
     $query
       ->condition('pmi.recipient', $account->uid)
       ->condition('pmi.type', array('hidden', 'user'));
@@ -1083,7 +1083,7 @@ function privatemsg_sql_messages($threads, $account = NULL, $load_all = FALSE) {
  * @param $account
  *   User account that should be considered when loading participants.
  *
- * @see hook_query_privatemsg_participants_alter().
+ * @see hook_query_privatemsg_participants_alter()
  */
 function privatemsg_sql_participants($thread_id, $account = NULL) {
   $query = db_select('pm_index', 'pmi');
@@ -1122,7 +1122,7 @@ function privatemsg_sql_participants($thread_id, $account = NULL) {
  * @param $account
  *   User account for which should be checked.
  *
- * @see hook_query_privatemsg_unread_count_alter().
+ * @see hook_query_privatemsg_unread_count_alter()
  */
 function privatemsg_sql_unread_count($account) {
   $query = db_select('pm_index', 'pmi');
@@ -1142,7 +1142,7 @@ function privatemsg_sql_unread_count($account) {
  * @param $names
  *   Array of names which are already selected and should be excluded.
  *
- * @see hook_query_privatemsg_autocomplete_alter().
+ * @see hook_query_privatemsg_autocomplete_alter()
  */
 function privatemsg_sql_autocomplete($search, $names) {
   $query = db_select('users', 'u')
@@ -1167,7 +1167,7 @@ function privatemsg_sql_autocomplete($search, $names) {
  * @param $max
  *   Select no more than $max messages.
  *
- * @see hook_query_privatemsg_deleted_alter().
+ * @see hook_query_privatemsg_deleted_alter()
  */
 function privatemsg_sql_deleted($days, $max) {
   $query = db_select('pm_message', 'pm');
@@ -1176,7 +1176,7 @@ function privatemsg_sql_deleted($days, $max) {
   $query->join('pm_index', 'pmi', 'pmi.mid = pm.mid');
   return $query
     ->groupBy('pm.mid')
-    ->having('MIN(pmi.deleted) > 0 AND MAX(pmi.deleted) < :old', array(':old' => time() - $days * 86400))
+    ->having('MIN(pmi.deleted) > 0 AND MAX(pmi.deleted) < :old', array(':old' => REQUEST_TIME - $days * 86400))
     ->range(0, $max);
 }
 
@@ -1357,7 +1357,7 @@ function privatemsg_user_update(&$edit, $account, $category) {
 }
 
 /**
- * Implementation of hook_privatemsg_block_message().
+ * Implements hook_privatemsg_block_message().
  */
 function privatemsg_privatemsg_block_message($author, $recipients, $context = array()) {
   $blocked = array();
@@ -1498,13 +1498,13 @@ function _privatemsg_block_menu() {
 function privatemsg_message_change_delete($pmid, $delete, $account = NULL) {
   $delete_value = 0;
   if ($delete == TRUE) {
-    $delete_value = time();
+    $delete_value = REQUEST_TIME;
   }
 
   $update = db_update('pm_index')
     ->fields(array('deleted' => $delete_value))
     ->condition('mid', $pmid);
-  if ($account){
+  if ($account) {
     $update
       ->condition('recipient', $account->uid)
       ->condition('type', array('user', 'hidden'));
@@ -1635,7 +1635,7 @@ function privatemsg_reply($thread_id, $body, $options = array()) {
     $message->author = $author;
   }
   if (!isset($message->timestamp)) {
-    $message->timestamp = time();
+    $message->timestamp = REQUEST_TIME;
   }
   if (!isset($message->format)) {
     $message->format = filter_default_format($message->author);
@@ -1726,11 +1726,12 @@ function _privatemsg_validate_message(&$message, $form = FALSE) {
   }
 
   if (!empty($message->recipients) && is_array($message->recipients)) {
-    foreach(module_invoke_all('privatemsg_block_message', $message->author, $message->recipients, (array)$message) as $blocked) {
+    foreach (module_invoke_all('privatemsg_block_message', $message->author, $message->recipients, (array)$message) as $blocked) {
       unset($message->recipients[$blocked['recipient']]);
       if ($form) {
         drupal_set_message($blocked['message'], 'warning');
-      } else {
+      }
+      else {
         $messages['warning'][] = $blocked['message'];
       }
     }
@@ -1790,7 +1791,7 @@ function _privatemsg_send($message) {
           'is_new' => 0,
           'deleted' => 0,
         ));
-       }
+      }
     }
 
     // 1) Save the message body first.
@@ -1897,7 +1898,7 @@ function privatemsg_get_link($recipients, $account = array(), $subject = NULL) {
   if (empty($validated)) {
     return FALSE;
   }
-  $url = 'messages/new/'. implode(',', $validated);
+  $url = 'messages/new/' . implode(',', $validated);
   if (!is_null($subject)) {
     // Explicitly encode the / so that it will be encoded twice to work around
     // the the menu_system.
@@ -1976,7 +1977,7 @@ function _privatemsg_assemble_query($query) {
   // We do the merge because we call call_user_func_array and not drupal_alter.
   // This is necessary because otherwise we would not be able to use $args
   // correctly (otherwise it doesnt unfold).
-  $query_function = $query_group .'_sql_'. $query_id;
+  $query_function = $query_group . '_sql_' . $query_id;
   if (!function_exists($query_function)) {
     drupal_set_message(t('Query function %function does not exist', array('%function' => $query_function)), 'error');
     return FALSE;
@@ -2057,7 +2058,7 @@ function privatemsg_thread_change_status($threads, $status, $account = NULL) {
 function _privatemsg_list_headers($keys) {
 
   // theme() doesn't include the theme file for patterns, we need to do it manually.
-  include_once drupal_get_path('module', 'privatemsg') .'/privatemsg.theme.inc';
+  include_once drupal_get_path('module', 'privatemsg') . '/privatemsg.theme.inc';
 
   $header = array();
   foreach ($keys as $key) {
@@ -2116,7 +2117,7 @@ function _privatemsg_list_thread($tableselect) {
  *   An array of thread ids. The array is filtered before used, a checkboxes
  *   array can be directly passed to it.
  */
-function privatemsg_operation_execute($operation, $threads, $account = null) {
+function privatemsg_operation_execute($operation, $threads, $account = NULL) {
   // Filter out unchecked threads, this gives us an array of "checked" threads.
   $threads = array_filter($threads);
 
@@ -2212,7 +2213,7 @@ function privatemsg_thread_change_delete($threads, $delete, $account = NULL) {
 }
 
 /**
- * Implementation of hook_privatemsg_thread_operations().
+ * Implements hook_privatemsg_thread_operations().
  */
 function privatemsg_privatemsg_thread_operations() {
   $operations = array(
@@ -2339,7 +2340,7 @@ function privatemsg_comment_view($comment) {
   }
 }
 /**
- * Implementation of hook_views_api().
+ * Implements hook_views_api().
  */
 function privatemsg_views_api() {
   return array(
@@ -3017,7 +3018,7 @@ class PrivatemsgMessageController extends DrupalDefaultEntityController {
 
     $query = parent::buildQuery($ids, $conditions, $revision_id);
     $query->fields('pmi', array('is_new', 'thread_id'));
-    if($this->account) {
+    if ($this->account) {
       $query
         ->condition('pmi.recipient', $this->account->uid)
         ->condition('pmi.type', array('hidden', 'user'));
@@ -3091,4 +3092,3 @@ function privatemsg_format_date($timestamp) {
   return format_date($timestamp, 'privatemsg_years');
 
 }
-

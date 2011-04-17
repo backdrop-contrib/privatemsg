@@ -26,7 +26,7 @@ function privatemsg_filter_permission() {
 }
 
 /**
- * Implementation of hook_menu().
+ * Implements hook_menu().
  */
 function privatemsg_filter_menu() {
   $items['admin/config/messaging/privatemsg/tags'] = array(
@@ -131,7 +131,7 @@ function privatemsg_filter_menu_alter(&$items) {
   // Rename messages to "All messages".
   $items['messages/list']['title'] = 'All messages';
 
-  if(variable_get('privatemsg_filter_default_list', 0) == 0) {
+  if (variable_get('privatemsg_filter_default_list', 0) == 0) {
     // Change default argument of /messages to inbox. and set the task to MENU_LOCAL_TASK.
     $items['messages']['page arguments'] = array('inbox');
     $items['messages/list']['type'] = MENU_LOCAL_TASK;
@@ -139,7 +139,7 @@ function privatemsg_filter_menu_alter(&$items) {
 }
 
 /**
- * Implementation of hook_form_FORM_ID_alter() to add a filter widget to the message listing pages.
+ * Implements hook_form_FORM_ID_alter() to add a filter widget to the message listing pages.
  */
 function privatemsg_filter_form_privatemsg_admin_settings_alter(&$form, $form_state) {
   $form['privatemsg_listing']['privatemsg_filter_default_list'] = array(
@@ -308,7 +308,7 @@ function privatemsg_filter_get_filter($account) {
     }
   }
 
-  if(!empty($filter)) {
+  if (!empty($filter)) {
     return $filter;
   }
 
@@ -319,7 +319,7 @@ function privatemsg_filter_get_filter($account) {
 }
 
 function privatemsg_filter_get_tags_data($account) {
- static $tag_data;
+  static $tag_data;
 
   if (is_array($tag_data)) {
     return $tag_data;
@@ -499,7 +499,7 @@ function privatemsg_filter_create_get_query($filter) {
 }
 
 /**
- * Implementation of hook_form_FORM_ID_alter() to add a filter widget to the message listing pages.
+ * Implements hook_form_FORM_ID_alter() to add a filter widget to the message listing pages.
  */
 function privatemsg_filter_form_privatemsg_list_alter(&$form, $form_state) {
   global $user;
@@ -621,7 +621,7 @@ function theme_privatemsg_list_field__tags($arguments) {
     $tags = array();
 
     foreach ($thread['tags'] as $tag_id => $tag) {
-      $tags[] = l(strlen($tag) > 15 ? substr($tag, 0, 13) . '...' : $tag, 'messages', array(
+      $tags[] = l(drupal_strlen($tag) > 15 ? drupal_substr($tag, 0, 13) . '...' : $tag, 'messages', array(
         'attributes' => array('title' => $tag),
         'query' => array('tags' => $tag)
       ));
@@ -704,7 +704,7 @@ function privatemsg_filter_query_privatemsg_list_alter($query) {
   if ($filter) {
     if (!empty($filter['tags'])) {
       foreach ($filter['tags'] as $tag) {
-        $alias = $query->join('pm_tags_index', 'pmti',"%alias.thread_id = pmi.thread_id AND %alias.uid = pmi.recipient AND pmi.type IN ('user', 'hidden')");
+        $alias = $query->join('pm_tags_index', 'pmti', "%alias.thread_id = pmi.thread_id AND %alias.uid = pmi.recipient AND pmi.type IN ('user', 'hidden')");
         $query->condition($alias . '.tag_id', $tag);
         $alias = $count_query->join('pm_tags_index', 'pmti',"%alias.thread_id = pmi.thread_id AND %alias.uid = pmi.recipient AND pmi.type IN ('user', 'hidden')");
         $count_query->condition($alias . '.tag_id', $tag);

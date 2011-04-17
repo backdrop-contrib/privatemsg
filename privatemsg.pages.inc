@@ -98,7 +98,7 @@ function privatemsg_delete($form, $form_state, $thread, $message) {
   }
   return confirm_form($form,
     t('Are you sure you want to delete this message?'),
-    isset($_GET['destination']) ? $_GET['destination'] : 'messages/view/'. $message->thread_id,
+    isset($_GET['destination']) ? $_GET['destination'] : 'messages/view/' . $message->thread_id,
     t('This action cannot be undone.'),
     t('Delete'),
     t('Cancel')
@@ -155,7 +155,7 @@ function privatemsg_list_page($argument = 'list', $uid = NULL) {
 }
 
 function privatemsg_list($form, &$form_state, $argument, $account) {
-  drupal_add_css(drupal_get_path('module', 'privatemsg') .'/styles/privatemsg-list.css');
+  drupal_add_css(drupal_get_path('module', 'privatemsg') . '/styles/privatemsg-list.css');
 
   // If this is an AJAX request, update $_GET['q'] so that table sorting and
   // similar links are using the correct base path.
@@ -348,7 +348,8 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
   }
   if (!$thread_id && !empty($recipients_plain)) {
     drupal_set_title(t('Write new message to @recipient', array('@recipient' => $recipients_plain)));
-  } elseif (!$thread_id) {
+  }
+  elseif (!$thread_id) {
     drupal_set_title(t('Write new message'));
   }
 
@@ -535,7 +536,7 @@ function privatemsg_new_validate($form, &$form_state) {
   $message->mid       = 0;
   $message->format    = $message->body['format'];
   $message->body      = $message->body['value'];
-  $message->timestamp = time();
+  $message->timestamp = REQUEST_TIME;
   // Avoid subjects which only consist of a space as these can not be clicked.
   $message->subject = trim($message->subject);
 
@@ -737,7 +738,7 @@ function privatemsg_autocomplete($string) {
 
   // Prefix the matches and convert them to the correct form for the
   // autocomplete.
-  $prefix = count($names) ? implode(", ", $names) .", " : '';
+  $prefix = count($names) ? implode(", ", $names) . ", " : '';
   $suggestions = array();
   foreach ($themed_matches as $match) {
     $suggestions[$prefix . $match . ', '] = $match;
@@ -756,7 +757,8 @@ function privatemsg_autocomplete($string) {
  *   privatemsg_thread_load().
  * @return
  *   The page content.
- * @see privatemsg_thread_load().
+ *
+ * @see privatemsg_thread_load()
  */
 function  privatemsg_view($thread) {
   drupal_set_title($thread['subject']);
@@ -773,7 +775,7 @@ function  privatemsg_view($thread) {
         'query' => array('start' => $thread['older_start']),
         'title' => t('Display older messages'),
       );
-       $older = l(t('<<'), 'messages/view/' . $thread['thread_id'], $options);
+      $older = l(t('<<'), 'messages/view/' . $thread['thread_id'], $options);
     }
     $newer = '';
     if (isset($thread['newer_start'])) {
@@ -807,7 +809,7 @@ function  privatemsg_view($thread) {
     // Set message as read and theme it.
     // Add CSS classes.
     $message->classes = array('privatemsg-message', 'privatemsg-message-' . $i, $i % 2 == 1 ? 'privatemsg-message-even' : 'privatemsg-message-odd');
-     if (!empty($message->is_new)) {
+    if (!empty($message->is_new)) {
       // Mark message as read.
       privatemsg_message_change_status($pmid, PRIVATEMSG_READ, $thread['user']);
       $message->classes[] = 'privatemsg-message-new';

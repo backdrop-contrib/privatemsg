@@ -43,7 +43,7 @@
  * @param $query
  *   Query object
  *
- * @see privatemsg_sql_autocomplete().
+ * @see privatemsg_sql_autocomplete()
  * @see hook_query_alter()
  */
 function hook_query_privatemsg_autocomplete_alter($query) {
@@ -254,7 +254,7 @@ function hook_privatemsg_message_presave_alter(&$message) {
  */
 function hook_privatemsg_message_view_alter(&$var) {
   // add a link to each message
-  $vars['message_links'][] = array('title' => t('My link'), 'href' => '/path/to/my/action/'. $vars['message']['mid']);
+  $vars['message_links'][] = array('title' => t('My link'), 'href' => '/path/to/my/action/' . $vars['message']['mid']);
 }
 
 /**
@@ -323,7 +323,7 @@ function hook_privatemsg_message_recipient_changed($mid, $thread_id, $recipient,
  */
 function hook_privatemsg_block_message($author, $recipients, $context = array()) {
   $blocked = array();
-  foreach($recipients as $recipient_id => $recipient) {
+  foreach ($recipients as $recipient_id => $recipient) {
     // Deny/block if the recipient type is role and the account does not have
     // the necessary permission.
     if ($recipient->type == 'role' && $recipient->recipient == 2) {
@@ -518,7 +518,7 @@ function hook_privatemsg_name_lookup($string) {
  * @see hook_privatemsg_recipient_type_info()
  */
 function hook_privatemsg_recipient_type_info_alter(&$types) {
-  
+
 }
 
 /**

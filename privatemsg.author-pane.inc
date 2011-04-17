@@ -26,7 +26,7 @@ function privatemsg_preprocess_author_pane(&$variables) {
 }
 
 /**
- * Implementation of hook_author_pane_allow_preprocess_disable().
+ * Implements hook_author_pane_allow_preprocess_disable().
  */
 function privatemsg_author_pane_allow_preprocess_disable() {
   return array('privatemsg' => 'Privatemsg');

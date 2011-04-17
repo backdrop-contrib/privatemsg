@@ -25,10 +25,10 @@ function privatemsg_filter_tags_autocomplete($string) {
   $matches = array();
   if (!empty($fragment)) {
     $query = _privatemsg_assemble_query(array('tags_autocomplete', 'privatemsg_filter'), $fragment, $tags);
-    $prefix = count($tags) ? implode(", ", $tags) .", " : '';
+    $prefix = count($tags) ? implode(", ", $tags) . ", " : '';
     // 3: Build proper suggestions and print.
     foreach ($query->execute() as $tag) {
-      $matches[$prefix . $tag->tag .", "] = $tag->tag;
+      $matches[$prefix . $tag->tag . ", "] = $tag->tag;
     }
   }
   // convert to object to prevent drupal bug, see http://drupal.org/node/175361

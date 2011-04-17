@@ -120,7 +120,7 @@ function theme_privatemsg_list_field__count($variables) {
   $options = array();
   if (!empty($thread['is_new']) && $thread['is_new'] < $thread['count']) {
     $options['fragment'] = 'new';
-    $field['data'] .= '<br />' . l((format_plural($thread['is_new'], '(1 new)', '(@count new)')),'messages/view/' . $thread['thread_id'], $options);
+    $field['data'] .= '<br />' . l((format_plural($thread['is_new'], '(1 new)', '(@count new)')), 'messages/view/' . $thread['thread_id'], $options);
   }
   $field['class'][] = 'privatemsg-list-count';
   return $field;

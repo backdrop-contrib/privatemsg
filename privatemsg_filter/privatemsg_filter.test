@@ -1,10 +1,16 @@
 <?php
+
+/**
+ * @file
+ * Contains tests for the privatemsg_filter module.
+ */
+
 /**
  * Test filters, tags and inbox/sent handling.
  */
 class PrivatemsgFilterTestCase extends DrupalWebTestCase {
   /**
-   * Implementation of getInfo().
+   * Implements getInfo().
    */
   static function getInfo() {
     return array(
@@ -15,7 +21,7 @@ class PrivatemsgFilterTestCase extends DrupalWebTestCase {
   }
 
   /**
-   * Implementation of setUp().
+   * Implements setUp().
    */
   function setUp() {
     parent::setUp('privatemsg', 'privatemsg_filter');
@@ -117,7 +123,7 @@ class PrivatemsgFilterTestCase extends DrupalWebTestCase {
  */
 class PrivatemsgTagsTestCase extends DrupalWebTestCase {
   /**
-   * Implementation of getInfo().
+   * Implements getInfo().
    */
   static function getInfo() {
     return array(
@@ -128,7 +134,7 @@ class PrivatemsgTagsTestCase extends DrupalWebTestCase {
   }
 
   /**
-   * Implementation of setUp().
+   * Implements setUp().
    */
   function setUp() {
     parent::setUp('privatemsg', 'privatemsg_filter');
