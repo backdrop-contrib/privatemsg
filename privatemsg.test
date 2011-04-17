@@ -676,7 +676,8 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
     $this->drupalPost(NULL, NULL, t('Cancel account'));
 
     // Confirm account cancellation.
-    $timestamp = REQUEST_TIME;
+    // Explicitly use time(), REQUEST_TIME is not exact enough.
+    $timestamp = time();
     $this->drupalPost(NULL, NULL, t('Cancel account'));
 
     // Confirm account cancellation request.
@@ -711,7 +712,8 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
     $this->drupalPost(NULL, NULL, t('Cancel account'));
 
     // Confirm account cancellation.
-    $timestamp = REQUEST_TIME;
+    // Explicitly use time(), REQUEST_TIME is not exact enough.
+    $timestamp = time();
     $this->drupalPost(NULL, NULL, t('Cancel account'));
 
     // Confirm account cancellation request.
@@ -752,9 +754,20 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
       'body[value]' => $this->randomName(50),
     );
     $this->drupalLogin($user);
+
+    // Preview message.
     $this->drupalPost('messages/new', $message, t('Preview message'));
     $this->assertTitle(t('Write new message to @user', array('@user' => $user->name)) . ' | Drupal', t('Correct title is displayed.'));
     $this->assertFieldByXPath($this->buildXPathQuery('//div[@class=:class]/p', array(':class' => 'privatemsg-message-body')), $message['body[value]'], t('Message body is previewed'));
+    $this->assertFieldByName('body[value]', $message['body[value]'], t('Message body field has the correct default value.'));
+
+    // Send message.
+    $this->drupalPost(NULL, array(), t('Send message'));
+    $this->assertText($message['subject'], t('Message subject is displayed.'));
+    $this->assertText($message['body[value]'], t('Message body is displayed.'));
+
+    $this->assertText(t('A message has been sent to @recipient.', array('@recipient' => $user->name)), t('Sent confirmation displayed.'));
+
   }
 
   /**
