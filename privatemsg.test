@@ -283,7 +283,7 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
 
     $this->drupalPost('messages/new', $editinvalid, t('Send message'));
     $this->assertText(t('You must include at least one valid recipient.'), 'Message was not sent.');
-    $this->assertText(t('The following users will not receive this private message: @recipients', array('@recipients' => $editinvalid['recipient'])), 'Message about non-existing user displayed.');
+    $this->assertText(t('The following recipients will not receive this private message: @recipients.', array('@recipients' => $editinvalid['recipient'])), 'Message about non-existing user displayed.');
 
     $this->drupalPost('messages/new', $editnobody, t('Send message'));
     $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $recipient->name)), 'Message sent confirmation displayed.');
@@ -299,7 +299,7 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
 
     $this->drupalPost('messages/new', $editmixed, t('Send message'));
     $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $recipient->name)), 'Message sent confirmation displayed.');
-    $this->assertText(t('The following users will not receive this private message: @recipients', array('@recipients' => $invalidmixed)), 'Message about non-existing user displayed.');
+    $this->assertText(t('The following recipients will not receive this private message: @recipients.', array('@recipients' => $invalidmixed)), 'Message about non-existing user displayed.');
 
     $this->drupalPost('messages/new', $editformatted, t('Send message'));
     $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $recipient2->name)), 'Message sent confirmation displayed.');
