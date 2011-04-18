@@ -530,7 +530,7 @@ function privatemsg_thread_load($thread_id, $account = NULL, $start = NULL, $use
         $message = current($thread['messages']);
         $thread['subject'] = $thread['subject-tokenized'] = $message->subject;
         if ($message->has_tokens) {
-          $thread['subject'] = privatemsg_token_replace($thread['subject'], array('privatemsg_message' => $message), array('sanitize' => TRUE, 'privatemsg-show-span' => FALSE));
+          $thread['subject-tokenized'] = privatemsg_token_replace($thread['subject'], array('privatemsg_message' => $message), array('sanitize' => TRUE, 'privatemsg-show-span' => FALSE));
         }
       }
       $threads[$account->uid][$thread_id] = $thread;
