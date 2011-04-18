@@ -275,6 +275,10 @@ function privatemsg_new($form, &$form_state, $recipients = '', $subject = '') {
     $recipients = array();
   }
 
+  // Subject has / encoded twice if clean urls are enabled to get it through
+  // mod_rewrite and the menu system. Decode it once more.
+  $subject = str_replace('%2F', '/', $subject);
+
   if (isset($form_state['values'])) {
     if (isset($form_state['values']['recipient'])) {
       $recipients_plain = $form_state['values']['recipient'];
@@ -308,7 +312,7 @@ function privatemsg_new($form, &$form_state, $recipients = '', $subject = '') {
     '#access' => privatemsg_user_access('write privatemsg'),
   );
 
-  $form += _privatemsg_form_base_fields($form_state);
+  $form += _privatemsg_form_base_fields($form, $form_state);
 
   $description_array = array();
   foreach (privatemsg_recipient_get_types() as $name => $type) {
@@ -344,7 +348,7 @@ function privatemsg_new($form, &$form_state, $recipients = '', $subject = '') {
     $url = $_REQUEST['destination'];
   }
 
-  $form['cancel'] = array(
+  $form['actions']['cancel'] = array(
     '#value'  => l(t('Cancel'), $url, array('attributes' => array('id' => 'edit-cancel'))),
     '#weight' => 20,
   );
@@ -361,17 +365,14 @@ function privatemsg_form_reply($form, &$form_state, $thread) {
   );
 
   $to = _privatemsg_get_allowed_recipients($thread['participants'], $thread['thread_id']);
-  if (!empty($to)) {
-    $recipients = _privatemsg_format_participants($to);
-  }
-  else {
+  if (empty($to)) {
     // Display a message if some users are blocked.
     // @todo: Move this check out of the form, don't use the form in that case.
     $blocked_messages = &drupal_static('privatemsg_blocked_messages', array());
     if (count($blocked_messages)) {
       $blocked = t('You can not reply to this conversation because all recipients are blocked.');
       $blocked .= theme('item_list', array('items' => $blocked_messages));
-      $form['blocked']['#value'] = $blocked;
+      $form['blocked']['#markup'] = $blocked;
     }
     else {
       $form['#access'] = FALSE;
@@ -379,9 +380,9 @@ function privatemsg_form_reply($form, &$form_state, $thread) {
     return $form;
   }
 
-  $form += _privatemsg_form_base_fields($form_state);
+  $form += _privatemsg_form_base_fields($form, $form_state);
 
-  $form['cancel'] = array(
+  $form['actions']['cancel'] = array(
     '#value'  => l(t('Clear'), $_GET['q'], array('attributes' => array('id' => 'edit-cancel'))),
     '#weight' => 20,
   );
@@ -395,11 +396,7 @@ function privatemsg_form_reply($form, &$form_state, $thread) {
     '#default_value' => $thread['subject'],
   );
   $form['reply'] = array(
-    '#value' =>  '<h2 class="privatemsg-reply">' . t('Reply') . '</h2>',
-    '#weight' => -10,
-  );
-  $form['recipient_display'] = array(
-    '#value' =>  '<p>'. t('<strong>Reply to thread</strong>:<br /> Recipients: !to', array('!to' => $recipients)) .'</p>',
+    '#markup' =>  '<h2 class="privatemsg-reply">' . t('Reply') . '</h2>',
     '#weight' => -10,
   );
 
@@ -407,16 +404,27 @@ function privatemsg_form_reply($form, &$form_state, $thread) {
     '#type'  => 'value',
     '#value' => $thread['read_all'],
   );
+
   return $form;
 }
 
 /**
  * Returns the common fields of the reply and new form.
  */
-function _privatemsg_form_base_fields(&$form_state) {
+function _privatemsg_form_base_fields($form, &$form_state) {
   global $user;
 
   if (isset($form_state['privatemsg_preview'])) {
+
+    $preview_subject = '';
+    // Only display subject on preview for new messages.
+    if (empty($form_state['validate_built_message']->thread_id)) {
+      $preview_subject = check_plain($form_state['validate_built_message']->subject);
+      // If message has tokens, replace them.
+      if ($form_state['validate_built_message']->has_tokens) {
+        $preview_subject = privatemsg_token_replace($preview_subject, array('privatemsg_message' => $form_state['validate_built_message']), array('sanitize' => TRUE, 'privatemsg-show-span' => FALSE));
+      }
+    }
     $form['message_header'] = array(
       '#type' => 'fieldset',
       '#title' => !empty($preview_subject) ? $preview_subject : t('Preview'),
@@ -424,6 +432,7 @@ function _privatemsg_form_base_fields(&$form_state) {
       '#weight' => -20,
     );
     $form['message_header']['message_preview'] = $form_state['privatemsg_preview'];
+    $body = $form_state['values']['body'];
   }
 
   $form['author'] = array(
@@ -446,8 +455,23 @@ function _privatemsg_form_base_fields(&$form_state) {
     '#after_build'        => array('privatemsg_check_format_access'),
   );
 
+  if (privatemsg_user_access('use tokens in privatemsg') && module_exists('token')) {
+    $form['token'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Token browser'),
+      '#weight' => -1,
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+    );
+    $form['token']['browser'] = array(
+      '#theme' => 'token_tree',
+      '#token_types' => array('privatemsg_message'),
+    );
+  }
+  $form['actions'] = array('#type' => 'actions');
+
   if (variable_get('privatemsg_display_preview_button', FALSE)) {
-    $form['preview'] = array(
+    $form['actions']['preview'] = array(
       '#type'     => 'submit',
       '#value'    => t('Preview message'),
       '#validate' => array('privatemsg_new_validate'),
@@ -456,13 +480,27 @@ function _privatemsg_form_base_fields(&$form_state) {
     );
   }
 
-  $form['submit'] = array(
+  $form['actions']['submit'] = array(
     '#type'     => 'submit',
     '#value'    => t('Send message'),
     '#weight'   => 15,
     '#validate' => array('privatemsg_new_validate'),
     '#submit'   => array('privatemsg_new_submit'),
   );
+
+  // Attach field widgets.
+  $message = (object) array();
+  if (isset($form_state['validate_built_message'])) {
+    $message = $form_state['validate_built_message'];
+  }
+
+  // If a module (e.g. OG) adds a validate or submit callback to the form in
+  // field_attach_form, the form system will not add ours automatically
+  // anymore. Therefore, explicitly adding them here.
+  $form['#submit'] = array('privatemsg_new_submit');
+  $form['#validate'] = array('privatemsg_new_validate');
+
+  field_attach_form('privatemsg_message', $message, $form, $form_state);
   return $form;
 }
 
@@ -545,7 +583,7 @@ function privatemsg_new_validate($form, &$form_state) {
   $message->subject = trim($message->subject);
 
   $trimed_body = trim(truncate_utf8(strip_tags($message->body), 50, TRUE, TRUE));
-  if (empty($message->subject) && !empty($trimed_body)) {
+  if (empty($message->thread_id) && empty($message->subject) && !empty($trimed_body)) {
     $message->subject = $trimed_body;
   }
   // Only parse the user string for a new thread.
@@ -764,8 +802,8 @@ function privatemsg_autocomplete($string) {
  *
  * @see privatemsg_thread_load()
  */
-function  privatemsg_view($thread) {
-  drupal_set_title($thread['subject']);
+function privatemsg_view($thread) {
+  drupal_set_title($thread['subject-tokenized']);
 
   $content = array(
     '#thread' => $thread,
