@@ -603,3 +603,50 @@ function hook_privatemsg_operation_executed($operation, $threads, $account = NUL
 /**
  * @}
  */
+
+/**
+ * Declare headers for message listings.
+ *
+ * @return
+ *   An array keyed by an identifier. All header definition keys for theme_table
+ *   and tablesortort_sql() and the following additional keys:
+ *     - #enabled: TRUE if the header should be enabled by default. FALSE by
+ *                 default.
+ *     - #locked: TRUE if it the header should be locked and can not be
+ *                enabled or disabled in the user interface.
+ *     - #weight: The default weight which can be changed in the user interface.
+ *     - #title: A title used in the administrative user interface. Defaults to
+ *               data.
+ *     - #access: Control if the header is accessible, TRUE or FALSE.
+ *     - #theme: Optionally define a theme function for the field. Defaults to
+ *               'privatemsg_list_field_$key'.
+ *
+ * @see theme_table()
+ * @ingroup theming
+ */
+function hook_privatemsg_header_info() {
+  return array(
+    'subject' => array(
+      'data'    => t('Subject'),
+      'field'   => 'subject',
+      'class'   => 'privatemsg-header-subject',
+      '#enabled' => TRUE,
+      '#locked'  => TRUE,
+      '#weight'  => -20,
+    ),
+  );
+}
+
+/**
+ * Alter the defined header structure.
+ *
+ * @param $headers
+ *   All headers returned by hook_privatemsg_header_info().
+ *
+ *
+ * @see hook_privatemsg_header_info()
+ * @ingroup theming
+ */
+function hook_privatemsg_header_info_alter(&$headers) {
+
+}

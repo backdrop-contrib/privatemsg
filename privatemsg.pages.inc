@@ -167,11 +167,8 @@ function privatemsg_list($form, &$form_state, $argument, $account) {
     $_GET['q'] = $q;
   }
 
-  // Load the table columns.
-  $columns = array_merge(array('subject', 'last_updated'), array_filter(variable_get('privatemsg_display_fields', array('participants'))));
-
   // Load the themed list headers based on the available data.
-  $headers = _privatemsg_list_headers($columns);
+  $headers = privatemsg_get_headers(TRUE);
 
   $form = array(
     '#list_argument' => $argument,
@@ -302,7 +299,7 @@ function privatemsg_new($form, &$form_state, $recipients = '', $subject = '') {
   }
 
   if (!empty($recipients_title)) {
-    drupal_set_title(t('Write new message to %recipient', array('%recipient' => $recipients_title)));
+    drupal_set_title(t('Write new message to %recipient', array('%recipient' => $recipients_title)), PASS_THROUGH);
   }
   else {
     drupal_set_title(t('Write new message'));

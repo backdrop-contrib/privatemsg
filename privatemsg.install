@@ -146,6 +146,7 @@ function privatemsg_uninstall() {
   variable_del('privatemsg_per_page');
   variable_del('privatemsg_display_loginmessage');
   variable_del('privatemsg_display_fields');
+  variable_del('privatemsg_display_fields_weights');
   variable_del('privatemsg_display_link_self');
   variable_del('privatemsg_view_default_amount');
   variable_del('privatemsg_view_max_amount');
