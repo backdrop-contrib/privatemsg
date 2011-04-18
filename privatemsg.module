@@ -1434,6 +1434,9 @@ function privatemsg_block_save($delta = '', $edit = array()) {
   if ($delta == 'privatemsg-new') {
     variable_set('privatemsg_no_messages_notification', $edit['notification']);
   }
+
+  // Allow modules to respond to the deleted changes.
+  module_invoke_all('privatemsg_message_status_delete', $pmid, $delete, $account);
 }
 
 function privatemsg_title_callback($title = NULL) {
@@ -1510,6 +1513,8 @@ function privatemsg_message_change_delete($pmid, $delete, $account = NULL) {
       ->condition('type', array('user', 'hidden'));
   }
   $update->execute();
+
+  module_invoke_all('privatemsg_message_status_deleted', $pmid, $delete, $account);
 }
 
 /**
@@ -2193,15 +2198,35 @@ function privatemsg_thread_change_delete($threads, $delete, $account = NULL) {
     $account = clone $user;
   }
 
+  // Record which messages will be deleted.
+  $changed = db_select('pm_index', 'pmi')
+    ->fields('pmi', array('mid'))
+    ->condition('deleted', 0, $delete ? '=' : '>')
+    ->condition('recipient', $account->uid)
+    ->condition('type', array('user', 'hidden'))
+    ->condition('thread_id', $threads)
+    ->execute()
+    ->fetchCol();
+
   // Merge status and uid with the threads list. array_merge() will not overwrite/ignore thread_id 1.
-  $params = array_merge(array($delete, $account->uid), $threads);
+  $delete_value = 0;
+  if ($delete == TRUE) {
+    $delete_value = REQUEST_TIME;
+  }
+  $params = array_merge(array($delete_value, $account->uid), $threads);
+  // Update the status of the threads.
+  db_update('pm_index')
+    ->fields(array(
+      'deleted' => $delete_value
+    ))
+    ->condition('recipient', $account->uid)
+    ->condition('type', array('user', 'hidden'))
+    ->condition('thread_id', $threads)
+    ->execute();
 
-  // Load all messages of those threads including the deleted.
-  $query = _privatemsg_assemble_query('messages', $threads, $account, TRUE);
-
-  // Delete each message. We need to do that to trigger the delete hook.
-  foreach ($query->execute() as $row) {
-    privatemsg_message_change_delete($row->mid, $delete, $account);
+  // Allow modules to respond to the deleted changes.
+  foreach ($changed as $mid) {
+    module_invoke_all('privatemsg_message_status_deleted', $mid, $delete, $account);
   }
 
   if ($delete) {
