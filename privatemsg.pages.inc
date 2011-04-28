@@ -222,7 +222,7 @@ function privatemsg_list($form, &$form_state, $argument, $account) {
 function privatemsg_list_submit($form, &$form_state) {
   // Load all available operation definitions.
   $operations = module_invoke_all('privatemsg_thread_operations', $form['#list_argument']);
-  drupal_alter('privatemsg_thread_operations', $operations, $for['#list_argument']);
+  drupal_alter('privatemsg_thread_operations', $operations, $form['#list_argument']);
 
   // Default "default" operation, which won't do anything.
   $operation = array('callback' => 0);
@@ -263,7 +263,6 @@ function privatemsg_list_submit($form, &$form_state) {
 function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '', $thread_id = NULL, $read_all = FALSE) {
   global $user;
 
-  $recipients_string = '';
   $recipients_plain = '';
   $body      = '';
 
@@ -332,7 +331,6 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
   $subject = str_replace('%2F', '/', $subject);
 
   if (!empty($to)) {
-    $recipients_string = implode(', ', $to);
     $recipients_plain = implode(', ', $to_plain);
   }
   if (isset($form_state['values'])) {
@@ -540,9 +538,9 @@ function privatemsg_new_validate($form, &$form_state) {
   // Avoid subjects which only consist of a space as these can not be clicked.
   $message->subject = trim($message->subject);
 
-  $trimed_body = trim(truncate_utf8(strip_tags($message->body), 50, TRUE, TRUE));
-  if (empty($message->subject) && !empty($trimed_body)) {
-    $message->subject = $trimed_body;
+  $trimmed_body = trim(truncate_utf8(strip_tags($message->body), 50, TRUE, TRUE));
+  if (empty($message->subject) && !empty($trimmed_body)) {
+    $message->subject = $trimmed_body;
   }
   // Only parse the user string for a new thread.
   if (!isset($message->thread_id)) {
@@ -687,7 +685,7 @@ function privatemsg_autocomplete($string) {
   $names = array();
   // 1: Parse $string and build list of valid user names.
   $fragments = explode(',', $string);
-  foreach ($fragments as $index => $name) {
+  foreach ($fragments as $name) {
     if ($name = trim($name)) {
       $names[$name] = $name;
     }
@@ -724,7 +722,7 @@ function privatemsg_autocomplete($string) {
   // Check if there are any duplicates.
   if (count(array_unique($themed_matches)) != count($themed_matches)) {
     // Loop over matches, look for duplicates of each one.
-    foreach ($themed_matches as $key => $themed_match) {
+    foreach ($themed_matches as $themed_match) {
       $duplicate_keys = array_keys($themed_matches, $themed_match);
       if (count($duplicate_keys) > 1) {
         // There are duplicates, make them unique.

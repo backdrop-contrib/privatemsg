@@ -137,7 +137,7 @@ function pm_block_user_list() {
 function pm_block_user_block_validate($form, &$form_state) {
   global $user;
   list($accounts, $invalid) = _privatemsg_parse_userstring($form_state['values']['name'], array('user'));
-  // Remove acocunts that can not be blocked.
+  // Remove accounts that can not be blocked.
   if (!empty($accounts)) {
     foreach ($accounts as $id => $account) {
 

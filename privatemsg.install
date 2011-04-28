@@ -11,7 +11,7 @@
 function privatemsg_schema() {
   $schema = array();
   $schema['pm_index'] = array(
-    'description'       => '{pm_index} holds indexing information about messages and recepients for fast retrieval',
+    'description'       => '{pm_index} holds indexing information about messages and recipients for fast retrieval',
     'fields'        => array(
       'mid'    => array(
         'description'   => 'Private Message ID',
@@ -210,7 +210,7 @@ function privatemsg_update_7002() {
 
   // Make sure to not run this update twice.
   if (db_table_exists('pm_disable')) {
-    return $ret;
+    return;
   }
 
   $schema['pm_disable'] = array(
@@ -293,13 +293,13 @@ function privatemsg_update_7004(&$sandbox) {
     $sql = 'SELECT COUNT(*) AS count, pmi.recipient, pmi.type, pmi.mid, pmi.thread_id, MAX(pmi.is_new) As is_new, MIN(pmi.deleted) AS deleted FROM {pm_index} pmi WHERE thread_id IN (:threads) GROUP BY pmi.recipient, pmi.type, pmi.mid, pmi.thread_id HAVING COUNT(*) > 1';
     $result = db_query($sql, array(':threads' => $threads));
     foreach ($result as $row) {
-      // Delete all occurences of these entries.
+      // Delete all occurrences of these entries.
       db_delete('pm_index')
         ->condition('mid', $row->mid)
         ->condition('recipient', $row->recipient)
         ->condition('type', $row->type)
         ->execute();
-      // Re-insert a single entry. We do this to explicitely keep messages
+      // Re-insert a single entry. We do this to explicitly keep messages
       // unread and undeleted if there are conflicting entries.
       db_insert('pm_index')
         ->fields(array(

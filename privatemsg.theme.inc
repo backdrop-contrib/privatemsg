@@ -40,7 +40,7 @@
  * id "privatemsg_list" will contain the header, raw and themed field data in
  * the following form:
  * @code
- * $form['#headers']['field_name'] = $header // Array with the header defintion;
+ * $form['#headers']['field_name'] = $header // Array with the header definition;
  * $form['#data']['thread_id'] = $data // Raw data of that thread
  * $form['#rows']['thread_id'] = $row // Themed fields of that thread
  * @endcode

@@ -2,7 +2,7 @@
 
 /**
  * @file
- * This file takes care of creating/deletig pm_email_notify table used
+ * This file takes care of creating/deleting pm_email_notify table used
  * for storing user notification preferences
  */
 

@@ -6,7 +6,7 @@
  */
 
 /**
- * Implementats hook_permission().
+ * Implements hook_permission().
  */
 function privatemsg_filter_permission() {
   return array(
@@ -484,7 +484,7 @@ function privatemsg_filter_create_get_query($filter) {
         $query['author'][] = privatemsg_recipient_format($author, array('plain' => TRUE));
       }
       elseif (is_int($author) && $author_obj = array_shift(privatemsg_user_load_multiple(array($author)))) {
-        $query['author'][] = privatemsg_recipient_format($author, array('plain' => TRUE));
+        $query['author'][] = privatemsg_recipient_format($author_obj, array('plain' => TRUE));
       }
     }
     if (isset($query['author'])) {
@@ -620,7 +620,7 @@ function theme_privatemsg_list_field__tags($arguments) {
   if (!empty($thread['tags'])) {
     $tags = array();
 
-    foreach ($thread['tags'] as $tag_id => $tag) {
+    foreach ($thread['tags'] as $tag) {
       $tags[] = l(drupal_strlen($tag) > 15 ? drupal_substr($tag, 0, 13) . '...' : $tag, 'messages', array(
         'attributes' => array('title' => $tag),
         'query' => array('tags' => $tag)
@@ -815,7 +815,6 @@ function privatemsg_filter_form($form, &$form_state, $thread_id) {
 
   // Get a list of current tags for this thread
   $query = _privatemsg_assemble_query(array('tags', 'privatemsg_filter'), $user, array($thread_id));
-  $count = $query->countQuery()->execute()->fetchField();
   $tags = implode(', ', $query->execute()->fetchCol(1));
 
   $form['user_id'] = array(

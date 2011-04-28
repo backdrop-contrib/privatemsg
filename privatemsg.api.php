@@ -247,12 +247,12 @@ function hook_privatemsg_message_presave_alter(&$message) {
  * Act on the $vars before a message is displayed.
  *
  * This is called in the preprocess hook of the privatemsg-view template.
- * The $message data is aviable in $vars['message'].
+ * The $message data is available in $vars['message'].
  *
  * @param $var
  *   Template variables
  */
-function hook_privatemsg_message_view_alter(&$var) {
+function hook_privatemsg_message_view_alter(&$vars) {
   // add a link to each message
   $vars['message_links'][] = array('title' => t('My link'), 'href' => '/path/to/my/action/' . $vars['message']['mid']);
 }
@@ -442,7 +442,7 @@ function hook_privatemsg_message_status_changed($pmid, $status, $account) {
  * - hook_privatemsg_name_lookup() - Convert a string to an
  *   recipient object
  *
- * Additionaly, there is also a hook_privatemsg_recipient_type_info_alter() that
+ * Additionally, there is also a hook_privatemsg_recipient_type_info_alter() that
  * allows to alter recipient type definitions.
  */
 
@@ -502,7 +502,7 @@ function hook_privatemsg_recipient_type_info() {
  * up the string.
  */
 function hook_privatemsg_name_lookup($string) {
-  $result = db_query("SELECT *, rid AS recipient FROM {role} WHERE name = '%s'", trim($role));
+  $result = db_query("SELECT *, rid AS recipient FROM {role} WHERE name = '%s'", trim($string));
   if ($role = db_fetch_object($result)) {
     $role->type = 'role';
     return $role;
@@ -522,7 +522,7 @@ function hook_privatemsg_recipient_type_info_alter(&$types) {
 }
 
 /**
- * Allows to alter the found autocompletions.
+ * Allows to alter the found autocomplete suggestions.
  *
  * @param $matches
  *   Array of matching recipient objects.
@@ -564,7 +564,7 @@ function hook_privatemsg_name_lookup_matches(&$matches, $string) {
  *   An array which contains the thread ids on which the operation
  *   has been executed.
  * @param $account
- *   An user account object if an other user than the currrently logged in is
+ *   An user account object if an other user than the currently logged in is
  *   affected.
  *
  * @see privatemsg_operation_execute()

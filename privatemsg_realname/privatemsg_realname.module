@@ -29,7 +29,7 @@ function privatemsg_realname_privatemsg_name_lookup($string) {
 }
 
 /**
- * Implemenets hook_theme().
+ * Implements hook_theme().
  */
 function privatemsg_realname_theme() {
   return array(
@@ -74,7 +74,7 @@ function privatemsg_realname_query_privatemsg_autocomplete_alter(SelectQueryInte
 
   if (!empty($names)) {
     // Exclude already existing realnames, but explicitly allow NULL.
-    // r.realname is left joined and cann be NULL => NULL NOT IN (...) => NOT (NULL) => NULL.
+    // r.realname is left joined and can be NULL => NULL NOT IN (...) => NOT (NULL) => NULL.
     $query->condition(db_or()
       ->condition($alias . '.realname', $names, 'NOT IN')
       ->isNull($alias . '.realname')

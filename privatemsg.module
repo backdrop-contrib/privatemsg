@@ -63,7 +63,7 @@ function privatemsg_permission() {
 }
 
 /**
- * Generate aray of user objects based on a string.
+ * Generate array of user objects based on a string.
  *
  *
  * @param $userstring
@@ -105,7 +105,7 @@ function _privatemsg_generate_user_array($string, $slice = NULL) {
  * Format an array of user objects.
  *
  * @param $part_array
- *   Array with user objects, for example the one returnd by
+ *   Array with user objects, for example the one returned by
  *   _privatemsg_generate_user_array.
  *
  * @param $limit
@@ -113,7 +113,7 @@ function _privatemsg_generate_user_array($string, $slice = NULL) {
  * @param $no_text
  *   When TRUE, don't display the Participants/From text.
  * @return
- *   String with formated user objects, like user1, user2.
+ *   String with formatted user objects, like user1, user2.
  */
 function _privatemsg_format_participants($part_array, $limit = NULL, $no_text = FALSE) {
   global $user;
@@ -153,7 +153,7 @@ function _privatemsg_format_participants($part_array, $limit = NULL, $no_text = 
     if (count($to) == 0) { // Only one participant
       return t("From !last", array('!last' => $last));
     }
-    else { // Multipe participants..
+    else { // Multiple participants..
       $participants = implode(', ', $to);
       return t('Between !participants and !last', array('!participants' => $participants, '!last' => $last));
     }
@@ -781,7 +781,7 @@ function privatemsg_message_change_status($pmid, $status, $account = NULL) {
  * Return number of unread messages for an account.
  *
  * @param $account
- *   Specifiy the user for which the unread count should be loaded.
+ *   Specify the user for which the unread count should be loaded.
  *
  * @ingroup api
  */
@@ -803,7 +803,7 @@ function privatemsg_unread_count($account = NULL) {
  * Load all participants of a thread.
  *
  * @param $thread_id
- *   Thread ID for wich the participants should be loaded.
+ *   Thread ID for which the participants should be loaded.
  * @param $account
  *   For which account should the messages be loaded. *
  * @param $ignore_hidden
@@ -884,9 +884,6 @@ function _privatemsg_parse_userstring($input, $types_limitations = array()) {
       // Remember if a possible match denies access.
       $access_denied = FALSE;
 
-      // Load recipient types.
-      $types = privatemsg_recipient_get_types();
-
       // Collect matches from hook implementations.
       foreach (module_implements('privatemsg_name_lookup') as $module) {
         $function = $module . '_privatemsg_name_lookup';
@@ -911,7 +908,7 @@ function _privatemsg_parse_userstring($input, $types_limitations = array()) {
           unset($matches[$key]);
           $access_denied = TRUE;
         }
-        // Appliy limitations.
+        // Apply limitations.
         if (!empty($types_limitations) && !in_array($recipient->type, $types_limitations)) {
           unset($matches[$key]);
         }
@@ -955,7 +952,7 @@ function _privatemsg_parse_userstring($input, $types_limitations = array()) {
  * Implements hook_privatemsg_name_lookup().
  */
 function privatemsg_privatemsg_name_lookup($string) {
-  // Remove optonal user specifier.
+  // Remove optional user specifier.
   $string = trim(str_replace(t('[user]'), '', $string));
   // Fall back to the default username lookup.
   if (!$error = module_invoke('user', 'validate_name', $string)) {
@@ -1013,7 +1010,7 @@ function privatemsg_sql_list($account, $argument = 'list') {
     $query->addExpression('COUNT(distinct pmi.mid)', 'count');
   }
   if (in_array('participants', $fields)) {
-    // Query for a string with uid's, for example "1,6,7". This needs a subquery on PostgreSQL.
+    // Query for a string with uids, for example "1,6,7". This needs a subquery on PostgreSQL.
     if (db_driver() == 'pgsql') {
       $query->addExpression("array_to_string(array(SELECT DISTINCT pmia.type || '_' || pmia.recipient
                                                           FROM {pm_index} pmia
@@ -1305,7 +1302,7 @@ function privatemsg_form_alter(&$form, &$form_state, $form_id) {
       '#after_build' => array('privatemsg_account_fieldset_remove_if_empty'),
     );
 
-    // We have to use user_acces() because privatemsg_user_access() would
+    // We have to use user_access() because privatemsg_user_access() would
     // return FALSE when privatemsg is disabled.
     if ((user_access('write privatemsg') || user_access('read privatemsg')) && user_access('allow disabling privatemsg')) {
       $form['privatemsg']['pm_enable'] = array(
@@ -1491,7 +1488,8 @@ function _privatemsg_block_menu() {
  * @param $delete
  *   Either deletes or restores the thread (1 => delete, 0 => restore)
  * @param $account
- *   User acccount for which the delete action should be carried out - Set to NULL to delete for all users.
+ *   User account for which the delete action should be carried out.
+ *   Set to NULL to delete for all users.
  *
  * @ingroup api
  */
@@ -1959,7 +1957,8 @@ function privatemsg_message_load_multiple(array $pmids, array $conditions = arra
  */
 function _privatemsg_assemble_query($query) {
 
-  // Modules will be allowed to choose the prefix for the querybuilder, but if there is not one supplied, 'privatemsg' will be taken by default.
+  // Modules will be allowed to choose the prefix for the query builder,
+  // but if there is not one supplied, 'privatemsg' will be taken by default.
   if (is_array($query)) {
     $query_id = $query[0];
     $query_group = $query[1];
@@ -1976,7 +1975,7 @@ function _privatemsg_assemble_query($query) {
   unset($args[0]);
   // We do the merge because we call call_user_func_array and not drupal_alter.
   // This is necessary because otherwise we would not be able to use $args
-  // correctly (otherwise it doesnt unfold).
+  // correctly (otherwise it doesn't unfold).
   $query_function = $query_group . '_sql_' . $query_id;
   if (!function_exists($query_function)) {
     drupal_set_message(t('Query function %function does not exist', array('%function' => $query_function)), 'error');
@@ -2012,7 +2011,7 @@ function privatemsg_thread_change_status($threads, $status, $account = NULL) {
     global $user;
     $account = clone $user;
   }
-  // Merge status and uid with the exising thread list.
+  // Merge status and uid with the existing thread list.
   $params = array(
     ':status' => $status,
     ':recipient' => $account->uid,
@@ -2053,7 +2052,7 @@ function privatemsg_thread_change_status($threads, $status, $account = NULL) {
  * @param $keys
  *   Array with the keys which are present in the query/should be displayed.
  * @return
- *   Array with header defintions for tablesort_sql and theme('table').
+ *   Array with header definitions for tablesort_sql and theme('table').
  */
 function _privatemsg_list_headers($keys) {
 
@@ -2182,7 +2181,7 @@ function privatemsg_operation_execute($operation, $threads, $account = NULL) {
  * @param $delete
  *   Indicates if the threads should be deleted or restored. 1 => delete, 0 => restore.
  * @param $account
- *   User acccount for which the delete action should be carried out - Set to NULL to delete for all users.
+ *   User account for which the delete action should be carried out - Set to NULL to delete for all users.
  */
 function privatemsg_thread_change_delete($threads, $delete, $account = NULL) {
   if (!is_array($threads)) {
@@ -2192,9 +2191,6 @@ function privatemsg_thread_change_delete($threads, $delete, $account = NULL) {
     global $user;
     $account = clone $user;
   }
-
-  // Merge status and uid with the threads list. array_merge() will not overwrite/ignore thread_id 1.
-  $params = array_merge(array($delete, $account->uid), $threads);
 
   // Load all messages of those threads including the deleted.
   $query = _privatemsg_assemble_query('messages', $threads, $account, TRUE);
@@ -2356,7 +2352,7 @@ function privatemsg_views_api() {
  * and recipient type to the user object.
  *
  * @param $uid
- *   Which uid to load. Can either be a single id or an array of uid's.
+ *   Which uid to load. Can either be a single id or an array of uids.
  * @return
  *   If existing for the passed in uid, the user object with the recipient
  *   and type properties.
@@ -2510,7 +2506,7 @@ function _privatemsg_handle_recipients($mid, $recipients, $use_batch = TRUE) {
     // Add a batch operation to press non-user recipient types.
     if ($recipient->type != 'user' && $recipient->type != 'hidden') {
       $type = privatemsg_recipient_get_type($recipient->type);
-      // Count the recipients, if there are less than small_treshold, process
+      // Count the recipients, if there are less than small_threshold, process
       // them right now.
       $count_function = $type['count'];
       if (!is_callable($count_function)) {
@@ -2591,7 +2587,7 @@ function privatemsg_recipient_access($type_name, $permission, $recipient = NULL)
 
     if (isset($type[$permission . ' access'])) {
       if (is_bool($type[$permission . ' access'])) {
-        return $types[$permission . ' access'];
+        return $type[$permission . ' access'];
       }
       return user_access($type[$permission . ' access']);
     }
@@ -2641,7 +2637,7 @@ function privatemsg_privatemsg_recipient_type_info() {
  * Implements callback_recipient_autocomplete().
  */
 function privatemsg_user_autocomplete($fragment, $names, $limit) {
-  // First, load all possible uid's.
+  // First, load all possible uids.
   $uids = _privatemsg_assemble_query('autocomplete', $fragment, $names)
     ->range(0, $limit)
     ->execute()
@@ -2702,7 +2698,7 @@ function privatemsg_field_extra_fields() {
 }
 
 /**
- * Implements hook_file_download_acces().
+ * Implements hook_file_download_access().
  */
 function privatemsg_file_download_access($field, $entity_type, $entity) {
   global $user;
@@ -2824,7 +2820,7 @@ function privatemsg_tokens($type, $tokens, array $data = array(), array $options
             $replacements[$original] = privatemsg_token_replace($sanitize ? check_markup($message->body, $message->format) : $message->body, $data, $options + array('privatemsg_recursion' => 1));
           }
           else {
-            $replacements[$original] = $sanitize ? check_markup($message->body, $message->format) : $body;
+            $replacements[$original] = $sanitize ? check_markup($message->body, $message->format) : $message->body;
           }
           break;
 
@@ -2856,7 +2852,7 @@ function privatemsg_tokens($type, $tokens, array $data = array(), array $options
       $replacements += token_generate('user', $recipient_tokens, array('user' => $recipient), $options);
     }
 
-    if ($sent_tokens = token_find_with_prefix($tokens, 'timpestamp')) {
+    if ($sent_tokens = token_find_with_prefix($tokens, 'timestamp')) {
       $replacements += token_generate('date', $sent_tokens, array('date' => $message->timestamp), $options);
     }
   }
@@ -2887,7 +2883,6 @@ function privatemsg_token_replace($text, $data, array $options = array()) {
 
   $message = $data['privatemsg_message'];
   $show_span = !isset($options['privatemsg-show-span']) || $options['privatemsg-show-span'];
-  $show_invalid = !isset($options['privatemsg-display-invalid']) || $options['privatemsg-display-invalid'];
 
   // We do not replace tokens if the user viewing the message is the author or
   // not a real recipient to avoid confusion.
@@ -2904,9 +2899,9 @@ function privatemsg_token_replace($text, $data, array $options = array()) {
     if (!empty($tokens)) {
       $replacements = array();
       // Loop over the found tokens.
-      foreach ($tokens as $type => $tokens_type) {
+      foreach ($tokens as $tokens_type) {
         // token_replace() returns tokens separated by type.
-        foreach ($tokens_type as $name => $original) {
+        foreach ($tokens_type as $original) {
           // Displaying invalid tokens only works with token.module.
           if (in_array($original, $invalid_tokens)) {
             $token = t('INVALID TOKEN @token', array('@token' => $original), array('langcode' => $language_code));
