@@ -15,7 +15,7 @@ function privatemsg_filter_tags_autocomplete($string) {
   // 1: Parse $string and build a list of tags.
   $tags = array();
   $fragments = explode(',', $string);
-  foreach ($fragments as $index => $tag) {
+  foreach ($fragments as $tag) {
     $tag = trim($tag);
     $tags[$tag] = $tag;
   }

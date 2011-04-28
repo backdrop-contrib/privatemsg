@@ -112,7 +112,7 @@ function pm_block_user_privatemsg_autocomplete_alter(&$matches, $names, $fragmen
 /**
  * Theme the user actions form.
  *
- * @ingroup themeable
+ * @ingroup theming
  */
 function theme_pm_block_user_actions($form) {
   // @todo: Something is wrong, remove this hack.
@@ -223,7 +223,7 @@ function pm_block_user_has_blocked($author, $recipient) {
  */
 function _pm_block_user_rule_exists($author, $recipient, $action = PM_BLOCK_USER_DISALLOW_BLOCKING) {
   $block_actions = variable_get('pm_block_user_actions', array());
-  foreach ($block_actions as $delta => $details) {
+  foreach ($block_actions as $details) {
     // If this rule doesn't relate to $action, or it's disabled
     // ignore it and go to next loop iteration.
     if ($details['action'] != $action || !$details['enabled']) {
@@ -278,7 +278,7 @@ function pm_block_user_privatemsg_block_message($author, $recipients, $context =
 
   // Only user recipients are supported for now, remove others.
   $user_recipients = array();
-  foreach ($recipients as $key => $recipient) {
+  foreach ($recipients as $recipient) {
     if (empty($recipient->type)) {
       $recipient->type = 'user';
       $recipient->recipient = $recipient->uid;
@@ -347,7 +347,7 @@ function pm_block_user_privatemsg_message_view_alter(&$vars) {
  * Implements hook_user_cancel().
  */
 function pm_block_user_user_cancel($edit, $account, $method) {
-  // Always delete, we don't need to keepy anonymous blocking rules.
+  // Always delete, we don't need to keep anonymous blocking rules.
   db_delete('pm_block_user')
     ->condition(db_or()
       ->condition('author', $account->uid)
@@ -357,7 +357,7 @@ function pm_block_user_user_cancel($edit, $account, $method) {
 }
 
 /**
- * Implememts hook_query_TAG_alter().
+ * Implements hook_query_TAG_alter().
  *
  * Remove blocked users.
  */
@@ -365,7 +365,7 @@ function pm_block_user_query_privatemsg_autocomplete_alter($query) {
   global $user;
 
   // Assume the users don't have blocked more than a few dozen other users
-  // but there can be hundreds of thousends of users and make the subquery
+  // but there can be hundreds of thousands of users and make the subquery
   // unrelated.
 
   // Create a subquery that gets all users which have blocked the current user.
@@ -380,7 +380,7 @@ function pm_block_user_query_privatemsg_autocomplete_alter($query) {
   if ($user->uid != 1) {
     $rids = array();
     $block_actions = variable_get('pm_block_user_actions', array());
-    foreach ($block_actions as $delta => $details) {
+    foreach ($block_actions as $details) {
       // Only continue if the rule is enabled and is a disallow sending rule.
       if ($details['action'] != PM_BLOCK_USER_DISALLOW_SENDING || !$details['enabled']) {
         continue;

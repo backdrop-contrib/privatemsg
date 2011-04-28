@@ -390,7 +390,7 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
 
     // Create a message between the users that we can use to test
     $return = privatemsg_new_thread(array($disableduser), $this->randomName(20), $this->randomName(100), array('author' => $enableduser));
-    $mid = $return['message']->thread_id;
+    $return['message']->thread_id;
 
     $this->drupalLogin($disableduser);
     // Now disable $disabledUser.
@@ -781,7 +781,7 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
     $this->drupalLogin($current);
 
     // Use specific names to be able to test for specific name combinations.
-    user_save($current, array('name' => 'wathever'));
+    user_save($current, array('name' => 'whatever'));
     user_save($user1, array('name' => 'aaaa'));
     user_save($user2, array('name' => 'aaab'));
     user_save($user3, array('name' => 'bbbb'));
@@ -805,14 +805,6 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
     $autocomplete = (array)json_decode($json);
     $this->assertEqual(count($autocomplete), 1, t('Autocomplete object contains one suggestion.'));
     $this->assertEqual($autocomplete['aaaa, aaab, '], 'aaab');
-  }
-
-  /**
-   * Implements tearDown().
-   */
-  function tearDown() {
-    //we dont really need to do this. i'm adding it just to keep it in front of my eyes so i can memorize it.
-    parent::tearDown();
   }
 }
 
@@ -847,7 +839,7 @@ class PrivatemsgFieldsTestCase extends DrupalWebTestCase {
 
     // Create a new field.
     $edit = array(
-      'fields[_add_new_field][label]' => $label = $this->randomName(),
+      'fields[_add_new_field][label]' => $this->randomName(),
       'fields[_add_new_field][field_name]' => $name = strtolower($this->randomName()),
       'fields[_add_new_field][type]' => 'text',
       'fields[_add_new_field][widget_type]' => 'text_textfield',
@@ -906,8 +898,8 @@ class PrivatemsgFieldsTestCase extends DrupalWebTestCase {
 
     // Create a new field.
     $edit = array(
-      'fields[_add_new_field][label]' => $label = $this->randomName(),
-      'fields[_add_new_field][field_name]' => $name = strtolower($this->randomName()),
+      'fields[_add_new_field][label]' => $this->randomName(),
+      'fields[_add_new_field][field_name]' => strtolower($this->randomName()),
       'fields[_add_new_field][type]' => 'image',
       'fields[_add_new_field][widget_type]' => 'image_image',
     );

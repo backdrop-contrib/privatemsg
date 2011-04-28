@@ -189,7 +189,7 @@ function privatemsg_admin_settings() {
   $form['links']['privatemsg_display_link_self'] = array(
     '#type' => 'checkbox',
     '#title' => t('Display "Send this user a message" links for themself'),
-    '#description' => t('If enabled, each users sees that link on their own profile, comments and similiar places.'),
+    '#description' => t('If enabled, each users sees that link on their own profile, comments and similar places.'),
     '#default_value' => variable_get('privatemsg_display_link_self', TRUE),
     '#weight'        => -10,
   );

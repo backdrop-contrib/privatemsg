@@ -148,7 +148,7 @@ function hook_query_privatemsg_deleted_alter($query) {
  * All message-level hooks look like hook_privatemsg_message_op,
  * where op is one of the following:
  * - @link hook_privatemsg_message_load load @endlink: Called when a full
- *   message is loaded similiar to nodeapi_load, new values can be returned and
+ *   message is loaded similar to nodeapi_load, new values can be returned and
  *   will be added to $message, parameter: $message
  * - @link hook_privatemsg_message_validate validate @endlink: Validation,
  *   before the message is sent/saved. Return validation errors as array,
@@ -174,8 +174,8 @@ function hook_query_privatemsg_deleted_alter($query) {
  * array (
  *   'mid' => 3517, // message id, identifies a message
  *   'author' => 27, // author id
- *   'subject' => 'raclebugav', // Message subject
- *   'body' => 'bla bla', // Body of the message
+ *   'subject' => 'Message subject',
+ *   'body' => 'Body of the message',
  *   'timestamp' => 351287003, // unix timestamp, creation time
  *   'is_new' => 0, // If the message has been read by the user
  *   'thread_id' => 3341, // thread id, this is actually the mid from the first
@@ -222,7 +222,7 @@ function hook_privatemsg_message_validate($message, $form = FALSE) {
   foreach ($message->recipients as $recipient) {
     if ($recipient->name == 'blocked user') {
       $_privatemsg_invalid_recipients[] = $recipient->uid;
-      $errors[] = t('%name has chosen to not recieve any more messages from you.', array('%name' => privatemsg_recipient_format($recipient, array('plain' => TRUE))));
+      $errors[] = t('%name has chosen to not receive any more messages from you.', array('%name' => privatemsg_recipient_format($recipient, array('plain' => TRUE))));
     }
   }
 }
@@ -247,12 +247,12 @@ function hook_privatemsg_message_presave_alter(&$message) {
  * Act on the $vars before a message is displayed.
  *
  * This is called in the preprocess hook of the privatemsg-view template.
- * The $message data is aviable in $vars['message'].
+ * The $message data is available in $vars['message'].
  *
  * @param $var
  *   Template variables
  */
-function hook_privatemsg_message_view_alter(&$var) {
+function hook_privatemsg_message_view_alter(&$vars) {
   // add a link to each message
   $vars['message_links'][] = array('title' => t('My link'), 'href' => '/path/to/my/action/' . $vars['message']['mid']);
 }
@@ -468,7 +468,7 @@ function hook_privatemsg_message_status_deleted($mid, $deleted, $account) {
  * - hook_privatemsg_name_lookup() - Convert a string to an
  *   recipient object
  *
- * Additionaly, there is also a hook_privatemsg_recipient_type_info_alter() that
+ * Additionally, there is also a hook_privatemsg_recipient_type_info_alter() that
  * allows to alter recipient type definitions.
  */
 
@@ -528,7 +528,7 @@ function hook_privatemsg_recipient_type_info() {
  * up the string.
  */
 function hook_privatemsg_name_lookup($string) {
-  $result = db_query("SELECT *, rid AS recipient FROM {role} WHERE name = '%s'", trim($role));
+  $result = db_query("SELECT *, rid AS recipient FROM {role} WHERE name = '%s'", trim($string));
   if ($role = db_fetch_object($result)) {
     $role->type = 'role';
     return $role;
@@ -548,7 +548,7 @@ function hook_privatemsg_recipient_type_info_alter(&$types) {
 }
 
 /**
- * Allows to alter the found autocompletions.
+ * Allows to alter the found autocomplete suggestions.
  *
  * @param $matches
  *   Array of matching recipient objects.
@@ -590,7 +590,7 @@ function hook_privatemsg_name_lookup_matches(&$matches, $string) {
  *   An array which contains the thread ids on which the operation
  *   has been executed.
  * @param $account
- *   An user account object if an other user than the currrently logged in is
+ *   An user account object if an other user than the currently logged in is
  *   affected.
  *
  * @see privatemsg_operation_execute()
@@ -609,7 +609,7 @@ function hook_privatemsg_operation_executed($operation, $threads, $account = NUL
  *
  * @return
  *   An array keyed by an identifier. All header definition keys for theme_table
- *   and tablesortort_sql() and the following additional keys:
+ *   and tablesort_sql() and the following additional keys:
  *     - #enabled: TRUE if the header should be enabled by default. FALSE by
  *                 default.
  *     - #locked: TRUE if it the header should be locked and can not be

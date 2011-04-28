@@ -15,7 +15,7 @@
  * modules).
  *
  * Columns are defined with hook_privatemsg_header_info(). The default weight
- * and if they are enabled or not can by set by default but can be overriden in
+ * and if they are enabled or not can by set by default but can be overridden in
  * the admin user interface.
  *
  * Additionally, a theme function needs to be defined that defaults to the name

@@ -66,7 +66,7 @@ class views_handler_field_privatemsg_link extends views_handler_field {
       '#type' => 'textfield',
       '#title' => t('Custom destination'),
       '#default_value' => $this->options['custom_destination'],
-      '#description' => t('If non-empty, users will be forwared to the given url. You can use replacement tokens to insert any existing field output.'),
+      '#description' => t('If non-empty, users will be forwarded to the given url. You can use replacement tokens to insert any existing field output.'),
       '#states' => array(
         'visible' => array(
           "input[name='options[return]']" => array('checked' => TRUE),
@@ -84,7 +84,7 @@ class views_handler_field_privatemsg_link extends views_handler_field {
       }
     }
     $count = 0; // This lets us prepare the key as we want it printed.
-    foreach ($this->view->display_handler->get_handlers('argument') as $arg => $handler) {
+    foreach ($this->view->display_handler->get_handlers('argument') as $handler) {
       $options[t('Arguments')]['%' . ++$count] = t('@argument title', array('@argument' => $handler->ui_name()));
       $options[t('Arguments')]['!' . $count] = t('@argument input', array('@argument' => $handler->ui_name()));
     }

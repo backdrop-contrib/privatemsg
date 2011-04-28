@@ -68,8 +68,6 @@ function privatemsg_limits_privatemsg_message_validate($message, $form = FALSE) 
     $amount = _privatemsg_limits_get_amount('receive_amount', $message->author);
     $used = _privatemsg_limits_get_received($message->author);
 
-    $type = array('message' => t('messages'), 'thread' => t('conversations'));
-
     if ($amount > 0 && $used >= $amount) {
       if (variable_get('privatemsg_limits_receive_object', 'message') == 'message') {
         $errors[] = t("Your message mailbox is currently full. You are allowed a maximum of %limit messages in your mailbox at one time. You won't be able to send or receive new messages until you delete some existing ones.", array('%limit' => $amount));
@@ -224,12 +222,15 @@ function _privatemsg_limits_get_oldest($account, $timeframe) {
 }
 
 /**
- * Loads the maximum value of a treshold value, takes roles into account.
+ * Loads the maximum value of a threshold value, takes roles into account.
  *
- * @param string $name    Unique part of the name
- * @param user   $account User object
+ * @param $name
+ *   Unique part of the name.
+ * @param $account
+ *   User object to get the limit for.
  *
- * @return int A specific number or 0 for unlimited
+ * @return
+ *   A specific number or 0 for unlimited.
  */
 function _privatemsg_limits_get_amount($name, $account) {
   // Don't limit uid 1.

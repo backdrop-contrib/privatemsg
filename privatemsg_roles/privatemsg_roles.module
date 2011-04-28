@@ -162,7 +162,7 @@ function privatemsg_roles_autocomplete($fragment, $names, $limit) {
  * Implements hook_privatemsg_name_lookup().
  */
 function privatemsg_roles_privatemsg_name_lookup($string) {
-  // Remove optonal role specifier.
+  // Remove optional role specifier.
   $string = str_replace(t('[role]'), '', $string);
   $role = db_query("SELECT *, rid AS recipient FROM {role} WHERE name = :name", array(':name' => trim($string)))->fetchObject();
   if ($role) {

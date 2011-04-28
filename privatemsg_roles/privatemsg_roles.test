@@ -47,7 +47,7 @@ class PrivatemsgRolesTestCase extends DrupalWebTestCase {
     $user1 = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg'));
 
     variable_set('privatemsg_recipient_small_threshold', 20);
-    variable_set('privatemgs_cron_recipient_per_run', 20);
+    variable_set('privatemsg_cron_recipient_per_run', 20);
 
     // Create 26 users (more than are allowed to be process directly).
     $users = array();
@@ -74,7 +74,7 @@ class PrivatemsgRolesTestCase extends DrupalWebTestCase {
     // Run cron.
     privatemsg_cron();
 
-    // Test a few recipients to see if they recieved the message.
+    // Test a few recipients to see if they received the message.
     foreach (array(0, 5, 18) as $uid) {
       $this->drupalLogin($users[$uid]);
       $this->drupalGet('messages');
@@ -84,7 +84,7 @@ class PrivatemsgRolesTestCase extends DrupalWebTestCase {
       $this->assertText($body, t('Thread starter body displayed.'));
     }
 
-    // Make sure that user 20 has not yet recieved the message.
+    // Make sure that user 20 has not yet received the message.
     $this->drupalLogin($users[20]);
     $this->drupalGet('messages');
     $this->assertNoText($subject, t('Message is not yet displayed for this user'));
@@ -127,7 +127,7 @@ class PrivatemsgRolesTestCase extends DrupalWebTestCase {
     $this->drupalPost('messages/new', $edit, t('Send message'));
     $this->assertText(t('A message has been sent to @role (role).', array('@role' => user_role_load($user1->roles[5])->name)));
 
-    // Test a few recipients to see if they all recieved the message.
+    // Test a few recipients to see if they all received the message.
     foreach ($users as $user) {
       $this->drupalLogin($user);
       $this->drupalGet('messages');

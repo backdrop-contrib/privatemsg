@@ -4,7 +4,8 @@
 drupal_add_css(drupal_get_path('module', 'privatemsg') . '/styles/privatemsg-view.base.css');
 drupal_add_css(drupal_get_path('module', 'privatemsg') . '/styles/privatemsg-view.theme.css');
 ?>
-<?php print $anchors; ?>
+<?php
+print $anchors; ?>
 <div <?php if ( !empty($message_classes)) { ?>class="<?php echo implode(' ', $message_classes); ?>" <?php } ?> id="privatemsg-mid-<?php print $mid; ?>">
   <div class="privatemsg-author-avatar">
     <?php print $author_picture; ?>
