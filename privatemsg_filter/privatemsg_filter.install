@@ -151,7 +151,7 @@ function privatemsg_filter_update_7001(&$sandbox) {
   // There is no way to know if this update is run before or after
   // privatemsg_update_update_6201() which renames uid to recipient.
   $uid_column = 'uid';
-  if (db_column_exists('pm_index', 'recipient')) {
+  if (db_field_exists('pm_index', 'recipient')) {
     $uid_column = 'recipient';
   }
 
