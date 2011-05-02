@@ -67,7 +67,7 @@ function privatemsg_permission() {
  *
  *
  * @param $userstring
- *   A string with user id, for example 1,2,4. Returned by the list query
+ *   A string with user id, for example 1,2,4. Returned by the list query.
  *
  * @return
  *   Array with user objects.
