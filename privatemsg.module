@@ -59,6 +59,10 @@ function privatemsg_permission() {
       'title' => t('Select text format for private messages'),
       'description' => t('Allows to choose the text format when sending private messages. Otherwise, the default is used.'),
     ),
+    'report private messages to mollom' => array(
+      'title' => t('Reporte private messages to mollom'),
+      'description' => t('Allows users to report messages as spam or unwanted content when they delete then, when Mollom is set up to check private messages.'),
+    ),
   );
 }
 
@@ -3204,4 +3208,37 @@ function privatemsg_privatemsg_header_info() {
       '#weight'  => -10,
     ),
   );
+}
+
+/**
+ * Implements hook_mollom_form_list().
+ */
+function privatemsg_mollom_form_list() {
+  $forms['privatemsg_new'] = array(
+    'title' => t('Send new message form'),
+    'entity' => 'privatemsg_message',
+    'delete form' => 'privatemsg_delete',
+  );
+  return $forms;
+}
+
+/**
+ * Implements hook_mollom_form_info().
+ */
+function privatemsg_mollom_form_info() {
+  $form_info = array(
+    'mode' => MOLLOM_MODE_ANALYSIS,
+    'bypass access' => array('administer privatemsg'),
+    'report access' => array('report private messages to mollom'),
+    'elements' => array(
+      'subject' => t('Subject'),
+      'body' => t('Body'),
+    ),
+    'mapping' => array(
+      'post_id' => 'mid',
+      'post_title' => 'subject',
+    ),
+  );
+
+  return $form_info;
 }
