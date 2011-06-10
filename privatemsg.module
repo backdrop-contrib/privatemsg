@@ -2454,7 +2454,8 @@ function privatemsg_message_change_recipient($mid, $uid, $type = 'user', $add = 
     // Only add the recipient if he does not block the author.
     $author_uid = db_query('SELECT author FROM {pm_message} WHERE mid = :mid', array(':mid' => $mid))->fetchField();
     $recipient = array_shift(privatemsg_user_load_multiple(array($uid)));
-    $user_blocked = module_invoke_all('privatemsg_block_message', user_load($author_uid), array(privatemsg_recipient_key($recipient) => $recipient));
+    $context = ($thread_id == $mid) ? array() : array('thread_id' => $thread_id);
+    $user_blocked = module_invoke_all('privatemsg_block_message', user_load($author_uid), array(privatemsg_recipient_key($recipient) => $recipient), $context);
     if (count($user_blocked) <> 0) {
       return;
     }
