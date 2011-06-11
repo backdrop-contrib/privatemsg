@@ -411,11 +411,11 @@ class PrivatemsgTestCase extends DrupalWebTestCase {
     $this->drupalGet('messages/new');
     $this->assertResponse(403, t('HTTP Response 403: Access to Write New Message page was blocked to user with private messaging disabled'));
 
-    // Use a newly loaded user object to test the API calls.
-    $disableduser_loaded = user_load($disableduser->uid, TRUE);
+    // Clear static cache.
+    drupal_static_reset('privatemsg_settings');
 
     // Check that $disableduser cannot submit a reply
-    $result = privatemsg_reply($return['message']->thread_id, $this->randomName(100), array('author' => $disableduser_loaded));
+    $result = privatemsg_reply($return['message']->thread_id, $this->randomName(100), array('author' => $disableduser));
 
     $this->assertFalse($result['success'], 'Message reply was not sent.');
 
