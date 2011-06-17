@@ -1247,10 +1247,6 @@ function privatemsg_user_cancel($edit, $account, $method) {
       _privatemsg_delete_data($account);
       break;
   }
-  // Always delete user settings.
-  db_delete('pm_disable')
-    ->condition('uid', $account->uid)
-    ->execute();
 }
 
 /**
