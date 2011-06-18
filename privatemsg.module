@@ -583,15 +583,41 @@ function privatemsg_cron() {
     }
   }
 
-  $result = db_query_range("SELECT pmi.recipient, pmi.type, pmi.mid FROM {pm_index} pmi WHERE pmi.type NOT IN ('user', 'hidden') AND pmi.is_new = 1 ORDER BY mid ASC", 0, 10);
   // Number of user ids to process for this cron run.
   $total_remaining = variable_get('privatemgs_cron_recipient_per_run', 1000);
   $current_process = variable_get('privatemsg_cron_recipient_process', array());
+
+  // Instead of doing the order by in the database, which can be slow, we load
+  // all results and the do the handling there. Additionally, explicitly specify
+  // the desired types. If there are more than a few dozen results the site is
+  // unhealthy anyway because this cron is unable to keep up with the
+  // unprocessed recipients.
+  $rows = array();
+
+  // Get all type keys except user.
+  $types = privatemsg_recipient_get_types();
+  unset($types['user']);
+  $types = array_keys($types);
+
+  // If there are no other recipient types, there is nothing to do.
+  if (empty($types)) {
+    return;
+  }
+
+  $result = db_query("SELECT pmi.recipient, pmi.type, pmi.mid FROM {pm_index} pmi WHERE pmi.type IN (:types) AND pmi.is_new = 1", array(':types' => $types));
   foreach ($result as $row) {
-    $type = privatemsg_recipient_get_type($row->type);
-    if (!$type) {
-      continue;
+    // If this is equal to the row that is currently processed, add it first in
+    // the array.
+    if (!empty($current_process) && $current_process['mid'] == $row->mid && $current_process['type'] == $row->type && $current_process['recipient'] == $row->recipient) {
+      array_unshift($rows, $row);
     }
+    else {
+      $rows[] = $row;
+    }
+  }
+
+  foreach ($rows as $row) {
+    $type = privatemsg_recipient_get_type($row->type);
     if (isset($type['load']) && is_callable($type['load'])) {
       $loaded = $type['load'](array($row->recipient));
       if (empty($loaded)) {
@@ -2437,14 +2463,14 @@ function privatemsg_recipient_get_type($type) {
  *   If TRUE, adds the recipient, if FALSE, removes it.
  */
 function privatemsg_message_change_recipient($mid, $uid, $type = 'user', $add = TRUE) {
-
-  $thread_id = db_query('SELECT thread_id FROM {pm_index} WHERE mid = :mid', array(':mid' => $mid))->fetchField();
+  // The message is statically cached, so only a single load is necessary.
+  $message = privatemsg_message_load($mid);
+  $thread_id = $message->thread_id;
   if ($add) {
     // Only add the recipient if he does not block the author.
-    $author_uid = db_query('SELECT author FROM {pm_message} WHERE mid = :mid', array(':mid' => $mid))->fetchField();
-    $recipient = array_shift(privatemsg_user_load_multiple(array($uid)));
+    $recipient = user_load($uid);
     $context = ($thread_id == $mid) ? array() : array('thread_id' => $thread_id);
-    $user_blocked = module_invoke_all('privatemsg_block_message', user_load($author_uid), array(privatemsg_recipient_key($recipient) => $recipient), $context);
+    $user_blocked = module_invoke_all('privatemsg_block_message', $message->author, array(privatemsg_recipient_key($recipient) => $recipient), $context);
     if (count($user_blocked) <> 0) {
       return;
     }
