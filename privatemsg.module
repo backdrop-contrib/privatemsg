@@ -714,6 +714,9 @@ function privatemsg_theme() {
   return $templates;
 }
 
+/**
+ * Implements hook_preprocess_THEME().
+ */
 function template_preprocess_privatemsg_view(&$vars) {
   global $user;
 
