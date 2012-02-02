@@ -9,6 +9,7 @@ files[] = views/privatemsg.views.inc
 files[] = privatemsg.theme.inc
 files[] = privatemsg.pages.inc
 files[] = privatemsg.admin.inc
+files[] = privatemsg.devel_generate.inc
 configure=admin/config/messaging/privatemsg
 
 test_dependencies[] = token

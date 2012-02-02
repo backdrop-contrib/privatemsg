@@ -262,6 +262,16 @@ function privatemsg_menu() {
     'type'             => MENU_DEFAULT_LOCAL_TASK,
     'weight'           => -10,
   );
+  if (module_exists('devel_generate')) {
+    $items['admin/config/development/generate/privatemsg'] = array(
+      'title' => 'Generate private messages',
+      'description' => 'Generate a given number of private messages. Optionally delete current private messages.',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('privatemsg_devel_generate_form'),
+      'access arguments' => array('administer privatemsg settings'),
+      'file' => 'privatemsg.devel_generate.inc',
+    );
+  }
   $items['messages/undo/action'] = array(
     'title'            => 'Private messages',
     'description'      => 'Undo last thread action',
@@ -280,7 +290,6 @@ function privatemsg_menu() {
     'access arguments' => array('read all private messages'),
     'type' => MENU_LOCAL_TASK,
   );
-
   return $items;
 }
 
