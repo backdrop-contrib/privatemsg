@@ -2711,6 +2711,22 @@ function privatemsg_user_autocomplete($fragment, $names, $limit) {
  * Implements hook_field_extra_fields().
  */
 function privatemsg_field_extra_fields() {
+  $extra['user']['user'] = array(
+    'form' => array(
+      'privatemsg' => array(
+        'label' => 'Private msg',
+        'description' => t('Private messages'),
+        'weight' => 5,
+      ),
+    ),
+    'display' => array(
+      'privatemsg_send_new_message' => array(
+        'label' => 'Private msg',
+        'description' => t('Private messages'),
+        'weight' => 5,
+      ),
+    ),
+  );
   $extra['privatemsg_message']['privatemsg_message'] = array(
     'form' => array(
       'recipient' => array(
