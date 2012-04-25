@@ -2439,7 +2439,7 @@ function privatemsg_recipient_key($recipient) {
  * @ingroup types
  */
 function privatemsg_recipient_get_types() {
-  static $types = NULL;
+  $types = &drupal_static(__FUNCTION__, NULL);
 
   if ($types === NULL) {
     $types = module_invoke_all('privatemsg_recipient_type_info');
