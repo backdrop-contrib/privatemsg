@@ -748,7 +748,7 @@ function privatemsg_autocomplete($string) {
     foreach ($types as $name => $type) {
       if (isset($type['autocomplete']) && is_callable($type['autocomplete']) && privatemsg_recipient_access($name, 'write')) {
         $function = $type['autocomplete'];
-        $return = $function($fragment, $names, $remaining);
+        $return = $function($fragment, $names, $remaining, $name);
         if (is_array($return) && !empty($return)) {
           $matches = array_merge($matches, $return);
         }

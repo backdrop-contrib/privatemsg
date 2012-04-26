@@ -67,7 +67,7 @@ function privatemsg_roles_write_access($recipient) {
 
   if ($recipient) {
     if (empty($recipient->name)) {
-      $recipient = array_shift(privatemsg_roles_load_multiple(array($recipient->recipient)));
+      $recipient = array_shift(privatemsg_roles_load_multiple(array($recipient->recipient), $recipient->type));
     }
     // Check permission for this recipient.
     return user_access('write privatemsg to role ' . $recipient->name);
@@ -85,7 +85,7 @@ function privatemsg_roles_write_access($recipient) {
 /**
  * Load a number of roles based on their rid.
  */
-function privatemsg_roles_load_multiple($rids) {
+function privatemsg_roles_load_multiple($rids, $type) {
   $result = db_query("SELECT name, rid AS recipient FROM {role} WHERE rid IN (:rids)", array(':rids' => $rids));
 
   $roles = array();
@@ -143,7 +143,7 @@ function privatemsg_roles_count_recipients($recipient) {
 /**
  * Provides autocomplete suggestions for roles.
  */
-function privatemsg_roles_autocomplete($fragment, $names, $limit) {
+function privatemsg_roles_autocomplete($fragment, $names, $limit, $type) {
   $result = _privatemsg_assemble_query(array('autocomplete_roles', 'privatemsg_roles'), $fragment, $names)
     ->range(0, $limit)
     ->execute();

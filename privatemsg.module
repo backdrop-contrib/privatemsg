@@ -97,7 +97,7 @@ function _privatemsg_generate_user_array($string, $slice = NULL) {
       list($type, $id) = explode('_', $uid);
       $type_info = privatemsg_recipient_get_type($type);
       if ($type_info && isset($type_info['load']) && is_callable($type_info['load'])) {
-        $temp_load = $type_info['load'](array($id));
+        $temp_load = $type_info['load'](array($id), $type);
         if ($participant = array_shift($temp_load)) {
           $participants[privatemsg_recipient_key($participant)] = $participant;
         }
@@ -631,7 +631,7 @@ function privatemsg_cron() {
   foreach ($rows as $row) {
     $type = privatemsg_recipient_get_type($row->type);
     if (isset($type['load']) && is_callable($type['load'])) {
-      $loaded = $type['load'](array($row->recipient));
+      $loaded = $type['load'](array($row->recipient), $row->type);
       if (empty($loaded)) {
         continue;
       }
@@ -872,7 +872,7 @@ function _privatemsg_load_thread_participants($thread_id, $account, $ignore_hidd
   foreach ($to_load as $type => $ids) {
     $type_info = privatemsg_recipient_get_type($type);
     if (isset($type_info['load']) && is_callable($type_info['load'])) {
-      $loaded = $type_info['load']($ids);
+      $loaded = $type_info['load']($ids, $type);
       if (is_array($loaded)) {
         $participants += $loaded;
       }
