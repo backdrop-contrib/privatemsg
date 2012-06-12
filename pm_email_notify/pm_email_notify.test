@@ -4,7 +4,7 @@
  * Test file for pm_email_notify.module
  */
 
-class PrivatemsgEMailNotifyTestCase extends DrupalWebTestCase {
+class PrivatemsgEMailNotifyTestCase extends PrivatemsgBaseTestCase {
 
   protected $handledMails = 0;
 
