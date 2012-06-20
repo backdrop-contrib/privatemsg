@@ -103,7 +103,7 @@ function theme_privatemsg_realname_username($variables) {
     $recipient->uid = $recipient->recipient;
   }
   if (!empty($options['plain'])) {
-    $name = format_username($recipient);
+    $name = check_plain(format_username($recipient));
     if (!empty($options['unique'])) {
       $identifier = variable_get('privatemsg_realname_unique_identifier', 'name');
       $name .= ' [user: ' . $recipient->$identifier . ']';

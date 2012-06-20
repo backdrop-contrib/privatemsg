@@ -845,6 +845,16 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
     $autocomplete = (array)json_decode($json);
     $this->assertEqual(count($autocomplete), 1, t('Autocomplete object contains one suggestion.'));
     $this->assertEqual($autocomplete['aaaa, aaab, '], 'aaab');
+
+    // Test XSS protection, create a username and check that the suggestion is
+    // safe.
+    $user4 = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg'));
+    $user4 = user_save($user4, array('name' => "<script>alert('XSS')</script>"));
+
+    $json = $this->drupalGet('messages/autocomplete/<sc');
+    $autocomplete = (array)json_decode($json);
+    $this->assertEqual(count($autocomplete), 1, t('Autocomplete object contains one suggestion.'));
+    $this->assertEqual($autocomplete[check_plain($user4->name) . ', '], check_plain($user4->name));
   }
 
   /**
