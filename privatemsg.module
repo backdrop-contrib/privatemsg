@@ -1970,6 +1970,11 @@ function privatemsg_get_link($recipients, $account = array(), $subject = NULL) {
  * @ingroup api
  */
 function privatemsg_message_load($pmid, $account = NULL) {
+  // If $pmid is object or array - do nothing
+  // (fixing conflict with message_load() function in message module).
+  if(is_array($pmid) || is_object($pmid)) {
+    return NULL;
+  }
   $conditions = array();
   if ($account) {
     $conditions['account'] = $account;
