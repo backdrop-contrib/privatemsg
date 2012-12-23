@@ -51,7 +51,7 @@ function privatemsg_groups_theme() {
 }
 
 /**
- * Implements hook_privatemsg_recipient_types_info().
+ * Implements hook_privatemsg_recipient_type_info().
  */
 function privatemsg_groups_privatemsg_recipient_type_info() {
   $info = array();
