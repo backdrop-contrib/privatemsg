@@ -2658,7 +2658,7 @@ function privatemsg_recipient_format($recipient, $options = array()) {
 }
 
 /**
- * Implements hook_privatemsg_recipient_types_info().
+ * Implements hook_privatemsg_recipient_type_info().
  */
 function privatemsg_privatemsg_recipient_type_info() {
   return array(
