@@ -28,7 +28,7 @@ class PrivatemsgEMailNotifyTestCase extends PrivatemsgBaseTestCase {
 
     $this->author = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg', 'write privatemsg to all roles'));
     $this->recipient = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg', 'set privatemsg e-mail notification level', 'change privatemsg e-mail notification for indirect messages'));
-    $this->recipient2 = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
+    $this->recipient2 = $this->drupalCreateUser(array('read privatemsg'));
     $this->admin = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg', 'administer privatemsg settings'));
     $this->handledMails = 0;
   }
@@ -369,6 +369,80 @@ class PrivatemsgEMailNotifyTestCase extends PrivatemsgBaseTestCase {
   }
 
   /**
+   * Test the "author's email address as notification sender" feature.
+   */
+  function testShowSenderMail() {
+
+    // Define a value for the "notification mails from" field.
+    $generic_sender = 'generic_sender@example.com';
+
+    // Test #1: Site wide setting is successfully stored (set to "show").
+
+    // Log in as admin and set the default to "show".
+    $this->drupalLogin($this->admin);
+    $edit = array(
+      'privatemsg_setting_show_sender_mail' => TRUE,
+      // Also set the generic sender address while we're here.
+      'pm_email_notify_from' => $generic_sender,
+    );
+    $this->drupalPost('admin/config/messaging/privatemsg', $edit, t('Save configuration'));
+    $this->drupalGet('admin/config/messaging/privatemsg');
+    // Verify correct defaults.
+    $this->assertFieldByName('privatemsg_setting_show_sender_mail', 1, "<em>Use sender's email address</em> value is now enabled in the form.");
+
+
+    // Test #2: User defaults match site-wide setting (currently "show").
+
+    // Log in as author and check for the custom field default.
+    $this->drupalLogin($this->author);
+    $this->drupalGet('user/' . $this->author->uid . '/edit');
+    $this->assertFieldByName('pm_show_sender_mail', 1, "User's default setting for <em>show my email address</em> is also enabled.");
+
+
+    // Test #3: User can override the site-wide setting (back to "hide")
+    //          and his private mail address will be hidden.
+    $edit = array(
+      'pm_show_sender_mail' => FALSE,
+    );
+    $this->drupalPost(NULL, $edit, t('Save'));
+    $this->drupalGet('user/' . $this->author->uid . '/edit');
+    $this->assertFieldByName('pm_show_sender_mail', 0, "User successfully disabled his <em>show my email address</em> setting.");
+
+    // Let author send a test mail.
+    $message = array(
+      'recipient' => $this->recipient->name,
+      'subject' => $this->randomName(),
+      'body[value]' => $this->randomName(20),
+    );
+    $this->drupalPost('messages/new', $message, t('Send message'));
+    $message['thread_id'] = $this->getCurrentThreadId();
+
+    $recipients = array($this->recipient);
+    $this->verifyMails($recipients, $this->author, $message, $generic_sender);
+
+
+    // Test #4: User can change his setting to "show" and his private
+    //          mail address will be used.
+    $this->drupalGet('user/' . $this->author->uid . '/edit');
+    $edit = array(
+      'pm_show_sender_mail' => TRUE,
+    );
+    $this->drupalPost(NULL, $edit, t('Save'));
+
+    // Let author send a test mail.
+    $message = array(
+      'recipient' => $this->recipient->name,
+      'subject' => $this->randomName(),
+      'body[value]' => $this->randomName(20),
+    );
+    $this->drupalPost('messages/new', $message, t('Send message'));
+    $message['thread_id'] = $this->getCurrentThreadId();
+
+    $recipients = array($this->recipient);
+    $this->verifyMails($recipients, $this->author, $message, $this->author->mail);
+  }
+
+  /**
    * Extracts the current thread_id from the URl.
    *
    * @return
@@ -412,14 +486,16 @@ class PrivatemsgEMailNotifyTestCase extends PrivatemsgBaseTestCase {
    *   Author user object.
    * @param $message
    *   Message array, containing the keys thread_id, body and subject.
+   * @param $expectedFrom
+   *   The mail address expected to be the notification origin (optional).
    */
-  function verifyMails($recipients, $author, $message) {
+  function verifyMails($recipients, $author, $message, $expectedFrom = NULL) {
 
     drupal_static_reset('privatemsg_thread_load');
 
     $mails = $this->getNewMails(count($recipients));
     foreach ($recipients as $id => $recipient) {
-      $this->verifyMail($mails[$id], $recipient, $author, $message);
+      $this->verifyMail($mails[$id], $recipient, $author, $message, $expectedFrom);
     }
   }
 
@@ -434,8 +510,11 @@ class PrivatemsgEMailNotifyTestCase extends PrivatemsgBaseTestCase {
    *   Author user object.
    * @param $message
    *   Message array, containing the keys thread_id, body and subject.
+   * @param $expectedFrom
+   *   The mail address expected to be the notification origin (optional).
+   *
    */
-  function verifyMail($mail, $recipient, $author, $message) {
+  function verifyMail($mail, $recipient, $author, $message, $expectedFrom = NULL) {
     $this->assertEqual($mail['id'], 'pm_email_notify_notice', t('Correct notification id.'));
     $this->assertEqual($mail['to'], $recipient->mail, t('Correct recipient e-mail address.'));
 
@@ -462,5 +541,13 @@ class PrivatemsgEMailNotifyTestCase extends PrivatemsgBaseTestCase {
 
     $this->assertEqual($mail['subject'], $subject, t('Correct subject'));
     $this->assertEqual($mail['body'], $body, t('Correct body'));
+
+    // Optionally verify the message's from address.
+    if (isset($expectedFrom)) {
+      $this->assertEqual($mail['from'], $expectedFrom, format_string( 'Mail sender was %sender, expected sender was %expected', array(
+        '%sender' => $mail['from'],
+        '%expected' => $expectedFrom,
+      )));
+    }
   }
 }

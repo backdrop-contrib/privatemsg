@@ -78,7 +78,7 @@ function _pm_email_notify_user_level($uid = NULL) {
 }
 
 /**
- * Check if a user should only be notified when addressed directly.
+ * Checks if a user should only be notified when addressed directly.
  *
  * @param $uid
  *   User ID.
@@ -86,6 +86,9 @@ function _pm_email_notify_user_level($uid = NULL) {
  * @param
  *   TRUE if notifications should only be sent for directly addressed
  *   recipients.
+ *
+ * @return bool
+ *   The effective setting for this user.
  */
 function _pm_email_notify_only_user($uid) {
   // Either check the setting for this user or the global default.
@@ -94,6 +97,24 @@ function _pm_email_notify_only_user($uid) {
     'global' => array(0),
   );
   return privatemsg_get_setting('email_notify_only_user', $keys);
+}
+
+/**
+ * Checks if a message author wants his email address as a sender.
+ *
+ * @param $uid
+ *   The author's user ID.
+ *
+ * @return bool
+ *   Whether or not to use the author's email address.
+ */
+function _pm_email_notify_show_sender($uid) {
+  // Either check the setting for this user or the global default.
+  $keys = array(
+    'user' => array($uid),
+    'global' => array(0),
+  );
+  return privatemsg_get_setting('show_sender_mail', $keys);
 }
 
 /**
@@ -107,6 +128,9 @@ function _pm_email_notify_only_user($uid) {
  *   User uid
  * @param $message
  *   Message.
+ *
+ * @return bool
+ *   Whether or not to notify the user in question.
  */
 function _pm_email_notify_send_check($uid, $message) {
   static $notifications = array();
@@ -189,31 +213,37 @@ function pm_email_notify_privatemsg_message_recipient_changed($mid, $thread_id, 
  * Send a pm notification email to a recipient.
  */
 function pm_email_notify_send_mail($recipient, $message) {
-  // check if recipient enabled email notifications
+  // Check if the recipient enabled email notifications.
   if (isset($recipient->uid) && !empty($recipient->mail) && _pm_email_notify_send_check($recipient->uid, $message)) {
-    // send them a new pm notification email if they did
+    // Send them a new pm notification email if they did.
     $params['recipient'] = $recipient;
     $params['message'] = $message;
-    // token replace for email from address
-    $data = array(
-      'privatemsg_message' => $params['message'],
-      'privatemsg_recipient' => $params['recipient'],
-    );
-    $options = array(
-      'language' => user_preferred_language($params['recipient']),
-      // Don't sanitize output since this is used in an email, not a browser.
-      'sanitize' => FALSE,
-      // Custom token to avoid custom token handling.
-      'privatemsg-display-invalid' => FALSE,
-    );
-    $from = trim(token_replace(variable_get('pm_email_notify_from', ''), $data, $options));
 
+    if (_pm_email_notify_show_sender($message->author->uid)) {
+      // User author's email as a sender.
+      $from = $message->author->mail;
+    }
+    else {
+      // Token replacements for email from address.
+      $data = array(
+        'privatemsg_message' => $params['message'],
+        'privatemsg_recipient' => $params['recipient'],
+      );
+      $options = array(
+        'language' => user_preferred_language($params['recipient']),
+        // Don't sanitize output since this is used in an email, not a browser.
+        'sanitize' => FALSE,
+        // Custom token to avoid custom token handling.
+        'privatemsg-display-invalid' => FALSE,
+      );
+      $from = trim(token_replace(variable_get('pm_email_notify_from', ''), $data, $options));
+    }
     drupal_mail('pm_email_notify', 'notice', $recipient->mail, user_preferred_language($recipient), $params, !empty($from) ? $from : NULL);
   }
 }
 
 /**
- * Get the default text for body and subject texts.
+ * Retrieves the default text for body and subject texts.
  *
  * @param $key
  *   Defines with string to return, either subject or body.
@@ -237,16 +267,15 @@ function _pm_email_notify_source_text($key) {
 }
 
 /**
- * Return (if enabled, translated) body/subject strings.
+ * Returns body or subject strings.
  *
  * @param $key
- *   Defines with string to return, either subject or body.
+ *   Defines which string to return, either subject or body.
  * @param $language
- *   Optionally define into which language should be translated. Defaults to the
+ *   Optionally define the language to translate into. Defaults to the
  *   active language.
  * @return
- *   Either the translated text or the source, depending on the $translate
- *   flag.
+ *   The translated text.
  */
 function pm_email_notify_text($key, $language = NULL) {
   $text = _pm_email_notify_source_text($key);
@@ -284,43 +313,55 @@ function pm_email_notify_mail($key, &$message, $params) {
   }
 }
 
+
 /**
  * Implements hook_form_FORM_ID_alter().
  */
 function pm_email_notify_form_user_profile_form_alter(&$form, &$form_state) {
-  if ($form['#user_category'] == 'account' && privatemsg_user_access('read privatemsg')) {
-    if (privatemsg_user_access('set privatemsg e-mail notification level')) {
-      $form['privatemsg']['pm_email_notify_level'] = array(
-        '#type' => 'radios',
-        '#title' => t('Send me an e-mail notification...'),
-        '#options' => array(
-          PM_EMAIL_NOTIFY_LEVEL_DISABLED => t('Never.'),
-          PM_EMAIL_NOTIFY_LEVEL_THREAD => t('Only for a new conversation'),
-          PM_EMAIL_NOTIFY_LEVEL_UNREAD_ONCE => t("Only once for a conversation until I've read the messages"),
-          PM_EMAIL_NOTIFY_LEVEL_ALL => t('Every time I receive a message'),
-        ),
-        '#default_value' => _pm_email_notify_user_level($form['#user']->uid),
-      );
-    }
-    else {
-      // If the user does not have permissions to customize the notification
-      // level, allow him to opt out of email notifications if they are not
-      // disabled by default.
-      $is_enabled = _pm_email_notify_user_level();
-      $form['privatemsg']['pm_email_notify_level'] = array(
+  if ($form['#user_category'] == 'account') {
+    if (privatemsg_user_access('write privatemsg')) {
+      $form['privatemsg']['pm_show_sender_mail'] = array(
         '#type' => 'checkbox',
-        '#title' => t('Receive email notification for incoming private messages'),
-        '#return_value' => PM_EMAIL_NOTIFY_LEVEL_DEFAULT,
-        '#default_value' => $is_enabled ? PM_EMAIL_NOTIFY_LEVEL_DEFAULT : PM_EMAIL_NOTIFY_LEVEL_DISABLED,
-        '#access' => (bool)$is_enabled,
+        '#title' => t('Show my email address'),
+        '#description' => t('Use my private email address as a sender for notification mails to users I have sent private messages to. If unchecked, the notification will be sent by a generic account.'),
+        '#default_value' => _pm_email_notify_show_sender($form['#user']->uid),
+        '#access' => privatemsg_user_access('write privatemsg'),
       );
     }
-    $form['privatemsg']['pm_email_only_user'] = array(
-      '#type' => 'checkbox',
-      '#title' => t("Don't send me e-mail notifications for mass messages."),
-      '#default_value' => _pm_email_notify_only_user($form['#user']->uid),
-      '#access' => privatemsg_user_access('change privatemsg e-mail notification for indirect messages'),
-    );
+    if (privatemsg_user_access('read privatemsg')) {
+      if (privatemsg_user_access('set privatemsg e-mail notification level')) {
+        $form['privatemsg']['pm_email_notify_level'] = array(
+          '#type' => 'radios',
+          '#title' => t('Send me an e-mail notification...'),
+          '#options' => array(
+            PM_EMAIL_NOTIFY_LEVEL_DISABLED => t('Never.'),
+            PM_EMAIL_NOTIFY_LEVEL_THREAD => t('Only for a new conversation'),
+            PM_EMAIL_NOTIFY_LEVEL_UNREAD_ONCE => t("Only once for a conversation until I've read the messages"),
+            PM_EMAIL_NOTIFY_LEVEL_ALL => t('Every time I receive a message'),
+          ),
+          '#default_value' => _pm_email_notify_user_level($form['#user']->uid),
+        );
+      }
+      else {
+        // If the user does not have permissions to customize the notification
+        // level, allow him to opt out of email notifications if they are not
+        // disabled by default.
+        $is_enabled = _pm_email_notify_user_level();
+        $form['privatemsg']['pm_email_notify_level'] = array(
+          '#type' => 'checkbox',
+          '#title' => t('Receive email notification for incoming private messages'),
+          '#return_value' => PM_EMAIL_NOTIFY_LEVEL_DEFAULT,
+          '#default_value' => $is_enabled ? PM_EMAIL_NOTIFY_LEVEL_DEFAULT : PM_EMAIL_NOTIFY_LEVEL_DISABLED,
+          '#access' => (bool)$is_enabled,
+        );
+      }
+      $form['privatemsg']['pm_email_only_user'] = array(
+        '#type' => 'checkbox',
+        '#title' => t("Don't send me e-mail notifications for mass messages."),
+        '#default_value' => _pm_email_notify_only_user($form['#user']->uid),
+        '#access' => privatemsg_user_access('change privatemsg e-mail notification for indirect messages'),
+      );
+    }
   }
 }
 
@@ -333,11 +374,16 @@ function pm_email_notify_user_update(&$edit, $account, $category) {
     unset($edit['pm_email_notify_level']);
   }
 
-
   if (isset($edit['pm_email_only_user'])) {
     privatemsg_set_setting('user', $account->uid, 'email_notify_only_user', $edit['pm_email_only_user']);
     unset($edit['pm_email_only_user']);
   }
+
+  if (isset($edit['pm_show_sender_mail'])) {
+    privatemsg_set_setting('user', $account->uid, 'show_sender_mail', $edit['pm_show_sender_mail']);
+    unset($edit['pm_show_sender_mail']);
+  }
+
 }
 
 /**
@@ -346,6 +392,7 @@ function pm_email_notify_user_update(&$edit, $account, $category) {
 function pm_email_notify_user_delete($account) {
   privatemsg_del_setting('user', $account->uid, 'email_notify_level');
   privatemsg_del_setting('user', $account->uid, 'email_notify_only_user');
+  privatemsg_del_setting('user', $account->uid, 'show_sender_mail');
 }
 
 /**
@@ -391,6 +438,14 @@ function pm_email_notify_form_privatemsg_admin_settings_alter(&$form, &$form_sta
     '#default_value' => variable_get('pm_email_notify_from',''),
     '#weight' => 3,
     '#description' => t('This is the e-mail address that notifications will come from. Leave blank to use the site default.'),
+  );
+
+  $form['pm_email_notify']['privatemsg_setting_show_sender_mail'] = array(
+    '#type' => 'checkbox',
+    '#title' => t("Use sender's email address"),
+    '#description' => t("Use the sender's private email address instead of a generic sender for notification mails. This is the site default setting; users may override it individually."),
+    '#default_value' => variable_get('privatemsg_setting_show_sender_mail', FALSE),
+    '#weight' => 3,
   );
 
   $form['pm_email_notify']['pm_email_notify_subject'] = array(
@@ -463,4 +518,3 @@ function pm_email_notify_i18n_string_list($group) {
     return $strings;
   }
 }
-
