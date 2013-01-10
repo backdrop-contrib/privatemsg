@@ -187,7 +187,7 @@ class PrivatemsgGroupsTestCase extends DrupalWebTestCase {
 
     // Attempt to send message to group1 with write to own permission and
     // group permission.
-    $roles = array_flip(og_roles('node', $this->group1->nid, 'page'));
+    $roles = array_flip(og_roles('node', 'page', $this->group1->nid));
     og_role_change_permissions($roles[OG_AUTHENTICATED_ROLE], array(
       'write privatemsg to group' => 1,
     ));
