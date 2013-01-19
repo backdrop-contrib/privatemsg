@@ -45,7 +45,7 @@ function privatemsg_permission() {
     ),
     'allow disabling privatemsg' => array(
       'title' => t('Allow disabling private messages'),
-      'description' => t("Allows user to disable privatemsg so that they can't recieve or send any private messages.")
+      'description' => t("Allows user to disable privatemsg so that they can't receive or send any private messages.")
     ),
     'reply only privatemsg' => array(
       'title' => t('Reply to private messages'),
