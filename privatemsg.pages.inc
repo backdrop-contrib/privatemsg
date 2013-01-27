@@ -291,7 +291,11 @@ function privatemsg_new($form, &$form_state, $recipients = '', $subject = '') {
       $to_plain = array();
       $to_title = array();
       foreach ($to as $recipient) {
-        $to_plain[] = privatemsg_recipient_format($recipient, array('plain' => TRUE, 'unique' => $unique));
+        // Load user(s) with that name
+        $user = _privatemsg_parse_userstring($recipient->name);
+        // If the count of duplicated is more than 0 that means the recipient name is used by the other recipient type,
+        // so we should use unique.
+        $to_plain[] = privatemsg_recipient_format($recipient, array('plain' => TRUE, 'unique' => (count($user[2]) > 0)));
         $to_title[] = privatemsg_recipient_format($recipient, array('plain' => TRUE));
       }
       $recipients_plain = implode(', ', $to_plain);

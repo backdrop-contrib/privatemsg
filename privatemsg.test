@@ -1269,7 +1269,7 @@ class PrivatemsgAPITestCase extends PrivatemsgBaseTestCase {
    * Implements setUp().
    */
   function setUp() {
-    parent::setUp('privatemsg');
+    parent::setUp('privatemsg', 'privatemsg_roles');
 
     // Create the full html format.
     $full_html_format = array(
@@ -1387,25 +1387,31 @@ class PrivatemsgAPITestCase extends PrivatemsgBaseTestCase {
    * Test various use cases for privatemsg_get_link().
    */
   function testGetLink() {
-    $author      = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
+    $author      = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg', 'write privatemsg to all roles'));
+    $author2      = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
     $recipient1  = $this->drupalCreateUser(array('read privatemsg'));
     $recipient2  = $this->drupalCreateUser(array('read privatemsg'));
     $recipient3  = $this->drupalCreateUser(array('read privatemsg', 'allow disabling privatemsg'));
     $recipient4  = $this->drupalCreateUser();
 
+    // Create role with the same name as recipient 2.
+    $role = $this->drupalCreateRole(array('read privatemsg'), $recipient2->name);
+
     $this->drupalLogin($author);
 
     $this->drupalGet(privatemsg_get_link(array($recipient1)));
-    $this->assertFieldByName('recipient', $recipient1->name . ' [user]');
+    $this->assertFieldByName('recipient', $recipient1->name);
 
+    // Because of there is a role with the same name like recipient 2,
+    // add the [user] for recipient 2.
     $this->drupalGet(privatemsg_get_link(array($recipient1, $recipient2)));
-    $this->assertFieldByName('recipient', $recipient1->name . ' [user], ' . $recipient2->name . ' [user]');
+    $this->assertFieldByName('recipient', $recipient1->name . ', ' . $recipient2->name . ' [user]');
 
     $this->drupalGet(privatemsg_get_link(array($recipient1, $recipient2), $author));
-    $this->assertFieldByName('recipient', $recipient1->name . ' [user], ' . $recipient2->name . ' [user]');
+    $this->assertFieldByName('recipient', $recipient1->name . ', ' . $recipient2->name . ' [user]');
 
     $this->drupalGet(privatemsg_get_link(array($recipient1, $recipient2), $author, $subject = 'Str/"ang\\w3//'));
-    $this->assertFieldByName('recipient', $recipient1->name . ' [user], ' . $recipient2->name . ' [user]');
+    $this->assertFieldByName('recipient', $recipient1->name . ', ' . $recipient2->name . ' [user]');
     $this->assertFieldByName('subject', $subject);
 
     // Disable privatemsg for recipient 3.
@@ -1414,7 +1420,7 @@ class PrivatemsgAPITestCase extends PrivatemsgBaseTestCase {
     $this->assertFalse(privatemsg_get_link(array($recipient3), $author));
 
     $this->drupalGet(privatemsg_get_link(array($recipient1, $recipient3), $author));
-    $this->assertFieldByName('recipient', $recipient1->name . ' [user]');
+    $this->assertFieldByName('recipient', $recipient1->name);
 
     // Disable links to self, verify that a link is only returned when the
     // author is not the only recipient.
@@ -1423,18 +1429,24 @@ class PrivatemsgAPITestCase extends PrivatemsgBaseTestCase {
     $this->assertFalse(privatemsg_get_link(array($author), $author));
 
     $this->drupalGet(privatemsg_get_link(array($recipient1, $author), $author));
-    $this->assertFieldByName('recipient', $recipient1->name . ' [user]');
+    $this->assertFieldByName('recipient', $recipient1->name);
 
     // Verify that link is not shown when recipient doesn't have read
     // permission.
     $this->assertFalse(privatemsg_get_link(array($recipient4), $author));
 
     $this->drupalGet(privatemsg_get_link(array($recipient1, $recipient4), $author));
-    $this->assertFieldByName('recipient', $recipient1->name . ' [user]');
+    $this->assertFieldByName('recipient', $recipient1->name);
 
     // Verify that link is not shown when author does not have write permission.
     $this->drupalLogin($recipient1);
     $this->assertFalse(privatemsg_get_link(array($author), $recipient1));
+
+    // For user that has no permission to send message to role,
+    // the [user] suffix will not appear although there is a role with the same name as user.
+    $this->drupalLogin($author2);
+    $this->drupalGet(privatemsg_get_link(array($recipient2)));
+    $this->assertFieldByName('recipient', $recipient2->name);
   }
 
   /**
