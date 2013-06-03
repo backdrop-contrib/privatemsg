@@ -983,7 +983,7 @@ function _privatemsg_parse_userstring($input, $types_limitations = array()) {
  */
 function privatemsg_privatemsg_name_lookup($string) {
   // Remove optional user specifier.
-  $string = trim(str_replace(t('[user]'), '', $string));
+  $string = trim(str_replace('[user]', '', $string));
   // Fall back to the default username lookup.
   if (!$error = module_invoke('user', 'validate_name', $string)) {
     // String is a valid username, look it up.
