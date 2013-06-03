@@ -85,9 +85,11 @@ function _privatemsg_generate_user_array($string, $slice = NULL) {
   $participants = array();
   foreach ($users as $uid) {
     // If it is an integer, it is a user id.
+    if ((int)$uid > 0) {
     $user_ids = privatemsg_user_load_multiple(array($uid));
-    if ((int)$uid > 0 && ($account = array_shift($user_ids))) {
-      $participants[privatemsg_recipient_key($account)] = $account;
+      if ($account = array_shift($user_ids)) {
+        $participants[privatemsg_recipient_key($account)] = $account;
+      }
     }
     elseif (strpos($uid, '_') !== FALSE) {
       list($type, $id) = explode('_', $uid);
