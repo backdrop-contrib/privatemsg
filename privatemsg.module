@@ -1045,6 +1045,9 @@ function privatemsg_sql_list($account, $argument = 'list') {
   $query->addExpression('MAX(pm.has_tokens)', 'has_tokens');
   $query->addExpression('SUM(pmi.is_new)', 'is_new');
 
+  // Needed to for tracking replies.
+  $query->addExpression('MAX(pm.reply_to_mid)', 'last_reply_to_mid');
+
   // Load enabled columns
   $fields = privatemsg_get_enabled_headers();
 
@@ -1740,6 +1743,10 @@ function privatemsg_reply($thread_id, $body, $options = array()) {
     );
   }
 
+  // Add the reply_to_mid, so we can mark that message as replied
+  $thread = privatemsg_thread_load($thread_id);
+  $message->reply_to_mid = end($thread['messages'])->mid;
+
   $message->thread_id = $thread_id;
   // Load participants
   $message->recipients = _privatemsg_load_thread_participants($thread_id, $message->author);
@@ -1751,6 +1758,7 @@ function privatemsg_reply($thread_id, $body, $options = array()) {
       _privatemsg_handle_recipients($validated['message']->mid, $validated['message']->recipients, FALSE);
     }
   }
+
   return $validated;
 }
 
@@ -1891,6 +1899,10 @@ function _privatemsg_send($message) {
     $args['format'] = $message->format;
     $args['timestamp'] = $message->timestamp;
     $args['has_tokens'] = (int)$message->has_tokens;
+    if (isset($message->reply_to_mid)) {
+      $args['reply_to_mid'] = $message->reply_to_mid;
+    }
+
     $mid = db_insert('pm_message')
       ->fields($args)
       ->execute();
@@ -2163,6 +2175,12 @@ function _privatemsg_list_thread($tableselect) {
       // Set the css class in the tr tag.
       $row['#attributes']['class'][] = 'privatemsg-unread';
     }
+
+    if (!empty($thread['is_replied'])) {
+      // Set the css class in the tr tag.
+      $row['#attributes']['class'][] = 'privatemsg-replied';
+    }
+
 
     foreach ($enabled_headers as $key) {
       // Theme each enabled field.

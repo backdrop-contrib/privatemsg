@@ -1367,11 +1367,18 @@ class PrivatemsgAPITestCase extends PrivatemsgBaseTestCase {
 
     $thread_row = $this->getMessageFromSubject('test reply');
 
+    $this->assertEqual($thread_row->reply_to_mid, 0, t('First message is not a reply to a thread.'));
     $resultok = privatemsg_reply($thread_row->mid, 'Test Body', array('author' => $author));
     $this->assertTrue($resultok['success'], 'Reply could be sent successfully');
 
+    $reply_to_mid = db_query('SELECT reply_to_mid FROM {pm_message} WHERE mid = :mid', array(':mid' => $resultok['message']->mid))->fetchField();
+    $this->assertEqual($reply_to_mid, $thread_row->mid, t('Reply is marked as reply of first message.'));
+
     $resultok = privatemsg_reply($thread_row->mid, 'Test Body', array('author' => $recipient1));
     $this->assertTrue($resultok['success'], 'Reply could be sent successfully');
+
+    $reply_to_mid = db_query('SELECT reply_to_mid FROM {pm_message} WHERE mid = :mid', array(':mid' => $resultok['message']->mid))->fetchField();
+    $this->assertEqual($reply_to_mid, $thread_row->mid, t('Reply is marked as reply of first message.'));
 
     $resultf1 = privatemsg_reply($thread_row->mid, '', array('author' => $recipient2));
     $this->assertFalse($resultf1['success'], 'API denied to send message without body.');
@@ -1380,7 +1387,6 @@ class PrivatemsgAPITestCase extends PrivatemsgBaseTestCase {
     $resultf2 = privatemsg_reply($thread_row->mid, 'Test Body', array('author' => $recipient3));
     $errormessage = t('@user is not allowed to write messages.', array('@user' => $recipient3->name));
     $this->assertEqual($errormessage, $resultf2['messages']['error'][0], 'API denied to send message from user without permission');
-
   }
 
   /**
