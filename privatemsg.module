@@ -1354,7 +1354,7 @@ function privatemsg_form_alter(&$form, &$form_state, $form_id) {
 
     // We have to use user_access() because privatemsg_user_access() would
     // return FALSE when privatemsg is disabled.
-    if ((user_access('write privatemsg') || user_access('read privatemsg')) && user_access('allow disabling privatemsg')) {
+    if ((user_access('write privatemsg') || user_access('read privatemsg')) && user_access('allow disabling privatemsg') && privatemsg_allow_disable($form['#user'])) {
       $form['privatemsg']['pm_enable'] = array(
         '#type' => 'checkbox',
         '#title' => t('Enable private messages'),
@@ -1368,6 +1368,12 @@ function privatemsg_form_alter(&$form, &$form_state, $form_id) {
 
 /**
  * Hides the settings fieldset if there are no options to be displayed.
+ *
+ * @param array $element
+ *   Form element to check.
+ * @return array
+ *   Form element with '#access' key value TRUE if the fieldset has a child,
+ *   FALSE if the fieldset has no child.
  */
 function privatemsg_account_fieldset_remove_if_empty($element) {
   // If there are no children elements, deny access.
@@ -1388,19 +1394,49 @@ function privatemsg_account_fieldset_remove_if_empty($element) {
 }
 
 /**
- * Implements hook_user_insert().
+ * Implements hook_user_update().
  */
 function privatemsg_user_update(&$edit, $account, $category) {
-  if (isset($edit['pm_enable']) && (user_access('write privatemsg') || user_access('read privatemsg')) && user_access('allow disabling privatemsg')) {
+  if (isset($edit['pm_enable']) && (user_access('write privatemsg') || user_access('read privatemsg')) && user_access('allow disabling privatemsg') && privatemsg_allow_disable($account)) {
     $current = privatemsg_is_disabled($account);
-    $disabled = (!$edit['pm_enable']);
+    $disabled = (int) !$edit['pm_enable'];
     $edit['pm_enable'] = NULL;
 
-    // only perform the save if the value has changed
+    // Only perform the save if the value has changed.
     if ($current != $disabled) {
-      privatemsg_set_setting('user', $account->uid, 'disabled', $disabled);
+      // If disabled is 1.
+      if ($disabled == 1) {
+        // Insert the setting.
+        privatemsg_set_setting('user', $account->uid, 'disabled', $disabled);
+      }
+      else {
+        // Delete the setting.
+        privatemsg_del_setting('user', $account->uid, 'disabled');
+      }
     }
   }
+}
+
+/**
+ * Checks if the user is allowed to disable/enable private message.
+ *
+ * @param object
+ *   User object to check.
+ * @return bool
+ *   TRUE if the user is allowed to disable the private message.
+ */
+function privatemsg_allow_disable($account) {
+  global $user;
+
+  $allow_disable_privatemsg = TRUE;
+  // Compare it to current user id.
+  if ($user->uid != $account->uid) {
+    // User must have administer permission to disable other users' private message
+    // and the edited user must be able to change the setting.
+    $allow_disable_privatemsg = (user_access('administer privatemsg settings') && user_access('allow disabling privatemsg', $account));
+  }
+
+  return $allow_disable_privatemsg;
 }
 
 /**
