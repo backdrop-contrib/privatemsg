@@ -192,7 +192,7 @@ function privatemsg_groups_autocomplete($fragment, $names, $limit, $type) {
     $recipient->recipient = $gid;
     if (privatemsg_groups_write_access($recipient)) {
       $name = entity_label($group_type, $group);
-      if (strpos($name, $fragment) !== false && !in_array($name, $names)) {
+      if (stripos($name, $fragment) !== false && !in_array($name, $names)) {
         $suggestions[privatemsg_recipient_key($recipient)] = $recipient;
         if (count($suggestions) >= $limit) {
           return $suggestions;
