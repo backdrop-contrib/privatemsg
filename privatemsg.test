@@ -853,7 +853,7 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
     $json = $this->drupalGet('messages/autocomplete/<sc');
     $autocomplete = (array)json_decode($json);
     $this->assertEqual(count($autocomplete), 1, t('Autocomplete object contains one suggestion.'));
-    $this->assertEqual($autocomplete[check_plain($user4->name) . ', '], check_plain($user4->name));
+    $this->assertEqual($autocomplete[strip_tags($user4->name) . ', '], strip_tags($user4->name));
   }
 }
 
