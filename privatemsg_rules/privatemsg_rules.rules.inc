@@ -32,6 +32,9 @@ function privatemsg_rules_rules_action_info() {
   $fields['subject']['description'] = t('Subject of the message. To use the tokens provided by Privatemsg, use {token}, for example: {privatemsg_message:recipient:name}.');
   $fields['body']['description'] = t('Body of the message. To use the tokens provided by Privatemsg, use {token}, for example: {privatemsg_message:recipient:name}.');
   $fields['body']['long'] = TRUE;
+  // Make subject and body translatable.
+  $fields['subject']['translatable'] = TRUE;
+  $fields['body']['translatable'] = TRUE;
 
   // Reply doesn't have subject either.
   $reply_fields = $fields;
