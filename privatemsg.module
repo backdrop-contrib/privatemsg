@@ -1462,6 +1462,13 @@ function privatemsg_privatemsg_block_message($author, $recipients, $context = ar
         'message' => t('%recipient has disabled private message receiving.', array('%recipient' => privatemsg_recipient_format($recipient, array('plain' => TRUE)))),
       );
     }
+    // Do not send private messages to blocked users.
+    else if (isset($recipient->status) && (!$recipient->status)) {
+      $blocked[] = array(
+        'recipient' => 'user_' . $recipient->uid,
+        'message' => t('%recipient has disabled his or her account.', array('%recipient' => privatemsg_recipient_format($recipient, array('plain' => TRUE)))),
+      );
+    }
   }
 
   return $blocked;
