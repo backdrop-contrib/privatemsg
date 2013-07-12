@@ -29,9 +29,9 @@ function privatemsg_admin_settings() {
   );
   $form['display_settings']['privatemsg_display_loginmessage'] = array(
     '#type' => 'checkbox',
-    '#title' => t('Inform the user about new messages on login'),
+    '#title' => t('Inform the user about unread messages on login'),
     '#default_value' => variable_get('privatemsg_display_loginmessage', TRUE),
-    '#description' => t('This option can safely be disabled if the "New message indication" block is used instead.'),
+    '#description' => t('This option can safely be disabled if the "Unread message indication" block is used instead.'),
     '#weight'      => -5,
   );
   $form['display_settings']['privatemsg_display_disabled_message'] = array(

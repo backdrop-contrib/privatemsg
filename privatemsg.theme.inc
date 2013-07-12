@@ -115,7 +115,7 @@ function theme_privatemsg_list_field__thread_started($variables) {
 }
 
 /**
- * Theme a block which displays the number of new messages a user has.
+ * Theme a block which displays the number of unread messages a user has.
  */
 function theme_privatemsg_new_block($count) {
   $count = $count['count'];
@@ -123,8 +123,8 @@ function theme_privatemsg_new_block($count) {
     $text = t('Click here to go to your messages.');
   }
   else {
-    $text = format_plural($count, 'You have a new message! Click here to read it.',
-                        'You have @count new messages! Click here to read them.');
+    $text = format_plural($count, 'You have an unread message! Click here to read it.',
+                        'You have @count unread messages! Click here to read them.');
   }
 
   return l($text, 'messages', array('attributes' => array('id' => 'privatemsg-new-link')));

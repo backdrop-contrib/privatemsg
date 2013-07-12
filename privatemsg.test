@@ -1157,7 +1157,7 @@ class PrivatemsgLinksTestCase extends PrivatemsgBaseTestCase {
     $this->drupalPost('admin/structure/block', $blocks, t('Save blocks'));
 
     $this->drupalGet('');
-    $this->assertNoText(t('New message'), t('Privatemsg new block title not displayed.'));
+    $this->assertNoText(t('Unread message'), t('Privatemsg unread message block title not displayed.'));
 
     $message = array(
       'recipient' => $user->name,
@@ -1167,9 +1167,9 @@ class PrivatemsgLinksTestCase extends PrivatemsgBaseTestCase {
     $this->drupalPost('messages/new', $message, t('Send message'));
 
     $this->drupalLogin($user);
-    $this->assertText(t('New message'), t('Privatemsg new block title displayed.'));
+    $this->assertText(t('Unread message'), t('Privatemsg unread message block title displayed.'));
 
-    $this->assertText(t('You have a new message! Click here to read it.'), t('New message indication displayed.'));
+    $this->assertText(t('You have an unread message! Click here to read it.'), t('Unread message indication displayed.'));
   }
 }
 
