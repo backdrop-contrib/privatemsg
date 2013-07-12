@@ -41,7 +41,7 @@ function privatemsg_permission() {
     ),
     'delete privatemsg' => array(
       'title' => t('Delete private messages'),
-      'description' => t('Delete private messages'),
+      'description' => t('Allows users to delete messages they can read'),
     ),
     'allow disabling privatemsg' => array(
       'title' => t('Allow disabling private messages'),
