@@ -94,7 +94,7 @@ function privatemsg_filter_menu() {
     'menu_name'        => 'user-menu',
   );
   $items['messages/sent'] = array(
-    'title'            => 'Sent Messages',
+    'title'            => 'Sent messages',
     'page callback'    => 'privatemsg_list_page',
     'page arguments'   => array('sent'),
     'file'             => 'privatemsg.pages.inc',
