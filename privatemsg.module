@@ -1793,10 +1793,10 @@ function _privatemsg_validate_message(&$message, $form = FALSE) {
   $message->subject = trim($message->subject);
   if (empty($message->subject)) {
     if ($form) {
-      form_set_error('subject', t('You must include a subject line with your message.'));
+      form_set_error('subject', t('You must include a subject line or a message.'));
     }
     else {
-      $messages['error'][] = t('A subject must be included with the message.');
+      $messages['error'][] = t('A subject or message must be included.');
     }
   }
 

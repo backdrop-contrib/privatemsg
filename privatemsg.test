@@ -355,7 +355,7 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
     $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $recipient->name)), 'Message sent confirmation displayed.');
 
     $this->drupalPost('messages/new', $editempty, t('Send message'));
-    $this->assertText(t('You must include a subject line with your message.'), 'Empty subject message displayed.');
+    $this->assertText(t('You must include a subject line or a message.'), 'Empty subject message displayed.');
 
     $this->drupalPost('messages/new', $editonlyspace, t('Send message'));
     $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $recipient2->name)), 'Message sent confirmation displayed.');
@@ -1354,7 +1354,7 @@ class PrivatemsgAPITestCase extends PrivatemsgBaseTestCase {
     $this->assertTrue($resultok2['success'], 'API allowed to send message without body');
 
     $resultf1 = privatemsg_new_thread(array($recipient1, $recipient2, $recipient3), '', 'No subject', array('author' => $author));
-    $this->assertEqual('A subject must be included with the message.', $resultf1['messages']['error'][0], 'API denied to send message without a subject');
+    $this->assertEqual('A subject or message must be included.', $resultf1['messages']['error'][0], 'API denied to send message without a subject');
 
     $resultf2 = privatemsg_new_thread(array(), 'no recipients', 'Body text', array('author' => $author));
     $this->assertEqual('At least one valid recipient must be included with the message.', $resultf2['messages']['error'][0], 'API denied to send message without recipients');
