@@ -155,8 +155,6 @@ function privatemsg_list_page($argument = 'list', $uid = NULL) {
 }
 
 function privatemsg_list($form, &$form_state, $argument, $account) {
-  drupal_add_css(drupal_get_path('module', 'privatemsg') . '/styles/privatemsg-list.css');
-
   // If this is an AJAX request, update $_GET['q'] so that table sorting and
   // similar links are using the correct base path.
   if ($_GET['q'] == 'system/ajax') {
@@ -176,6 +174,11 @@ function privatemsg_list($form, &$form_state, $argument, $account) {
     'updated' => array(
       '#prefix' => '<div id="privatemsg-list-form">',
       '#suffix' => '</div>',
+    ),
+    '#attached' => array(
+      'css' => array(
+        drupal_get_path('module', 'privatemsg') . '/styles/privatemsg-list.css',
+      ),
     ),
   );
   $form['updated']['list'] = array(
@@ -674,6 +677,10 @@ function privatemsg_new_preview($form, &$form_state) {
   _field_invoke_multiple('load', 'privatemsg_message', array($message->mid => $message));
   $form_state['privatemsg_preview'] = array(
     '#markup' => theme('privatemsg_view', array('message' => $message)),
+    '#attached' => array(
+      drupal_get_path('module', 'privatemsg') . '/styles/privatemsg-view.base.css',
+      drupal_get_path('module', 'privatemsg') . '/styles/privatemsg-view.theme.css',
+    ),
   );
   // This forces the form to be rebuilt instead of being submitted.
   $form_state['rebuild'] = TRUE;
@@ -869,7 +876,12 @@ function privatemsg_view($thread) {
   // Render the participants.
   $content['participants'] = array(
     '#markup' => theme('privatemsg_recipients', array('thread' => $thread)),
-    '#weight' => -5
+    '#weight' => -5,
+    '#attached' => array(
+      'css' => array(
+        drupal_get_path('module', 'privatemsg') . '/styles/privatemsg-recipients.css',
+      ),
+    ),
   );
 
   // Render the messages.
@@ -895,6 +907,12 @@ function privatemsg_view($thread) {
     $i++;
     $content['messages'][$pmid] = array(
       '#markup' => theme('privatemsg_view', array('message' => $message)),
+      '#attached' => array(
+        'css' => array(
+          drupal_get_path('module', 'privatemsg') . '/styles/privatemsg-view.base.css',
+          drupal_get_path('module', 'privatemsg') . '/styles/privatemsg-view.theme.css',
+        ),
+      ),
     );
   }
 
