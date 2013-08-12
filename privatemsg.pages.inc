@@ -851,7 +851,9 @@ function privatemsg_view($thread) {
     if (isset($thread['older_start'])) {
       $options = array(
         'query' => array('start' => $thread['older_start']),
-        'title' => t('Display older messages'),
+        'attributes' => array(
+          'title' => t('Display older messages'),
+        ),
       );
       $older = l(t('<<'), 'messages/view/' . $thread['thread_id'], $options);
     }
@@ -859,7 +861,9 @@ function privatemsg_view($thread) {
     if (isset($thread['newer_start'])) {
       $options = array(
         'query' => array('start' => $thread['newer_start']),
-        'title' => t('Display newer messages'),
+        'attributes' => array(
+          'title' => t('Display newer messages'),
+        ),
       );
       $newer = l(t('>>'), 'messages/view/' . $thread['thread_id'], $options);
     }
