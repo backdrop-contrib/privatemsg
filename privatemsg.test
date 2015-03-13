@@ -1500,7 +1500,9 @@ class PrivatemsgAPITestCase extends PrivatemsgBaseTestCase {
 
     // Create some global and role default settings.
     privatemsg_set_setting('global', 0, 'test', 1);
-    privatemsg_set_setting('role', array_shift(array_keys($user->roles)), 'test', 2);
+    $roles = array_keys($user->roles);
+    $first_role = array_shift($roles);
+    privatemsg_set_setting('role', $first_role, 'test', 2);
 
     // Add some user specific setting.
     privatemsg_set_setting('user', $admin->uid, 'test', 3);
@@ -1523,7 +1525,7 @@ class PrivatemsgAPITestCase extends PrivatemsgBaseTestCase {
     $this->assertEqual(privatemsg_get_setting('test2', $user2_ids), 0, t('Negative values are ignored.'));
 
     // Update existing settings, verify that the updated value is used now.
-    privatemsg_set_setting('role', array_shift(array_keys($user->roles)), 'test', 5);
+    privatemsg_set_setting('role', $first_role, 'test', 5);
     privatemsg_set_setting('user', $admin->uid, 'test', 6);
     privatemsg_set_setting('user', $user2->uid, 'test', 7);
 
@@ -1532,7 +1534,7 @@ class PrivatemsgAPITestCase extends PrivatemsgBaseTestCase {
     $this->assertEqual(privatemsg_get_setting('test', $user2_ids), 7, t('The second user uses the new setting.'));
 
     // Default some settings.
-    privatemsg_del_setting('role', array_shift(array_keys($user->roles)), 'test');
+    privatemsg_del_setting('role', $first_role, 'test');
     privatemsg_del_setting('user', $admin->uid, 'test');
 
     $this->assertEqual(privatemsg_get_setting('test', $admin_ids), 1, t('The user level setting was deleted, the default is now used.'));
