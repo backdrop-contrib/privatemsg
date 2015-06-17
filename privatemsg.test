@@ -754,7 +754,7 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
     $this->drupalPost(NULL, NULL, t('Cancel account'));
 
     // Confirm account cancellation request.
-    $this->drupalGet("user/$recipient2->uid/cancel/confirm/$timestamp/" . user_pass_rehash($recipient2->pass, $timestamp, $recipient2->login));
+    $this->drupalGet("user/$recipient2->uid/cancel/confirm/$timestamp/" . user_pass_rehash($recipient2->pass, $timestamp, $recipient2->login, $recipient2->uid));
 
     // Simpletest thinks that we are still logged in.
     $this->loggedInUser = NULL;
@@ -790,7 +790,7 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
     $this->drupalPost(NULL, NULL, t('Cancel account'));
 
     // Confirm account cancellation request.
-    $this->drupalGet("user/$dummy->uid/cancel/confirm/$timestamp/" . user_pass_rehash($dummy->pass, $timestamp, $dummy->login));
+    $this->drupalGet("user/$dummy->uid/cancel/confirm/$timestamp/" . user_pass_rehash($dummy->pass, $timestamp, $dummy->login, $dummy->uid));
   }
 
   function checkThreadDelete($message) {
