@@ -3165,6 +3165,19 @@ class PrivatemsgMessageController extends DrupalDefaultEntityController {
     $query->join('pm_index', 'pmi', "base.mid = pmi.mid");
     return $query;
   }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function cacheGet($ids, $conditions = array()) {
+    // Passing the account condition, which does not exist as a property to
+    // parent::cacheGet() causes notices, remove it.
+    // @todo Investigate if this causes any undesired side effects.
+    if (isset($conditions['account'])) {
+      unset($conditions['account']);
+    }
+    return parent::cacheGet($ids, $conditions);
+  }
 }
 
 /**
