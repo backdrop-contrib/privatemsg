@@ -2601,7 +2601,7 @@ function privatemsg_message_change_recipient($mid, $uid, $type = 'user', $add = 
   }
   else {
     db_delete('pm_index')
-      >condition('mid', $mid)
+      ->condition('mid', $mid)
       ->condition('recipient', $uid)
       ->condition('type', $type)
       ->execute();
