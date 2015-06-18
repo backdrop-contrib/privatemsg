@@ -521,7 +521,12 @@ function privatemsg_thread_load($thread_id, $account = NULL, $start = NULL, $use
       if (!$thread['read_all']) {
         $conditions['account'] = $account;
       }
-      $thread['messages'] = privatemsg_message_load_multiple($query->execute()->fetchCol(), $conditions);
+
+      // #2033161 privatemsg_message_load_multiple will load all threads if empty
+      $ids = $query->execute()->fetchCol();
+      if (count($ids)) {
+        $thread['messages'] = privatemsg_message_load_multiple($ids, $conditions);
+      }
 
       // If there are no messages, don't allow access to the thread.
       if (empty($thread['messages'])) {
