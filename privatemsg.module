@@ -132,7 +132,7 @@ function _privatemsg_format_participants($part_array, $limit = NULL, $no_text = 
 
       // Directly address the current user.
       if (isset($account->type) && in_array($account->type, array('hidden', 'user')) && $account->recipient == $user->uid) {
-        array_unshift($to, $no_text ? t('You') : t('you'));
+        array_unshift($to, $no_text ? t('You', array(), array('context' => 'Dative')) : t('you', array(), array('context' => 'Dative')));
         continue;
       }
 
