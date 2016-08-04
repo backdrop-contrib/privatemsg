@@ -2501,7 +2501,7 @@ function privatemsg_recipient_get_types() {
       $types = array();
     }
     backdrop_alter('privatemsg_recipient_type_info', $types);
-    uasort($types, 'element_sort');
+    backdrop_sort($types, array('#weight'));
   }
   return $types;
 }
