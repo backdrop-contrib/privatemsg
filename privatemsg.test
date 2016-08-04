@@ -8,7 +8,7 @@
 /**
  * Base class for Privatemsg tests.
  */
-class PrivatemsgBaseTestCase extends DrupalWebTestCase {
+class PrivatemsgBaseTestCase extends BackdropWebTestCase {
   /**
    * Use testing profile.
    */
@@ -76,10 +76,10 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
    * Create user with 'read privatemsg' permission. Try to access mailbox and see if it gives allows access
    */
   function testPrivatemsgReadPrivatemsgPermission() {
-    $user_no_read_msg = $this->drupalCreateUser(); // set up user with default permissions (meaning: no read privatemsg permission
-    $author     = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
-    $recipient  = $this->drupalCreateUser(array('read privatemsg'));
-    $no_recipient  = $this->drupalCreateUser(array('read privatemsg'));
+    $user_no_read_msg = $this->backdropCreateUser(); // set up user with default permissions (meaning: no read privatemsg permission
+    $author     = $this->backdropCreateUser(array('write privatemsg', 'read privatemsg'));
+    $recipient  = $this->backdropCreateUser(array('read privatemsg'));
+    $no_recipient  = $this->backdropCreateUser(array('read privatemsg'));
 
 
     $subject = $this->randomName(20);
@@ -87,22 +87,22 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
 
     $response = privatemsg_new_thread(array($recipient), $subject, $body, array('author' => $author));
 
-    $this->drupalLogin($user_no_read_msg);
-    $this->drupalGet('messages');
+    $this->backdropLogin($user_no_read_msg);
+    $this->backdropGet('messages');
     $this->assertResponse(403, t('HTTP Response 403: Access to mailbox was blocked to user without "<em>read privatemsg</em>" permission'));
 
-    $this->drupalLogin($no_recipient);
-    $this->drupalGet('messages');
+    $this->backdropLogin($no_recipient);
+    $this->backdropGet('messages');
     $this->assertResponse(200, t('HTTP Response 200: Access to mailbox was authorized to user with "<em>read privatemsg</em>" permission'));
 
-    $this->drupalGet('messages/view/' . $response['message']->thread_id);
+    $this->backdropGet('messages/view/' . $response['message']->thread_id);
     $this->assertResponse(403, t('HTTP Response 403: Access to thread is blocked for non-recipients.'));
 
-    $this->drupalLogin($recipient);
-    $this->drupalGet('messages/view/' . $response['message']->thread_id);
+    $this->backdropLogin($recipient);
+    $this->backdropGet('messages/view/' . $response['message']->thread_id);
     $this->assertText($subject, t('Access to thread for recipient allowed.'));
 
-    $this->drupalGet('messages/view/' . $response['message']->thread_id + 1);
+    $this->backdropGet('messages/view/' . $response['message']->thread_id + 1);
     $this->assertResponse(404, t('Non-existing thread lead to HTTP Response 404.'));
 
   }
@@ -112,24 +112,24 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
    * Create user with 'write privatemsg' permission. Try to access Write New Message page and see if it gives allows access
    */
   function testPrivatemsgWritePrivatemsgPermission() {
-    $user_no_write_msg = $this->drupalCreateUser(); // set up user with default permissions (meaning: no read privatemsg permission
-    $this->drupalLogin($user_no_write_msg);
-    $this->drupalGet('messages/new');
+    $user_no_write_msg = $this->backdropCreateUser(); // set up user with default permissions (meaning: no read privatemsg permission
+    $this->backdropLogin($user_no_write_msg);
+    $this->backdropGet('messages/new');
     $this->assertResponse(403, t('HTTP Response 403: Access to Write New Message page was blocked to user without "<em>write privatemsg</em>" permission'));
 
-    $user_write_msg = $this->drupalCreateUser(array('write privatemsg')); // set up user with write privatemsg permissions
-    $this->drupalLogin($user_write_msg);
-    $this->drupalGet('messages/new');
+    $user_write_msg = $this->backdropCreateUser(array('write privatemsg')); // set up user with write privatemsg permissions
+    $this->backdropLogin($user_write_msg);
+    $this->backdropGet('messages/new');
     $this->assertResponse(200, t('HTTP Response 200: Access to Write New Message page was authorized to user with "<em>write privatemsg</em>" permission'));
   }
 
   function testPaging() {
-    $author     = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
-    $recipient  = $this->drupalCreateUser(array('read privatemsg'));
+    $author     = $this->backdropCreateUser(array('write privatemsg', 'read privatemsg'));
+    $recipient  = $this->backdropCreateUser(array('read privatemsg'));
 
     // Set lower values so that we don't need to generate 100's of messages.
-    variable_set('privatemsg_view_default_amount', 5);
-    variable_set('privatemsg_view_max_amount', 10);
+    config_set('privatemsg.settings', 'privatemsg_view_default_amount', 5);
+    config_set('privatemsg.settings', 'privatemsg_view_max_amount', 10);
 
     $subject_single = $this->randomName(20);
     $subject = $this->randomName(20);
@@ -143,15 +143,15 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
       privatemsg_reply($thread['message']->thread_id, $bodies[$i], array('author' => $author));
     }
 
-    $this->drupalLogin($recipient);
-    $this->drupalGet('messages');
+    $this->backdropLogin($recipient);
+    $this->backdropGet('messages');
     $this->clickLink($subject_single);
 
     $this->assertNoText(t('Displaying messages 1 - 1 of 1'), t('Pager is displayed'));
     $this->assertNoText(t('&gt;&gt;'), t('Newer messages link not displayed.'));
     $this->assertNoText(t('&lt;&lt;'), t('Older messages link not displayed.'));
 
-    $this->drupalGet('messages');
+    $this->backdropGet('messages');
     $this->clickLink($subject);
 
     // Verify that only the last 10 messages are displayed.
@@ -162,8 +162,8 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
     $this->assertText($bodies[22], t('Message is displayed.'));
     $this->assertNoText(t('&gt;&gt;'), t('Newer messages link not displayed.'));
 
-    variable_set('privatemsg_view_use_max_as_default', TRUE);
-    $this->drupalGet('messages');
+    config_set('privatemsg.settings', 'privatemsg_view_use_max_as_default', TRUE);
+    $this->backdropGet('messages');
     $this->clickLink($subject);
 
     // Now with separate default value.
@@ -201,8 +201,8 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
     $this->assertText($bodies[17], t('Message is displayed.'));
     $this->assertNoText($bodies[22], t('Hidden message is not displayed.'));
 
-    variable_set('privatemsg_view_max_amount', PRIVATEMSG_UNLIMITED);
-    $this->drupalGet('messages');
+    config_set('privatemsg.settings', 'privatemsg_view_max_amount', PRIVATEMSG_UNLIMITED);
+    $this->backdropGet('messages');
     $this->clickLink($subject);
 
     // Now with separate default value.
@@ -223,9 +223,9 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
     $this->assertNoText(t('&lt;&lt;'), t('Older messages link not displayed.'));
 
     // Check with max_amount = UNLIMITED and different default amount disabled.
-    variable_set('privatemsg_view_use_max_as_default', FALSE);
+    config_set('privatemsg.settings', 'privatemsg_view_use_max_as_default', FALSE);
 
-    $this->drupalGet('messages');
+    $this->backdropGet('messages');
     $this->clickLink($subject);
     $this->assertNoText(t('Displaying messages 1 - 23 of 23'), t('Pager is displayed'));
     $this->assertText($bodies[0], t('Message is displayed.'));
@@ -239,17 +239,17 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
    */
   function testWriteReplyPrivatemsg() {
     // Create an author and two recipients.
-    $author     = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg', 'select text format for privatemsg', filter_permission_name(filter_format_load('full_html'))));
-    $recipient  = $this->drupalCreateUser(array('read privatemsg'));
-    $recipient2  = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg'));
+    $author     = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg', 'select text format for privatemsg', filter_permission_name(filter_format_load('full_html'))));
+    $recipient  = $this->backdropCreateUser(array('read privatemsg'));
+    $recipient2  = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg'));
     // Set up a user with "read/write privatemsg" permissions.
-    $blocked_recipient = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg'));
+    $blocked_recipient = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg'));
     // Block this recipient to test users who cancelled their accounts.
     user_save($blocked_recipient, array('status' => 0));
 
     // Login author and go to new message form.
-    $this->drupalLogin($author);
-    $this->drupalGet('messages/new');
+    $this->backdropLogin($author);
+    $this->backdropGet('messages/new');
 
     // Prepare edit arrays, single recipient with [user].
     $edit = array(
@@ -327,54 +327,54 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
     );
 
     // Submit the messages.
-    $this->drupalPost('messages/new', $edit, t('Send message'));
+    $this->backdropPost('messages/new', $edit, t('Send message'));
     $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $recipient->name)), 'Message sent confirmation displayed.');
 
-    $this->drupalPost('messages/new', $edit2, t('Send message'));
+    $this->backdropPost('messages/new', $edit2, t('Send message'));
     $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => implode(', ', array($recipient->name, $recipient2->name)))), 'Message sent confirmation displayed.');
 
-    $this->drupalPost('messages/new', $editnone, t('Send message'));
+    $this->backdropPost('messages/new', $editnone, t('Send message'));
     $this->assertText(t('To field is required.'), 'Message was not sent.');
 
-    $this->drupalPost('messages/new', $editinvalid, t('Send message'));
+    $this->backdropPost('messages/new', $editinvalid, t('Send message'));
     $this->assertText(t('You must include at least one valid recipient.'), 'Message was not sent.');
     $this->assertText(t('The following users will not receive this private message: @recipients', array('@recipients' => $editinvalid['recipient'])), 'Message about non-existing user displayed.');
 
-    $this->drupalPost('messages/new', $editrecipientblocked, t('Send message'));
+    $this->backdropPost('messages/new', $editrecipientblocked, t('Send message'));
     $this->assertText(t('@recipients has disabled his or her account.', array('@recipients' => $blocked_recipient->name)), 'Message about blocked user displayed.');
     $this->assertText(t('You are not allowed to send this message because all recipients are blocked.'), 'Message was not sent.');
 
     // We will block the author later to test whether the reply form appears.
-    $this->drupalPost('messages/new', $editauthorblocked, t('Send message'));
+    $this->backdropPost('messages/new', $editauthorblocked, t('Send message'));
     $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $recipient2->name)), 'Message sent confirmation displayed.');
 
-    $this->drupalPost('messages/new', $editnobody, t('Send message'));
+    $this->backdropPost('messages/new', $editnobody, t('Send message'));
     $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $recipient->name)), 'Message sent confirmation displayed.');
 
-    $this->drupalPost('messages/new', $editnosubject, t('Send message'));
+    $this->backdropPost('messages/new', $editnosubject, t('Send message'));
     $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $recipient->name)), 'Message sent confirmation displayed.');
 
-    $this->drupalPost('messages/new', $editempty, t('Send message'));
+    $this->backdropPost('messages/new', $editempty, t('Send message'));
     $this->assertText(t('You must include a subject line with your message.'), 'Empty subject message displayed.');
 
-    $this->drupalPost('messages/new', $editonlyspace, t('Send message'));
+    $this->backdropPost('messages/new', $editonlyspace, t('Send message'));
     $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $recipient2->name)), 'Message sent confirmation displayed.');
 
-    $this->drupalPost('messages/new', $editmixed, t('Send message'));
+    $this->backdropPost('messages/new', $editmixed, t('Send message'));
     $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $recipient->name)), 'Message sent confirmation displayed.');
     $this->assertText(t('The following users will not receive this private message: @recipients', array('@recipients' => $invalidmixed)), 'Message about non-existing user displayed.');
 
-    $this->drupalPost('messages/new', $editformatted, t('Send message'));
+    $this->backdropPost('messages/new', $editformatted, t('Send message'));
     $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $recipient2->name)), 'Message sent confirmation displayed.');
 
     // Login as recipient2 and try to write some replies.
-    $this->drupalLogin($recipient2);
-    $this->drupalGet('messages');
+    $this->backdropLogin($recipient2);
+    $this->backdropGet('messages');
 
     // Check that the message with only a space in the subject uses the body
     // as subject.
     $this->clickLink($editonlyspace['body[value]']);
-    $this->drupalGet('messages');
+    $this->backdropGet('messages');
 
     $this->assertNoText($edit['subject'], 'Message sent to other recipient not found.');
     $this->assertText($edit2['subject'], 'Sent message subject found.');
@@ -391,27 +391,27 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
       'body[value]' => '',
     );
 
-    $this->drupalPost(NULL, $reply, t('Send message'));
+    $this->backdropPost(NULL, $reply, t('Send message'));
     $this->assertText($reply['body[value]'], 'New message body displayed.');
 
-    $this->drupalPost(NULL, $replyempty, t('Send message'));
+    $this->backdropPost(NULL, $replyempty, t('Send message'));
     $this->assertText(t('You must include a message in your reply.'));
 
     // reply with a bold part, not allowed with default format
     $replyformatted = array(
       'body[value]' => $this->randomName(100) . '<b>formatted message #2</b>',
     );
-    $this->drupalGet('messages');
+    $this->backdropGet('messages');
     $this->clickLink($editformatted['subject']);
     $this->assertRaw($editformatted['body[value]'], 'Found formatted message body.');
 
-    $this->drupalPost(NULL, $replyformatted, t('Send message'));
+    $this->backdropPost(NULL, $replyformatted, t('Send message'));
     $this->assertNoRaw($replyformatted['body[value]'], 'Did not find formatted reply body.');
     $this->assertText(check_plain($replyformatted['body[value]']), 'New reply body displayed.');
 
     // Login using recipient and try to read the message by going to inbox first.
-    $this->drupalLogin($recipient);
-    $this->drupalGet('messages');
+    $this->backdropLogin($recipient);
+    $this->backdropGet('messages');
 
     // Assert if we see the subject of the messages.
     $this->assertText($edit['subject'], 'Sent message subject found.');
@@ -434,7 +434,7 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
     $this->assertText(t('Between you and @author', array('@author' => $author->name)));
 
     // Navigate into the message.
-    $this->drupalGet('messages');
+    $this->backdropGet('messages');
     $this->clickLink($edit2['subject']);
     // Confirm that we can read the message that was sent.
     $this->assertText($edit2['body[value]'], 'Found message body.');
@@ -443,9 +443,9 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
 
     // Block the author.
     user_save($author, array('status' => 0));
-    $this->drupalLogin($recipient2);
+    $this->backdropLogin($recipient2);
     // Navigate into the message.
-    $this->drupalGet('messages');
+    $this->backdropGet('messages');
     $this->clickLink($editauthorblocked['subject']);
     // Confirm that the reply form is not shown.
     $this->assertNoText(t('Reply'), 'Reply form is not displayed.');
@@ -456,32 +456,32 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
    * Test functionality around disabling private messaging.
    */
   function testDisablePrivatemsg() {
-    $admin_user = $this->drupalCreateUser(array('administer permissions'));
-    $enableduser = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg')); // set up user with read/write privatemsg permissions
-    $enableduser2 = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg')); // set up user with read/write privatemsg permissions
-    $disableduser = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg', 'allow disabling privatemsg')); // set up user with read/write privatemsg permissions
+    $admin_user = $this->backdropCreateUser(array('administer permissions'));
+    $enableduser = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg')); // set up user with read/write privatemsg permissions
+    $enableduser2 = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg')); // set up user with read/write privatemsg permissions
+    $disableduser = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg', 'allow disabling privatemsg')); // set up user with read/write privatemsg permissions
 
     // Create a message between the users that we can use to test
     $return = privatemsg_new_thread(array($disableduser), $this->randomName(20), $this->randomName(100), array('author' => $enableduser));
     $mid = $return['message']->thread_id;
 
-    $this->drupalLogin($disableduser);
+    $this->backdropLogin($disableduser);
     // Now disable $disabledUser.
-    $this->drupalGet('user/' . $disableduser->uid . '/edit');
+    $this->backdropGet('user/' . $disableduser->uid . '/edit');
     $edit['pm_enable'] = FALSE;
-    $this->drupalPost('user/' . $disableduser->uid . '/edit', $edit, t('Save'));
+    $this->backdropPost('user/' . $disableduser->uid . '/edit', $edit, t('Save'));
 
     // Verify that disableduser can list messages.
-    $this->drupalGet('messages');
+    $this->backdropGet('messages');
     $this->assertResponse(200, t('HTTP Response 200: Access to reading messages page is allowed.'));
 
     // Verify that $disableduser can read messages but there is not reply form
-    $this->drupalGet('messages/view/' . $return['message']->thread_id);
+    $this->backdropGet('messages/view/' . $return['message']->thread_id);
     $this->assertResponse(200, t('HTTP Response 200: Access to message thread page is allowed.'));
     $this->assertNoText(t('Reply to thread'), 'No reply form shown.');
 
     // Verify that $disableduser cannot send a new message.
-    $this->drupalGet('messages/new');
+    $this->backdropGet('messages/new');
     $this->assertResponse(403, t('HTTP Response 403: Access to Write New Message page was blocked to user with private messaging disabled'));
 
     // Use a newly loaded user object to test the API calls.
@@ -500,8 +500,8 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
       'subject'     => $this->randomName(20),
       'body[value]'        => $this->randomName(100),
     );
-    $this->drupalLogin($enableduser);
-    $this->drupalPost('messages/new', $message, t('Send message'));
+    $this->backdropLogin($enableduser);
+    $this->backdropPost('messages/new', $message, t('Send message'));
     $this->assertText(t('You are not allowed to send this message because all recipients are blocked.'));
 
     // Make sure that a message to multiple recipients still works if one is
@@ -511,23 +511,23 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
       'subject'     => $this->randomName(20),
       'body[value]'        => $this->randomName(100),
     );
-    $this->drupalPost('messages/new', $messagemultiple, t('Send message'));
+    $this->backdropPost('messages/new', $messagemultiple, t('Send message'));
     $this->assertText(t('@recipient has disabled private message receiving.', array('@recipient' => $disableduser->name)), 'Message about user with disabled private messaging.');
     $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $enableduser2->name)), 'Message sent confirmation displayed.');
 
     // Remove the permission to disable privatemsg.
-    $this->drupalLogin($admin_user);
+    $this->backdropLogin($admin_user);
     // 6 is the rid of the custom $disableduser role.
     $edit = array('6[allow disabling privatemsg]' => FALSE);
-    $this->drupalPost('admin/people/permissions', $edit, t('Save permissions'));
+    $this->backdropPost('admin/people/permissions', $edit, t('Save permissions'));
 
     // Make sure that the option is not visible anymore.
-    $this->drupalLogin($disableduser);
-    $this->drupalGet('user/' . $disableduser->uid . '/edit');
+    $this->backdropLogin($disableduser);
+    $this->backdropGet('user/' . $disableduser->uid . '/edit');
     $this->assertNoText(t('Enable Private Messaging'), t('Disable privatemsg setting not displayed'));
 
     // Verify that the user is now allowed to write messages again.
-    $this->drupalGet('messages/new');
+    $this->backdropGet('messages/new');
     $this->assertNoText(t('You are not authorized to access this page.'), t('Access denied page is not displayed.'));
     $this->assertText(t('Write new message'), t('Write message form is displayed.'));
   }
@@ -536,9 +536,9 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
    * Test correct handling of read all permissions.
    */
   function testReadAllPermission() {
-    $author    = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
-    $recipient = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
-    $admin     = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg', 'read all private messages'));
+    $author    = $this->backdropCreateUser(array('write privatemsg', 'read privatemsg'));
+    $recipient = $this->backdropCreateUser(array('write privatemsg', 'read privatemsg'));
+    $admin     = $this->backdropCreateUser(array('write privatemsg', 'read privatemsg', 'read all private messages'));
 
     // Create new message.
     $edit = array(
@@ -546,13 +546,13 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
       'subject'     => $this->randomName(20),
       'body[value]'        => $this->randomName(100),
     );
-    $this->drupalLogin($author);
-    $this->drupalPost('messages/new', $edit, t('Send message'));
+    $this->backdropLogin($author);
+    $this->backdropPost('messages/new', $edit, t('Send message'));
 
     $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $recipient->name)), t('Message sent confirmation displayed'));
 
-    $this->drupalLogin($admin);
-    $this->drupalGet('messages/view/1');
+    $this->backdropLogin($admin);
+    $this->backdropGet('messages/view/1');
 
     $this->assertText(t('This conversation is being viewed with escalated privileges and may not be the same as shown to normal users.'), t('Notice about read all mode displayed.'));
 
@@ -560,7 +560,7 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
     $admin_edit = array(
       'body[value]'        => $this->randomName(100),
     );
-    $this->drupalPost('messages/view/1', $admin_edit, t('Send message'));
+    $this->backdropPost('messages/view/1', $admin_edit, t('Send message'));
 
     // Make sure that the notice is not displayed anymore.
     // @tod: Commented out because this does not work as expected.
@@ -581,7 +581,7 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
     $admin_edit2 = array(
       'body[value]' => $this->randomName(100),
     );
-    $this->drupalPost('messages/view/1', $admin_edit2, t('Send message'));
+    $this->backdropPost('messages/view/1', $admin_edit2, t('Send message'));
 
     // Make sure that both the existing message body and the new one are displayed.
     $this->assertText($edit['body[value]'], t('First message body displayed.'));
@@ -600,8 +600,8 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
    * Tests for the flush feature
    */
   function testPrivatemsgFlush() {
-    $author = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
-    $recipient = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
+    $author = $this->backdropCreateUser(array('write privatemsg', 'read privatemsg'));
+    $recipient = $this->backdropCreateUser(array('write privatemsg', 'read privatemsg'));
 
     // Send 10 messages.
     for ($i = 0; $i < 10; $i++) {
@@ -621,7 +621,7 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
     // Now, mid 1, 4 and 6 have been deleted by both.
 
     // Flush configuration, enable, delay is default, 30 days
-    variable_set('privatemsg_flush_enabled', TRUE);
+    config_set('privatemsg.settings', 'privatemsg_flush_enabled', TRUE);
 
     // Set back the deleted timestamp 35 days back of mid 4.
     db_update('pm_index')
@@ -657,11 +657,11 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
 
   function testDelete() {
     // Create users.
-    $author = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg', 'delete privatemsg'));
-    $recipient = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg', 'delete privatemsg'));
-    $recipient2 = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg', 'cancel account'));
-    $admin = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg', 'delete privatemsg', 'read all private messages'));
-    $dummy = $this->drupalCreateUser(array('cancel account'));
+    $author = $this->backdropCreateUser(array('write privatemsg', 'read privatemsg', 'delete privatemsg'));
+    $recipient = $this->backdropCreateUser(array('write privatemsg', 'read privatemsg', 'delete privatemsg'));
+    $recipient2 = $this->backdropCreateUser(array('write privatemsg', 'read privatemsg', 'cancel account'));
+    $admin = $this->backdropCreateUser(array('write privatemsg', 'read privatemsg', 'delete privatemsg', 'read all private messages'));
+    $dummy = $this->backdropCreateUser(array('cancel account'));
 
     // Create texts.
     $subject = $this->randomName(20);
@@ -673,20 +673,20 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
     privatemsg_reply($return['message']->thread_id, $body2, array('author' => $recipient));
 
     // Check with user without delete permission.
-    $this->drupalLogin($recipient2);
-    $this->drupalGet('messages/view/' . $return['message']->thread_id);
+    $this->backdropLogin($recipient2);
+    $this->backdropGet('messages/view/' . $return['message']->thread_id);
     $this->assertText($subject, 'Subject is displayed');
     $this->assertText($body1, 'First message is displayed');
     $this->assertText($body2, 'Second message is displayed');
     $this->assertNoLink(t('Delete'), 'Delete message is link is not displayed for user without permission');
 
     // Check if access for that user is denied.
-    $this->drupalGet('messages/delete/' . $return['message']->thread_id . '/' . $return['message']->mid);
+    $this->backdropGet('messages/delete/' . $return['message']->thread_id . '/' . $return['message']->mid);
     $this->assertText(t('Access denied'));
 
     // Check with user with delete access.
-    $this->drupalLogin($recipient);
-    $this->drupalGet('messages/view/' . $return['message']->thread_id);
+    $this->backdropLogin($recipient);
+    $this->backdropGet('messages/view/' . $return['message']->thread_id);
     $this->assertText(t('Delete'), 'Delete message is link is displayed for user without permission');
 
     // Click delete link of the second message and cancel.
@@ -698,7 +698,7 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
     // Confirm message deletion.
     $this->clickLink(t('Delete'), 1);
     $this->assertText(t('Are you sure you want to delete this message?'), 'Confirmation message displayed');
-    $this->drupalPost(NULL, array(), t('Delete'));
+    $this->backdropPost(NULL, array(), t('Delete'));
     $this->assertText(t('Message has been deleted.'), 'Message has been deleted');
     $this->assertText($body1, 'First message is still displayed');
     $this->assertNoText($body2, 'Second message was deleted');
@@ -712,86 +712,86 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
     // Confirm message deletion.
     $this->clickLink(t('Delete'));
     $this->assertText(t('Are you sure you want to delete this message?'), 'Confirmation message displayed');
-    $this->drupalPost(NULL, array(), t('Delete'));
+    $this->backdropPost(NULL, array(), t('Delete'));
     $this->assertText(t('Message has been deleted.'), 'Message deleted has been deleted');
     $this->assertNoText($subject, 'All messages of that thread have been deleted');
 
     // Test if the message has not been deleted for other users.
-    $this->drupalLogin($recipient2);
-    $this->drupalGet('messages/view/' . $return['message']->thread_id);
+    $this->backdropLogin($recipient2);
+    $this->backdropGet('messages/view/' . $return['message']->thread_id);
     $this->assertText($body1, 'First message is still displayed');
     $this->assertText($body2, 'First message is still displayed');
 
     // Test delete all checkbox.
-    $this->drupalLogin($admin);
-    $this->drupalGet('messages/view/' . $return['message']->thread_id);
+    $this->backdropLogin($admin);
+    $this->backdropGet('messages/view/' . $return['message']->thread_id);
     $this->clickLink(t('Delete'), 1);
-    $this->drupalPost(NULL, array('delete_options' => TRUE), t('Delete'));
+    $this->backdropPost(NULL, array('delete_options' => TRUE), t('Delete'));
     $this->assertText(t('Message has been deleted for all users.'), 'Message deleted has been deleted');
 
     // Test if the message has been deleted for all users.
-    $this->drupalLogin($recipient2);
-    $this->drupalGet('messages/view/' . $return['message']->thread_id);
+    $this->backdropLogin($recipient2);
+    $this->backdropGet('messages/view/' . $return['message']->thread_id);
     $this->assertText($body1, 'First message is still displayed');
     $this->assertNoText($body2, 'Second message has been deleted for all users');
 
     // Check that messages of canceled users (user_cancel_delete) are deleted too.
     $edit = array('body[value]' => $this->randomName(100));
-    $this->drupalPost(NULL, $edit, t('Send message'));
-    $this->drupalGet('messages/view/' . $return['message']->thread_id);
+    $this->backdropPost(NULL, $edit, t('Send message'));
+    $this->backdropGet('messages/view/' . $return['message']->thread_id);
     $this->assertText($edit['body[value]'], t('New reply is displayed'));
 
     // Reload user object, don't use the cache.
     $recipient2 = user_load($recipient2->uid, TRUE);
 
     // Attempt to cancel account.
-    variable_set('user_cancel_method', 'user_cancel_delete');
-    $this->drupalGet('user/' . $recipient2->uid . '/edit');
-    $this->drupalPost(NULL, NULL, t('Cancel account'));
+    config_set('privatemsg.settings', 'user_cancel_method', 'user_cancel_delete');
+    $this->backdropGet('user/' . $recipient2->uid . '/edit');
+    $this->backdropPost(NULL, NULL, t('Cancel account'));
 
     // Confirm account cancellation.
     // Explicitly use time(), REQUEST_TIME is not exact enough.
     $timestamp = time();
-    $this->drupalPost(NULL, NULL, t('Cancel account'));
+    $this->backdropPost(NULL, NULL, t('Cancel account'));
 
     // Confirm account cancellation request.
-    $this->drupalGet("user/$recipient2->uid/cancel/confirm/$timestamp/" . user_pass_rehash($recipient2->pass, $timestamp, $recipient2->login, $recipient2->uid));
+    $this->backdropGet("user/$recipient2->uid/cancel/confirm/$timestamp/" . user_pass_rehash($recipient2->pass, $timestamp, $recipient2->login, $recipient2->uid));
 
     // Simpletest thinks that we are still logged in.
     $this->loggedInUser = NULL;
 
-    $this->drupalLogin($admin);
-    $this->drupalGet('messages/view/' . $return['message']->thread_id);
+    $this->backdropLogin($admin);
+    $this->backdropGet('messages/view/' . $return['message']->thread_id);
     $this->assertText($body1, 'First message is still displayed');
     $this->assertNoText($edit['body[value]'], t('Reply of deleted user is not displayed anymore'));
 
     // Test if admin is allowed to delete messages of other users.
-    $this->drupalGet('user/' . $author->uid . '/messages');
+    $this->backdropGet('user/' . $author->uid . '/messages');
     $this->checkThreadDelete($return['message']);
 
     // Check if user is allowed to delete messages.
-    $this->drupalLogin($author);
-    $this->drupalGet('messages');
+    $this->backdropLogin($author);
+    $this->backdropGet('messages');
     $this->checkThreadDelete($return['message']);
 
     // Check that deleting users that didn't send any message does not cause
     // errors.
-    $this->drupalLogin($dummy);
+    $this->backdropLogin($dummy);
 
     // Reload user object, don't use the cache.
     $dummy = user_load($dummy->uid, TRUE);
 
     // Attempt to cancel account.
-    $this->drupalGet('user/' . $dummy->uid . '/edit');
-    $this->drupalPost(NULL, NULL, t('Cancel account'));
+    $this->backdropGet('user/' . $dummy->uid . '/edit');
+    $this->backdropPost(NULL, NULL, t('Cancel account'));
 
     // Confirm account cancellation.
     // Explicitly use time(), REQUEST_TIME is not exact enough.
     $timestamp = time();
-    $this->drupalPost(NULL, NULL, t('Cancel account'));
+    $this->backdropPost(NULL, NULL, t('Cancel account'));
 
     // Confirm account cancellation request.
-    $this->drupalGet("user/$dummy->uid/cancel/confirm/$timestamp/" . user_pass_rehash($dummy->pass, $timestamp, $dummy->login, $dummy->uid));
+    $this->backdropGet("user/$dummy->uid/cancel/confirm/$timestamp/" . user_pass_rehash($dummy->pass, $timestamp, $dummy->login, $dummy->uid));
   }
 
   function checkThreadDelete($message) {
@@ -800,7 +800,7 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
     $delete = array(
       'list[' . $message->thread_id . ']' => 1,
     );
-    $this->drupalPost(NULL, $delete, t('Delete'));
+    $this->backdropPost(NULL, $delete, t('Delete'));
     $this->assertText(t('Deleted @count thread.', array('@count' => 1)), t('Delete message displayed.'));
     $this->assertNoText($message->subject, t('Message is not displayed anymore.'));
     $this->assertText(t('No messages available.'), t('No messages available anymore.'));
@@ -817,26 +817,26 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
    * Test preview functionality.
    */
   function testPreview() {
-    $user = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg'));
+    $user = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg'));
 
     // Enable preview button.
-    variable_set('privatemsg_display_preview_button', TRUE);
+    config_set('privatemsg.settings', 'privatemsg_display_preview_button', TRUE);
 
     $message = array(
       'recipient' => $user->name,
       'subject' => $this->randomName(),
       'body[value]' => $this->randomName(50),
     );
-    $this->drupalLogin($user);
+    $this->backdropLogin($user);
 
     // Preview message.
-    $this->drupalPost('messages/new', $message, t('Preview message'));
-    $this->assertTitle(t('Write new message to @user', array('@user' => $user->name)) . ' | Drupal', t('Correct title is displayed.'));
+    $this->backdropPost('messages/new', $message, t('Preview message'));
+    $this->assertTitle(t('Write new message to @user', array('@user' => $user->name)) . ' | Backdrop', t('Correct title is displayed.'));
     $this->assertFieldByXPath($this->buildXPathQuery('//div[@class=:class]/p', array(':class' => 'privatemsg-message-body')), $message['body[value]'], t('Message body is previewed'));
     $this->assertFieldByName('body[value]', $message['body[value]'], t('Message body field has the correct default value.'));
 
     // Send message.
-    $this->drupalPost(NULL, array(), t('Send message'));
+    $this->backdropPost(NULL, array(), t('Send message'));
     $this->assertText($message['subject'], t('Message subject is displayed.'));
     $this->assertText($message['body[value]'], t('Message body is displayed.'));
 
@@ -848,12 +848,12 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
    * Test autocomplete.
    */
   function testAutocomplete() {
-    $current = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg'));
-    $user1 = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg'));
-    $user2 = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg'));
-    $user3 = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg'));
+    $current = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg'));
+    $user1 = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg'));
+    $user2 = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg'));
+    $user3 = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg'));
 
-    $this->drupalLogin($current);
+    $this->backdropLogin($current);
 
     // Use specific names to be able to test for specific name combinations.
     user_save($current, array('name' => 'wathever'));
@@ -861,32 +861,32 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
     user_save($user2, array('name' => 'aaab'));
     user_save($user3, array('name' => 'bbbb'));
 
-    $json = $this->drupalGet('messages/autocomplete/aa');
+    $json = $this->backdropGet('messages/autocomplete/aa');
     $autocomplete = (array)json_decode($json);
     $this->assertEqual(count($autocomplete), 2, t('Autocomplete object contains two suggestions.'));
     $this->assertEqual($autocomplete['aaaa, '], 'aaaa');
     $this->assertEqual($autocomplete['aaab, '], 'aaab');
 
-    $json = $this->drupalGet('messages/autocomplete/bb');
+    $json = $this->backdropGet('messages/autocomplete/bb');
     $autocomplete = (array)json_decode($json);
     $this->assertEqual(count($autocomplete), 1, t('Autocomplete object contains one suggestion.'));
     $this->assertEqual($autocomplete['bbbb, '], 'bbbb');
 
-    $json = $this->drupalGet('messages/autocomplete/cc');
+    $json = $this->backdropGet('messages/autocomplete/cc');
     $autocomplete = (array)json_decode($json);
     $this->assertEqual(count($autocomplete), 0, t('Autocomplete object contains no suggestions.'));
 
-    $json = $this->drupalGet('messages/autocomplete/aaaa, a');
+    $json = $this->backdropGet('messages/autocomplete/aaaa, a');
     $autocomplete = (array)json_decode($json);
     $this->assertEqual(count($autocomplete), 1, t('Autocomplete object contains one suggestion.'));
     $this->assertEqual($autocomplete['aaaa, aaab, '], 'aaab');
 
     // Test XSS protection, create a username and check that the suggestion is
     // safe.
-    $user4 = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg'));
+    $user4 = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg'));
     $user4 = user_save($user4, array('name' => "<script>alert('XSS')</script>"));
 
-    $json = $this->drupalGet('messages/autocomplete/<sc');
+    $json = $this->backdropGet('messages/autocomplete/<sc');
     $autocomplete = (array)json_decode($json);
     $this->assertEqual(count($autocomplete), 1, t('Autocomplete object contains one suggestion.'));
     $this->assertEqual($autocomplete[strip_tags($user4->name) . ', '], strip_tags($user4->name));
@@ -925,10 +925,10 @@ class PrivatemsgFieldsTestCase extends PrivatemsgBaseTestCase {
   }
 
   function testSingleField() {
-    $admin = $this->drupalCreateUser(array('administer privatemsg settings', 'write privatemsg', 'read privatemsg'));
-    $user = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
+    $admin = $this->backdropCreateUser(array('administer privatemsg settings', 'write privatemsg', 'read privatemsg'));
+    $user = $this->backdropCreateUser(array('write privatemsg', 'read privatemsg'));
 
-    $this->drupalLogin($admin);
+    $this->backdropLogin($admin);
 
     // Create a new field.
     $edit = array(
@@ -937,12 +937,12 @@ class PrivatemsgFieldsTestCase extends PrivatemsgBaseTestCase {
       'fields[_add_new_field][type]' => 'text',
       'fields[_add_new_field][widget_type]' => 'text_textfield',
     );
-    $this->drupalPost('admin/config/messaging/privatemsg/fields', $edit, t('Save'));
-    $this->drupalPost(NULL, array(), t('Save field settings'));
-    $this->drupalPost(NULL, array(), t('Save settings'));
+    $this->backdropPost('admin/config/messaging/privatemsg/fields', $edit, t('Save'));
+    $this->backdropPost(NULL, array(), t('Save field settings'));
+    $this->backdropPost(NULL, array(), t('Save settings'));
 
     // Enable preview button.
-    variable_set('privatemsg_display_preview_button', TRUE);
+    config_set('privatemsg.settings', 'privatemsg_display_preview_button', TRUE);
 
     // Preview message.
     $message = array(
@@ -951,14 +951,14 @@ class PrivatemsgFieldsTestCase extends PrivatemsgBaseTestCase {
       'body[value]'    => $this->randomName(50),
       'field_' . $name . '[und][0][value]' => $this->randomName(50),
     );
-    $this->drupalPost('messages/new', $message, t('Preview message'));
+    $this->backdropPost('messages/new', $message, t('Preview message'));
 
     // Send message.
-    $this->drupalPost(NULL, array(), t('Send message'));
+    $this->backdropPost(NULL, array(), t('Send message'));
 
     // Check message.
-    $this->drupalLogin($user);
-    $this->drupalGet('messages');
+    $this->backdropLogin($user);
+    $this->backdropGet('messages');
     $this->clickLink($message['subject']);
 
     $this->assertText($message['body[value]'], t('Message body displayed.'));
@@ -969,11 +969,11 @@ class PrivatemsgFieldsTestCase extends PrivatemsgBaseTestCase {
       'body[value]' => $this->randomName(50),
       'field_' . $name . '[und][0][value]' => $this->randomName(50),
     );
-    $this->drupalPost(NULL, $response, t('Send message'));
+    $this->backdropPost(NULL, $response, t('Send message'));
 
     // Check response.
-    $this->drupalLogin($admin);
-    $this->drupalGet('messages');
+    $this->backdropLogin($admin);
+    $this->backdropGet('messages');
     $this->clickLink($message['subject']);
 
     $this->assertText($response['body[value]'], t('Message body displayed.'));
@@ -984,10 +984,10 @@ class PrivatemsgFieldsTestCase extends PrivatemsgBaseTestCase {
    * Verify that a message with an empty image can be sent.
    */
   function testEmptyImage() {
-    $admin = $this->drupalCreateUser(array('administer privatemsg settings', 'write privatemsg', 'read privatemsg'));
-    $user = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
+    $admin = $this->backdropCreateUser(array('administer privatemsg settings', 'write privatemsg', 'read privatemsg'));
+    $user = $this->backdropCreateUser(array('write privatemsg', 'read privatemsg'));
 
-    $this->drupalLogin($admin);
+    $this->backdropLogin($admin);
 
     // Create a new field.
     $edit = array(
@@ -996,12 +996,12 @@ class PrivatemsgFieldsTestCase extends PrivatemsgBaseTestCase {
       'fields[_add_new_field][type]' => 'image',
       'fields[_add_new_field][widget_type]' => 'image_image',
     );
-    $this->drupalPost('admin/config/messaging/privatemsg/fields', $edit, t('Save'));
-    $this->drupalPost(NULL, array(), t('Save field settings'));
-    $this->drupalPost(NULL, array(), t('Save settings'));
+    $this->backdropPost('admin/config/messaging/privatemsg/fields', $edit, t('Save'));
+    $this->backdropPost(NULL, array(), t('Save field settings'));
+    $this->backdropPost(NULL, array(), t('Save settings'));
 
     // Enable preview button.
-    variable_set('privatemsg_display_preview_button', TRUE);
+    config_set('privatemsg.settings', 'privatemsg_display_preview_button', TRUE);
 
     // Preview message.
     $message = array(
@@ -1009,14 +1009,14 @@ class PrivatemsgFieldsTestCase extends PrivatemsgBaseTestCase {
       'subject' => $this->randomName(),
       'body[value]'    => $this->randomName(50),
     );
-    $this->drupalPost('messages/new', $message, t('Preview message'));
+    $this->backdropPost('messages/new', $message, t('Preview message'));
 
     // Send message.
-    $this->drupalPost(NULL, array(), t('Send message'));
+    $this->backdropPost(NULL, array(), t('Send message'));
 
     // Check message.
-    $this->drupalLogin($user);
-    $this->drupalGet('messages');
+    $this->backdropLogin($user);
+    $this->backdropGet('messages');
     $this->clickLink($message['subject']);
 
     $this->assertText($message['body[value]'], t('Message body displayed.'));
@@ -1056,10 +1056,10 @@ class PrivatemsgLinksTestCase extends PrivatemsgBaseTestCase {
    * Tests author links displayed on nodes and comments.
    */
   function testAuthorLinks() {
-    $admin = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg', 'administer privatemsg settings', 'create article content', 'create page content'));
-    $user = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg'));
+    $admin = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg', 'administer privatemsg settings', 'create article content', 'create page content'));
+    $user = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg'));
 
-    $this->drupalLogin($admin);
+    $this->backdropLogin($admin);
 
     $settings = array(
       'privatemsg_display_link_self' => FALSE,
@@ -1067,49 +1067,49 @@ class PrivatemsgLinksTestCase extends PrivatemsgBaseTestCase {
       'privatemsg_display_on_teaser' => FALSE,
       'privatemsg_display_on_comments' => TRUE,
     );
-    $this->drupalPost('admin/config/messaging/privatemsg', $settings, t('Save configuration'));
+    $this->backdropPost('admin/config/messaging/privatemsg', $settings, t('Save configuration'));
 
     $node1 = array(
       'title' => $this->randomName(10),
       'body[und][0][value]' => $this->randomString(50),
     );
-    $this->drupalPost('node/add/article', $node1, t('Save'));
+    $this->backdropPost('node/add/article', $node1, t('Save'));
 
     $comment = array(
       'comment_body[und][0][value]' => $this->randomName(20),
     );
-    $this->drupalPost(NULL, $comment, t('Save'));
+    $this->backdropPost(NULL, $comment, t('Save'));
 
     $node2 = array(
       'title' => $this->randomName(),
       'body[und][0][value]' => $this->randomString(50),
     );
-    $this->drupalPost('node/add/page', $node2, t('Save'));
+    $this->backdropPost('node/add/page', $node2, t('Save'));
 
-    $this->drupalGet('node');
+    $this->backdropGet('node');
     $this->assertNoText(t('Send author a message'), t('Send author a message link not displayed.'));
     $this->clickLink($node1['title']);
     $this->assertNoText(t('Send author a message'), t('Send author a message link not displayed.'));
 
-    $this->drupalLogin($user);
-    $this->drupalGet('node');
+    $this->backdropLogin($user);
+    $this->backdropGet('node');
     $this->assertNoText(t('Send author a message'), t('Send author a message link not displayed.'));
     $this->clickLink($node1['title']);
     $this->assertNoUniqueText(t('Send author a message'), t('Send author a message link displayed.'));
 
     $this->clickLink(t('Send author a message'));
     // To field and subject should be correctly pre-filled now.
-    $this->drupalPost(NULL, array(), t('Send message'));
+    $this->backdropPost(NULL, array(), t('Send message'));
 
     // Make sure the message was sent to the correct user.
     $this->assertText(t('A message has been sent to @user', array('@user' => $admin->name)));
 
     // @todo: Do not guess nid.
-    $this->drupalGet('node/2');
+    $this->backdropGet('node/2');
     $this->assertNoText(t('Send author a message'), t('Send author a message link not displayed.'));
 
-    $this->drupalLogin($admin);
-    $this->drupalGet('messages');
+    $this->backdropLogin($admin);
+    $this->backdropGet('messages');
     $this->assertText(t('Message regarding @node', array('@node' => $node1['title'])));
   }
 
@@ -1117,26 +1117,26 @@ class PrivatemsgLinksTestCase extends PrivatemsgBaseTestCase {
    * Tests menu block.
    */
   function testMenuBlock() {
-    $admin = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg', 'administer privatemsg settings', 'administer blocks', 'administer menu'));
-    $user = $this->drupalCreateUser(array('read privatemsg'));
+    $admin = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg', 'administer privatemsg settings', 'administer blocks', 'administer menu'));
+    $user = $this->backdropCreateUser(array('read privatemsg'));
 
     // Enable block.
-    $this->drupalLogin($admin);
+    $this->backdropLogin($admin);
     $blocks = array(
       'blocks[privatemsg_privatemsg-menu][region]' => 'sidebar_second',
     );
-    $this->drupalPost('admin/structure/block', $blocks, t('Save blocks'));
+    $this->backdropPost('admin/structure/block', $blocks, t('Save blocks'));
 
     // Disable secondary menu.
     /* @todo: Not yet possible because simpletest needs a log out link to verify that the user is logged in.
     $menu_settings = array(
       'menu_secondary_links_source' => '',
     );
-    $this->drupalPost('admin/structure/menu/settings', $menu_settings, t('Save configuration'));
+    $this->backdropPost('admin/structure/menu/settings', $menu_settings, t('Save configuration'));
      *
      */
 
-    $this->drupalGet('');
+    $this->backdropGet('');
     $this->assertText(t('Private messages'), t('Privatemsg menu block title displayed.'));
     $this->assertText('Write new message', t('Write new message link displayed.'));
 
@@ -1145,9 +1145,9 @@ class PrivatemsgLinksTestCase extends PrivatemsgBaseTestCase {
       'subject' => $this->randomName(),
       'body[value]' => $this->randomName(50),
     );
-    $this->drupalPost('messages/new', $message, t('Send message'));
+    $this->backdropPost('messages/new', $message, t('Send message'));
 
-    $this->drupalLogin($user);
+    $this->backdropLogin($user);
     $this->assertNoText(t('Write new message'), t('Write new message link not displayed.'));
     $this->assertNoUniqueText(t('Messages (1 new)'), t('Messages link including new message information displayed'));
   }
@@ -1156,17 +1156,17 @@ class PrivatemsgLinksTestCase extends PrivatemsgBaseTestCase {
    * Tests menu block.
    */
   function testNewBlock() {
-    $admin = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg', 'administer privatemsg settings', 'administer blocks', 'administer menu'));
-    $user = $this->drupalCreateUser(array('read privatemsg'));
+    $admin = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg', 'administer privatemsg settings', 'administer blocks', 'administer menu'));
+    $user = $this->backdropCreateUser(array('read privatemsg'));
 
     // Enable block.
-    $this->drupalLogin($admin);
+    $this->backdropLogin($admin);
     $blocks = array(
       'blocks[privatemsg_privatemsg-new][region]' => 'sidebar_second',
     );
-    $this->drupalPost('admin/structure/block', $blocks, t('Save blocks'));
+    $this->backdropPost('admin/structure/block', $blocks, t('Save blocks'));
 
-    $this->drupalGet('');
+    $this->backdropGet('');
     $this->assertNoText(t('New message'), t('Privatemsg new block title not displayed.'));
 
     $message = array(
@@ -1174,9 +1174,9 @@ class PrivatemsgLinksTestCase extends PrivatemsgBaseTestCase {
       'subject' => $this->randomName(),
       'body[value]' => $this->randomName(50),
     );
-    $this->drupalPost('messages/new', $message, t('Send message'));
+    $this->backdropPost('messages/new', $message, t('Send message'));
 
-    $this->drupalLogin($user);
+    $this->backdropLogin($user);
     $this->assertText(t('New message'), t('Privatemsg new block title displayed.'));
 
     $this->assertText(t('You have a new message! Click here to read it.'), t('New message indication displayed.'));
@@ -1211,14 +1211,14 @@ class PrivatemsgTokenTestCase extends PrivatemsgBaseTestCase {
    * Basic token functionality.
    */
   function testBasicTokens() {
-    $author = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg', 'use tokens in privatemsg'));
-    $recipient1 = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
-    $recipient2 = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
+    $author = $this->backdropCreateUser(array('write privatemsg', 'read privatemsg', 'use tokens in privatemsg'));
+    $recipient1 = $this->backdropCreateUser(array('write privatemsg', 'read privatemsg'));
+    $recipient2 = $this->backdropCreateUser(array('write privatemsg', 'read privatemsg'));
 
-    $this->drupalLogin($author);
+    $this->backdropLogin($author);
 
     // Enable preview button.
-    variable_set('privatemsg_display_preview_button', TRUE);
+    config_set('privatemsg.settings', 'privatemsg_display_preview_button', TRUE);
 
     // Create message with tokens and preview it.
     $edit = array(
@@ -1226,7 +1226,7 @@ class PrivatemsgTokenTestCase extends PrivatemsgBaseTestCase {
       'subject'     => 'Hey [privatemsg_message:recipient:name]',
       'body[value]' => "Testing a few tokens.\n\nSubject: [privatemsg_message:subject]\n\nAuthor: [privatemsg_message:author:name]\n\nInvalid token: [privatemsg_message:invalid_token]",
     );
-    $this->drupalPost('messages/new', $edit, t('Preview message'));
+    $this->backdropPost('messages/new', $edit, t('Preview message'));
 
     // Make sure the tokens in subject and body are correctly displayed in the
     // preview.
@@ -1236,7 +1236,7 @@ class PrivatemsgTokenTestCase extends PrivatemsgBaseTestCase {
     $this->assertText('Invalid token: &lt; INVALID TOKEN [privatemsg_message:invalid_token] &gt;', t('Invalid token is displayed.'));
     $this->assertText(t('Note: Valid tokens will be replaced when a recipient is reading this message.'), t('Token notice is displayed.'));
 
-    $this->drupalPost(NULL, array(), t('Send message'));
+    $this->backdropPost(NULL, array(), t('Send message'));
 
     // Make sure the tokens in subject and body are correctly displayed in the
     // sent message.
@@ -1248,8 +1248,8 @@ class PrivatemsgTokenTestCase extends PrivatemsgBaseTestCase {
 
     // Log in as the first recipient, verify that he sees the message with the
     // replacements.
-    $this->drupalLogin($recipient1);
-    $this->drupalGet('messages');
+    $this->backdropLogin($recipient1);
+    $this->backdropGet('messages');
     $this->clickLink('Hey ' . $recipient1->name);
 
     // Make sure the tokens in subject and body are correctly displayed in the
@@ -1265,10 +1265,10 @@ class PrivatemsgTokenTestCase extends PrivatemsgBaseTestCase {
     $reply = array(
       'body[value]' => 'Response with a token [privatemsg_message:mid]',
     );
-    $this->drupalPost(NULL, $reply, t('Send message'));
+    $this->backdropPost(NULL, $reply, t('Send message'));
 
-    $this->drupalLogin($recipient2);
-    $this->drupalGet('messages');
+    $this->backdropLogin($recipient2);
+    $this->backdropGet('messages');
     $this->clickLink('Hey ' . $recipient2->name);
 
     // Make sure the tokens in subject and body are correctly displayed in the
@@ -1280,8 +1280,8 @@ class PrivatemsgTokenTestCase extends PrivatemsgBaseTestCase {
     $this->assertText('Response with a token [privatemsg_message:mid]', t('Token from recipient is not replaced.'));
     $this->assertNoText(t('Note: Valid tokens will be replaced when a recipient is reading this message.'), t('Token notice is displayed.'));
 
-    $this->drupalLogin($author);
-    $this->drupalGet('messages');
+    $this->backdropLogin($author);
+    $this->backdropGet('messages');
 
     // Assert that token is displayed in the subject for the author.
     $this->assertText('Hey &lt; Token [privatemsg_message:recipient:name] &gt;', t('Token is displayed correctly in subject for author.'));
@@ -1345,10 +1345,10 @@ class PrivatemsgAPITestCase extends PrivatemsgBaseTestCase {
   }
 
   function testPrivatemsgApiNewThread() {
-    $author     = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
-    $recipient1  = $this->drupalCreateUser(array('read privatemsg'));
-    $recipient2  = $this->drupalCreateUser(array('read privatemsg'));
-    $recipient3  = $this->drupalCreateUser(array('read privatemsg'));
+    $author     = $this->backdropCreateUser(array('write privatemsg', 'read privatemsg'));
+    $recipient1  = $this->backdropCreateUser(array('read privatemsg'));
+    $recipient2  = $this->backdropCreateUser(array('read privatemsg'));
+    $recipient3  = $this->backdropCreateUser(array('read privatemsg'));
 
     // Reset user_access cache
     user_access('', $author, TRUE);
@@ -1387,8 +1387,8 @@ class PrivatemsgAPITestCase extends PrivatemsgBaseTestCase {
     // Send a message through the api to the same user and check if it marked
     // as new.
     privatemsg_new_thread(array($author), $subject = $this->randomName(10), $this->randomString(20), array('author' => $author));
-    $this->drupalLogin($author);
-    $this->drupalGet('messages');
+    $this->backdropLogin($author);
+    $this->backdropGet('messages');
     $this->clickLink($subject);
     $this->assertText(t('New'), t('Message is marked as new'));
   }
@@ -1398,10 +1398,10 @@ class PrivatemsgAPITestCase extends PrivatemsgBaseTestCase {
   }
 
   function testPrivatemsgApiReply() {
-    $author     = $this->drupalCreateUser(array('write privatemsg'));
-    $recipient1  = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg'));
-    $recipient2  = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg'));
-    $recipient3  = $this->drupalCreateUser(array('read privatemsg'));
+    $author     = $this->backdropCreateUser(array('write privatemsg'));
+    $recipient1  = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg'));
+    $recipient2  = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg'));
+    $recipient3  = $this->backdropCreateUser(array('read privatemsg'));
 
     // Reset user_access cache
     user_access('', $author, TRUE);
@@ -1431,24 +1431,24 @@ class PrivatemsgAPITestCase extends PrivatemsgBaseTestCase {
    * Test various use cases for privatemsg_get_link().
    */
   function testGetLink() {
-    $author      = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
-    $recipient1  = $this->drupalCreateUser(array('read privatemsg'));
-    $recipient2  = $this->drupalCreateUser(array('read privatemsg'));
-    $recipient3  = $this->drupalCreateUser(array('read privatemsg', 'allow disabling privatemsg'));
-    $recipient4  = $this->drupalCreateUser();
+    $author      = $this->backdropCreateUser(array('write privatemsg', 'read privatemsg'));
+    $recipient1  = $this->backdropCreateUser(array('read privatemsg'));
+    $recipient2  = $this->backdropCreateUser(array('read privatemsg'));
+    $recipient3  = $this->backdropCreateUser(array('read privatemsg', 'allow disabling privatemsg'));
+    $recipient4  = $this->backdropCreateUser();
 
-    $this->drupalLogin($author);
+    $this->backdropLogin($author);
 
-    $this->drupalGet(privatemsg_get_link(array($recipient1)));
+    $this->backdropGet(privatemsg_get_link(array($recipient1)));
     $this->assertFieldByName('recipient', $recipient1->name . ' [user]');
 
-    $this->drupalGet(privatemsg_get_link(array($recipient1, $recipient2)));
+    $this->backdropGet(privatemsg_get_link(array($recipient1, $recipient2)));
     $this->assertFieldByName('recipient', $recipient1->name . ' [user], ' . $recipient2->name . ' [user]');
 
-    $this->drupalGet(privatemsg_get_link(array($recipient1, $recipient2), $author));
+    $this->backdropGet(privatemsg_get_link(array($recipient1, $recipient2), $author));
     $this->assertFieldByName('recipient', $recipient1->name . ' [user], ' . $recipient2->name . ' [user]');
 
-    $this->drupalGet(privatemsg_get_link(array($recipient1, $recipient2), $author, $subject = 'Str/"ang\\w3//'));
+    $this->backdropGet(privatemsg_get_link(array($recipient1, $recipient2), $author, $subject = 'Str/"ang\\w3//'));
     $this->assertFieldByName('recipient', $recipient1->name . ' [user], ' . $recipient2->name . ' [user]');
     $this->assertFieldByName('subject', $subject);
 
@@ -1460,27 +1460,27 @@ class PrivatemsgAPITestCase extends PrivatemsgBaseTestCase {
       ->execute();
     $this->assertFalse(privatemsg_get_link(array($recipient3), $author));
 
-    $this->drupalGet(privatemsg_get_link(array($recipient1, $recipient3), $author));
+    $this->backdropGet(privatemsg_get_link(array($recipient1, $recipient3), $author));
     $this->assertFieldByName('recipient', $recipient1->name . ' [user]');
 
     // Disable links to self, verify that a link is only returned when the
     // author is not the only recipient.
-    variable_set('privatemsg_display_link_self', FALSE);
+    config_set('privatemsg.settings', 'privatemsg_display_link_self', FALSE);
 
     $this->assertFalse(privatemsg_get_link(array($author), $author));
 
-    $this->drupalGet(privatemsg_get_link(array($recipient1, $author), $author));
+    $this->backdropGet(privatemsg_get_link(array($recipient1, $author), $author));
     $this->assertFieldByName('recipient', $recipient1->name . ' [user]');
 
     // Verify that link is not shown when recipient doesn't have read
     // permission.
     $this->assertFalse(privatemsg_get_link(array($recipient4), $author));
 
-    $this->drupalGet(privatemsg_get_link(array($recipient1, $recipient4), $author));
+    $this->backdropGet(privatemsg_get_link(array($recipient1, $recipient4), $author));
     $this->assertFieldByName('recipient', $recipient1->name . ' [user]');
 
     // Verify that link is not shown when author does not have write permission.
-    $this->drupalLogin($recipient1);
+    $this->backdropLogin($recipient1);
     $this->assertFalse(privatemsg_get_link(array($author), $recipient1));
   }
 }

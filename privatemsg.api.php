@@ -289,7 +289,7 @@ function hook_privatemsg_message_insert($message) {
  */
 function hook_privatemsg_message_recipient_changed($mid, $thread_id, $recipient, $type, $added) {
   if ($added && ($type == 'user' || $type == 'hidden')) {
-    privatemsg_filter_add_tags(array($thread_id), variable_get('privatemsg_filter_inbox_tag', ''), (object)array('uid' => $recipient));
+    privatemsg_filter_add_tags(array($thread_id), config_get('privatemsg.settings', 'privatemsg_filter_inbox_tag'), (object)array('uid' => $recipient));
   }
 }
 

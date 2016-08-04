@@ -1,9 +1,8 @@
 name = Privatemsg filter
 description = Allow users to filter messages using tags or other criteria.
 package = Mail
-core = 7.x
+backdrop = 1.x
+type = module
 dependencies[] = privatemsg
-files[]=privatemsg_filter.module
-files[]=privatemsg_filter.test
-configure=admin/config/messaging/privatemsg/filter
+
 

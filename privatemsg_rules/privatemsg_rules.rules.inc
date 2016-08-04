@@ -209,7 +209,7 @@ function privatemsg_rules_new($args, $element) {
   // together with the Privatemsg API because that one assumes recipient
   // objects which have additional properties like type.
   $recipient = $args['recipient'];
-  if ($recipient instanceof EntityDrupalWrapper) {
+  if ($recipient instanceof EntityBackdropWrapper) {
     $recipient = user_load($recipient->getIdentifier());
   }
 
@@ -314,7 +314,7 @@ function privatemsg_rules_reply($args, $element) {
   rules_log('Writing reply to thread %thread_id from %author', array('%thread_id' => $args['thread_id'], '%author' => $args['author']->name));
   $result = privatemsg_reply($args['thread_id'], $args['body'], $args);
   if ($result['success']) {
-    rules_log('New message sucessfully sent, !link', array('!link' => l(drupal_substr($args['body'], 0, 15), 'messages/view/' . $result['message']->thread_id)));
+    rules_log('New message sucessfully sent, !link', array('!link' => l(backdrop_substr($args['body'], 0, 15), 'messages/view/' . $result['message']->thread_id)));
   }
   else {
     foreach ($result['messages']['error'] as $message) {

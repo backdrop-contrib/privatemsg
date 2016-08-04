@@ -63,12 +63,12 @@ configure 'Write to Author' options.
     dependent on module rules
 
 
-
 ## Installation
 
 - Install this module using the official Backdrop CMS instructions at
   https://backdropcms.org/guide/modules.
 
+- Once installed there is a new item 'Messages' in the User Menu.
 
 ## License
 

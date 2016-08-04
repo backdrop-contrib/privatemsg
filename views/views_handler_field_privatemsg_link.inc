@@ -152,7 +152,7 @@ class views_handler_field_privatemsg_link extends views_handler_field {
         $options['query'] = array('destination' => $destination);
       }
       else {
-        $options['query'] = drupal_get_destination();
+        $options['query'] = backdrop_get_destination();
       }
     }
 

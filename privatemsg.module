@@ -85,8 +85,8 @@ function _privatemsg_generate_user_array($string, $slice = NULL) {
   $participants = array();
   foreach ($users as $uid) {
     // If it is an integer, it is a user id.
-    if ((int)$uid > 0) {
-    $user_ids = privatemsg_user_load_multiple(array($uid));
+    if ((int) $uid > 0) {
+      $user_ids = privatemsg_user_load_multiple(array($uid));
       if ($account = array_shift($user_ids)) {
         $participants[privatemsg_recipient_key($account)] = $account;
       }
@@ -127,7 +127,11 @@ function _privatemsg_format_participants($part_array, $limit = NULL, $no_text = 
     foreach ($part_array as $account) {
 
       // Directly address the current user.
-      if (isset($account->type) && in_array($account->type, array('hidden', 'user')) && $account->recipient == $user->uid) {
+      if (isset($account->type) && in_array($account->type, array(
+          'hidden',
+          'user'
+        )) && $account->recipient == $user->uid
+      ) {
         array_unshift($to, $no_text ? t('You', array(), array('context' => 'Dative')) : t('you', array(), array('context' => 'Dative')));
         continue;
       }
@@ -159,7 +163,10 @@ function _privatemsg_format_participants($part_array, $limit = NULL, $no_text = 
     }
     else { // Multiple participants..
       $participants = implode(', ', $to);
-      return t('Between !participants and !last', array('!participants' => $participants, '!last' => $last));
+      return t('Between !participants and !last', array(
+        '!participants' => $participants,
+        '!last' => $last
+      ));
     }
   }
   return '';
@@ -170,68 +177,68 @@ function _privatemsg_format_participants($part_array, $limit = NULL, $no_text = 
  */
 function privatemsg_menu() {
   $items['messages'] = array(
-    'title'            => 'Messages',
-    'title callback'   => 'privatemsg_title_callback',
-    'page callback'    => 'privatemsg_list_page',
-    'page arguments'   => array('list'),
-    'file'             => 'privatemsg.pages.inc',
-    'access callback'  => 'privatemsg_user_access',
-    'type'             => MENU_NORMAL_ITEM,
-    'menu_name'        => 'user-menu',
+    'title' => 'Messages',
+    'title callback' => 'privatemsg_title_callback',
+    'page callback' => 'privatemsg_list_page',
+    'page arguments' => array('list'),
+    'file' => 'privatemsg.pages.inc',
+    'access callback' => 'privatemsg_user_access',
+    'type' => MENU_NORMAL_ITEM,
+    'menu_name' => 'user-menu',
   );
   $items['messages/list'] = array(
-    'title'            => 'Messages',
-    'page callback'    => 'privatemsg_list_page',
-    'page arguments'   => array('list'),
-    'file'             => 'privatemsg.pages.inc',
-    'access callback'  => 'privatemsg_user_access',
-    'type'             => MENU_DEFAULT_LOCAL_TASK,
-    'weight'           => -10,
-    'menu_name'        => 'user-menu',
+    'title' => 'Messages',
+    'page callback' => 'privatemsg_list_page',
+    'page arguments' => array('list'),
+    'file' => 'privatemsg.pages.inc',
+    'access callback' => 'privatemsg_user_access',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+    'menu_name' => 'user-menu',
   );
   $items['messages/view/%privatemsg_thread'] = array(
     // Set the third argument to TRUE so that we can show access denied instead
     // of not found.
-    'load arguments'   => array(NULL, NULL, TRUE),
-    'title'            => 'Read message',
-    'page callback'    => 'privatemsg_view',
-    'page arguments'   => array(2),
-    'file'             => 'privatemsg.pages.inc',
-    'access callback'  => 'privatemsg_view_access',
+    'load arguments' => array(NULL, NULL, TRUE),
+    'title' => 'Read message',
+    'page callback' => 'privatemsg_view',
+    'page arguments' => array(2),
+    'file' => 'privatemsg.pages.inc',
+    'access callback' => 'privatemsg_view_access',
     'access arguments' => array(2),
-    'type'             => MENU_LOCAL_TASK,
-    'weight'           => -5,
-    'menu_name'        => 'user-menu',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -5,
+    'menu_name' => 'user-menu',
   );
   $items['messages/delete/%privatemsg_thread/%privatemsg_message'] = array(
-    'title'            => 'Delete message',
-    'page callback'    => 'drupal_get_form',
-    'page arguments'   => array('privatemsg_delete', 2, 3),
-    'file'             => 'privatemsg.pages.inc',
-    'access callback'  => 'privatemsg_user_access',
+    'title' => 'Delete message',
+    'page callback' => 'backdrop_get_form',
+    'page arguments' => array('privatemsg_delete', 2, 3),
+    'file' => 'privatemsg.pages.inc',
+    'access callback' => 'privatemsg_user_access',
     'access arguments' => array('delete privatemsg'),
-    'type'             => MENU_CALLBACK,
-    'weight'           => -10,
-    'menu_name'        => 'user-menu',
+    'type' => MENU_CALLBACK,
+    'weight' => -10,
+    'menu_name' => 'user-menu',
   );
   $items['messages/new'] = array(
-    'title'            => 'Write new message',
-    'page callback'    => 'drupal_get_form',
-    'page arguments'   => array('privatemsg_new', 2, 3, NULL),
-    'file'             => 'privatemsg.pages.inc',
-    'access callback'  => 'privatemsg_user_access',
+    'title' => 'Write new message',
+    'page callback' => 'backdrop_get_form',
+    'page arguments' => array('privatemsg_new', 2, 3, NULL),
+    'file' => 'privatemsg.pages.inc',
+    'access callback' => 'privatemsg_user_access',
     'access arguments' => array('write privatemsg'),
-    'type'             => MENU_LOCAL_ACTION,
-    'weight'           => -3,
-    'menu_name'        => 'user-menu',
+    'type' => MENU_LOCAL_ACTION,
+    'weight' => -3,
+    'menu_name' => 'user-menu',
   );
   // Auto-completes available user names & removes duplicates.
   $items['messages/autocomplete'] = array(
-    'page callback'    => 'privatemsg_autocomplete',
-    'file'             => 'privatemsg.pages.inc',
-    'access callback'  => 'privatemsg_user_access',
+    'page callback' => 'privatemsg_autocomplete',
+    'file' => 'privatemsg.pages.inc',
+    'access callback' => 'privatemsg_user_access',
     'access arguments' => array('write privatemsg'),
-    'type'             => MENU_CALLBACK,
+    'type' => MENU_CALLBACK,
   );
   $items['admin/config/messaging'] = array(
     'title' => 'Messaging',
@@ -239,42 +246,42 @@ function privatemsg_menu() {
     'page callback' => 'system_admin_menu_block_page',
     'access arguments' => array('access administration pages'),
     'file' => 'system.admin.inc',
-    'file path' => drupal_get_path('module', 'system'),
+    'file path' => backdrop_get_path('module', 'system'),
   );
   $items['admin/config/messaging/privatemsg'] = array(
-    'title'            => 'Private message settings',
-    'description'      => 'Configure private messaging settings.',
-    'page callback'    => 'drupal_get_form',
-    'page arguments'   => array('privatemsg_admin_settings'),
-    'file'             => 'privatemsg.admin.inc',
+    'title' => 'Private message settings',
+    'description' => 'Configure private messaging settings.',
+    'page callback' => 'backdrop_get_form',
+    'page arguments' => array('privatemsg_admin_settings'),
+    'file' => 'privatemsg.admin.inc',
     'access arguments' => array('administer privatemsg settings'),
-    'type'             => MENU_NORMAL_ITEM,
+    'type' => MENU_NORMAL_ITEM,
   );
   $items['admin/config/messaging/privatemsg/settings'] = array(
-    'title'            => 'Private message settings',
-    'description'      => 'Configure private messaging settings.',
-    'page callback'    => 'drupal_get_form',
-    'page arguments'   => array('privatemsg_admin_settings'),
-    'file'             => 'privatemsg.admin.inc',
+    'title' => 'Private message settings',
+    'description' => 'Configure private messaging settings.',
+    'page callback' => 'backdrop_get_form',
+    'page arguments' => array('privatemsg_admin_settings'),
+    'file' => 'privatemsg.admin.inc',
     'access arguments' => array('administer privatemsg settings'),
-    'type'             => MENU_DEFAULT_LOCAL_TASK,
-    'weight'           => -10,
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
   );
   $items['messages/undo/action'] = array(
-    'title'            => 'Private messages',
-    'description'      => 'Undo last thread action',
-    'page callback'    => 'privatemsg_undo_action',
-    'file'             => 'privatemsg.pages.inc',
+    'title' => 'Private messages',
+    'description' => 'Undo last thread action',
+    'page callback' => 'privatemsg_undo_action',
+    'file' => 'privatemsg.pages.inc',
     'access arguments' => array('read privatemsg'),
-    'type'             => MENU_CALLBACK,
-    'menu'             => 'user-menu',
+    'type' => MENU_CALLBACK,
+    'menu' => 'user-menu',
   );
   $items['user/%/messages'] = array(
     'title' => 'Messages',
-    'page callback'    => 'privatemsg_list_page',
-    'page arguments'   => array('list', 1),
-    'file'             => 'privatemsg.pages.inc',
-    'access callback'  => 'privatemsg_user_access',
+    'page callback' => 'privatemsg_list_page',
+    'page arguments' => array('list', 1),
+    'file' => 'privatemsg.pages.inc',
+    'access callback' => 'privatemsg_user_access',
     'access arguments' => array('read all private messages'),
     'type' => MENU_LOCAL_TASK,
   );
@@ -290,14 +297,14 @@ function privatemsg_menu_local_tasks_alter(&$data, $router_item, $root_path) {
   $add_to_array = array('messages/list', 'messages/inbox', 'messages/sent');
   foreach ($add_to_array as $add_to) {
     if (strpos($root_path, $add_to) !== FALSE) {
-    $item = menu_get_item('messages/new');
-    if ($item['access']) {
-      $data['actions']['output'][] = array(
-        '#theme' => 'menu_local_action',
-        '#link' => $item,
-      );
-    }
-    break;
+      $item = menu_get_item('messages/new');
+      if ($item['access']) {
+        $data['actions']['output'][] = array(
+          '#theme' => 'menu_local_action',
+          '#link' => $item,
+        );
+      }
+      break;
     }
   }
 }
@@ -317,17 +324,17 @@ function privatemsg_menu_local_tasks_alter(&$data, $router_item, $root_path) {
  */
 function privatemsg_user_access($permission = 'read privatemsg', $account = NULL) {
   static $disabled_displayed = FALSE;
-  if ( $account === NULL ) {
+  if ($account === NULL) {
     global $user;
     $account = $user;
   }
   if (!$account->uid) { // Disallow anonymous access, regardless of permissions
     return FALSE;
   }
-  if (privatemsg_is_disabled($account) && ($permission == 'write privatemsg') ) {
-    if (arg(0) == 'messages' && variable_get('privatemsg_display_disabled_message', TRUE) && !$disabled_displayed) {
+  if (privatemsg_is_disabled($account) && ($permission == 'write privatemsg')) {
+    if (arg(0) == 'messages' && config_get('privatemsg.settings', 'privatemsg_display_disabled_message') && !$disabled_displayed) {
       $disabled_displayed = TRUE;
-      drupal_set_message(t('You have disabled Privatemsg and are not allowed to write messages. Go to your <a href="@settings_url">Account settings</a> to enable it again.', array('@settings_url' => url('user/' . $account->uid . '/edit'))), 'warning');
+      backdrop_set_message(t('You have disabled Privatemsg and are not allowed to write messages. Go to your <a href="@settings_url">Account settings</a> to enable it again.', array('@settings_url' => url('user/' . $account->uid . '/edit'))), 'warning');
     }
     return FALSE;
   }
@@ -376,7 +383,7 @@ function privatemsg_is_disabled($account) {
   if (!isset($account->privatemsg_disabled)) {
     // Make sure we have a fully loaded user object and try to load it if not.
     if ((!empty($account->roles) || $account = user_load($account->uid)) && user_access('allow disabling privatemsg', $account)) {
-      $account->privatemsg_disabled = (bool)db_query('SELECT 1 FROM {pm_disable} WHERE uid = :uid ', array(':uid' => $account->uid))->fetchField();
+      $account->privatemsg_disabled = (bool) db_query('SELECT 1 FROM {pm_disable} WHERE uid = :uid ', array(':uid' => $account->uid))->fetchField();
     }
     else {
       $account->privatemsg_disabled = FALSE;
@@ -411,12 +418,11 @@ function privatemsg_is_disabled($account) {
  *
  *   If no messages are found, or the thread_id is invalid, the function returns
  *   FALSE.
-
  * @ingroup api
  */
 function privatemsg_thread_load($thread_id, $account = NULL, $start = NULL, $useAccessDenied = FALSE) {
-  $threads = &drupal_static(__FUNCTION__, array());
-  $thread_id = (int)$thread_id;
+  $threads = &backdrop_static(__FUNCTION__, array());
+  $thread_id = (int) $thread_id;
   if ($thread_id > 0) {
     $thread = array('thread_id' => $thread_id);
 
@@ -445,21 +451,22 @@ function privatemsg_thread_load($thread_id, $account = NULL, $start = NULL, $use
       // existing GROUP BY statements.
       $countQuery = db_select($query);
       $countQuery->addExpression('COUNT(*)');
-      $thread['message_count'] = $thread['to'] = $countQuery->execute()->fetchField();
+      $thread['message_count'] = $thread['to'] = $countQuery->execute()
+        ->fetchField();
       $thread['from'] = 1;
       // Check if we need to limit the messages.
-      $max_amount = variable_get('privatemsg_view_max_amount', 20);
+      $max_amount = config_get('privatemsg.settings', 'privatemsg_view_max_amount');
 
       // If there is no start value, select based on get params.
       if (is_null($start)) {
         if (isset($_GET['start']) && $_GET['start'] < $thread['message_count']) {
           $start = $_GET['start'];
         }
-        elseif (!variable_get('privatemsg_view_use_max_as_default', FALSE) && $max_amount == PRIVATEMSG_UNLIMITED) {
+        elseif (!config_get('privatemsg.settings', 'privatemsg_view_use_max_as_default') && $max_amount == PRIVATEMSG_UNLIMITED) {
           $start = PRIVATEMSG_UNLIMITED;
         }
         else {
-          $start = $thread['message_count'] - (variable_get('privatemsg_view_use_max_as_default', FALSE) ? variable_get('privatemsg_view_default_amount', 10) : $max_amount);
+          $start = $thread['message_count'] - (config_get('privatemsg.settings', 'privatemsg_view_use_max_as_default') ? config_get('privatemsg.settings', 'privatemsg_view_default_amount') : $max_amount);
         }
       }
 
@@ -472,7 +479,7 @@ function privatemsg_thread_load($thread_id, $account = NULL, $start = NULL, $use
           // Calculate the number of messages on the "last" page to avoid
           // message overlap.
           // Note - the last page lists the earliest messages, not the latest.
-          $paging_count = variable_get('privatemsg_view_use_max_as_default', FALSE) ? $thread['message_count'] - variable_get('privatemsg_view_default_amount', 10) : $thread['message_count'];
+          $paging_count = config_get('privatemsg.settings', 'privatemsg_view_use_max_as_default') ? $thread['message_count'] - config_get('privatemsg.settings', 'privatemsg_view_default_amount') : $thread['message_count'];
           $last_page = $paging_count % $max_amount;
         }
 
@@ -511,7 +518,8 @@ function privatemsg_thread_load($thread_id, $account = NULL, $start = NULL, $use
       if (!$thread['read_all']) {
         $conditions['account'] = $account;
       }
-      $thread['messages'] = privatemsg_message_load_multiple($query->execute()->fetchCol(), $conditions);
+      $thread['messages'] = privatemsg_message_load_multiple($query->execute()
+        ->fetchCol(), $conditions);
 
       // If there are no messages, don't allow access to the thread.
       if (empty($thread['messages'])) {
@@ -534,7 +542,10 @@ function privatemsg_thread_load($thread_id, $account = NULL, $start = NULL, $use
         $message = current($thread['messages']);
         $thread['subject'] = $thread['subject-original'] = $message->subject;
         if ($message->has_tokens) {
-          $thread['subject'] = privatemsg_token_replace($thread['subject'], array('privatemsg_message' => $message), array('sanitize' => TRUE, 'privatemsg-show-span' => FALSE));
+          $thread['subject'] = privatemsg_token_replace($thread['subject'], array('privatemsg_message' => $message), array(
+            'sanitize' => TRUE,
+            'privatemsg-show-span' => FALSE
+          ));
         }
       }
       $threads[$account->uid][$thread_id] = $thread;
@@ -569,8 +580,8 @@ function privatemsg_privatemsg_view_template() {
  * old enough are flushed.
  */
 function privatemsg_cron() {
-  if (variable_get('privatemsg_flush_enabled', FALSE)) {
-    $query = _privatemsg_assemble_query('deleted', variable_get('privatemsg_flush_days', 30), variable_get('privatemsg_flush_max', 200));
+  if (config_get('privatemsg.settings', 'privatemsg_flush_enabled')) {
+    $query = _privatemsg_assemble_query('deleted', config_get('privatemsg.settings', 'privatemsg_flush_days'), config_get('privatemsg.settings', 'privatemsg_flush_max'));
 
     foreach ($query->execute()->fetchCol() as $mid) {
       $message = privatemsg_message_load($mid);
@@ -588,8 +599,8 @@ function privatemsg_cron() {
   }
 
   // Number of user ids to process for this cron run.
-  $total_remaining = variable_get('privatemgs_cron_recipient_per_run', 1000);
-  $current_process = variable_get('privatemsg_cron_recipient_process', array());
+  $total_remaining = config_get('privatemsg.settings', 'privatemsg_cron_recipient_per_run');
+  $current_process = config_get('privatemsg.settings', 'privatemsg_cron_recipient_process');
 
   // Instead of doing the order by in the database, which can be slow, we load
   // all results and the do the handling there. Additionally, explicitly specify
@@ -654,15 +665,15 @@ function privatemsg_cron() {
         ->execute();
       // Reset current process if necessary.
       if ($offset > 0) {
-        variable_set('privatemsg_cron_recipient_process', array());
+        config_set('privatemsg.settings', 'privatemsg_cron_recipient_process', array());
       }
     }
     else {
       // We are not yet finished, save current process and break.
       $existing_offset = isset($current_process['offset']) ? $current_process['offset'] : 0;
-      $current_process = (array)$row;
+      $current_process = (array) $row;
       $current_process['offset'] = $existing_offset + count($uids);
-      variable_set('privatemsg_cron_recipient_process', $current_process);
+      config_set('privatemsg.settings', 'privatemsg_cron_recipient_process', $current_process);
       break;
     }
   }
@@ -670,50 +681,51 @@ function privatemsg_cron() {
 
 function privatemsg_theme() {
   $templates = array(
-    'privatemsg_view'    => array(
-      'variables'        => array('message' => NULL),
-      'template'         => variable_get('private_message_view_template', 'privatemsg-view'), // 'privatemsg',
+    'privatemsg_view' => array(
+      'variables' => array('message' => NULL),
+      'template' => config_get('privatemsg.settings', 'private_message_view_template'),
+      // 'privatemsg',
     ),
-    'privatemsg_from'    => array(
-      'variables'        => array('author' => NULL),
-      'template'         => 'privatemsg-from',
+    'privatemsg_from' => array(
+      'variables' => array('author' => NULL),
+      'template' => 'privatemsg-from',
     ),
     'privatemsg_recipients' => array(
-      'variables'        => array('message' => NULL),
-      'template'         => 'privatemsg-recipients',
+      'variables' => array('message' => NULL),
+      'template' => 'privatemsg-recipients',
     ),
     'privatemsg_between' => array(
-      'variables'        => array('recipients' => NULL),
-      'template'         => 'privatemsg-between',
+      'variables' => array('recipients' => NULL),
+      'template' => 'privatemsg-between',
     ),
     // Define pattern for header/field templates. The theme system will register all
     // theme functions that start with the defined pattern.
-    'privatemsg_list_header'  => array(
-      'file'                  => 'privatemsg.theme.inc',
-      'path'                  => drupal_get_path('module', 'privatemsg'),
-      'pattern'               => 'privatemsg_list_header__',
-      'variables'             => array(),
+    'privatemsg_list_header' => array(
+      'file' => 'privatemsg.theme.inc',
+      'path' => backdrop_get_path('module', 'privatemsg'),
+      'pattern' => 'privatemsg_list_header__',
+      'variables' => array(),
     ),
-    'privatemsg_list_field'   => array(
-      'file'                  => 'privatemsg.theme.inc',
-      'path'                  => drupal_get_path('module', 'privatemsg'),
-      'pattern'               => 'privatemsg_list_field__',
-      'variables'             => array('thread' => array()),
+    'privatemsg_list_field' => array(
+      'file' => 'privatemsg.theme.inc',
+      'path' => backdrop_get_path('module', 'privatemsg'),
+      'pattern' => 'privatemsg_list_field__',
+      'variables' => array('thread' => array()),
     ),
-    'privatemsg_new_block'  => array(
-      'file'                  => 'privatemsg.theme.inc',
-      'path'                  => drupal_get_path('module', 'privatemsg'),
-      'variables'             => array('count'),
+    'privatemsg_new_block' => array(
+      'file' => 'privatemsg.theme.inc',
+      'path' => backdrop_get_path('module', 'privatemsg'),
+      'variables' => array('count'),
     ),
-    'privatemsg_username'  => array(
-      'file'                  => 'privatemsg.theme.inc',
-      'path'                  => drupal_get_path('module', 'privatemsg'),
-      'variables'             => array('recipient' => NULL, 'options' => array()),
+    'privatemsg_username' => array(
+      'file' => 'privatemsg.theme.inc',
+      'path' => backdrop_get_path('module', 'privatemsg'),
+      'variables' => array('recipient' => NULL, 'options' => array()),
     ),
   );
   // Include the theme file to load the theme suggestions.
   module_load_include('inc', 'privatemsg', 'privatemsg.theme');
-  $templates += drupal_find_theme_functions($templates, array('theme'));
+  $templates += backdrop_find_theme_functions($templates, array('theme'));
   return $templates;
 }
 
@@ -745,7 +757,10 @@ function template_preprocess_privatemsg_view(&$vars) {
   if ($message->has_tokens) {
     // Replace tokens including option to add a notice if the user is not a
     // recipient.
-    $message->content['body']['#markup'] = privatemsg_token_replace($message->content['body']['#markup'], array('privatemsg_message' => $message), array('privatemsg-token-notice' => TRUE, 'sanitize' => TRUE));
+    $message->content['body']['#markup'] = privatemsg_token_replace($message->content['body']['#markup'], array('privatemsg_message' => $message), array(
+      'privatemsg-token-notice' => TRUE,
+      'sanitize' => TRUE
+    ));
   }
 
   // Build fields content.
@@ -753,20 +768,32 @@ function template_preprocess_privatemsg_view(&$vars) {
   $message->content += field_attach_view('privatemsg_message', $message, 'message');
 
   // Render message body.
-  $vars['message_body'] =  drupal_render($message->content);
+  $vars['message_body'] = backdrop_render($message->content);
   if (isset($vars['mid']) && isset($vars['thread_id']) && privatemsg_user_access('delete privatemsg')) {
-    $vars['message_actions'][] = array('title' => t('Delete'), 'href' => 'messages/delete/' . $vars['thread_id'] . '/' . $vars['mid']);
+    $vars['message_actions'][] = array(
+      'title' => t('Delete'),
+      'href' => 'messages/delete/' . $vars['thread_id'] . '/' . $vars['mid']
+    );
   }
   $vars['message_anchors'][] = 'privatemsg-mid-' . $vars['mid'];
   if (!empty($message->is_new)) {
     $vars['message_anchors'][] = 'new';
-    $vars['new'] = drupal_ucfirst(t('new'));
+    $vars['new'] = backdrop_ucfirst(t('new'));
   }
 
   // call hook_privatemsg_message_view_alter
-  drupal_alter('privatemsg_message_view', $vars);
+  backdrop_alter('privatemsg_message_view', $vars);
 
-  $vars['message_actions'] = !empty($vars['message_actions']) ? theme('links', array('links' => $vars['message_actions'], 'attributes' => array('class' => array('privatemsg-message-actions', 'links', 'inline')))) : '';
+  $vars['message_actions'] = !empty($vars['message_actions']) ? theme('links', array(
+    'links' => $vars['message_actions'],
+    'attributes' => array(
+      'class' => array(
+        'privatemsg-message-actions',
+        'links',
+        'inline'
+      )
+    )
+  )) : '';
 
   $vars['anchors'] = '';
   foreach ($vars['message_anchors'] as $anchor) {
@@ -816,7 +843,7 @@ function privatemsg_message_change_status($pmid, $status, $account = NULL) {
  * @ingroup api
  */
 function privatemsg_unread_count($account = NULL) {
-  $counts = &drupal_static(__FUNCTION__, array());
+  $counts = &backdrop_static(__FUNCTION__, array());
   if (!$account || $account->uid == 0) {
     global $user;
     $account = $user;
@@ -945,7 +972,7 @@ function _privatemsg_parse_userstring($input, $types_limitations = array()) {
       }
 
       // Allow modules to alter the found matches.
-      drupal_alter('privatemsg_name_lookup_matches', $matches, $string);
+      backdrop_alter('privatemsg_name_lookup_matches', $matches, $string);
 
       // Check if there are any matches.
       $number_of_matches = count($matches);
@@ -1011,7 +1038,9 @@ function privatemsg_privatemsg_name_lookup($string) {
  * @see hook_query_privatemsg_list_alter()
  */
 function privatemsg_sql_list($account, $argument = 'list') {
-  $query = db_select('pm_message', 'pm')->extend('TableSort')->extend('PagerDefault');
+  $query = db_select('pm_message', 'pm')
+    ->extend('TableSort')
+    ->extend('PagerDefault');
   $query->join('pm_index', 'pmi', 'pm.mid = pmi.mid');
 
   // Create count query;
@@ -1033,7 +1062,7 @@ function privatemsg_sql_list($account, $argument = 'list') {
   $query->addExpression('SUM(pmi.is_new)', 'is_new');
 
   // Load enabled columns
-  $fields = array_filter(variable_get('privatemsg_display_fields', array('participants')));
+  $fields = array_filter(config_get('privatemsg.settings', 'privatemsg_display_fields'));
 
   if (in_array('count', $fields)) {
     // We only want the distinct number of messages in this thread.
@@ -1060,8 +1089,11 @@ function privatemsg_sql_list($account, $argument = 'list') {
     ->condition('pmi.type', array('hidden', 'user'))
     ->condition('pmi.deleted', 0)
     ->groupBy('pmi.thread_id')
-    ->orderByHeader(_privatemsg_list_headers(array_merge(array('subject', 'last_updated'), $fields)))
-    ->limit(variable_get('privatemsg_per_page', 25));
+    ->orderByHeader(_privatemsg_list_headers(array_merge(array(
+      'subject',
+      'last_updated'
+    ), $fields)))
+    ->limit(config_get('privatemsg.settings', 'privatemsg_per_page'));
 }
 
 /**
@@ -1127,7 +1159,7 @@ function privatemsg_sql_participants($thread_id, $account = NULL) {
       ->condition(db_and()
         ->condition('pmi.type', 'hidden')
         ->condition('pmi.recipient', $account->uid)
-    ));
+      ));
 
     // Only load recipients of messages which are visible for that user.
     $query->where('(SELECT 1 FROM {pm_index} pmiu WHERE pmi.mid = pmiu.mid AND pmiu.recipient = :recipient LIMIT 1) = 1', array(':recipient' => $account->uid));
@@ -1215,14 +1247,14 @@ function privatemsg_sql_deleted($days, $max) {
  * Implements hook_user_view().
  */
 function privatemsg_user_view($account) {
-  if (($url = privatemsg_get_link(array($account))) && variable_get('privatemsg_display_profile_links', 1)) {
+  if (($url = privatemsg_get_link(array($account))) && config_get('privatemsg.settings', 'privatemsg_display_profile_links')) {
     $account->content['privatemsg_send_new_message'] = array(
-      '#type'   => 'link',
-      '#title'  => t('Send this user a private message'),
-      '#href'  => $url,
+      '#type' => 'link',
+      '#title' => t('Send this user a private message'),
+      '#href' => $url,
       '#weight' => 10,
       '#options' => array(
-        'query' => drupal_get_destination(),
+        'query' => backdrop_get_destination(),
         'title' => t('Send this user a private message'),
         'attributes' => array('class' => 'privatemsg-send-link privatemsg-send-link-profile'),
       ),
@@ -1234,10 +1266,10 @@ function privatemsg_user_view($account) {
  * Implements hook_user_login().
  */
 function privatemsg_user_login(&$edit, $account) {
-  if (variable_get('privatemsg_display_loginmessage', TRUE) && privatemsg_user_access()) {
+  if (config_get('privatemsg.settings', 'privatemsg_display_loginmessage') && privatemsg_user_access()) {
     $count = privatemsg_unread_count();
     if ($count) {
-      drupal_set_message(format_plural($count, 'You have <a href="@messages">1 unread message</a>.', 'You have <a href="@messages">@count unread messages</a>', array('@messages' => url('messages'))));
+      backdrop_set_message(format_plural($count, 'You have <a href="@messages">1 unread message</a>.', 'You have <a href="@messages">@count unread messages</a>', array('@messages' => url('messages'))));
     }
   }
 }
@@ -1419,12 +1451,12 @@ function privatemsg_privatemsg_block_message($author, $recipients, $context = ar
 function privatemsg_block_info() {
   $blocks = array();
   $blocks['privatemsg-menu'] = array(
-      'info' => t('Privatemsg links'),
-      'cache' => DRUPAL_NO_CACHE,
+    'info' => t('Privatemsg links'),
+    'cache' => BACKDROP_NO_CACHE,
   );
   $blocks['privatemsg-new'] = array(
-      'info' => t('New message indication'),
-      'cache' => DRUPAL_NO_CACHE,
+    'info' => t('New message indication'),
+    'cache' => BACKDROP_NO_CACHE,
   );
 
   return $blocks;
@@ -1454,7 +1486,7 @@ function privatemsg_block_configure($delta = '') {
     $form['notification'] = array(
       '#type' => 'checkbox',
       '#title' => t('Display block when there are no new messages'),
-      '#default_value' => variable_get('privatemsg_no_messages_notification', 0),
+      '#default_value' => config_get('privatemsg.settings', 'privatemsg_no_messages_notification'),
       '#description' => t('Enable this to have this block always displayed, even if there are no new messages'),
     );
     return $form;
@@ -1466,7 +1498,7 @@ function privatemsg_block_configure($delta = '') {
  */
 function privatemsg_block_save($delta = '', $edit = array()) {
   if ($delta == 'privatemsg-new') {
-    variable_set('privatemsg_no_messages_notification', $edit['notification']);
+    config_set('privatemsg.settings', 'privatemsg_no_messages_notification', $edit['notification']);
   }
 }
 
@@ -1488,7 +1520,7 @@ function _privatemsg_block_new() {
   }
 
   $count = privatemsg_unread_count();
-  if ($count || variable_get('privatemsg_no_messages_notification', 0)) {
+  if ($count || config_get('privatemsg.settings', 'privatemsg_no_messages_notification')) {
     $block = array(
       'subject' => $count ? format_plural($count, 'New message', 'New messages') : t('No new messages'),
       'content' => theme('privatemsg_new_block', array('count' => $count)),
@@ -1505,7 +1537,7 @@ function _privatemsg_block_menu() {
   if (privatemsg_user_access('write privatemsg')) {
     $links[] = l(t('Write new message'), 'messages/new');
   }
-  if (privatemsg_user_access('read privatemsg') || privatemsg_user_access('read all private messages') ) {
+  if (privatemsg_user_access('read privatemsg') || privatemsg_user_access('read all private messages')) {
     $links[] = l(privatemsg_title_callback(), 'messages');
   }
   if (count($links)) {
@@ -1580,9 +1612,9 @@ function privatemsg_message_change_delete($pmid, $delete, $account = NULL) {
  *   as well as ['success'] is TRUE.
  *
  *   Example:
- *   @code
+ * @code
  *   array('error' => array('A error message'))
- *   @endcode
+ * @endcode
  *
  * @ingroup api
  */
@@ -1590,7 +1622,7 @@ function privatemsg_new_thread($recipients, $subject, $body = NULL, $options = a
   global $user;
   $author = clone $user;
 
-  $message = (object)$options;
+  $message = (object) $options;
   $message->subject = $subject;
   $message->body = $body;
   // Make sure that recipients are keyed correctly and are not added
@@ -1652,9 +1684,9 @@ function privatemsg_new_thread($recipients, $subject, $body = NULL, $options = a
  *   as well as ['success'] is TRUE.
  *
  *   Example messages values:
- *   @code
+ * @code
  *   array('error' => array('A error message'))
- *   @endcode
+ * @endcode
  *
  * @ingroup api
  */
@@ -1662,7 +1694,7 @@ function privatemsg_reply($thread_id, $body, $options = array()) {
   global $user;
   $author = clone $user;
 
-  $message = (object)$options;
+  $message = (object) $options;
   $message->body = $body;
 
   // Apply defaults - this will not overwrite existing keys.
@@ -1681,8 +1713,8 @@ function privatemsg_reply($thread_id, $body, $options = array()) {
   $first_message = privatemsg_message_load($thread_id, $message->author);
   if (!$first_message) {
     return array(
-      'success'  => FALSE,
-      'messages'   => array('error' => array(t('Thread %thread_id not found, unable to answer', array('%thread_id' => $thread_id)))),
+      'success' => FALSE,
+      'messages' => array('error' => array(t('Thread %thread_id not found, unable to answer', array('%thread_id' => $thread_id)))),
     );
   }
 
@@ -1707,15 +1739,15 @@ function _privatemsg_validate_message(&$message, $form = FALSE) {
     if ($form) {
       form_set_error('author', t('You are not allowed to write messages.'));
       return array(
-        'success'  => FALSE,
-        'messages'   => $messages,
+        'success' => FALSE,
+        'messages' => $messages,
       );
     }
     else {
       $messages['error'][] = t('@user is not allowed to write messages.', array('@user' => privatemsg_recipient_format($message->author, array('plain' => TRUE))));
       return array(
-         'success'  => FALSE,
-         'messages'   => $messages,
+        'success' => FALSE,
+        'messages' => $messages,
       );
     }
   }
@@ -1732,7 +1764,7 @@ function _privatemsg_validate_message(&$message, $form = FALSE) {
   }
 
   // Don't allow replies without a body.
-  if (!empty($message->thread_id) && ($message->body === NULL || $message->body === '') ) {
+  if (!empty($message->thread_id) && ($message->body === NULL || $message->body === '')) {
     if ($form) {
       form_set_error('body', t('You must include a message in your reply.'));
     }
@@ -1761,10 +1793,10 @@ function _privatemsg_validate_message(&$message, $form = FALSE) {
   }
 
   if (!empty($message->recipients) && is_array($message->recipients)) {
-    foreach (module_invoke_all('privatemsg_block_message', $message->author, $message->recipients, (array)$message) as $blocked) {
+    foreach (module_invoke_all('privatemsg_block_message', $message->author, $message->recipients, (array) $message) as $blocked) {
       unset($message->recipients[$blocked['recipient']]);
       if ($form) {
-        drupal_set_message($blocked['message'], 'warning');
+        backdrop_set_message($blocked['message'], 'warning');
       }
       else {
         $messages['warning'][] = $blocked['message'];
@@ -1788,10 +1820,10 @@ function _privatemsg_validate_message(&$message, $form = FALSE) {
   $messages = array_merge_recursive(module_invoke_all('privatemsg_message_validate', $message, $form), $messages);
 
   // Check if there are errors in $messages or if $form is TRUE, there are form errors.
-  $success = empty($messages['error']) || ($form && count((array)form_get_errors()) > 0);
+  $success = empty($messages['error']) || ($form && count((array) form_get_errors()) > 0);
   return array(
-    'success'  => $success,
-    'messages'   => $messages,
+    'success' => $success,
+    'messages' => $messages,
   );
 }
 
@@ -1809,10 +1841,17 @@ function _privatemsg_validate_message(&$message, $form = FALSE) {
 function _privatemsg_send($message) {
   $transaction = db_transaction();
   try {
-    drupal_alter('privatemsg_message_presave', $message);
+    backdrop_alter('privatemsg_message_presave', $message);
     field_attach_presave('privatemsg_message', $message);
 
-    $query = db_insert('pm_index')->fields(array('mid', 'thread_id', 'recipient', 'type', 'is_new', 'deleted'));
+    $query = db_insert('pm_index')->fields(array(
+      'mid',
+      'thread_id',
+      'recipient',
+      'type',
+      'is_new',
+      'deleted'
+    ));
     if (isset($message->read_all) && $message->read_all && isset($message->thread_id)) {
       // The message was sent in read all mode, add the author as recipient to all
       // existing messages.
@@ -1836,7 +1875,7 @@ function _privatemsg_send($message) {
     $args['body'] = $message->body;
     $args['format'] = $message->format;
     $args['timestamp'] = $message->timestamp;
-    $args['has_tokens'] = (int)$message->has_tokens;
+    $args['has_tokens'] = (int) $message->has_tokens;
     $mid = db_insert('pm_message')
       ->fields($args)
       ->execute();
@@ -1922,7 +1961,7 @@ function privatemsg_get_link($recipients, $account = array(), $subject = NULL) {
     if (!privatemsg_user_access('read privatemsg', $recipient)) {
       continue;
     }
-    if (variable_get('privatemsg_display_link_self', TRUE) == FALSE && $account->uid == $recipient->uid) {
+    if (config_get('privatemsg.settings', 'privatemsg_display_link_self') == FALSE && $account->uid == $recipient->uid) {
       continue;
     }
     if (count(module_invoke_all('privatemsg_block_message', $account, array(privatemsg_recipient_key($recipient) => $recipient))) > 0) {
@@ -1956,7 +1995,7 @@ function privatemsg_get_link($recipients, $account = array(), $subject = NULL) {
 function privatemsg_message_load($pmid, $account = NULL) {
   // If $pmid is object or array - do nothing
   // (fixing conflict with message_load() function in message module).
-  if(is_array($pmid) || is_object($pmid)) {
+  if (is_array($pmid) || is_object($pmid)) {
     return NULL;
   }
   $conditions = array();
@@ -2015,12 +2054,12 @@ function _privatemsg_assemble_query($query) {
    */
   $args = func_get_args();
   unset($args[0]);
-  // We do the merge because we call call_user_func_array and not drupal_alter.
+  // We do the merge because we call call_user_func_array and not backdrop_alter.
   // This is necessary because otherwise we would not be able to use $args
   // correctly (otherwise it doesn't unfold).
   $query_function = $query_group . '_sql_' . $query_id;
   if (!function_exists($query_function)) {
-    drupal_set_message(t('Query function %function does not exist', array('%function' => $query_function)), 'error');
+    backdrop_set_message(t('Query function %function does not exist', array('%function' => $query_function)), 'error');
     return FALSE;
   }
   $query = call_user_func_array($query_function, $args);
@@ -2078,12 +2117,13 @@ function privatemsg_thread_change_status($threads, $status, $account = NULL) {
   }
 
   if ($status == PRIVATEMSG_UNREAD) {
-    drupal_set_message(format_plural(count($threads), 'Marked 1 thread as unread.', 'Marked @count threads as unread.'));
+    backdrop_set_message(format_plural(count($threads), 'Marked 1 thread as unread.', 'Marked @count threads as unread.'));
   }
   else {
-    drupal_set_message(format_plural(count($threads), 'Marked 1 thread as read.', 'Marked @count threads as read.'));
+    backdrop_set_message(format_plural(count($threads), 'Marked 1 thread as read.', 'Marked @count threads as read.'));
   }
 }
+
 /**
  * Returns a table header definition based on the submitted keys.
  *
@@ -2099,7 +2139,7 @@ function privatemsg_thread_change_status($threads, $status, $account = NULL) {
 function _privatemsg_list_headers($keys) {
 
   // theme() doesn't include the theme file for patterns, we need to do it manually.
-  include_once drupal_get_path('module', 'privatemsg') . '/privatemsg.theme.inc';
+  include_once backdrop_get_path('module', 'privatemsg') . '/privatemsg.theme.inc';
 
   $header = array();
   foreach ($keys as $key) {
@@ -2153,7 +2193,7 @@ function _privatemsg_list_thread($tableselect) {
  *
  * @param $operation
  *   The operation that should be executed.
- *   @see hook_privatemsg_thread_operations()
+ * @see hook_privatemsg_thread_operations()
  * @param $threads
  *   An array of thread ids. The array is filtered before used, a checkboxes
  *   array can be directly passed to it.
@@ -2164,7 +2204,7 @@ function privatemsg_operation_execute($operation, $threads, $account = NULL) {
 
   if (empty($threads)) {
     // Do not execute anything if there are no checked threads.
-    drupal_set_message(t('You must first select one (or more) messages before you can take that action.'), 'warning');
+    backdrop_set_message(t('You must first select one (or more) messages before you can take that action.'), 'warning');
     return FALSE;
   }
   // Add in callback arguments if present.
@@ -2184,7 +2224,7 @@ function privatemsg_operation_execute($operation, $threads, $account = NULL) {
   call_user_func_array($operation['callback'], $args);
 
   if (!empty($operation['success message'])) {
-    drupal_set_message($operation['success message']);
+    backdrop_set_message($operation['success message']);
   }
 
   // Check if that operation has defined an undo callback.
@@ -2203,10 +2243,13 @@ function privatemsg_operation_execute($operation, $threads, $account = NULL) {
     }
     // Store the undo callback in the session and display a "Undo" link.
     // @todo: Provide a more flexible solution for such an undo action, operation defined string for example.
-    $_SESSION['privatemsg']['undo callback'] = array('function' => $undo_function, 'args' => $undo_args);
-    $undo = url('messages/undo/action', array('query' => drupal_get_destination()));
+    $_SESSION['privatemsg']['undo callback'] = array(
+      'function' => $undo_function,
+      'args' => $undo_args
+    );
+    $undo = url('messages/undo/action', array('query' => backdrop_get_destination()));
 
-    drupal_set_message(t('The previous action can be <a href="!undo">undone</a>.', array('!undo' => $undo)));
+    backdrop_set_message(t('The previous action can be <a href="!undo">undone</a>.', array('!undo' => $undo)));
   }
 
   // Allow modules to respond to the operation.
@@ -2243,10 +2286,10 @@ function privatemsg_thread_change_delete($threads, $delete, $account = NULL) {
   }
 
   if ($delete) {
-    drupal_set_message(format_plural(count($threads), 'Deleted 1 thread.', 'Deleted @count threads.'));
+    backdrop_set_message(format_plural(count($threads), 'Deleted 1 thread.', 'Deleted @count threads.'));
   }
   else {
-    drupal_set_message(format_plural(count($threads), 'Restored 1 thread.', 'Restored @count threads.'));
+    backdrop_set_message(format_plural(count($threads), 'Restored 1 thread.', 'Restored @count threads.'));
   }
 }
 
@@ -2349,14 +2392,14 @@ function privatemsg_build_modes($obj_type) {
  * Implements hook_node_view().
  */
 function privatemsg_node_view($node, $view_mode) {
-  $types = array_filter(variable_get('privatemsg_link_node_types', array()));
-  if (in_array($node->type, $types) && ($view_mode == 'full' || (variable_get('privatemsg_display_on_teaser', 1) && $view_mode == 'teaser'))) {
+  $types = array_filter(config_get('privatemsg.settings', 'privatemsg_link_node_types'));
+  if (in_array($node->type, $types) && ($view_mode == 'full' || (config_get('privatemsg.settings', 'privatemsg_display_on_teaser') && $view_mode == 'teaser'))) {
     $url = privatemsg_get_link(user_load($node->uid));
-    if (!empty($url)){
+    if (!empty($url)) {
       $node->content['links']['#links']['privatemsg_link'] = array(
         'title' => t('Send author a message'),
         'href' => $url . '/' . t('Message regarding @node', array('@node' => $node->title)),
-        'query' => drupal_get_destination(),
+        'query' => backdrop_get_destination(),
         'attributes' => array('class' => 'privatemsg-send-link privatemsg-send-link-node'),
       );
     }
@@ -2367,30 +2410,38 @@ function privatemsg_node_view($node, $view_mode) {
  * Implements hook_comment_view().
  */
 function privatemsg_comment_view($comment) {
-  $types = array_filter(variable_get('privatemsg_link_node_types', array()));
-  if (in_array(node_load($comment->nid)->type, $types) && variable_get('privatemsg_display_on_comments', 0)) {
+  $types = array_filter(config_get('privatemsg.settings', 'privatemsg_link_node_types'));
+  if (in_array(node_load($comment->nid)->type, $types) && config_get('privatemsg.settings', 'privatemsg_display_on_comments')) {
     $url = privatemsg_get_link(user_load($comment->uid));
-    if (!empty($url)){
+    if (!empty($url)) {
       $links['privatemsg_link'] = array(
         'title' => t('Send author a message'),
         'href' => $url . '/' . t('Message regarding @comment', array('@comment' => trim($comment->subject))),
-        'query' => drupal_get_destination(),
+        'query' => backdrop_get_destination(),
       );
       $comment->content['links']['privatemsg'] = array(
         '#theme' => 'links',
         '#links' => $links,
-        '#attributes' => array('class' => array('privatemsg-send-link', 'privatemsg-send-link-node', 'links', 'inline')),
+        '#attributes' => array(
+          'class' => array(
+            'privatemsg-send-link',
+            'privatemsg-send-link-node',
+            'links',
+            'inline'
+          )
+        ),
       );
     }
   }
 }
+
 /**
  * Implements hook_views_api().
  */
 function privatemsg_views_api() {
   return array(
     'api' => 2,
-    'path' => drupal_get_path('module', 'privatemsg') . '/views',
+    'path' => backdrop_get_path('module', 'privatemsg') . '/views',
   );
 }
 
@@ -2442,18 +2493,19 @@ function privatemsg_recipient_key($recipient) {
  * @ingroup types
  */
 function privatemsg_recipient_get_types() {
-  $types = &drupal_static(__FUNCTION__, NULL);
+  $types = &backdrop_static(__FUNCTION__, NULL);
 
   if ($types === NULL) {
     $types = module_invoke_all('privatemsg_recipient_type_info');
     if (!is_array($types)) {
       $types = array();
     }
-    drupal_alter('privatemsg_recipient_type_info', $types);
+    backdrop_alter('privatemsg_recipient_type_info', $types);
     uasort($types, 'element_sort');
   }
   return $types;
 }
+
 /**
  * Return a single recipient type information.
  * @param $type
@@ -2505,7 +2557,10 @@ function privatemsg_message_change_recipient($mid, $uid, $type = 'user', $add = 
     $exists = $query
       ->condition('mid', $mid)
       ->condition('recipient', $uid)
-      ->condition('type', ($type == 'user' || $type == 'hidden') ? array('user', 'hidden') : $type)
+      ->condition('type', ($type == 'user' || $type == 'hidden') ? array(
+        'user',
+        'hidden'
+      ) : $type)
       ->execute()
       ->fetchField();
     if (!$exists) {
@@ -2548,10 +2603,10 @@ function _privatemsg_handle_recipients($mid, $recipients, $use_batch = TRUE) {
   $batch = array(
     'title' => t('Processing recipients'),
     'operations' => array(),
-    'file' => drupal_get_path('module', 'privatemsg') . '/privatemsg.pages.inc',
-    'progress_message' =>  t('Processing recipients'),
+    'file' => backdrop_get_path('module', 'privatemsg') . '/privatemsg.pages.inc',
+    'progress_message' => t('Processing recipients'),
   );
-  $small_threshold = variable_get('privatemsg_recipient_small_threshold', 100);
+  $small_threshold = config_get('privatemsg.settings', 'privatemsg_recipient_small_threshold', 100);
   foreach ($recipients as $recipient) {
     // Add a batch operation to press non-user recipient types.
     if ($recipient->type != 'user' && $recipient->type != 'hidden') {
@@ -2566,7 +2621,7 @@ function _privatemsg_handle_recipients($mid, $recipients, $use_batch = TRUE) {
           ->condition('recipient', $recipient->recipient)
           ->condition('type', $recipient->type)
           ->execute();
-        drupal_set_message(t('Recipient type %type is not correctly implemented', array('%type' => $recipient->type)), 'error');
+        backdrop_set_message(t('Recipient type %type is not correctly implemented', array('%type' => $recipient->type)), 'error');
         continue;
       }
       $count = $count_function($recipient);
@@ -2579,7 +2634,7 @@ function _privatemsg_handle_recipients($mid, $recipients, $use_batch = TRUE) {
             ->condition('recipient', $recipient->recipient)
             ->condition('type', $recipient->type)
             ->execute();
-          drupal_set_message(t('Recipient type %type is not correctly implemented', array('%type' => $recipient->type)), 'error');
+          backdrop_set_message(t('Recipient type %type is not correctly implemented', array('%type' => $recipient->type)), 'error');
           continue;
         }
         $uids = $load_function($recipient, $small_threshold, 0);
@@ -2597,7 +2652,10 @@ function _privatemsg_handle_recipients($mid, $recipients, $use_batch = TRUE) {
         continue;
       }
       if ($use_batch) {
-        $batch['operations'][] = array('privatemsg_load_recipients', array($mid, $recipient));
+        $batch['operations'][] = array(
+          'privatemsg_load_recipients',
+          array($mid, $recipient)
+        );
       }
     }
   }
@@ -2661,7 +2719,10 @@ function privatemsg_recipient_format($recipient, $options = array()) {
   }
   $type = privatemsg_recipient_get_type($recipient->type);
   if (isset($type['format'])) {
-    return theme($type['format'], array('recipient' => $recipient, 'options' => $options));
+    return theme($type['format'], array(
+      'recipient' => $recipient,
+      'options' => $options
+    ));
   }
   return NULL;
 }
@@ -2776,7 +2837,10 @@ function privatemsg_file_download_access($field, $entity_type, $entity) {
     }
 
     // Check if user is a recipient of this message.
-    return (bool)db_query_range("SELECT 1 FROM {pm_index} WHERE recipient = :uid AND type IN ('user', 'hidden') AND mid = :mid", 0, 1, array(':uid' => $user->uid, ':mid' => $entity->mid))->fetchField();
+    return (bool) db_query_range("SELECT 1 FROM {pm_index} WHERE recipient = :uid AND type IN ('user', 'hidden') AND mid = :mid", 0, 1, array(
+      ':uid' => $user->uid,
+      ':mid' => $entity->mid
+    ))->fetchField();
   }
 }
 
@@ -2901,7 +2965,7 @@ function privatemsg_tokens($type, $tokens, array $data = array(), array $options
           break;
 
         case 'recipient':
-            $replacements[$original] = $sanitize ? filter_xss(privatemsg_recipient_format($recipient, array('plain' => TRUE))) : privatemsg_recipient_format($recipient, array('plain' => TRUE));
+          $replacements[$original] = $sanitize ? filter_xss(privatemsg_recipient_format($recipient, array('plain' => TRUE))) : privatemsg_recipient_format($recipient, array('plain' => TRUE));
           break;
 
         case 'timestamp':
@@ -3013,30 +3077,30 @@ function privatemsg_entity_property_info() {
   $properties = &$info['privatemsg_message']['properties'];
   $properties = array(
     'mid' => array(
-      'type'  => 'integer',
+      'type' => 'integer',
       'label' => t('Private message ID'),
       'description' => t('Private message ID'),
     ),
     'thread_id' => array(
-      'type'  => 'integer',
+      'type' => 'integer',
       'label' => t('Private message thread ID'),
       'description' => t('Private message thread ID'),
       'getter callback' => 'entity_property_verbatim_get',
     ),
     'author' => array(
-      'type'  => 'user',
+      'type' => 'user',
       'label' => t('Private message author'),
       'description' => t('Private message author'),
       'setter callback' => 'entity_property_verbatim_set',
     ),
     'subject' => array(
-      'type'  => 'text',
+      'type' => 'text',
       'label' => t('Private message subject'),
       'description' => t('Private message subject'),
       'setter callback' => 'entity_property_verbatim_set',
     ),
     'body' => array(
-      'type'  => 'text',
+      'type' => 'text',
       'label' => t('Private message body'),
       'description' => t('Private message body'),
       'setter callback' => 'entity_property_verbatim_set',
@@ -3053,7 +3117,7 @@ function privatemsg_entity_property_info() {
 /**
  * Private message controller, loads private messages.
  */
-class PrivatemsgMessageController extends DrupalDefaultEntityController {
+class PrivatemsgMessageController extends DefaultEntityController {
 
   protected $account = NULL;
 
@@ -3111,7 +3175,16 @@ class PrivatemsgMessageController extends DrupalDefaultEntityController {
  * Implements hook_date_formats().
  */
 function privatemsg_date_formats() {
-  $formats = array('g:i a', 'H:i', 'M j', 'j M', 'm/d/y', 'd/m/y', 'j/n/y', 'n/j/y');
+  $formats = array(
+    'g:i a',
+    'H:i',
+    'M j',
+    'j M',
+    'm/d/y',
+    'd/m/y',
+    'j/n/y',
+    'n/j/y'
+  );
   $types = array_keys(privatemsg_date_format_types());
   $date_formats = array();
   foreach ($types as $type) {
@@ -3154,14 +3227,47 @@ function privatemsg_date_format_types() {
  *   The formatted date.
  */
 function privatemsg_format_date($timestamp) {
-  if ($timestamp > ((int)(REQUEST_TIME / 3600)) * 3600) {
+  if ($timestamp > ((int) (REQUEST_TIME / 3600)) * 3600) {
     return t('@interval ago', array('@interval' => format_interval(abs(REQUEST_TIME - $timestamp), 1)));
   }
-  if ($timestamp > ((int)(REQUEST_TIME / 86400)) * 86400) {
+  if ($timestamp > ((int) (REQUEST_TIME / 86400)) * 86400) {
     return format_date($timestamp, 'privatemsg_current_day');
   }
   if ($timestamp > mktime(0, 0, 0, 1, 0, date('Y'))) {
     return format_date($timestamp, 'privatemsg_current_year');
   }
   return format_date($timestamp, 'privatemsg_years');
+}
+
+
+/**
+ * Implements hook_config_info().
+ */
+function privatemsg_config_info() {
+  $prefixes['privatemsg.settings'] = array(
+    'label' => t('Private message settings'),
+    'group' => t('Configuration'),
+  );
+  return $prefixes;
+}
+
+
+/**
+ * Implements hook_autoload_info().
+ */
+function privatemsg_autoload_info() {
+  return array(
+    'PrivatemsgMessageController' => 'privatemsg.module',
+    'PrivatemsgBaseTestCase' => 'privatemsg.test',
+    'PrivatemsgTestCase' => 'privatemsg.test',
+    'PrivatemsgFieldsTestCase' => 'privatemsg.test',
+    'PrivatemsgLinksTestCase' => 'privatemsg.test',
+    'PrivatemsgTokenTestCase' => 'privatemsg.test',
+    'PrivatemsgAPITestCase' => 'privatemsg.test',
+    'PrivatemsgBlockUserCase' => 'pm_block_user/pm_block_user.test',
+    'PrivatemsgFilterTestCase' => 'privatemsg_filter/privatemsg_filter.test',
+    'PrivatemsgTagsTestCase' => 'privatemsg_filter/privatemsg_filter.test',
+    'PrivatemsgFilterWidgetTestCase' => 'privatemsg_filter/privatemsg_filter.test',
+    'views_handler_field_privatemsg_link' => 'views/views_handler_field_privatemsg_link.inc',
+  );
 }

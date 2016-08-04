@@ -27,7 +27,7 @@ function _privatemsg_action_form($type) {
   );
   // Display all operations which have a label.
   $operations = module_invoke_all('privatemsg_thread_operations', $type);
-  drupal_alter('privatemsg_thread_operations', $operations, $type);
+  backdrop_alter('privatemsg_thread_operations', $operations, $type);
   foreach ($operations as $operation => $array) {
     if (!empty($array['button'])) {
       $form[$operation] = array(
@@ -112,11 +112,11 @@ function privatemsg_delete_submit($form, &$form_state) {
   if ($form_state['values']['confirm']) {
     if (isset($form_state['values']['delete_options']) && $form_state['values']['delete_options']) {
       privatemsg_message_change_delete($form_state['values']['pmid'], 1);
-      drupal_set_message(t('Message has been deleted for all users.'));
+      backdrop_set_message(t('Message has been deleted for all users.'));
     }
     else {
       privatemsg_message_change_delete($form_state['values']['pmid'], 1, $account);
-      drupal_set_message(t('Message has been deleted.'));
+      backdrop_set_message(t('Message has been deleted.'));
     }
   }
   $form_state['redirect'] = $form_state['values']['delete_destination'];
@@ -151,11 +151,11 @@ function privatemsg_list_page($argument = 'list', $uid = NULL) {
     $account = $account_check;
   }
 
-  return drupal_get_form('privatemsg_list', $argument, $account);
+  return backdrop_get_form('privatemsg_list', $argument, $account);
 }
 
 function privatemsg_list($form, &$form_state, $argument, $account) {
-  drupal_add_css(drupal_get_path('module', 'privatemsg') . '/styles/privatemsg-list.css');
+  backdrop_add_css(backdrop_get_path('module', 'privatemsg') . '/styles/privatemsg-list.css');
 
   // If this is an AJAX request, update $_GET['q'] so that table sorting and
   // similar links are using the correct base path.
@@ -168,7 +168,7 @@ function privatemsg_list($form, &$form_state, $argument, $account) {
   }
 
   // Load the table columns.
-  $columns = array_merge(array('subject', 'last_updated'), array_filter(variable_get('privatemsg_display_fields', array('participants'))));
+  $columns = array_merge(array('subject', 'last_updated'), array_filter(config_get('privatemsg.settings', 'privatemsg_display_fields')));
 
   // Load the themed list headers based on the available data.
   $headers = _privatemsg_list_headers($columns);
@@ -222,7 +222,7 @@ function privatemsg_list($form, &$form_state, $argument, $account) {
 function privatemsg_list_submit($form, &$form_state) {
   // Load all available operation definitions.
   $operations = module_invoke_all('privatemsg_thread_operations', $form['#list_argument']);
-  drupal_alter('privatemsg_thread_operations', $operations, $form['#list_argument']);
+  backdrop_alter('privatemsg_thread_operations', $operations, $form['#list_argument']);
 
   // Default "default" operation, which won't do anything.
   $operation = array('callback' => 0);
@@ -347,10 +347,10 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
     }
   }
   if (!$thread_id && !empty($recipients_plain)) {
-    drupal_set_title(t('Write new message to @recipient', array('@recipient' => $recipients_plain)));
+    backdrop_set_title(t('Write new message to @recipient', array('@recipient' => $recipients_plain)));
   }
   elseif (!$thread_id) {
-    drupal_set_title(t('Write new message'));
+    backdrop_set_title(t('Write new message'));
   }
 
   $form = array(
@@ -440,7 +440,7 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
     );
   }
   $form['actions'] = array('#type' => 'actions');
-  if (variable_get('privatemsg_display_preview_button', FALSE)) {
+  if (config_get('privatemsg.settings', 'privatemsg_display_preview_button')) {
     $form['actions']['preview'] = array(
       '#type'               => 'submit',
       '#value'              => t('Preview message'),
@@ -555,16 +555,16 @@ function privatemsg_new_validate($form, &$form_state) {
 
   if (!empty($invalid)) {
     // Display information about invalid recipients.
-    drupal_set_message(t('The following users will not receive this private message: @invalid.', array('@invalid' => implode(", ", $invalid))), 'error');
+    backdrop_set_message(t('The following users will not receive this private message: @invalid.', array('@invalid' => implode(", ", $invalid))), 'error');
   }
   if (!empty($denieds)) {
     // Display information about denied recipients.
-    drupal_set_message(t('You do not have access to write these recipients: @denieds.', array('@denieds' => implode(", ", $denieds))), 'error');
+    backdrop_set_message(t('You do not have access to write these recipients: @denieds.', array('@denieds' => implode(", ", $denieds))), 'error');
   }
 
   if (!empty($duplicates)) {
     // Add JS and CSS to allow choosing the recipient.
-    drupal_add_js(drupal_get_path('module', 'privatemsg') . '/privatemsg-alternatives.js');
+    backdrop_add_js(backdrop_get_path('module', 'privatemsg') . '/privatemsg-alternatives.js');
 
     // Display information about recipients that couldn't be identified
     // uniquely.
@@ -582,13 +582,13 @@ function privatemsg_new_validate($form, &$form_state) {
     }
 
     // Also make that information available to the javascript replacement code.
-    drupal_add_js(array('privatemsg_duplicates' => $js_duplicates), 'setting');
+    backdrop_add_js(array('privatemsg_duplicates' => $js_duplicates), 'setting');
   }
 
   $validated = _privatemsg_validate_message($message, TRUE);
   foreach ($validated['messages'] as $type => $texts) {
     foreach ($texts as $text) {
-      drupal_set_message($text, $type);
+      backdrop_set_message($text, $type);
     }
   }
   $form_state['validate_built_message'] = $message;
@@ -624,13 +624,13 @@ function privatemsg_new_submit($form, &$form_state) {
   try {
     $message = _privatemsg_send($message);
     _privatemsg_handle_recipients($message->mid, $message->recipients);
-    drupal_set_message(t('A message has been sent to !recipients.', array('!recipients' => implode(', ', $recipient_names))));
+    backdrop_set_message(t('A message has been sent to !recipients.', array('!recipients' => implode(', ', $recipient_names))));
     // Only redirect on new threads.
-    if ($message->mid == $message->thread_id || variable_get('privatemsg_default_redirect_reply', FALSE)) {
-      $redirect = variable_get('privatemsg_default_redirect', '<new-message>');
+    if ($message->mid == $message->thread_id || config_get('privatemsg.settings', 'privatemsg_default_redirect_reply')) {
+      $redirect = config_get('privatemsg.settings', 'privatemsg_default_redirect');
       if ($redirect == '<new-message>' || (!empty($_REQUEST['destination']) && $_REQUEST['destination'] == '[new-message]')) {
         if (!empty($_REQUEST['destination']) && $_REQUEST['destination'] == '[new-message]') {
-          // Remove GET param so that drupal_goto() uses the redirect from
+          // Remove GET param so that backdrop_goto() uses the redirect from
           // $form_state.
           unset($_GET['destination']);
         }
@@ -644,12 +644,12 @@ function privatemsg_new_submit($form, &$form_state) {
   }
   catch (Exception $e) {
     if (error_displayable()) {
-      require_once DRUPAL_ROOT . '/includes/errors.inc';
-      $variables = _drupal_decode_exception($e);
-      drupal_set_message(t('Failed to send a message to !recipients. %type: !message in %function (line %line of %file).', array('!recipients' => implode(', ', $recipient_names)) + $variables), 'error');
+      require_once BACKDROP_ROOT . '/includes/errors.inc';
+      $variables = _backdrop_decode_exception($e);
+      backdrop_set_message(t('Failed to send a message to !recipients. %type: !message in %function (line %line of %file).', array('!recipients' => implode(', ', $recipient_names)) + $variables), 'error');
     }
     else {
-      drupal_set_message(t('Failed to send a message to !recipients. Contact your site administrator.', array('!recipients' => implode(', ', $recipient_names))), 'error');
+      backdrop_set_message(t('Failed to send a message to !recipients. Contact your site administrator.', array('!recipients' => implode(', ', $recipient_names))), 'error');
     }
   }
 }
@@ -674,7 +674,7 @@ function privatemsg_undo_action() {
     }
   }
   // Return back to the site defined by the destination GET param.
-  drupal_goto();
+  backdrop_goto();
 }
 
 
@@ -713,7 +713,7 @@ function privatemsg_autocomplete($string) {
     }
   }
   // Allow modules to alter the autocomplete list.
-  drupal_alter('privatemsg_autocomplete', $matches, $names, $fragment);
+  backdrop_alter('privatemsg_autocomplete', $matches, $names, $fragment);
 
   // Format the suggestions.
   $themed_matches = array();
@@ -744,8 +744,8 @@ function privatemsg_autocomplete($string) {
     $suggestions[$prefix . $match . ', '] = $match;
   }
 
-  // convert to object to prevent drupal bug, see http://drupal.org/node/175361
-  drupal_json_output((object)$suggestions);
+  // convert to object to prevent backdrop bug, see http://drupal.org/node/175361
+  backdrop_json_output((object)$suggestions);
 }
 
 
@@ -761,7 +761,7 @@ function privatemsg_autocomplete($string) {
  * @see privatemsg_thread_load()
  */
 function  privatemsg_view($thread) {
-  drupal_set_title($thread['subject']);
+  backdrop_set_title($thread['subject']);
 
   $content = array(
     '#thread' => $thread,
@@ -833,17 +833,17 @@ function  privatemsg_view($thread) {
 
   // Display the reply form if user is allowed to use it.
   if (privatemsg_user_access('write privatemsg') || privatemsg_user_access('reply only privatemsg')) {
-    $content['reply'] = drupal_get_form('privatemsg_new', $thread['participants'], $thread['subject-original'], $thread['thread_id'], $thread['read_all']);
+    $content['reply'] = backdrop_get_form('privatemsg_new', $thread['participants'], $thread['subject-original'], $thread['thread_id'], $thread['read_all']);
     $content['reply']['#weight'] = 5;
   }
   // Check after calling the privatemsg_new form so that this message is only
   // displayed when we are not sending a message.
   if ($thread['read_all']) {
     // User has permission to read all messages AND is not a participant of the current thread.
-    drupal_set_message(t('This conversation is being viewed with escalated privileges and may not be the same as shown to normal users.'), 'warning');
+    backdrop_set_message(t('This conversation is being viewed with escalated privileges and may not be the same as shown to normal users.'), 'warning');
   }
 
-  drupal_alter('privatemsg_view', $content);
+  backdrop_alter('privatemsg_view', $content);
 
   return $content;
 }

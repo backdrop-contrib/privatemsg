@@ -1,7 +1,7 @@
 name = Privatemsg Realname Integration
 description = Provides reverse lookup for realnames
 package = Mail
-core = 7.x
+backdrop = 1.x
+type = module
 dependencies[] = privatemsg
 dependencies[] = realname
-

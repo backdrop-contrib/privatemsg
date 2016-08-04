@@ -31,6 +31,6 @@ function privatemsg_filter_tags_autocomplete($string) {
       $matches[$prefix . $tag->tag . ", "] = $tag->tag;
     }
   }
-  // convert to object to prevent drupal bug, see http://drupal.org/node/175361
-  drupal_json_output((object)$matches);
+  // convert to object to prevent backdrop bug, see http://drupal.org/node/175361
+  backdrop_json_output((object)$matches);
 }

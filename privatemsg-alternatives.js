@@ -1,6 +1,6 @@
 
 (function ($) {
-  Drupal.behaviors.PrivatemsgAlternatives = {
+  Backdrop.behaviors.PrivatemsgAlternatives = {
     attach: function (context) {
       // Replace span with a link.
       $("span.privatemsg-recipient-alternative").each(function() {
@@ -21,13 +21,13 @@
                     .val()
                     .replace(
                       // Get the original recipient string for this suggestion.
-                      Drupal.settings.privatemsg_duplicates[$(this).text()],
+                      Backdrop.settings.privatemsg_duplicates[$(this).text()],
                       $(this).text()
                 ))
 
               // Add a new status message.
               $(this).closest('div.messages')
-                .after('<div class="messages status"><h2 class="element-invisible">' + Drupal.t('Status message') + '</h2>' + Drupal.t('The recipient field has been updated. You may now send your message.') + '</div>');
+                .after('<div class="messages status"><h2 class="element-invisible">' + Backdrop.t('Status message') + '</h2>' + Backdrop.t('The recipient field has been updated. You may now send your message.') + '</div>');
 
               // Hide the error message. Hide the parent of the span, this is
               // either div if there is only a single message or the li.

@@ -31,8 +31,8 @@ class PrivatemsgFilterTestCase extends PrivatemsgBaseTestCase {
    * Test correct handling of read all permissions.
    */
   function testInboxSentHandling() {
-    $author    = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg', 'delete privatemsg'));
-    $recipient = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg'));
+    $author    = $this->backdropCreateUser(array('write privatemsg', 'read privatemsg', 'delete privatemsg'));
+    $recipient = $this->backdropCreateUser(array('write privatemsg', 'read privatemsg'));
 
     // Create new message.
     $edit = array(
@@ -40,26 +40,26 @@ class PrivatemsgFilterTestCase extends PrivatemsgBaseTestCase {
       'subject'     => $this->randomName(20),
       'body[value]' => $this->randomName(100),
     );
-    $this->drupalLogin($author);
-    $this->drupalPost('messages/new', $edit, t('Send message'));
+    $this->backdropLogin($author);
+    $this->backdropPost('messages/new', $edit, t('Send message'));
     $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $recipient->name)), t('Message sent confirmation displayed'));
 
     // Validate that the message is not displayed in the inbox of the author
     // but in the sent list.
-    $this->drupalGet('messages');
+    $this->backdropGet('messages');
     $this->assertNoText($edit['subject'], t('Thread not displayed in inbox for author.'));
-    $this->drupalGet('messages/sent');
+    $this->backdropGet('messages/sent');
     $this->assertText($edit['subject'], t('Thread displayed in "Sent messages" for author.'));
-    $this->drupalGet('messages/list');
+    $this->backdropGet('messages/list');
     $this->assertText($edit['subject'], t('Thread displayed in "All messages" for author.'));
 
     // Write a reply as recipient.
-    $this->drupalLogin($recipient);
-    $this->drupalGet('messages');
+    $this->backdropLogin($recipient);
+    $this->backdropGet('messages');
     $this->assertText($edit['subject'], t('Thread displayed in inbox for recipient.'));
-    $this->drupalGet('messages/sent');
+    $this->backdropGet('messages/sent');
     $this->assertNoText($edit['subject'], t('Thread not displayed in "Sent messages" for recipient.'));
-    $this->drupalGet('messages/list');
+    $this->backdropGet('messages/list');
     $this->assertText($edit['subject'], t('Thread displayed in "All messages." for recipient.'));
 
     // Navigate to the new message.
@@ -67,14 +67,14 @@ class PrivatemsgFilterTestCase extends PrivatemsgBaseTestCase {
     $response = array(
       'body[value]' => $this->randomName(100),
     );
-    $this->drupalPost(NULL, $response, t('Send message'));
+    $this->backdropPost(NULL, $response, t('Send message'));
     $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $author->name)), t('Message sent confirmation displayed'));
 
-    $this->drupalGet('messages/sent');
+    $this->backdropGet('messages/sent');
     $this->assertText($edit['subject'], t('Thread displayed in "Sent messages" for recipient.'));
 
-    $this->drupalLogin($author);
-    $this->drupalGet('messages');
+    $this->backdropLogin($author);
+    $this->backdropGet('messages');
     $this->assertText($edit['subject'], t('Thread displayed in inbox for author.'));
 
     // Test for bug http://drupal.org/node/617648
@@ -82,24 +82,24 @@ class PrivatemsgFilterTestCase extends PrivatemsgBaseTestCase {
     $delete = array(
         'list[1]' => 1,
     );
-    $this->drupalPost(NULL, $delete, t('Delete'));
+    $this->backdropPost(NULL, $delete, t('Delete'));
     $this->assertNoText($edit['subject'], t('Thread has been deleted for author.'));
 
     // Write a reply as recipient.
-    $this->drupalLogin($recipient);
-    $this->drupalGet('messages');
+    $this->backdropLogin($recipient);
+    $this->backdropGet('messages');
 
     // Navigate to the new message.
     $this->clickLink($edit['subject']);
     $response = array(
       'body[value]' => $this->randomName(100),
     );
-    $this->drupalPost(NULL, $response, t('Send message'));
+    $this->backdropPost(NULL, $response, t('Send message'));
     $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $author->name)), t('Message sent confirmation displayed'));
 
     // Check if thread is visible again for author.
-    $this->drupalLogin($author);
-    $this->drupalGet('messages');
+    $this->backdropLogin($author);
+    $this->backdropGet('messages');
     $this->assertText($edit['subject'], t('Thread displayed again in inbox for author.'));
 
     // Test archiving of messages.
@@ -108,11 +108,11 @@ class PrivatemsgFilterTestCase extends PrivatemsgBaseTestCase {
         'list[1]' => 1,
         'operation' => 'archive',
     );
-    $this->drupalPost(NULL, $archive, t('Execute'));
+    $this->backdropPost(NULL, $archive, t('Execute'));
     $this->assertText(t('The messages have been archived.'), t('Confirmation message displayed'));
     $this->assertNoText($edit['subject'], t('Thread has been removed from inbox.'));
 
-    $this->drupalGet('messages/list');
+    $this->backdropGet('messages/list');
     $this->assertText($edit['subject'], t('Thread still displayed in "All messages" list.'));
 
   }
@@ -144,7 +144,7 @@ class PrivatemsgTagsTestCase extends PrivatemsgBaseTestCase {
    * Create and update tags on a single thread.
    */
   function testFilterFormSingleThread() {
-    $webuser = $this->drupalCreateuser(array('read privatemsg', 'write privatemsg', 'tag private messages', 'create private message tags'));
+    $webuser = $this->backdropCreateuser(array('read privatemsg', 'write privatemsg', 'tag private messages', 'create private message tags'));
 
     // Create a new thread through the api.
     $response = privatemsg_new_thread(array($webuser), $this->randomName(10), $this->randomName(20), array('author' => $webuser));
@@ -154,10 +154,10 @@ class PrivatemsgTagsTestCase extends PrivatemsgBaseTestCase {
     $edit = array(
       'tags' => $tags[0] . ', ' . $tags[1],
     );
-    $this->drupalLogin($webuser);
-    $this->drupalGet('messages/view/' . $thread_id);
+    $this->backdropLogin($webuser);
+    $this->backdropGet('messages/view/' . $thread_id);
     $this->clickLink(t('Tag this conversation'));
-    $this->drupalPost(NULL, $edit, t('Tag this conversation'));
+    $this->backdropPost(NULL, $edit, t('Tag this conversation'));
     $this->assertText($tags[0], t('Found message tag'));
     $this->assertText($tags[1], t('Found message tag'));
 
@@ -168,9 +168,9 @@ class PrivatemsgTagsTestCase extends PrivatemsgBaseTestCase {
     $edit = array(
       'tags' => $tags[1] . ', ' . $tags[2],
     );
-    $this->drupalGet('messages/view/' . $thread_id);
+    $this->backdropGet('messages/view/' . $thread_id);
     $this->clickLink(t('Tag this conversation'));
-    $this->drupalPost(NULL, $edit, t('Tag this conversation'));
+    $this->backdropPost(NULL, $edit, t('Tag this conversation'));
     $this->assertText($tags[1], t('Found message tag'));
     $this->assertText($tags[2], t('Found message tag'));
 
@@ -178,9 +178,9 @@ class PrivatemsgTagsTestCase extends PrivatemsgBaseTestCase {
     $edit = array(
       'tags' => $tags[0],
     );
-    $this->drupalGet('messages/view/' . $thread_id);
+    $this->backdropGet('messages/view/' . $thread_id);
     $this->clickLink(t('(modify tags)'));
-    $this->drupalPost(NULL, $edit, t('Tag this conversation'));
+    $this->backdropPost(NULL, $edit, t('Tag this conversation'));
     $this->assertText($tags[0], t('Found message tag'));
     $this->assertNoText($tags[1], t('Tag has been removed.'));
     $this->assertNoText($tags[2], t('Tag has been removed.'));
@@ -189,8 +189,8 @@ class PrivatemsgTagsTestCase extends PrivatemsgBaseTestCase {
 
   function testTagsAdministration() {
     // Create users.
-    $admin = $this->drupalCreateuser(array('administer privatemsg settings', 'read privatemsg', 'write privatemsg', 'tag private messages', 'create private message tags'));
-    $webuser = $this->drupalCreateuser(array('read privatemsg', 'write privatemsg', 'tag private messages', 'create private message tags'));
+    $admin = $this->backdropCreateuser(array('administer privatemsg settings', 'read privatemsg', 'write privatemsg', 'tag private messages', 'create private message tags'));
+    $webuser = $this->backdropCreateuser(array('read privatemsg', 'write privatemsg', 'tag private messages', 'create private message tags'));
 
     // Prepare data.
     $private = array(
@@ -211,24 +211,24 @@ class PrivatemsgTagsTestCase extends PrivatemsgBaseTestCase {
     );
     $duplicate = $private;
 
-    $this->drupalLogin($admin);
+    $this->backdropLogin($admin);
 
     // Check that the empty message is displayed.
-    $this->drupalGet('admin/config/messaging/privatemsg/tags/list');
+    $this->backdropGet('admin/config/messaging/privatemsg/tags/list');
     $this->assertText(t('No tags available.'), t('No tags exist yet.'));
 
     // Create tags.
-    $this->drupalPost('admin/config/messaging/privatemsg/tags/add', $private, t('Create tag'));
+    $this->backdropPost('admin/config/messaging/privatemsg/tags/add', $private, t('Create tag'));
     $this->assertText(t('Tag created.'));
-    $this->drupalPost('admin/config/messaging/privatemsg/tags/add', $public, t('Create tag'));
+    $this->backdropPost('admin/config/messaging/privatemsg/tags/add', $public, t('Create tag'));
     $this->assertText(t('Tag created.'));
-    $this->drupalPost('admin/config/messaging/privatemsg/tags/add', $to_edit, t('Create tag'));
+    $this->backdropPost('admin/config/messaging/privatemsg/tags/add', $to_edit, t('Create tag'));
     $this->assertText(t('Tag created.'));
-    $this->drupalPost('admin/config/messaging/privatemsg/tags/add', $duplicate, t('Create tag'));
+    $this->backdropPost('admin/config/messaging/privatemsg/tags/add', $duplicate, t('Create tag'));
     $this->assertText(t('Tag already exists, choose a different name.'));
 
     // Verify that all tags are displayed.
-    $this->drupalGet('admin/config/messaging/privatemsg/tags/list');
+    $this->backdropGet('admin/config/messaging/privatemsg/tags/list');
     foreach (array($private, $public, $to_edit) as $tag) {
       $this->assertText($tag['tag'], t('Tag %tag displayed', array('%tag' => $tag['tag'])));
     }
@@ -249,20 +249,20 @@ class PrivatemsgTagsTestCase extends PrivatemsgBaseTestCase {
         $edit_url = substr($row->td[3]->a[0]['href'], strpos($row->td[3]->a[0]['href'], 'admin/'));
       }
       if ((string)$row->td[0] == $public['tag']) {
-        $delete_url = drupal_substr($row->td[3]->a[1]['href'], strpos($row->td[3]->a[1]['href'], 'admin/'));
+        $delete_url = backdrop_substr($row->td[3]->a[1]['href'], strpos($row->td[3]->a[1]['href'], 'admin/'));
       }
     }
 
     // Edit Tag.
-    $this->drupalGet($edit_url);
-    $this->assertTitle(t('Edit @tag | @site-name', array('@site-name' => variable_get('site_name', 'Drupal'), '@tag' => $to_edit['tag'])), t('Correct title for @tag is set.', array('@tag' => $to_edit['tag'])));
+    $this->backdropGet($edit_url);
+    $this->assertTitle(t('Edit @tag | @site-name', array('@site-name' => config_get('privatemsg.settings', 'site_name', 'Backdrop'), '@tag' => $to_edit['tag'])), t('Correct title for @tag is set.', array('@tag' => $to_edit['tag'])));
 
     // With duplicate data.
-    $this->drupalPost(NULL, $duplicate, t('Save tag'));
+    $this->backdropPost(NULL, $duplicate, t('Save tag'));
     $this->assertText(t('Tag already exists, choose a different name.'));
 
     // With valid data.
-    $this->drupalPost(NULL, $edited_tag, t('Save tag'));
+    $this->backdropPost(NULL, $edited_tag, t('Save tag'));
     $this->assertText(t('Tag updated.'), t('Tag has been updated'));
 
     // Verify edited tag.
@@ -277,7 +277,7 @@ class PrivatemsgTagsTestCase extends PrivatemsgBaseTestCase {
     }
 
     // Delete tag.
-    $this->drupalPost($delete_url, array(), t('Delete'));
+    $this->backdropPost($delete_url, array(), t('Delete'));
     $this->assertText(t('Tag has been deleted'), t('Tag has been deleted'));
     $this->assertNoText($public['tag'], t('Deleted tag is not displayed anymore.'));
   }
@@ -287,12 +287,12 @@ class PrivatemsgTagsTestCase extends PrivatemsgBaseTestCase {
    * permission.
    */
   function testOnlyTaggingPermission() {
-    $admin = $this->drupalCreateUser(array('administer privatemsg settings', 'write privatemsg', 'read privatemsg'));
-    $webuser = $this->drupalCreateUser(array('write privatemsg', 'read privatemsg', 'tag private messages', 'create private message tags'));
+    $admin = $this->backdropCreateUser(array('administer privatemsg settings', 'write privatemsg', 'read privatemsg'));
+    $webuser = $this->backdropCreateUser(array('write privatemsg', 'read privatemsg', 'tag private messages', 'create private message tags'));
 
     // Display tag column in thread list.
-    $this->drupalLogin($admin);
-    $this->drupalPost('admin/config/messaging/privatemsg', array('privatemsg_display_fields[tags]' => 'tags'), t('Save configuration'));
+    $this->backdropLogin($admin);
+    $this->backdropPost('admin/config/messaging/privatemsg', array('privatemsg_display_fields[tags]' => 'tags'), t('Save configuration'));
 
     // Create two threads through the API.
     $response = privatemsg_new_thread(array($webuser), $subject1 = $this->randomName(10), $this->randomName(20), array('author' => $admin));
@@ -302,8 +302,8 @@ class PrivatemsgTagsTestCase extends PrivatemsgBaseTestCase {
     $thread_id2 = $response['message']->thread_id;
 
     // Log in and check that both messages are visible.
-    $this->drupalLogin($webuser);
-    $this->drupalGet('messages');
+    $this->backdropLogin($webuser);
+    $this->backdropGet('messages');
     $this->assertText($subject1, t('Message is displayed.'));
     $this->assertText($subject2, t('Message is displayed.'));
 
@@ -312,7 +312,7 @@ class PrivatemsgTagsTestCase extends PrivatemsgBaseTestCase {
       'tag-add' => $this->randomName(5),
       'list[' . $thread_id1 . ']' => $thread_id1,
     );
-    $this->drupalPost(NULL, $tag, t('Apply Tag'));
+    $this->backdropPost(NULL, $tag, t('Apply Tag'));
 
     // Filter by tag, verify that only the first thread is displayed, an
     // informal message and no filter form.
@@ -323,10 +323,10 @@ class PrivatemsgTagsTestCase extends PrivatemsgBaseTestCase {
     $this->assertNoText($subject2, t('Second thread not displayed.'));
 
     // Check paging, set threads per page to 1.
-    variable_set('privatemsg_per_page', 1);
+    config_set('privatemsg.settings', 'privatemsg_per_page', 1);
 
     // Go the second page, only the second thread should be visible there.
-    $this->drupalGet('messages');
+    $this->backdropGet('messages');
     $this->clickLink('2');
     $this->assertNoText($subject1, t('First thread not displayed.'));
     $this->assertText($subject2, t('Second thread displayed.'));
@@ -349,12 +349,12 @@ class PrivatemsgTagsTestCase extends PrivatemsgBaseTestCase {
   }
 
   function testInboxTagging() {
-    $webuser = $this->drupalCreateuser(array('read privatemsg', 'write privatemsg', 'tag private messages', 'create private message tags'));
-    $admin = $this->drupalCreateUser(array('administer privatemsg settings'));
+    $webuser = $this->backdropCreateuser(array('read privatemsg', 'write privatemsg', 'tag private messages', 'create private message tags'));
+    $admin = $this->backdropCreateUser(array('administer privatemsg settings'));
 
     // Display tag column in thread list.
-    $this->drupalLogin($admin);
-    $this->drupalPost('admin/config/messaging/privatemsg', array('privatemsg_display_fields[tags]' => 'tags'), t('Save configuration'));
+    $this->backdropLogin($admin);
+    $this->backdropPost('admin/config/messaging/privatemsg', array('privatemsg_display_fields[tags]' => 'tags'), t('Save configuration'));
 
     // Create a new thread through the api.
     $response = privatemsg_new_thread(array($webuser), $subject1 = $this->randomName(10), $this->randomName(20), array('author' => $webuser));
@@ -365,10 +365,10 @@ class PrivatemsgTagsTestCase extends PrivatemsgBaseTestCase {
     $edit = array(
       'tags' => $tag1 . ', ' . $tag2,
     );
-    $this->drupalLogin($webuser);
-    $this->drupalGet('messages/view/' . $thread_id);
+    $this->backdropLogin($webuser);
+    $this->backdropGet('messages/view/' . $thread_id);
     $this->clickLink(t('Tag this conversation'));
-    $this->drupalPost(NULL, $edit, t('Tag this conversation'));
+    $this->backdropPost(NULL, $edit, t('Tag this conversation'));
     $this->assertText($tag1, t('Found message tag'));
     $this->assertText($tag2, t('Found message tag'));
 
@@ -376,7 +376,7 @@ class PrivatemsgTagsTestCase extends PrivatemsgBaseTestCase {
     $response = privatemsg_new_thread(array($webuser), $subject2 = $this->randomName(10), $this->randomName(20), array('author' => $webuser));
     $thread_id2 = $response['message']->thread_id;
 
-    $this->drupalGet('messages');
+    $this->backdropGet('messages');
     $rows = $this->xpath('//tbody/tr');
     foreach ($rows as $row) {
       if ($row->td[2]->a == $subject1) {
@@ -395,7 +395,7 @@ class PrivatemsgTagsTestCase extends PrivatemsgBaseTestCase {
       'list[' . $thread_id2 . ']' => 1,
       'tag-add' => $tag2,
     );
-    $this->drupalPost(NULL, $add_tag, t('Apply Tag'));
+    $this->backdropPost(NULL, $add_tag, t('Apply Tag'));
     $rows = $this->xpath('//tbody/tr');
     foreach ($rows as $row) {
       if ($row->td[2]->a == $subject1) {
@@ -415,7 +415,7 @@ class PrivatemsgTagsTestCase extends PrivatemsgBaseTestCase {
       'list[' . $thread_id2 . ']' => 1,
       'tag-remove' => 3,
     );
-    $this->drupalPost(NULL, $remove_tag, t('Remove Tag'));
+    $this->backdropPost(NULL, $remove_tag, t('Remove Tag'));
     $rows = $this->xpath('//tbody/tr');
     foreach ($rows as $row) {
       if ($row->td[2]->a == $subject1) {
@@ -457,12 +457,12 @@ class PrivatemsgFilterWidgetTestCase extends PrivatemsgBaseTestCase {
    * Generic filter widget tests.
    */
   function testAuthorSearch() {
-    $user1 = $this->drupalCreateuser(array('read privatemsg', 'write privatemsg', 'tag private messages', 'create private message tags', 'filter private messages'));
-    $user2 = $this->drupalCreateuser(array('read privatemsg', 'write privatemsg', 'tag private messages', 'create private message tags', 'filter private messages'));
-    $user3 = $this->drupalCreateuser(array('read privatemsg', 'write privatemsg', 'tag private messages', 'create private message tags', 'filter private messages'));
+    $user1 = $this->backdropCreateuser(array('read privatemsg', 'write privatemsg', 'tag private messages', 'create private message tags', 'filter private messages'));
+    $user2 = $this->backdropCreateuser(array('read privatemsg', 'write privatemsg', 'tag private messages', 'create private message tags', 'filter private messages'));
+    $user3 = $this->backdropCreateuser(array('read privatemsg', 'write privatemsg', 'tag private messages', 'create private message tags', 'filter private messages'));
 
-    $this->drupalLogin($user2);
-    $this->drupalGet('messages');
+    $this->backdropLogin($user2);
+    $this->backdropGet('messages');
 
     // Make sure the widget is not displayed when there are no messages.
     $this->assertNoFieldById('edit-author');
@@ -471,19 +471,19 @@ class PrivatemsgFilterWidgetTestCase extends PrivatemsgBaseTestCase {
     $response = privatemsg_new_thread(array($user2), $subject = $this->randomName(10), $body = $this->randomName(20), array('author' => $user1));
     $thread_id = $response['message']->thread_id;
 
-    $this->drupalGet('messages');
+    $this->backdropGet('messages');
 
     // Make sure the widget is now displayed and the message is too.
     $this->assertText($subject);
     $this->assertFieldById('edit-author');
 
     // Search for user 3 which will find no results but the widget should still be displayed.
-    $this->drupalPost(NULL, array('author' => $user3->name), t('Filter'));
+    $this->backdropPost(NULL, array('author' => $user3->name), t('Filter'));
     $this->assertNoText($subject);
     $this->assertFieldById('edit-author', $user3->name . ', ');
 
     // Reset filter widget.
-    $this->drupalPost(NULL, array(), t('Reset'));
+    $this->backdropPost(NULL, array(), t('Reset'));
     $this->assertFieldById('edit-author');
     $this->assertText($subject);
 
@@ -492,24 +492,24 @@ class PrivatemsgFilterWidgetTestCase extends PrivatemsgBaseTestCase {
     $thread_id = $response['message']->thread_id;
 
     // Make sure that the new message is displayed.
-    $this->drupalGet('messages');
+    $this->backdropGet('messages');
     $this->assertText($subject2);
 
     // Search for user 1 which should only display his message.
-    $this->drupalPost(NULL, array('author' => $user1->name), t('Filter'));
+    $this->backdropPost(NULL, array('author' => $user1->name), t('Filter'));
     $this->assertText($subject);
     $this->assertNoText($subject2);
 
     // Save the filter and access /messages again - The filter should still be
     // active.
-    $this->drupalPost(NULL, array(), t('Save filter'));
-    $this->drupalGet('messages');
+    $this->backdropPost(NULL, array(), t('Save filter'));
+    $this->backdropGet('messages');
     $this->assertFieldById('edit-author', $user1->name . ', ');
     $this->assertText($subject);
     $this->assertNoText($subject2);
 
     // Reset filter widget.
-    $this->drupalPost(NULL, array(), t('Reset'));
+    $this->backdropPost(NULL, array(), t('Reset'));
     $this->assertFieldById('edit-author');
     $this->assertText($subject);
     $this->assertText($subject2);

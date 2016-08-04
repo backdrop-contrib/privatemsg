@@ -1,8 +1,8 @@
 <?php
 // Each file loads it's own styles because we cant predict which file will be
 // loaded.
-drupal_add_css(drupal_get_path('module', 'privatemsg') . '/styles/privatemsg-view.base.css');
-drupal_add_css(drupal_get_path('module', 'privatemsg') . '/styles/privatemsg-view.theme.css');
+backdrop_add_css(backdrop_get_path('module', 'privatemsg') . '/styles/privatemsg-view.base.css');
+backdrop_add_css(backdrop_get_path('module', 'privatemsg') . '/styles/privatemsg-view.theme.css');
 ?>
 <?php
 print $anchors; ?>

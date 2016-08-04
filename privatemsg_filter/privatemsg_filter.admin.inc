@@ -9,31 +9,33 @@
  * Display a list of tags to administer them.
  */
 function privatemsg_tags_admin() {
-  drupal_set_title(t('Tags'));
+  backdrop_set_title(t('Tags'));
 
   $header = array(
     'tag' => array(
-      'data'    => t('Tag'),
-      'field'   => 'tag',
-      'class'   => array('privatemsg-filter-header-tag'),
-      'sort'    => 'asc',
+      'data' => t('Tag'),
+      'field' => 'tag',
+      'class' => array('privatemsg-filter-header-tag'),
+      'sort' => 'asc',
     ),
     'usage' => array(
-      'data'    => t('Usage'),
-      'field'   => 'count',
-      'class'   => array('privatemsg-filter-header-usage'),
+      'data' => t('Usage'),
+      'field' => 'count',
+      'class' => array('privatemsg-filter-header-usage'),
     ),
     'public' => array(
-      'data'    => t('Public'),
-      'field'   => 'public',
-      'class'   => array('privatemsg-filter-header-public'),
+      'data' => t('Public'),
+      'field' => 'public',
+      'class' => array('privatemsg-filter-header-public'),
     ),
     'operations' => array(
-      'data'    => t('Operations'),
-      'class'   => array('privatemsg-filter-header-operations'),
+      'data' => t('Operations'),
+      'class' => array('privatemsg-filter-header-operations'),
     ),
   );
-  $query = _privatemsg_assemble_query(array('tags', 'privatemsg_filter'))->extend('PagerDefault')->extend('TableSort');
+  $query = _privatemsg_assemble_query(array('tags', 'privatemsg_filter'))
+    ->extend('PagerDefault')
+    ->extend('TableSort');
   $query
     ->orderByHeader($header)
     ->limit();
@@ -52,10 +54,18 @@ function privatemsg_tags_admin() {
 
   if (empty($rows)) {
     // Display a message if now tags are available.
-    $rows[] = array(array('data' => t('No tags available.'), 'colspan' => count($header)));
+    $rows[] = array(
+      array(
+        'data' => t('No tags available.'),
+        'colspan' => count($header)
+      )
+    );
   }
 
-  return theme('table',  array('header' => $header, 'rows' =>  $rows)) . theme('pager');
+  return theme('table', array(
+    'header' => $header,
+    'rows' => $rows
+  )) . theme('pager');
 }
 
 /**
@@ -74,7 +84,7 @@ function privatemsg_tags_form($form, &$form_state, $tag_id = NULL) {
       '#value' => $tag_id,
       '#type' => 'value',
     );
-    drupal_set_title(t('Edit @tag', array('@tag' => $tag['tag'])));
+    backdrop_set_title(t('Edit @tag', array('@tag' => $tag['tag'])));
   }
 
   $form['tag'] = array(
@@ -92,7 +102,7 @@ function privatemsg_tags_form($form, &$form_state, $tag_id = NULL) {
 
   $form['submit'] = array(
     '#value' => empty($tag_id) ? t('Create tag') : t('Save tag'),
-    '#type'  => 'submit',
+    '#type' => 'submit',
   );
 
   return $form;
@@ -108,13 +118,13 @@ function privatemsg_tags_form_validate($form, &$form_state) {
   if ($tag_id) {
     // We are editing an existing tag, exclude the current tag from the search.
     $exists = db_query("SELECT 1 FROM {pm_tags} WHERE tag = :tag AND tag_id <> :tag_id", array(
-        ':tag' => $form_state['values']['tag'],
-        ':tag_id' => $tag_id,
+      ':tag' => $form_state['values']['tag'],
+      ':tag_id' => $tag_id,
     ))->fetchField();
   }
   else {
     $exists = db_query("SELECT 1 FROM {pm_tags} WHERE tag = :tag", array(
-        ':tag' => $form_state['values']['tag'],
+      ':tag' => $form_state['values']['tag'],
     ))->fetchField();
   }
   if ($exists) {
@@ -135,7 +145,7 @@ function privatemsg_tags_form_submit($form, &$form_state) {
       ))
       ->condition('tag_id', $form_state['values']['tag_id'])
       ->execute();
-    drupal_set_message(t('Tag updated.'));
+    backdrop_set_message(t('Tag updated.'));
   }
   else {
     // Tag does not yet exist, create a new one.
@@ -145,7 +155,7 @@ function privatemsg_tags_form_submit($form, &$form_state) {
         'public' => $form_state['values']['public'],
       ))
       ->execute();
-    drupal_set_message(t('Tag created.'));
+    backdrop_set_message(t('Tag created.'));
   }
   $form_state['redirect'] = 'admin/config/messaging/privatemsg/tags';
 }
@@ -181,7 +191,7 @@ function privatemsg_filter_tags_delete_submit($form, &$form_state) {
       ->condition('tag_id', $form_state['values']['tag_id'])
       ->execute();
 
-    drupal_set_message(t('Tag has been deleted'));
+    backdrop_set_message(t('Tag has been deleted'));
   }
   $form_state['redirect'] = 'admin/config/messaging/privatemsg/tags';
 }
@@ -211,7 +221,7 @@ function privatemsg_filter_inbox_rebuid_form_submit($form, &$form_state) {
       array('privatemsg_filter_inbox_rebuild_process', array()),
     ),
     'finished' => 'privatemsg_filter_inbox_rebuild_finished',
-    'file' => drupal_get_path('module', 'privatemsg_filter') . '/privatemsg_filter.admin.inc',
+    'file' => backdrop_get_path('module', 'privatemsg_filter') . '/privatemsg_filter.admin.inc',
   );
   batch_set($batch);
 }
@@ -243,7 +253,7 @@ function privatemsg_filter_inbox_rebuild_process(&$context) {
       $row->uid = $row->recipient;
       // $row is an object with uid property, so we pass it to the function as a
       // pseudo user object.
-      privatemsg_filter_add_tags(array($row->thread_id), variable_get('privatemsg_filter_inbox_tag', ''), $row);
+      privatemsg_filter_add_tags(array($row->thread_id), config_get('privatemsg.settings', 'privatemsg_filter_inbox_tag', ''), $row);
       $context['results']['count']++;
     }
     $context['sandbox']['current_thread_id'] = max($threads);
@@ -257,9 +267,9 @@ function privatemsg_filter_inbox_rebuild_process(&$context) {
  */
 function privatemsg_filter_inbox_rebuild_finished($success, $results, $operations) {
   if ($success) {
-    drupal_set_message(format_plural($results['count'], 'One thread tagged.', '@count threads tagged.'));
+    backdrop_set_message(format_plural($results['count'], 'One thread tagged.', '@count threads tagged.'));
   }
   else {
-    drupal_set_message(t('Finished with an error.'), 'error');
+    backdrop_set_message(t('Finished with an error.'), 'error');
   };
 }

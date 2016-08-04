@@ -83,7 +83,7 @@ function theme_privatemsg_roles_format($variables) {
  */
 function privatemsg_roles_load_recipients($recipient, $limit, $offset) {
   $rid = isset($recipient->recipient) ? $recipient->recipient : $recipient->rid;
-  if ($rid == DRUPAL_AUTHENTICATED_RID) {
+  if ($rid == BACKDROP_AUTHENTICATED_RID) {
     $result = db_query_range('SELECT uid FROM {users} WHERE uid > 0 ORDER BY uid ASC', $offset, $limit);
   }
   else {
@@ -98,7 +98,7 @@ function privatemsg_roles_load_recipients($recipient, $limit, $offset) {
  */
 function privatemsg_roles_count_recipients($recipient) {
   $rid = isset($recipient->recipient) ? $recipient->recipient : $recipient->rid;
-  if ($rid == DRUPAL_AUTHENTICATED_RID) {
+  if ($rid == BACKDROP_AUTHENTICATED_RID) {
     return db_query('SELECT COUNT(uid) FROM {users}')->fetchField();
   }
   else {
@@ -149,7 +149,7 @@ function privatemsg_roles_sql_autocomplete_roles($search, $names) {
   $query = db_select('role', 'role')
     ->fields('role')
     ->condition('role.name', $search . '%', 'LIKE')
-    ->condition('role.rid', DRUPAL_ANONYMOUS_RID, '<>')
+    ->condition('role.rid', BACKDROP_ANONYMOUS_RID, '<>')
     ->orderBy('role.name', 'ASC');
   if (!empty($names)) {
     $query->condition('role.name', $names, 'NOT IN');

@@ -31,7 +31,7 @@ function pm_block_user_help($path) {
 function pm_block_user_menu() {
   $items['messages/block/%user'] = array(
     'title'            => 'Block user messages',
-    'page callback'    => 'drupal_get_form',
+    'page callback'    => 'backdrop_get_form',
     'page arguments'   => array('pm_block_user_form', 2),
     'file'             => 'pm_block_user.pages.inc',
     'access callback'  => '_pm_block_user_access',
@@ -42,7 +42,7 @@ function pm_block_user_menu() {
 
   $items['messages/blocked'] = array(
     'title'            => 'Blocked users',
-    'page callback'    => 'drupal_get_form',
+    'page callback'    => 'backdrop_get_form',
     'page arguments'    => array('pm_block_user_list'),
     'file'             => 'pm_block_user.pages.inc',
     'access callback'  => 'privatemsg_user_access',
@@ -54,7 +54,7 @@ function pm_block_user_menu() {
   $items['admin/config/messaging/privatemsg/block'] = array(
     'title'            => 'User blocking rules',
     'description'      => 'Configure rules for which users may block each other.',
-    'page callback'    => 'drupal_get_form',
+    'page callback'    => 'backdrop_get_form',
     'page arguments'   => array('pm_block_user_settings'),
     'file'             => 'pm_block_user.admin.inc',
     'access arguments' => array('administer privatemsg settings'),
@@ -72,7 +72,7 @@ function pm_block_user_menu() {
   $items['messages/user/autocomplete'] = array(
     'page callback'    => 'privatemsg_autocomplete',
     'file'             => 'privatemsg.pages.inc',
-    'file path'        => drupal_get_path('module', 'privatemsg'),
+    'file path'        => backdrop_get_path('module', 'privatemsg'),
     'access callback'  => 'privatemsg_user_access',
     'access arguments' => array('write privatemsg'),
     'type'             => MENU_CALLBACK,
@@ -132,11 +132,11 @@ function theme_pm_block_user_actions($form) {
     // Build the table row.
     $row = array(
       'data' => array(
-        array('data' => drupal_render($form[$key]['author'])),
-        array('data' => drupal_render($form[$key]['recipient'])),
-        array('data' => drupal_render($form[$key]['action'])),
-        array('data' => drupal_render($form[$key]['enabled'])),
-        array('data' => drupal_render($form[$key]['remove'])),
+        array('data' => backdrop_render($form[$key]['author'])),
+        array('data' => backdrop_render($form[$key]['recipient'])),
+        array('data' => backdrop_render($form[$key]['action'])),
+        array('data' => backdrop_render($form[$key]['enabled'])),
+        array('data' => backdrop_render($form[$key]['remove'])),
       ),
     );
 
@@ -161,7 +161,7 @@ function theme_pm_block_user_actions($form) {
     'header' => $headers,
     'rows' => $rows
   ));
-  $output .= drupal_render_children($form);
+  $output .= backdrop_render_children($form);
 
   return $output;
 }
@@ -222,7 +222,7 @@ function pm_block_user_has_blocked($author, $recipient) {
  *   TRUE if a rule exists for the combination of author recipient and action.
  */
 function _pm_block_user_rule_exists($author, $recipient, $action = PM_BLOCK_USER_DISALLOW_BLOCKING) {
-  $block_actions = variable_get('pm_block_user_actions', array());
+  $block_actions = config_get('privatemsg.settings', 'pm_block_user_actions');
   foreach ($block_actions as $details) {
     // If this rule doesn't relate to $action, or it's disabled
     // ignore it and go to next loop iteration.
@@ -379,7 +379,7 @@ function pm_block_user_query_privatemsg_autocomplete_alter($query) {
   // Block role configurations.
   if ($user->uid != 1) {
     $rids = array();
-    $block_actions = variable_get('pm_block_user_actions', array());
+    $block_actions = config_get('privatemsg.settings', 'pm_block_user_actions');
     foreach ($block_actions as $details) {
       // Only continue if the rule is enabled and is a disallow sending rule.
       if ($details['action'] != PM_BLOCK_USER_DISALLOW_SENDING || !$details['enabled']) {
@@ -390,7 +390,7 @@ function pm_block_user_query_privatemsg_autocomplete_alter($query) {
         // authenticated user role is not stored in the database but all users
         // have it so there can be no valid recipients. Add a condition that is
         // always false and bail out because no other rules need to be checked.
-        if ($details['recipient'] == DRUPAL_AUTHENTICATED_RID) {
+        if ($details['recipient'] == BACKDROP_AUTHENTICATED_RID) {
           $query->addExpression('1 = 0');
           return;
         }

@@ -61,14 +61,14 @@ function pm_block_user_form_submit($form, &$form_state) {
             'recipient' => $form_state['values']['recipient']->uid,
           ))
           ->execute();
-        drupal_set_message(t('@author has been blocked from sending you any further messages.', array('@author' => privatemsg_recipient_format($form_state['values']['author'], array('plain' => TRUE)))));
+        backdrop_set_message(t('@author has been blocked from sending you any further messages.', array('@author' => privatemsg_recipient_format($form_state['values']['author'], array('plain' => TRUE)))));
       break;
       case 'unblock_user':
         db_delete('pm_block_user')
           ->condition('author', $form_state['values']['author']->uid)
           ->condition('recipient', $form_state['values']['recipient']->uid)
           ->execute();
-        drupal_set_message(t('@author is now allowed to send you new messages.', array('@author' => privatemsg_recipient_format($form_state['values']['author'], array('plain' => TRUE)))));
+        backdrop_set_message(t('@author is now allowed to send you new messages.', array('@author' => privatemsg_recipient_format($form_state['values']['author'], array('plain' => TRUE)))));
       break;
     }
   }
@@ -123,7 +123,7 @@ function pm_block_user_list() {
   foreach ($select->execute() as $row) {
     $rows[] = array(
       theme('username', array('account' => user_load($row->author))),
-      l(t('unblock'), 'messages/block/' . $row->author, array('query' => drupal_get_destination())),
+      l(t('unblock'), 'messages/block/' . $row->author, array('query' => backdrop_get_destination())),
     );
   }
   $form['#header'] = $header;
@@ -143,26 +143,26 @@ function pm_block_user_block_validate($form, &$form_state) {
 
       // Only authors can be blocked.
       if ($account->type != 'user') {
-        drupal_set_message(t('Only users can be blocked.'));
+        backdrop_set_message(t('Only users can be blocked.'));
         unset($accounts[$id]);
         continue;
       }
 
       // Check if the user can not be blocked because of a rule.
       if (_pm_block_user_rule_exists($account, $user, PM_BLOCK_USER_DISALLOW_BLOCKING)) {
-        drupal_set_message(t('You are not allowed to block !account.', array('!account' => theme('username', array('account' => $account)))), 'warning');
+        backdrop_set_message(t('You are not allowed to block !account.', array('!account' => theme('username', array('account' => $account)))), 'warning');
         unset($accounts[$id]);
         continue;
       }
       // Check if the user is already blocked.
       if (pm_block_user_has_blocked($account, $user)) {
-        drupal_set_message(t('You have already blocked !account.', array('!account' => theme('username', array('account' => $account)))), 'warning');
+        backdrop_set_message(t('You have already blocked !account.', array('!account' => theme('username', array('account' => $account)))), 'warning');
         unset($accounts[$id]);
         continue;
       }
       // Do not allow users to block themself.
       if ($user->uid == $account->uid) {
-        drupal_set_message(t('You can not block yourself.'), 'warning');
+        backdrop_set_message(t('You can not block yourself.'), 'warning');
         unset($accounts[$id]);
         continue;
       }
@@ -170,7 +170,7 @@ function pm_block_user_block_validate($form, &$form_state) {
   }
   // Display warning about invalid user names.
   if (!empty($invalid)) {
-    drupal_set_message(t('The following users do not exist: @invalid.', array('@invalid' => implode(", ", $invalid))), 'warning');
+    backdrop_set_message(t('The following users do not exist: @invalid.', array('@invalid' => implode(", ", $invalid))), 'warning');
   }
   // If there are no accounts left, display error.
   if (empty($accounts)) {
@@ -192,7 +192,7 @@ function pm_block_user_block_submit($form, &$form_state) {
       'author' => $account->uid,
       'recipient' => $user->uid,
     ));
-    drupal_set_message(t('!author has been blocked from sending you any further messages.', array('!author' => theme('username', array('account' => $account)))));
+    backdrop_set_message(t('!author has been blocked from sending you any further messages.', array('!author' => theme('username', array('account' => $account)))));
   }
   $insert->execute();
 }
@@ -202,5 +202,5 @@ function pm_block_user_block_submit($form, &$form_state) {
  */
 function theme_pm_block_user_list($variables) {
   $form = $variables['form'];
-  return drupal_render_children($form) . theme('table', array('header' => $form['#header'], 'rows' =>  $form['#rows'])) . theme('pager');
+  return backdrop_render_children($form) . theme('table', array('header' => $form['#header'], 'rows' =>  $form['#rows'])) . theme('pager');
 }

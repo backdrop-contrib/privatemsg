@@ -22,9 +22,9 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
   }
 
   function testSendMessagetoRoleAPI() {
-    $admin = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg', 'write privatemsg to roles'));
-    $user1 = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg'));
-    $user2 = $this->drupalCreateUser();
+    $admin = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg', 'write privatemsg to roles'));
+    $user1 = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg'));
+    $user2 = $this->backdropCreateUser();
 
     // Add role of user 1 to user 2;
     $edit = array('roles' => $user2->roles + $user1->roles);
@@ -35,8 +35,8 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
     $recipient->type = 'role';
     privatemsg_new_thread(array($recipient), $subject = $this->randomName(10), $body = $this->randomName(50), array('author' => $admin));
 
-    $this->drupalLogin($user2);
-    $this->drupalGet('messages');
+    $this->backdropLogin($user2);
+    $this->backdropGet('messages');
     $this->assertRaw($subject . '</a> <span class="marker">new</span>', t('Message is displayed as new'));
 
     $this->clickLink($subject);
@@ -44,16 +44,16 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
   }
 
   function testSendMessagetoRoleCron() {
-    $admin = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg', 'write privatemsg to roles'));
-    $user1 = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg'));
+    $admin = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg', 'write privatemsg to roles'));
+    $user1 = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg'));
 
-    variable_set('privatemsg_recipient_small_threshold', 20);
-    variable_set('privatemgs_cron_recipient_per_run', 20);
+    config_set('privatemsg.settings', 'privatemsg_recipient_small_threshold', 20);
+    config_set('privatemsg.settings', 'privatemsg_cron_recipient_per_run', 20);
 
     // Create 26 users (more than are allowed to be process directly).
     $users = array();
     for ($i = 0; $i < 25; $i++) {
-      $users[$i] = $this->drupalCreateUser();
+      $users[$i] = $this->backdropCreateUser();
       // Add role of user 1 to user 2;
       $edit = array('roles' => $users[$i]->roles + $user1->roles);
       user_save($users[$i], $edit);
@@ -69,8 +69,8 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
 
     // Test a few recipients to see if they recieved the message.
     foreach (array(0, 5, 18) as $uid) {
-      $this->drupalLogin($users[$uid]);
-      $this->drupalGet('messages');
+      $this->backdropLogin($users[$uid]);
+      $this->backdropGet('messages');
       $this->assertRaw($subject . '</a> <span class="marker">new</span>', t('Message is displayed as new'));
 
       $this->clickLink($subject);
@@ -78,8 +78,8 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
     }
 
     // Make sure that user 20 has not yet recieved the message.
-    $this->drupalLogin($users[20]);
-    $this->drupalGet('messages');
+    $this->backdropLogin($users[20]);
+    $this->backdropGet('messages');
     $this->assertNoText($subject, t('Message is not yet displayed for this user'));
 
     // Run cron again.
@@ -87,8 +87,8 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
 
     // Test that the remaining recipients do now see the message too.
     foreach (array(20, 24) as $uid) {
-      $this->drupalLogin($users[$uid]);
-      $this->drupalGet('messages');
+      $this->backdropLogin($users[$uid]);
+      $this->backdropGet('messages');
       $this->assertRaw($subject . '</a> <span class="marker">new</span>', t('Message is displayed as new'));
 
       $this->clickLink($subject);
@@ -97,19 +97,19 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
   }
 
   function testSendMessagetoRoleBatch() {
-    $admin = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg', 'write privatemsg to roles'));
-    $user1 = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg'));
+    $admin = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg', 'write privatemsg to roles'));
+    $user1 = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg'));
 
-    variable_set('privatemsg_recipient_small_threshold', 20);
+    config_set('privatemsg.settings', 'privatemsg_recipient_small_threshold', 20);
     // Create 25 users (more than are allowed to be process directly).
     $users = array();
     for ($i = 0; $i < 25; $i++) {
-      $users[$i] = $this->drupalCreateUser();
+      $users[$i] = $this->backdropCreateUser();
       // Add role of user 1 to user 2;
       $edit = array('roles' => $users[$i]->roles + $user1->roles);
       user_save($users[$i], $edit);
     }
-    $this->drupalLogin($admin);
+    $this->backdropLogin($admin);
 
     // Send a message to the role shared by all users.
     $edit = array(
@@ -117,13 +117,13 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
       'subject' => $this->randomName(10),
       'body[value]' => $this->randomName(50),
     );
-    $this->drupalPost('messages/new', $edit, t('Send message'));
+    $this->backdropPost('messages/new', $edit, t('Send message'));
     $this->assertText(t('A message has been sent to @role (role).', array('@role' => user_role_load($user1->roles[4])->name)));
 
     // Test a few recipients to see if they all recieved the message.
     foreach ($users as $user) {
-      $this->drupalLogin($user);
-      $this->drupalGet('messages');
+      $this->backdropLogin($user);
+      $this->backdropGet('messages');
       $this->assertRaw($edit['subject'] . '</a> <span class="marker">new</span>', t('Message is displayed as new'));
 
       $this->clickLink($edit['subject']);
@@ -132,9 +132,9 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
   }
 
   function testPermission() {
-    $user1 = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg'));
-    $user2 = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg'));
-    $this->drupalLogin($user1);
+    $user1 = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg'));
+    $user2 = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg'));
+    $this->backdropLogin($user1);
 
     // Send a message to the role of user 1 and 2.
     $edit = array(
@@ -142,41 +142,41 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
       'subject' => $this->randomName(10),
       'body[value]' => $this->randomName(50),
     );
-    $this->drupalPost('messages/new', $edit, t('Send message'));
+    $this->backdropPost('messages/new', $edit, t('Send message'));
     $this->assertText(t('You must include at least one valid recipient.'));
   }
 
   function testSendMessageToRole() {
-    $admin = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg', 'write privatemsg to roles'));
-    $user1 = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg'));
-    $user2 = $this->drupalCreateUser(array('view roles recipients'));
+    $admin = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg', 'write privatemsg to roles'));
+    $user1 = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg'));
+    $user2 = $this->backdropCreateUser(array('view roles recipients'));
 
     // Add role of user 1 to user 2;
     $edit = array('roles' => $user2->roles + $user1->roles);
     user_save($user2, $edit);
-    $this->drupalLogin($admin);
+    $this->backdropLogin($admin);
 
     // Verify autocomplete feature.
     $role_name = user_role_load($user1->roles[4])->name;
-    $json = $this->drupalGet('messages/autocomplete/' . drupal_substr($role_name, 0, 2));
+    $json = $this->backdropGet('messages/autocomplete/' . backdrop_substr($role_name, 0, 2));
     $autocomplete = (array)json_decode($json);
     $this->assertEqual($autocomplete[$role_name . ', '], $role_name);
 
     // Access the form through a url that pre-fills the recipient field.
-    $this->drupalGet('messages/new/role_4');
+    $this->backdropGet('messages/new/role_4');
 
     // Send a message to the role of user 1 and 2.
     $edit = array(
       'subject' => $this->randomName(10),
       'body[value]' => $this->randomName(50),
     );
-    $this->drupalPost(NULL, $edit, t('Send message'));
+    $this->backdropPost(NULL, $edit, t('Send message'));
     $this->assertText(t('A message has been sent to @role (role).', array('@role' => user_role_load($user1->roles[4])->name)));
 
     // Log in as user1 and check that the message is listed, is marked as new
     // and can be marked as read.
-    $this->drupalLogin($user1);
-    $this->drupalGet('messages');
+    $this->backdropLogin($user1);
+    $this->backdropGet('messages');
     $this->assertRaw($edit['subject'] . '</a> <span class="marker">new</span>', t('Message is displayed as new'));
 
     $this->clickLink($edit['subject']);
@@ -189,14 +189,14 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
     $reply1 = array(
       'body[value]' => $this->randomName(50),
     );
-    $this->drupalPost(NULL, $reply1, t('Send message'));
+    $this->backdropPost(NULL, $reply1, t('Send message'));
 
-    $this->drupalGet('messages');
+    $this->backdropGet('messages');
     $this->assertNoRaw($edit['subject'] . '</a> <span class="marker">new</span>', t('Message is displayed as read'));
 
     // Login as admin again and check if he sees the response.
-    $this->drupalLogin($admin);
-    $this->drupalGet('messages');
+    $this->backdropLogin($admin);
+    $this->backdropGet('messages');
     $this->assertRaw($edit['subject'] . '</a> <span class="marker">new</span>', t('Message is displayed as new'));
     $this->clickLink($edit['subject']);
 
@@ -206,11 +206,11 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
     $reply2 = array(
       'body[value]' => $this->randomName(50),
     );
-    $this->drupalPost(NULL, $reply2, t('Send message'));
+    $this->backdropPost(NULL, $reply2, t('Send message'));
 
     // Log in as user2 and check that he only sees the messages from admin.
-    $this->drupalLogin($user2);
-    $this->drupalGet('messages');
+    $this->backdropLogin($user2);
+    $this->backdropGet('messages');
     $this->assertRaw($edit['subject'] . '</a> <span class="marker">new</span>', t('Message is displayed as new'));
     $this->clickLink($edit['subject']);
     $this->assertText(t('@role (role)', array('@role' => $role_name)));
@@ -221,19 +221,19 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
   }
 
   function testSendMessageToRoleBlocked() {
-    $admin = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg', 'write privatemsg to roles'));
-    $user1 = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg'));
-    $user2 = $this->drupalCreateUser();
+    $admin = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg', 'write privatemsg to roles'));
+    $user1 = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg'));
+    $user2 = $this->backdropCreateUser();
 
     // Add role of user 1 to user 2;
     $edit = array('roles' => $user2->roles + $user1->roles);
     user_save($user2, $edit);
 
     // Block admin as user 2.
-    $this->drupalLogin($user2);
-    $this->drupalPost('messages/blocked', array('name' => $admin->name), t('Block user'));
+    $this->backdropLogin($user2);
+    $this->backdropPost('messages/blocked', array('name' => $admin->name), t('Block user'));
 
-    $this->drupalLogin($admin);
+    $this->backdropLogin($admin);
 
     // Send a message to the role of user 1 and 2.
     $edit = array(
@@ -241,13 +241,13 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
       'subject' => $this->randomName(10),
       'body[value]' => $this->randomName(50),
     );
-    $this->drupalPost('messages/new', $edit, t('Send message'));
+    $this->backdropPost('messages/new', $edit, t('Send message'));
     $this->assertText(t('A message has been sent to @role (role).', array('@role' => user_role_load($user1->roles[4])->name)));
 
     // Log in as user1 and check that the message is listed, is marked as new
     // and can be marked as read.
-    $this->drupalLogin($user1);
-    $this->drupalGet('messages');
+    $this->backdropLogin($user1);
+    $this->backdropGet('messages');
     $this->assertRaw($edit['subject'] . '</a> <span class="marker">new</span>', t('Message is displayed as new'));
 
     $this->clickLink($edit['subject']);
@@ -258,34 +258,34 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
 
     // Log in as user2 and make sure that he didn't received the messages
     // as he blocks admin.
-    $this->drupalLogin($user2);
-    $this->drupalGet('messages');
+    $this->backdropLogin($user2);
+    $this->backdropGet('messages');
     $this->assertNoText($edit['subject'], t('Message is not displayed'));
   }
 
   function testNewUser() {
-    $admin = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg', 'write privatemsg to roles'));
-    $user1 = $this->drupalCreateUser(array('read privatemsg', 'write privatemsg'));
+    $admin = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg', 'write privatemsg to roles'));
+    $user1 = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg'));
 
     // Send a message to the role of user 1.
-    $this->drupalLogin($admin);
+    $this->backdropLogin($admin);
     $edit = array(
       'recipient' => user_role_load($user1->roles[4])->name . '[role]',
       'subject' => $this->randomName(10),
       'body[value]' => $this->randomName(50),
     );
-    $this->drupalPost('messages/new', $edit, t('Send message'));
+    $this->backdropPost('messages/new', $edit, t('Send message'));
     $this->assertText(t('A message has been sent to @role (role).', array('@role' => user_role_load($user1->roles[4])->name)));
 
     // Add user 2 with the same role now. The user should not see the message.
-    $user2 = $this->drupalCreateUser();
+    $user2 = $this->backdropCreateUser();
 
     // Add role of user 1 to user 2;
     $edit_roles = array('roles' => $user2->roles + $user1->roles);
     user_save($user2, $edit_roles);
-    $this->drupalLogin($user2);
+    $this->backdropLogin($user2);
 
-    $this->drupalGet('messages');
+    $this->backdropGet('messages');
     $this->assertNoText($edit['subject'], t('Newly added user does not see the old message sent to his role'));
   }
 }
