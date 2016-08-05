@@ -18,7 +18,10 @@
   "privatemsg_view_default_amount": 10,
   "privatemsg_display_link_self": 1,
   "privatemsg_display_profile_links": 1,
-  "privatemsg_link_node_types": "",
+  "privatemsg_link_node_types": {
+    "page": 0,
+    "post": 0
+  },
   "privatemsg_display_on_teaser": 1,
   "privatemsg_display_on_comments": 0,
   "privatemsg_filter_default_list": 0,
