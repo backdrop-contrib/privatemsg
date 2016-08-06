@@ -1344,7 +1344,7 @@ function _privatemsg_delete_data($account) {
  * Implements hook_form_alter().
  */
 function privatemsg_form_alter(&$form, &$form_state, $form_id) {
-  if (($form_id == 'user_register_form' || $form_id == 'user_profile_form') && $form['#user_category'] == 'account') {
+  if (($form_id == 'user_register_form' || $form_id == 'user_profile_form')) {
 
     // Create array to be able to merge in fieldset and avoid overwriting
     // already added options.
