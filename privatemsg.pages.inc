@@ -644,7 +644,7 @@ function privatemsg_new_submit($form, &$form_state) {
   }
   catch (Exception $e) {
     if (error_displayable()) {
-      require_once BACKDROP_ROOT . '/includes/errors.inc';
+      require_once BACKDROP_ROOT . '/core/includes/errors.inc';
       $variables = _backdrop_decode_exception($e);
       backdrop_set_message(t('Failed to send a message to !recipients. %type: !message in %function (line %line of %file).', array('!recipients' => implode(', ', $recipient_names)) + $variables), 'error');
     }
