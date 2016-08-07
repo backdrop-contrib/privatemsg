@@ -376,6 +376,7 @@ function privatemsg_view_access($thread) {
  * @return TRUE if user has disabled private messaging, FALSE otherwise
  */
 function privatemsg_is_disabled($account) {
+  // Make sure account exists
   if (!$account || !isset($account->uid) || !$account->uid) {
     return FALSE;
   }
@@ -1389,14 +1390,18 @@ function privatemsg_account_fieldset_remove_if_empty($element) {
 }
 
 /**
- * Implements hook_user_insert().
+ * Implements hook_user_update().
+ * {pm_disable} holds the list of users that have disabled private messaging
  */
-function privatemsg_user_update(&$edit, $account, $category) {
-  if (isset($edit['pm_enable']) && (user_access('write privatemsg') || user_access('read privatemsg')) && user_access('allow disabling privatemsg')) {
+function privatemsg_user_update($account) {
+  if (isset($account->pm_enable) && (user_access('write privatemsg') || user_access('read privatemsg')) && user_access('allow disabling privatemsg')) {
+    // check whether user is listed in pm_disable datatable
     $current = privatemsg_is_disabled($account);
-    $disabled = (!$edit['pm_enable']);
-    $edit['pm_enable'] = NULL;
-
+    // $account->pm_enable was TRUE so set $disabled to FALSE
+    $disabled = (!$account->pm_enable);
+    // remove setting for $account->pm_enable
+    $account->pm_enable = NULL;
+    // set privatemsg_disabled to FALSE
     $account->privatemsg_disabled = $disabled;
 
     // only perform the save if the value has changed
