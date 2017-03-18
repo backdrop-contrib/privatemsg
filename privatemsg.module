@@ -1457,10 +1457,18 @@ function privatemsg_account_fieldset_remove_if_empty($element) {
 }
 
 /**
+ * Implements hook_user_insert().
+ */
+function privatemsg_user_insert($account) {
+  // Insert and update run the same code.
+  privatemsg_user_update($account);
+}
+
+/**
  * Implements hook_user_update().
- * {pm_disable} holds the list of users that have disabled private messaging
  */
 function privatemsg_user_update($account) {
+  // {pm_disable} holds the list of users that have disabled private messaging
   if (isset($account->pm_enable) && (user_access('write privatemsg', $account) || user_access('read privatemsg', $account)) && user_access('allow disabling privatemsg', $account)) {
     // Check whether user is listed in pm_disable table.
     $current = privatemsg_is_disabled($account);
