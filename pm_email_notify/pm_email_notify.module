@@ -192,6 +192,7 @@ function pm_email_notify_form_privatemsg_admin_settings_alter(&$form, &$form_sta
   }
 
   // Add a submit button
+  $form['#submit'][] = 'pm_email_notify_form_privatemsg_admin_settings_alter_submit';
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Save configuration'),
@@ -213,5 +214,4 @@ function pm_email_notify_form_privatemsg_admin_settings_alter_submit($form, &$fo
   $config->set('browser', $form_state['values']['browser']);
   $config->set('suggestions', $form_state['values']['suggestions']);
   $config->save();
-  backdrop_set_message(t('The configuration options have been saved.'));
 }
