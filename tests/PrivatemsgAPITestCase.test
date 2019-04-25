@@ -1,0 +1,200 @@
+<?php
+
+require_once backdrop_get_path('module', 'privatemsg') . '/tests/PrivatemsgBaseTestCase.test';
+
+/**
+ * Privatemsg API tests
+ */
+class PrivatemsgAPITestCase extends PrivatemsgBaseTestCase {
+  /**
+   * Implements getInfo().
+   */
+  public static function getInfo() {
+    return array(
+      // 'name' should start with what is being tested (menu item) followed by what about it
+      // is being tested (creation/deletion).
+      'name' => t('Privatemsg API functionality.'),
+      // 'description' should be one or more complete sentences that provide more details on what
+      // exactly is being tested.
+      'description' => t('Test sending, receiving, listing, deleting messages and other features via API.'),
+      // 'group' should be a logical grouping of test cases, like a category.  In most cases, that
+      // is the module the test case is for.
+      'group' => t('Privatemsg'),
+    );
+  }
+
+  /**
+   * Implements setUp().
+   */
+  function setUp() {
+    parent::setUp('privatemsg');
+
+    // Create the full html format.
+    $full_html_format = array(
+      'format' => 'full_html',
+      'name' => 'Full HTML',
+      'weight' => 1,
+      'filters' => array(
+        // URL filter.
+        'filter_url' => array(
+          'weight' => 0,
+          'status' => 1,
+        ),
+        // Line break filter.
+        'filter_autop' => array(
+          'weight' => 1,
+          'status' => 1,
+        ),
+        // HTML corrector filter.
+        'filter_htmlcorrector' => array(
+          'weight' => 10,
+          'status' => 1,
+        ),
+      ),
+    );
+    $full_html_format = (object) $full_html_format;
+    filter_format_save($full_html_format);
+    // Refresh permissions.
+    $this->checkPermissions(array(), TRUE);
+  }
+
+  function testPrivatemsgApiNewThread() {
+    $author     = $this->backdropCreateUser(array('write privatemsg', 'read privatemsg'));
+    $recipient1  = $this->backdropCreateUser(array('read privatemsg'));
+    $recipient2  = $this->backdropCreateUser(array('read privatemsg'));
+    $recipient3  = $this->backdropCreateUser(array('read privatemsg'));
+
+    // Reset user_access cache
+    user_access('', $author, TRUE);
+
+    $resultok1 = privatemsg_new_thread(array($recipient1, $recipient2, $recipient3), 'normal message', 'Body text', array('author' => $author));
+    $this->assertTrue($resultok1['success'], 'Private message could be sent successfully');
+
+    $message = $this->getMessageFromSubject('normal message');
+    $this->assertFalse(empty($message), 'Message was saved in database');
+    $this->assertEqual($message->author, $author->uid, 'Message was sent by author');
+
+    $resultok2 = privatemsg_new_thread(array($recipient1, $recipient2, $recipient3), 'empty body', '', array('author' => $author));
+    $this->assertTrue($resultok2['success'], 'API allowed to send message without body');
+
+    $resultf1 = privatemsg_new_thread(array($recipient1, $recipient2, $recipient3), '', 'No subject', array('author' => $author));
+    $this->assertEqual('A subject must be included with the message.', $resultf1['messages']['error'][0], 'API denied to send message without a subject');
+
+    $resultf2 = privatemsg_new_thread(array(), 'no recipients', 'Body text', array('author' => $author));
+    $this->assertEqual('At least one valid recipient must be included with the message.', $resultf2['messages']['error'][0], 'API denied to send message without recipients');
+    $message = $this->getMessageFromSubject('no recipients');
+    $this->assertTrue(empty($message), 'Message was not saved in database');
+
+    $resultf3 = privatemsg_new_thread(array($recipient1, $recipient2, $recipient3), 'not allowed', 'Body text', array('author' => $recipient1));
+    $errormessage = t('@user is not allowed to write messages.', array('@user' => $recipient1->name));
+    $this->assertEqual($errormessage, $resultf3['messages']['error'][0], 'API denied to send message from user without permission');
+    $message = $this->getMessageFromSubject('not allowed');
+    $this->assertTrue(empty($message), 'Message was not saved in database');
+
+    // Test with an input format that the author is not allowed to use.
+    $resultf4 = privatemsg_new_thread(array($recipient1, $recipient2, $recipient3), 'input filter not allowed', 'Body text', array('author' => $author, 'format' => 'full_html'));
+    $errormessage = t('@user is not allowed to use the specified input format.', array('@user' => $author->name));
+    $this->assertEqual($errormessage, $resultf4['messages']['error'][0], t('User is not allowed to use the specified input format.'));
+    $message = $this->getMessageFromSubject('input filter not allowed');
+    $this->assertTrue(empty($message), 'Message was not saved in database');
+
+    // Send a message through the api to the same user and check if it marked
+    // as new.
+    privatemsg_new_thread(array($author), $subject = $this->randomName(10), $this->randomString(20), array('author' => $author));
+    $this->backdropLogin($author);
+    $this->backdropGet('messages');
+    $this->clickLink($subject);
+    $this->assertText(t('New'), t('Message is marked as new'));
+  }
+
+  function getMessageFromSubject($subject) {
+    return db_query("SELECT * FROM {pm_message} WHERE subject = :subject", array(':subject' => $subject))->fetchObject();
+  }
+
+  function testPrivatemsgApiReply() {
+    $author     = $this->backdropCreateUser(array('write privatemsg'));
+    $recipient1  = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg'));
+    $recipient2  = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg'));
+    $recipient3  = $this->backdropCreateUser(array('read privatemsg'));
+
+    // Reset user_access cache
+    user_access('', $author, TRUE);
+
+    $resultok = privatemsg_new_thread(array($recipient2, $recipient1, $recipient3), 'test reply', 'body text', array('author' => $author));
+    $this->assertTrue($resultok['success'], 'Private message could be sent successfully');
+
+    $thread_row = $this->getMessageFromSubject('test reply');
+
+    $resultok = privatemsg_reply($thread_row->mid, 'Test Body', array('author' => $author));
+    $this->assertTrue($resultok['success'], 'Reply could be sent successfully');
+
+    $resultok = privatemsg_reply($thread_row->mid, 'Test Body', array('author' => $recipient1));
+    $this->assertTrue($resultok['success'], 'Reply could be sent successfully');
+
+    $resultf1 = privatemsg_reply($thread_row->mid, '', array('author' => $recipient2));
+    $this->assertFalse($resultf1['success'], 'API denied to send message without body.');
+    $this->assertEqual($resultf1['messages']['error'][0], t('A message must be included in your reply.'), 'Correct error returned when replying with an empty body.');
+
+    $resultf2 = privatemsg_reply($thread_row->mid, 'Test Body', array('author' => $recipient3));
+    $errormessage = t('@user is not allowed to write messages.', array('@user' => $recipient3->name));
+    $this->assertEqual($errormessage, $resultf2['messages']['error'][0], 'API denied to send message from user without permission');
+
+  }
+
+  /**
+   * Test various use cases for privatemsg_get_link().
+   */
+  function testGetLink() {
+    $author      = $this->backdropCreateUser(array('write privatemsg', 'read privatemsg'));
+    $recipient1  = $this->backdropCreateUser(array('read privatemsg'));
+    $recipient2  = $this->backdropCreateUser(array('read privatemsg'));
+    $recipient3  = $this->backdropCreateUser(array('read privatemsg', 'allow disabling privatemsg'));
+    $recipient4  = $this->backdropCreateUser();
+
+    $this->backdropLogin($author);
+
+    $this->backdropGet(privatemsg_get_link(array($recipient1)));
+    $this->assertFieldByName('recipient', $recipient1->name . ' [user]');
+
+    $this->backdropGet(privatemsg_get_link(array($recipient1, $recipient2)));
+    $this->assertFieldByName('recipient', $recipient1->name . ' [user], ' . $recipient2->name . ' [user]');
+
+    $this->backdropGet(privatemsg_get_link(array($recipient1, $recipient2), $author));
+    $this->assertFieldByName('recipient', $recipient1->name . ' [user], ' . $recipient2->name . ' [user]');
+
+    $this->backdropGet(privatemsg_get_link(array($recipient1, $recipient2), $author, $subject = 'Str/"ang\\w3//'));
+    $this->assertFieldByName('recipient', $recipient1->name . ' [user], ' . $recipient2->name . ' [user]');
+    $this->assertFieldByName('subject', $subject);
+
+    // Disable privatemsg for recipient 3.
+    db_insert('pm_disable')
+      ->fields(array(
+        'uid' => $recipient3->uid,
+      ))
+      ->execute();
+    $this->assertFalse(privatemsg_get_link(array($recipient3), $author));
+
+    $this->backdropGet(privatemsg_get_link(array($recipient1, $recipient3), $author));
+    $this->assertFieldByName('recipient', $recipient1->name . ' [user]');
+
+    // Disable links to self, verify that a link is only returned when the
+    // author is not the only recipient.
+    config_set('privatemsg.settings', 'privatemsg_display_link_self', FALSE);
+
+    $this->assertFalse(privatemsg_get_link(array($author), $author));
+
+    $this->backdropGet(privatemsg_get_link(array($recipient1, $author), $author));
+    $this->assertFieldByName('recipient', $recipient1->name . ' [user]');
+
+    // Verify that link is not shown when recipient doesn't have read
+    // permission.
+    $this->assertFalse(privatemsg_get_link(array($recipient4), $author));
+
+    $this->backdropGet(privatemsg_get_link(array($recipient1, $recipient4), $author));
+    $this->assertFieldByName('recipient', $recipient1->name . ' [user]');
+
+    // Verify that link is not shown when author does not have write permission.
+    $this->backdropLogin($recipient1);
+    $this->assertFalse(privatemsg_get_link(array($author), $recipient1));
+  }
+}

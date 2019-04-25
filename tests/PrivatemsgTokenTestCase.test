@@ -1,0 +1,108 @@
+<?php
+
+require_once backdrop_get_path('module', 'privatemsg') . '/tests/PrivatemsgBaseTestCase.test';
+
+/**
+ * Tests for fields integration.
+ */
+class PrivatemsgTokenTestCase extends PrivatemsgBaseTestCase {
+  /**
+   * Implements of getInfo().
+   */
+  public static function getInfo() {
+    return array
+    (
+      'name' => t('Privatemsg tokens'),
+      'description' => t('Tests tokens in private messages.'),
+      'group' => t('Privatemsg'),
+      'dependencies' => array('token'),
+    );
+  }
+
+  /**
+   * Implements setUp().
+   */
+  function setUp() {
+    parent::setUp('privatemsg', 'token');
+  }
+
+  /**
+   * Basic token functionality.
+   */
+  function testBasicTokens() {
+    $author = $this->backdropCreateUser(array('write privatemsg', 'read privatemsg', 'use tokens in privatemsg'));
+    $recipient1 = $this->backdropCreateUser(array('write privatemsg', 'read privatemsg'));
+    $recipient2 = $this->backdropCreateUser(array('write privatemsg', 'read privatemsg'));
+
+    $this->backdropLogin($author);
+
+    // Enable preview button.
+    config_set('privatemsg.settings', 'privatemsg_display_preview_button', TRUE);
+
+    // Create message with tokens and preview it.
+    $edit = array(
+      'recipient'   => $recipient1->name . ', ' . $recipient2->name,
+      'subject'     => 'Hey [privatemsg_message:recipient:name]',
+      'body[value]' => "Testing a few tokens.\n\nSubject: [privatemsg_message:subject]\n\nAuthor: [privatemsg_message:author:name]\n\nInvalid token: [privatemsg_message:invalid_token]",
+    );
+    $this->backdropPost('messages/new', $edit, t('Preview message'));
+
+    // Make sure the tokens in subject and body are correctly displayed in the
+    // preview.
+    $this->assertText('Hey &lt; Token [privatemsg_message:recipient:name] &gt;', t('Token is displayed in subject.'));
+    $this->assertText('Subject: &lt; Token [privatemsg_message:subject] &gt;', t('Subject token is displayed.'));
+    $this->assertText('Author: &lt; Token [privatemsg_message:author:name] &gt;', t('Author token is displayed.'));
+    $this->assertText('Invalid token: &lt; INVALID TOKEN [privatemsg_message:invalid_token] &gt;', t('Invalid token is displayed.'));
+    $this->assertText(t('Note: Valid tokens will be replaced when a recipient is reading this message.'), t('Token notice is displayed.'));
+
+    $this->backdropPost(NULL, array(), t('Send message'));
+
+    // Make sure the tokens in subject and body are correctly displayed in the
+    // sent message.
+    $this->assertText('Hey &lt; Token [privatemsg_message:recipient:name] &gt;', t('Token is displayed in subject.'));
+    $this->assertText('Subject: &lt; Token [privatemsg_message:subject] &gt;', t('Subject token is displayed.'));
+    $this->assertText('Author: &lt; Token [privatemsg_message:author:name] &gt;', t('Author token is displayed.'));
+    $this->assertText('Invalid token: &lt; INVALID TOKEN [privatemsg_message:invalid_token] &gt;', t('Invalid token is displayed.'));
+    $this->assertText(t('Note: Valid tokens will be replaced when a recipient is reading this message.'), t('Token notice is displayed.'));
+
+    // Log in as the first recipient, verify that he sees the message with the
+    // replacements.
+    $this->backdropLogin($recipient1);
+    $this->backdropGet('messages');
+    $this->clickLink('Hey ' . $recipient1->name);
+
+    // Make sure the tokens in subject and body are correctly displayed in the
+    // message.
+    $this->assertText('Hey ' . $recipient1->name, t('Replaced token is displayed in subject.'));
+    $this->assertText('Subject: Hey ' . $recipient1->name, t('Subject token is replaced.'));
+    $this->assertText('Author: ' . $author->name, t('Author token is replaced.'));
+    $this->assertText('Invalid token: [privatemsg_message:invalid_token]', t('Invalid token is displayed.'));
+    $this->assertNoText(t('Note: Valid tokens will be replaced when a recipient is reading this message.'), t('Token notice is displayed.'));
+
+    // Reply, verify that the message still shows the correct subject and
+    // tokens from this user are not replaced.
+    $reply = array(
+      'body[value]' => 'Response with a token [privatemsg_message:mid]',
+    );
+    $this->backdropPost(NULL, $reply, t('Send message'));
+
+    $this->backdropLogin($recipient2);
+    $this->backdropGet('messages');
+    $this->clickLink('Hey ' . $recipient2->name);
+
+    // Make sure the tokens in subject and body are correctly displayed in the
+    // message.
+    $this->assertText('Hey ' . $recipient2->name, t('Replaced token is displayed in subject.'));
+    $this->assertText('Subject: Hey ' . $recipient2->name, t('Subject token is replaced.'));
+    $this->assertText('Author: ' . $author->name, t('Author token is replaced.'));
+    $this->assertText('Invalid token: [privatemsg_message:invalid_token]', t('Invalid token is displayed.'));
+    $this->assertText('Response with a token [privatemsg_message:mid]', t('Token from recipient is not replaced.'));
+    $this->assertNoText(t('Note: Valid tokens will be replaced when a recipient is reading this message.'), t('Token notice is displayed.'));
+
+    $this->backdropLogin($author);
+    $this->backdropGet('messages');
+
+    // Assert that token is displayed in the subject for the author.
+    $this->assertText('Hey &lt; Token [privatemsg_message:recipient:name] &gt;', t('Token is displayed correctly in subject for author.'));
+  }
+}

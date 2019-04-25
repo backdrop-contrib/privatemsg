@@ -1,0 +1,125 @@
+<?php
+
+require_once backdrop_get_path('module', 'privatemsg') . '/tests/PrivatemsgBaseTestCase.test';
+
+/**
+ * Tests for fields integration.
+ */
+class PrivatemsgFieldsTestCase extends PrivatemsgBaseTestCase {
+  /**
+   * Implements getInfo().
+   */
+  public static function getInfo() {
+    return array
+    (
+      'name' => t('Privatemsg fields.'),
+      'description' => t('Tests integration with fields.'),
+      'group' => t('Privatemsg'),
+    );
+  }
+
+  /**
+   * Implements setUp().
+   */
+  function setUp() {
+    parent::setUp('privatemsg', 'image', 'text', 'field_ui');
+  }
+
+  function testSingleField() {
+    $admin = $this->backdropCreateUser(array('administer privatemsg settings', 'write privatemsg', 'read privatemsg'));
+    $user = $this->backdropCreateUser(array('write privatemsg', 'read privatemsg'));
+
+    $this->backdropLogin($admin);
+
+    // Create a new field.
+    $edit = array(
+      'fields[_add_new_field][label]' => $label = $this->randomName(),
+      'fields[_add_new_field][field_name]' => $name = strtolower($this->randomName()),
+      'fields[_add_new_field][type]' => 'text',
+      'fields[_add_new_field][widget_type]' => 'text_textfield',
+    );
+    $this->backdropPost('admin/config/messaging/privatemsg/fields', $edit, t('Save'));
+    $this->backdropPost(NULL, array(), t('Save field settings'));
+    $this->backdropPost(NULL, array(), t('Save settings'));
+
+    // Enable preview button.
+    config_set('privatemsg.settings', 'privatemsg_display_preview_button', TRUE);
+
+    // Preview message.
+    $message = array(
+      'recipient' => $user->name,
+      'subject' => $this->randomName(),
+      'body[value]'    => $this->randomName(50),
+      'field_' . $name . '[und][0][value]' => $this->randomName(50),
+    );
+    $this->backdropPost('messages/new', $message, t('Preview message'));
+
+    // Send message.
+    $this->backdropPost(NULL, array(), t('Send message'));
+
+    // Check message.
+    $this->backdropLogin($user);
+    $this->backdropGet('messages');
+    $this->clickLink($message['subject']);
+
+    $this->assertText($message['body[value]'], t('Message body displayed.'));
+    $this->assertText($message['field_' . $name . '[und][0][value]'], t('Content of new field is displayed.'));
+
+    // Respond.
+    $response = array(
+      'body[value]' => $this->randomName(50),
+      'field_' . $name . '[und][0][value]' => $this->randomName(50),
+    );
+    $this->backdropPost(NULL, $response, t('Send message'));
+
+    // Check response.
+    $this->backdropLogin($admin);
+    $this->backdropGet('messages');
+    $this->clickLink($message['subject']);
+
+    $this->assertText($response['body[value]'], t('Message body displayed.'));
+    $this->assertText($response['field_' . $name . '[und][0][value]'], t('Content of new field is displayed.'));
+  }
+
+  /**
+   * Verify that a message with an empty image can be sent.
+   */
+  function testEmptyImage() {
+    $admin = $this->backdropCreateUser(array('administer privatemsg settings', 'write privatemsg', 'read privatemsg'));
+    $user = $this->backdropCreateUser(array('write privatemsg', 'read privatemsg'));
+
+    $this->backdropLogin($admin);
+
+    // Create a new field.
+    $edit = array(
+      'fields[_add_new_field][label]' => $label = $this->randomName(),
+      'fields[_add_new_field][field_name]' => $name = strtolower($this->randomName()),
+      'fields[_add_new_field][type]' => 'image',
+      'fields[_add_new_field][widget_type]' => 'image_image',
+    );
+    $this->backdropPost('admin/config/messaging/privatemsg/fields', $edit, t('Save'));
+    $this->backdropPost(NULL, array(), t('Save field settings'));
+    $this->backdropPost(NULL, array(), t('Save settings'));
+
+    // Enable preview button.
+    config_set('privatemsg.settings', 'privatemsg_display_preview_button', TRUE);
+
+    // Preview message.
+    $message = array(
+      'recipient' => $user->name,
+      'subject' => $this->randomName(),
+      'body[value]'    => $this->randomName(50),
+    );
+    $this->backdropPost('messages/new', $message, t('Preview message'));
+
+    // Send message.
+    $this->backdropPost(NULL, array(), t('Send message'));
+
+    // Check message.
+    $this->backdropLogin($user);
+    $this->backdropGet('messages');
+    $this->clickLink($message['subject']);
+
+    $this->assertText($message['body[value]'], t('Message body displayed.'));
+  }
+}
