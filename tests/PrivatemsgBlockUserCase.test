@@ -3,6 +3,7 @@
  * @file
  * Test file for pm_block_user.module
  */
+require_once backdrop_get_path('module', 'privatemsg') . '/tests/PrivatemsgBaseTestCase.test';
 
 class PrivatemsgBlockUserCase extends PrivatemsgBaseTestCase {
   /**

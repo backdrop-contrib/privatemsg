@@ -1,0 +1,17 @@
+ <?php
+
+ /**
+  * @file
+  * Test file for privatemsg.module
+  *
+  */
+
+ /**
+  * Base class for Privatemsg tests.
+  */
+ abstract class PrivatemsgBaseTestCase extends BackdropWebTestCase {
+   /**
+    * Use testing profile.
+    */
+   protected $profile = 'testing';
+ }

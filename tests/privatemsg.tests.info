@@ -1,0 +1,53 @@
+[PrivatemsgTestCase]
+name = Privatemsg Tests
+description = Privatemsg Tests
+group = Privatemsg
+file = PrivatemsgTestCase.test
+
+[PrivatemsgFieldsTestCase]
+name = Privatemsg Field Tests
+description = Privatemsg Field Tests
+group = Privatemsg
+file = PrivatemsgFieldsTestCase.test
+
+[PrivatemsgLinksTestCase]
+name = Privatemsg Link Tests
+description = Privatemsg Link Tests
+group = Privatemsg
+file = PrivatemsgLinksTestCase.test
+
+[PrivatemsgTokenTestCase]
+name = Privatemsg Token Tests
+description = Privatemsg Token Tests
+group = Privatemsg
+file = PrivatemsgTokenTestCase.test
+
+[PrivatemsgAPITestCase]
+name = Privatemsg API Tests
+description = Privatemsg API Tests
+group = Privatemsg
+file = PrivatemsgAPITestCase.test
+
+[PrivatemsgBlockUserCase]
+name = Privatemsg Block User Tests
+description = Privatemsg Block User Tests
+group = Privatemsg
+file = PrivatemsgBlockUserCase.test
+
+[PrivatemsgFilterTestCase]
+name = Privatemsg Filter Tests
+description = Privatemsg Filter Tests
+group = Privatemsg
+file = PrivatemsgFilterTestCase.test
+
+[PrivatemsgTagsTestCase]
+name = Privatemsg Tag Tests
+description = Privatemsg Tag Tests
+group = Privatemsg
+file = PrivatemsgTagsTestCase.test
+
+[PrivatemsgFilterWidgetTestCase]
+name = Privatemsg Filter Widget Tests
+description = Privatemsg Filter Widget Tests
+group = Privatemsg
+file = PrivatemsgFilterWidgetTestCase.test

@@ -3206,16 +3206,6 @@ function privatemsg_config_info() {
 function privatemsg_autoload_info() {
   return array(
     'PrivatemsgMessageController' => 'privatemsg.controller.inc',
-    'PrivatemsgBaseTestCase' => 'privatemsg.test',
-    'PrivatemsgTestCase' => 'privatemsg.test',
-    'PrivatemsgFieldsTestCase' => 'privatemsg.test',
-    'PrivatemsgLinksTestCase' => 'privatemsg.test',
-    'PrivatemsgTokenTestCase' => 'privatemsg.test',
-    'PrivatemsgAPITestCase' => 'privatemsg.test',
-    'PrivatemsgBlockUserCase' => 'pm_block_user/pm_block_user.test',
-    'PrivatemsgFilterTestCase' => 'privatemsg_filter/privatemsg_filter.test',
-    'PrivatemsgTagsTestCase' => 'privatemsg_filter/privatemsg_filter.test',
-    'PrivatemsgFilterWidgetTestCase' => 'privatemsg_filter/privatemsg_filter.test',
     'views_handler_field_privatemsg_link' => 'views/views_handler_field_privatemsg_link.inc',
   );
 }
