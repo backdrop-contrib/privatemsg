@@ -390,7 +390,7 @@ function pm_block_user_query_privatemsg_autocomplete_alter($query) {
         // authenticated user role is not stored in the database but all users
         // have it so there can be no valid recipients. Add a condition that is
         // always false and bail out because no other rules need to be checked.
-        if ($details['recipient'] == BACKDROP_AUTHENTICATED_RID) {
+        if ($details['recipient'] == BACKDROP_AUTHENTICATED_ROLE) {
           $query->addExpression('1 = 0');
           return;
         }

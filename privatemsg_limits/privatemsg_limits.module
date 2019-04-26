@@ -242,7 +242,7 @@ function _privatemsg_limits_get_amount($name, $account) {
   // case.
   // @todo: Remove once privatemsg_user_load_multiple() is implemented.
   if (!isset($account->roles)) {
-    $account->roles = array(BACKDROP_AUTHENTICATED_RID => 'authenticated user');
+    $account->roles = array(BACKDROP_AUTHENTICATED_ROLE => 'authenticated user');
     $account->roles += db_query('SELECT r.rid, r.name FROM {role} r INNER JOIN {users_roles} ur ON ur.rid = r.rid WHERE ur.uid = :uid', array(':uid' => $account->uid))->fetchAllKeyed();
   }
 
