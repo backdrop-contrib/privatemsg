@@ -75,13 +75,16 @@ configure 'Write to Author' options.
 This project is GPL v2 software. See the LICENSE.txt file in this
 directory for complete text.
 
+## Current Maintainers
+
++ David Radcliffe (https://github.com/Radcliffe)
++ Seeking additional maintainers
 
 ## Credits
 
 ### Port to Backdrop
 
 + Graham Oliver (github.com/Graham-72)
-
 
 ### Maintainers for Drupal:
 
