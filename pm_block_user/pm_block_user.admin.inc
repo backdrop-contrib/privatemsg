@@ -33,13 +33,13 @@ function _pm_block_user_actions_form($details, $blacklist = TRUE) {
   $form['author'] = array(
     '#type' => 'select',
     '#options' => user_roles(TRUE),
-    '#default_value' => (isset($details['author']) ? $details['author'] : BACKDROP_AUTHENTICATED_RID),
+    '#default_value' => (isset($details['author']) ? $details['author'] : BACKDROP_AUTHENTICATED_ROLE),
     '#disabled' => $row_disabled,
   );
   $form['recipient'] = array(
     '#type' => 'select',
     '#options' => user_roles(TRUE),
-    '#default_value' => (isset($details['recipient']) ? $details['recipient'] : BACKDROP_AUTHENTICATED_RID),
+    '#default_value' => (isset($details['recipient']) ? $details['recipient'] : BACKDROP_AUTHENTICATED_ROLE),
     '#disabled' => $row_disabled,
   );
 
@@ -182,9 +182,11 @@ function pm_block_user_settings($form, &$form_state) {
   }
   // Work through each rule, adding it as a new element in
   // $form['block_actions'] ready to be themed later.
-  foreach ($block_actions as $delta => $details) {
-    $details['delta'] = $delta;
-    $form['block_actions'][$delta] = _pm_block_user_actions_form($details);
+  if (!empty($block_actions)) {
+    foreach ($block_actions as $delta => $details) {
+      $details['delta'] = $delta;
+      $form['block_actions'][$delta] = _pm_block_user_actions_form($details);
+    }
   }
 
   // The magic AHAH callback button that adds more rows.

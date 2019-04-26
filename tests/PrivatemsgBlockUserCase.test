@@ -39,7 +39,7 @@ class PrivatemsgBlockUserCase extends PrivatemsgBaseTestCase {
     // If this fails we still have the default empty block user form.
     $this->assertNoText(t('No rules have been added'), t('The block form now allows adding rules.'));
 
-    // If author role is 4 and recipent role is 5, disallow sending of messages.
+    // If author role is 4 and recipient role is 5, disallow sending of messages.
     $edit = array(
       'block_actions[0][author]' => 3,
       'block_actions[0][recipient]' => 4,

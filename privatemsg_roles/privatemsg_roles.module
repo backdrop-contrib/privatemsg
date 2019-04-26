@@ -83,7 +83,7 @@ function theme_privatemsg_roles_format($variables) {
  */
 function privatemsg_roles_load_recipients($recipient, $limit, $offset) {
   $rid = isset($recipient->recipient) ? $recipient->recipient : $recipient->rid;
-  if ($rid == BACKDROP_AUTHENTICATED_RID) {
+  if ($rid == BACKDROP_AUTHENTICATED_ROLE) {
     $result = db_query_range('SELECT uid FROM {users} WHERE uid > 0 ORDER BY uid ASC', $offset, $limit);
   }
   else {
@@ -98,7 +98,7 @@ function privatemsg_roles_load_recipients($recipient, $limit, $offset) {
  */
 function privatemsg_roles_count_recipients($recipient) {
   $rid = isset($recipient->recipient) ? $recipient->recipient : $recipient->rid;
-  if ($rid == BACKDROP_AUTHENTICATED_RID) {
+  if ($rid == BACKDROP_AUTHENTICATED_ROLE) {
     return db_query('SELECT COUNT(uid) FROM {users}')->fetchField();
   }
   else {
