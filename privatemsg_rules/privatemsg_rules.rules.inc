@@ -14,7 +14,7 @@ function privatemsg_rules_rules_action_info() {
 
   // Re-use existing information and also get information about fields added
   // to private messages.
-  $fields = entity_get_all_property_info('privatemsg_message');
+  $fields = entity_plus_get_all_property_info('privatemsg_message');
 
   // Remove properties that can't be used here.
   unset($fields['mid']);
