@@ -223,6 +223,9 @@ function pm_block_user_has_blocked($author, $recipient) {
  */
 function _pm_block_user_rule_exists($author, $recipient, $action = PM_BLOCK_USER_DISALLOW_BLOCKING) {
   $block_actions = config_get('privatemsg.settings', 'pm_block_user_actions');
+  if (empty($block_actions)) {
+    return FALSE;
+  }
   foreach ($block_actions as $details) {
     // If this rule doesn't relate to $action, or it's disabled
     // ignore it and go to next loop iteration.
