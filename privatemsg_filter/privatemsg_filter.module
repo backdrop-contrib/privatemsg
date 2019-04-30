@@ -58,7 +58,7 @@ function privatemsg_filter_menu() {
   $items['admin/config/messaging/privatemsg/tags/rebuild'] = array(
     'title' => 'Rebuild inbox',
     'page callback' => 'backdrop_get_form',
-    'page arguments' => array('privatemsg_filter_inbox_rebuid_form'),
+    'page arguments' => array('privatemsg_filter_inbox_rebuild_form'),
     'file' => 'privatemsg_filter.admin.inc',
     'access arguments' => array('administer privatemsg settings'),
     'type' => MENU_LOCAL_TASK,
