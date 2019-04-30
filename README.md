@@ -11,6 +11,9 @@ as separate modules.
 This is a port to Backdrop of the Drupal module, version 7.x-1.4.
 It is currently under development.
 
+**Warning**: This module has major bugs, and it may crash
+your website. Do not use on production websites.
+
 ## Features
 
     + send and receive private messages on a site
