@@ -1,53 +1,53 @@
 [PrivatemsgTestCase]
-name = Privatemsg Tests
-description = Privatemsg Tests
+name = Privatemsg functionality
+description = Test sending, receiving, listing, deleting messages and other features.
 group = Privatemsg
 file = PrivatemsgTestCase.test
 
 [PrivatemsgFieldsTestCase]
-name = Privatemsg Field Tests
-description = Privatemsg Field Tests
+name = Privatemsg fields
+description = Tests integration with fields.
 group = Privatemsg
 file = PrivatemsgFieldsTestCase.test
 
 [PrivatemsgLinksTestCase]
-name = Privatemsg Link Tests
-description = Privatemsg Link Tests
+name = Privatemsg links
+description = Tests links displayed in nodes, profiles and blocks.
 group = Privatemsg
 file = PrivatemsgLinksTestCase.test
 
 [PrivatemsgTokenTestCase]
-name = Privatemsg Token Tests
-description = Privatemsg Token Tests
+name = Privatemsg tokens
+description = Tests tokens in private messages.
 group = Privatemsg
 file = PrivatemsgTokenTestCase.test
 
 [PrivatemsgAPITestCase]
-name = Privatemsg API Tests
-description = Privatemsg API Tests
+name = Privatemsg API functionality
+description = Test sending, receiving, listing, deleting messages and other features via API.
 group = Privatemsg
 file = PrivatemsgAPITestCase.test
 
 [PrivatemsgBlockUserCase]
-name = Privatemsg Block User Tests
-description = Privatemsg Block User Tests
+name = User blocking functionality
+description = Test blocking and unblocking of users.
 group = Privatemsg
 file = PrivatemsgBlockUserCase.test
 
 [PrivatemsgFilterTestCase]
-name = Privatemsg Filter Tests
-description = Privatemsg Filter Tests
+name = Privatemsg Filter functionality
+description = Test filters, tags and inbox/sent handling.
 group = Privatemsg
 file = PrivatemsgFilterTestCase.test
 
 [PrivatemsgTagsTestCase]
-name = Privatemsg Tag Tests
-description = Privatemsg Tag Tests
+name = Privatemsg Tags functionality
+description = Test Privatemsg tags use and administration functionality.
 group = Privatemsg
 file = PrivatemsgTagsTestCase.test
 
 [PrivatemsgFilterWidgetTestCase]
-name = Privatemsg Filter Widget Tests
-description = Privatemsg Filter Widget Tests
+name = Privatemsg filter widget
+description = Tests the Privatemsg filter widget displayed on message listings.
 group = Privatemsg
 file = PrivatemsgFilterWidgetTestCase.test
