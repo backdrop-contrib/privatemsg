@@ -5,6 +5,7 @@
  * Hooks and callback functions for rules.module integration.
  */
 
+
 /**
  * Implements hook_rules_action_info().
  *
@@ -14,7 +15,7 @@ function privatemsg_rules_rules_action_info() {
 
   // Re-use existing information and also get information about fields added
   // to private messages.
-  $fields = entity_get_all_property_info('privatemsg_message');
+  $fields = entity_plus_get_all_property_info('privatemsg_message');
 
   // Remove properties that can't be used here.
   unset($fields['mid']);
@@ -223,7 +224,7 @@ function privatemsg_rules_new($args, $element) {
   rules_log('Writing new message with subject %subject to %user from %author', array('%subject' => $args['subject'], '%user' => $recipient->name, '%author' => $args['author']->name));
   $result = privatemsg_new_thread(array($recipient), $args['subject'], $args['body'], $args);
   if ($result['success']) {
-    rules_log('New message sucessfully sent, !link', array('!link' => l($args['subject'], 'messages/view/' . $result['message']->thread_id)));
+    rules_log('New message successfully sent, !link', array('!link' => l($args['subject'], 'messages/view/' . $result['message']->thread_id)));
   }
   else {
     foreach ($result['messages']['error'] as $args) {
