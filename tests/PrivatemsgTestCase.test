@@ -89,7 +89,7 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
     $this->backdropGet('messages/view/' . $response['message']->thread_id);
     $this->assertText($subject, t('Access to thread for recipient allowed.'));
 
-    $this->backdropGet('messages/view/' . $response['message']->thread_id + 1);
+    $this->backdropGet('messages/view/' . ($response['message']->thread_id + 1));
     $this->assertResponse(404, t('Non-existing thread lead to HTTP Response 404.'));
 
   }
@@ -883,7 +883,6 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
    * Implements tearDown().
    */
   function tearDown() {
-    //we dont really need to do this. i'm adding it just to keep it in front of my eyes so i can memorize it.
     parent::tearDown();
   }
 }
