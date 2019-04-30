@@ -411,7 +411,7 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
     '#weight'             => -5,
   );
 
-  // The input filter widget looses the format during preview, specify it
+  // The input filter widget loses the format during preview, specify it
   // explicitly.
   if (isset($form_state['values']) && array_key_exists('format', $form_state['values'])) {
     $format = $form_state['values']['format'];
@@ -760,7 +760,7 @@ function privatemsg_autocomplete($string) {
  *
  * @see privatemsg_thread_load()
  */
-function  privatemsg_view($thread) {
+function privatemsg_view($thread) {
   backdrop_set_title($thread['subject']);
 
   $content = array(
