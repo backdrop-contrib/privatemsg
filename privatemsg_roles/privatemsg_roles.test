@@ -27,8 +27,8 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
     $user2 = $this->backdropCreateUser();
 
     // Add role of user 1 to user 2;
-    $edit = array('roles' => $user2->roles + $user1->roles);
-    user_save($user2, $edit);
+    $user2->roles = $user2->roles + $user1->roles;
+    user_save($user2);
 
     $recipient = user_role_load($user1->roles[4]);
     $recipient->recipient = $recipient->rid;
@@ -55,8 +55,8 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
     for ($i = 0; $i < 25; $i++) {
       $users[$i] = $this->backdropCreateUser();
       // Add role of user 1 to user 2;
-      $edit = array('roles' => $users[$i]->roles + $user1->roles);
-      user_save($users[$i], $edit);
+      $users[$i]->roles = $users[$i]->roles + $user1->roles;
+      user_save($users[$i]);
     }
 
     $recipient = user_role_load($user1->roles[4]);
@@ -106,8 +106,8 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
     for ($i = 0; $i < 25; $i++) {
       $users[$i] = $this->backdropCreateUser();
       // Add role of user 1 to user 2;
-      $edit = array('roles' => $users[$i]->roles + $user1->roles);
-      user_save($users[$i], $edit);
+      $users[$i]->roles = $users[$i]->roles + $user1->roles;
+      user_save($users[$i]);
     }
     $this->backdropLogin($admin);
 
@@ -152,8 +152,8 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
     $user2 = $this->backdropCreateUser(array('view roles recipients'));
 
     // Add role of user 1 to user 2;
-    $edit = array('roles' => $user2->roles + $user1->roles);
-    user_save($user2, $edit);
+    $user2->roles = $user2->roles + $user1->roles;
+    user_save($user2);
     $this->backdropLogin($admin);
 
     // Verify autocomplete feature.
@@ -226,8 +226,8 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
     $user2 = $this->backdropCreateUser();
 
     // Add role of user 1 to user 2;
-    $edit = array('roles' => $user2->roles + $user1->roles);
-    user_save($user2, $edit);
+    $user2->roles = $user2->roles + $user1->roles;
+    user_save($user2);
 
     // Block admin as user 2.
     $this->backdropLogin($user2);
@@ -281,8 +281,8 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
     $user2 = $this->backdropCreateUser();
 
     // Add role of user 1 to user 2;
-    $edit_roles = array('roles' => $user2->roles + $user1->roles);
-    user_save($user2, $edit_roles);
+    $user2->roles = $user2->roles + $user1->roles;
+    user_save($user2);
     $this->backdropLogin($user2);
 
     $this->backdropGet('messages');

@@ -232,7 +232,8 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
     // Set up a user with "read/write privatemsg" permissions.
     $blocked_recipient = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg'));
     // Block this recipient to test users who cancelled their accounts.
-    user_save($blocked_recipient, array('status' => 0));
+    $blocked_recipient->status = 0;
+    user_save($blocked_recipient);
 
     // Login author and go to new message form.
     $this->backdropLogin($author);
@@ -429,7 +430,8 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
     $this->assertText($reply['body[value]'], 'Found reply body.');
 
     // Block the author.
-    user_save($author, array('status' => 0));
+    $author->status = 0;
+    user_save($author);
     $this->backdropLogin($recipient2);
     // Navigate into the message.
     $this->backdropGet('messages');
@@ -843,10 +845,14 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
     $this->backdropLogin($current);
 
     // Use specific names to be able to test for specific name combinations.
-    user_save($current, array('name' => 'wathever'));
-    user_save($user1, array('name' => 'aaaa'));
-    user_save($user2, array('name' => 'aaab'));
-    user_save($user3, array('name' => 'bbbb'));
+    $current->name = 'whatever';
+    user_save($current);
+    $user1->name = 'aaaa';
+    user_save($user1);
+    $user2->name = 'aaab';
+    user_save($user2);
+    $user3->name = 'bbbb';
+    user_save($user3);
 
     $json = $this->backdropGet('messages/autocomplete/aa');
     $autocomplete = (array)json_decode($json);
@@ -871,7 +877,8 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
     // Test XSS protection, create a username and check that the suggestion is
     // safe.
     $user4 = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg'));
-    $user4 = user_save($user4, array('name' => "<script>alert('XSS')</script>"));
+    $user4->name = "<script>alert('XSS')</script>";
+    $user4 = user_save($user4);
 
     $json = $this->backdropGet('messages/autocomplete/<sc');
     $autocomplete = (array)json_decode($json);
