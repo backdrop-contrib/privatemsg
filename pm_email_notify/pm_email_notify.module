@@ -90,7 +90,7 @@ function _pm_email_notify_default_body() {
  * Implements hook_form_alter().
  */
 function pm_email_notify_form_alter(&$form, &$form_state, $form_id) {
-  if (($form_id == 'user_register_form' || $form_id == 'user_profile_form') && $form['#user_category'] == 'account' && privatemsg_user_access('read privatemsg')) {
+  if (($form_id == 'user_register_form' || $form_id == 'user_profile_form') && privatemsg_user_access('read privatemsg')) {
     $form['privatemsg']['pm_send_notifications'] = array(
       '#type' => 'checkbox',
       '#title' => t('Receive email notification for incoming private messages'),
