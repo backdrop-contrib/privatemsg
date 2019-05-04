@@ -35,14 +35,14 @@ class PrivatemsgLinksTestCase extends PrivatemsgBaseTestCase {
    * Tests author links displayed on nodes and comments.
    */
   function testAuthorLinks() {
-    $admin = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg', 'administer privatemsg settings', 'create article content', 'create page content'));
+    $admin = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg', 'administer privatemsg settings', 'create post content', 'create page content'));
     $user = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg'));
 
     $this->backdropLogin($admin);
 
     $settings = array(
       'privatemsg_display_link_self' => FALSE,
-      'privatemsg_link_node_types[article]' => TRUE,
+      'privatemsg_link_node_types[post]' => TRUE,
       'privatemsg_display_on_teaser' => FALSE,
       'privatemsg_display_on_comments' => TRUE,
     );
@@ -52,7 +52,7 @@ class PrivatemsgLinksTestCase extends PrivatemsgBaseTestCase {
       'title' => $this->randomName(10),
       'body[und][0][value]' => $this->randomString(50),
     );
-    $this->backdropPost('node/add/article', $node1, t('Save'));
+    $this->backdropPost('node/add/post', $node1, t('Save'));
 
     $comment = array(
       'comment_body[und][0][value]' => $this->randomName(20),
