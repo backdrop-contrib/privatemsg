@@ -125,12 +125,25 @@ function privatemsg_limits_admin($form, &$form_state) {
  */
 function privatemsg_limits_admin_submit($form, &$form_state) {
   $config = config('privatemsg.settings');
-  $config->set('views_send_throttle', $form_state['conversation']['privatemsg_limits_messages_per_thread']);
-  $config->set('views_send_spool_expire', $form_state['values']['views_send_spool_expire']);
-  $config->set('views_send_debug', $form_state['values']['views_send_debug']);
-  $config->set('views_send_additional_options', $form_state['values']['views_send_additional_options']);
-  $config->set('views_send_from_name', $form_state['values']['views_send_from_name']);
-  $config->set('views_send_from_mail', $form_state['values']['views_send_from_mail']);
+  $values = $form_state['values'];
+  $config->set('privatemsg_limits_messages_per_thread', $values['privatemsg_limits_messages_per_thread']);
+  $config->set('privatemsg_limits_messages_per_thread_action', $values['privatemsg_limits_messages_per_thread_action']);
+  $config->set('privatemsg_limits_receive_enabled', $values['privatemsg_limits_receive_enabled']);
+  $config->set('privatemsg_limits_receive_object', $values['privatemsg_limits_receive_object']);
+  $config->set('privatemsg_limits_receive_amount', $values['privatemsg_limits_receive_amount']);
+  $config->set('privatemsg_limits_send_enabled', $values['privatemsg_limits_send_enabled']);
+  $config->set('privatemsg_limits_send_object', $values['privatemsg_limits_send_object']);
+  $config->set('privatemsg_limits_send_amount', $values['privatemsg_limits_send_amount']);
+  $config->set('privatemsg_limits_send_timeframe', $values['privatemsg_limits_send_timeframe']);
+  $config->set('privatemsg_limits_messages_per_thread', $values['privatemsg_limits_messages_per_thread']);
+  $config->set('privatemsg_limits_recipients_enabled', $values['privatemsg_limits_recipients_enabled']);
+  $config->set('privatemsg_limits_recipients_amount', $values['privatemsg_limits_recipients_amount']);
+  foreach (array_keys(user_roles(TRUE)) as $role) {
+    foreach (array('send', 'receive', 'recipients') as $option) {
+      $setting = 'privatemsg_limits_' . $option . '_amount_role_' . $role;
+      $config->set($setting, $values[$setting]);
+    }
+  }
   $config->save();
   backdrop_set_message(t('The configuration options have been saved.'));
 }
