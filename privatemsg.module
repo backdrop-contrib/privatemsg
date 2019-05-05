@@ -2966,7 +2966,7 @@ function privatemsg_tokens($type, $tokens, array $data = array(), array $options
           break;
 
         case 'url':
-          $uri = entity_uri('privatemsg_message', $message);
+          $uri = privatemsg_message_uri_callback($message);
           $replacements[$original] = url($uri['path'], $url_options + $uri['options']);
           break;
 
