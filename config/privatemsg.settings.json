@@ -25,7 +25,7 @@
   "privatemsg_display_on_teaser": 1,
   "privatemsg_display_on_comments": 0,
   "privatemsg_filter_default_list": 0,
-  "privatemsg_filter_inbox_tag": "<>",
+  "privatemsg_filter_inbox_tag": "",
   "privatemsg_filter_searchbody": 0,
   "privatemsg_cron_recipient_per_run": 1000,
   "privatemsg_cron_recipient_process": "",
