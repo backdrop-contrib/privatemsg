@@ -5,6 +5,8 @@
  * This file contains tests for the privatemsg limits module
  */
 
+require_once backdrop_get_path('module', 'privatemsg') . '/tests/PrivatemsgBaseTestCase.test';
+
 /**
  * Test cases for the privatemsg_limits module.
  */
@@ -12,7 +14,7 @@ class PrivatemsgLimitsTestCase extends PrivatemsgBaseTestCase {
   public static function getInfo() {
     return array(
       'name' => 'Privatemsg Limits',
-      'description' => 'Tests limits on sending and recieving messages.',
+      'description' => 'Tests limits on sending and receiving messages.',
       'group' => 'Privatemsg',
     );
   }
@@ -36,8 +38,11 @@ class PrivatemsgLimitsTestCase extends PrivatemsgBaseTestCase {
     $settings = array(
       'privatemsg_limits_send_enabled' => TRUE,
       'privatemsg_limits_send_amount' => 3,
-      'privatemsg_limits_send_amount_role_3' => 5,
+      'privatemsg_limits_send_timeframe' => 3600,
     );
+    $name = $this->get_special_role($admin);
+    $settings['privatemsg_limits_send_amount_role_' . $name] = 5;
+
     $this->backdropPost('admin/config/messaging/privatemsg/limits', $settings, t('Save configuration'));
 
     $this->backdropLogin($user);
@@ -46,7 +51,7 @@ class PrivatemsgLimitsTestCase extends PrivatemsgBaseTestCase {
       $edit = array(
         'recipient'   => $user->name,
         'subject'     => $this->randomName(20),
-        'body[value]'        => $this->randomName(100),
+        'body[value]' => $this->randomName(100),
       );
       $this->backdropPost('messages/new', $edit, t('Send message'));
       $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $user->name)));
@@ -56,7 +61,7 @@ class PrivatemsgLimitsTestCase extends PrivatemsgBaseTestCase {
     $blocked = array(
       'recipient'   => $user->name,
       'subject'     => $this->randomName(20),
-      'body[value]'        => $this->randomName(100),
+      'body[value]' => $this->randomName(100),
     );
     $this->backdropPost('messages/new', $blocked, t('Send message'));
     $this->assertText(t('Your message was not sent because you have exceeded your sending limit. You are allowed to send 3 messages every 1 hour.'));
@@ -65,7 +70,7 @@ class PrivatemsgLimitsTestCase extends PrivatemsgBaseTestCase {
     $this->backdropGet('messages');
     $this->clickLink($edit['subject']);
     $reply = array(
-      'body[value]'        => $this->randomName(100),
+      'body[value]' => $this->randomName(100),
     );
     $this->backdropPost(NULL, $reply, t('Send message'));
     $this->assertText(t('Your message was not sent because you have exceeded your sending limit. You are allowed to send 3 messages every 1 hour.'));
@@ -73,11 +78,11 @@ class PrivatemsgLimitsTestCase extends PrivatemsgBaseTestCase {
     // Now the same with admin, he should be able to send 5 messages.
     $this->backdropLogin($admin);
     for ($i = 0; $i < 5; $i++) {
-      // Send three messages.
+      // Send five messages.
       $edit = array(
         'recipient'   => $admin->name,
         'subject'     => $this->randomName(20),
-        'body[value]'        => $this->randomName(100),
+        'body[value]' => $this->randomName(100),
       );
       $this->backdropPost('messages/new', $edit, t('Send message'));
       $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $admin->name)));
@@ -87,7 +92,7 @@ class PrivatemsgLimitsTestCase extends PrivatemsgBaseTestCase {
     $blocked = array(
       'recipient'   => $admin->name,
       'subject'     => $this->randomName(20),
-      'body[value]'        => $this->randomName(100),
+      'body[value]' => $this->randomName(100),
     );
     $this->backdropPost('messages/new', $blocked, t('Send message'));
     $this->assertText(t('Your message was not sent because you have exceeded your sending limit. You are allowed to send 5 messages every 1 hour.'));
@@ -96,7 +101,7 @@ class PrivatemsgLimitsTestCase extends PrivatemsgBaseTestCase {
     $this->backdropGet('messages');
     $this->clickLink($edit['subject']);
     $reply = array(
-      'body[value]'        => $this->randomName(100),
+      'body[value]' => $this->randomName(100),
     );
     $this->backdropPost(NULL, $reply, t('Send message'));
     $this->assertText(t('Your message was not sent because you have exceeded your sending limit. You are allowed to send 5 messages every 1 hour.'));
@@ -114,9 +119,12 @@ class PrivatemsgLimitsTestCase extends PrivatemsgBaseTestCase {
     $settings = array(
       'privatemsg_limits_send_enabled' => TRUE,
       'privatemsg_limits_send_amount' => 3,
-      'privatemsg_limits_send_amount_role_3' => 5,
       'privatemsg_limits_send_object' => 'thread',
+      'privatemsg_limits_send_timeframe' => 3600,
     );
+    $name = $this->get_special_role($admin);
+    $settings['privatemsg_limits_send_amount_role_' . $name] = 5;
+
     $this->backdropPost('admin/config/messaging/privatemsg/limits', $settings, t('Save configuration'));
 
     $this->backdropLogin($user);
@@ -125,7 +133,7 @@ class PrivatemsgLimitsTestCase extends PrivatemsgBaseTestCase {
       $edit = array(
         'recipient'   => $user->name,
         'subject'     => $this->randomName(20),
-        'body[value]'        => $this->randomName(100),
+        'body[value]' => $this->randomName(100),
       );
       $this->backdropPost('messages/new', $edit, t('Send message'));
       $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $user->name)));
@@ -135,7 +143,7 @@ class PrivatemsgLimitsTestCase extends PrivatemsgBaseTestCase {
     $blocked = array(
       'recipient'   => $user->name,
       'subject'     => $this->randomName(20),
-      'body[value]'        => $this->randomName(100),
+      'body[value]' => $this->randomName(100),
     );
     $this->backdropPost('messages/new', $blocked, t('Send message'));
     $this->assertText(t('Your message was not sent because you have exceeded your sending limit. You are allowed to send 3 messages every 1 hour.'));
@@ -152,11 +160,11 @@ class PrivatemsgLimitsTestCase extends PrivatemsgBaseTestCase {
     // Now the same with admin, he should be able to send 5 messages.
     $this->backdropLogin($admin);
     for ($i = 0; $i < 5; $i++) {
-      // Send three messages.
+      // Send five messages.
       $edit = array(
         'recipient'   => $admin->name,
         'subject'     => $this->randomName(20),
-        'body[value]'        => $this->randomName(100),
+        'body[value]' => $this->randomName(100),
       );
       $this->backdropPost('messages/new', $edit, t('Send message'));
       $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $admin->name)));
@@ -166,7 +174,7 @@ class PrivatemsgLimitsTestCase extends PrivatemsgBaseTestCase {
     $blocked = array(
       'recipient'   => $admin->name,
       'subject'     => $this->randomName(20),
-      'body[value]'        => $this->randomName(100),
+      'body[value]' => $this->randomName(100),
     );
     $this->backdropPost('messages/new', $blocked, t('Send message'));
     $this->assertText(t('Your message was not sent because you have exceeded your sending limit. You are allowed to send 5 messages every 1 hour.'));
@@ -175,7 +183,7 @@ class PrivatemsgLimitsTestCase extends PrivatemsgBaseTestCase {
     $this->backdropGet('messages');
     $this->clickLink($edit['subject']);
     $reply = array(
-      'body[value]'        => $this->randomName(100),
+      'body[value]' => $this->randomName(100),
     );
     $this->backdropPost(NULL, $reply, t('Send message'));
     $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $admin->name)));
@@ -193,8 +201,11 @@ class PrivatemsgLimitsTestCase extends PrivatemsgBaseTestCase {
     $settings = array(
       'privatemsg_limits_receive_enabled' => TRUE,
       'privatemsg_limits_receive_amount' => 3,
-      'privatemsg_limits_receive_amount_role_3' => 5,
+      'privatemsg_limits_send_timeframe' => 3600,
     );
+    $name = $this->get_special_role($admin);
+    $settings['privatemsg_limits_receive_amount_role_' . $name] = 5;
+
     $this->backdropPost('admin/config/messaging/privatemsg/limits', $settings, t('Save configuration'));
 
     // Check empty inbox.
@@ -210,7 +221,7 @@ class PrivatemsgLimitsTestCase extends PrivatemsgBaseTestCase {
       $edit = array(
         'recipient'   => $admin->name,
         'subject'     => $this->randomName(20),
-        'body[value]'        => $this->randomName(100),
+        'body[value]' => $this->randomName(100),
       );
       $this->backdropPost('messages/new', $edit, t('Send message'));
       $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $admin->name)));
@@ -220,7 +231,7 @@ class PrivatemsgLimitsTestCase extends PrivatemsgBaseTestCase {
     $blocked = array(
       'recipient'   => $admin->name,
       'subject'     => $this->randomName(20),
-      'body[value]'        => $this->randomName(100),
+      'body[value]' => $this->randomName(100),
     );
     $this->backdropPost('messages/new', $blocked, t('Send message'));
     $this->assertText(t("Your message mailbox is currently full. You are allowed a maximum of @limit messages in your mailbox at one time. You won't be able to send or receive new messages until you delete some existing ones.", array('@limit' => 3)), 'Limit exceeded message displayed.');
@@ -247,7 +258,7 @@ class PrivatemsgLimitsTestCase extends PrivatemsgBaseTestCase {
     $blocked = array(
       'recipient'   => $user->name,
       'subject'     => $this->randomName(20),
-      'body[value]'        => $this->randomName(100),
+      'body[value]' => $this->randomName(100),
     );
     $this->backdropPost('messages/new', $blocked, t('Send message'));
     $this->assertText(t("This message cannot be sent to @user because @user's mailbox is full.", array('@user' => $user->name)));
@@ -270,9 +281,12 @@ class PrivatemsgLimitsTestCase extends PrivatemsgBaseTestCase {
     $settings = array(
       'privatemsg_limits_receive_enabled' => TRUE,
       'privatemsg_limits_receive_amount' => 3,
-      'privatemsg_limits_receive_amount_role_3' => 5,
       'privatemsg_limits_receive_object' => 'thread',
+      'privatemsg_limits_send_timeframe' => 3600,
     );
+    $name = $this->get_special_role($admin);
+    $settings['privatemsg_limits_receive_amount_role_' . $name] = 5;
+
     $this->backdropPost('admin/config/messaging/privatemsg/limits', $settings, t('Save configuration'));
 
     // Check empty inbox.
@@ -288,7 +302,7 @@ class PrivatemsgLimitsTestCase extends PrivatemsgBaseTestCase {
       $edit = array(
         'recipient'   => $admin->name,
         'subject'     => $this->randomName(20),
-        'body[value]'        => $this->randomName(100),
+        'body[value]' => $this->randomName(100),
       );
       $this->backdropPost('messages/new', $edit, t('Send message'));
       $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $admin->name)));
@@ -298,7 +312,7 @@ class PrivatemsgLimitsTestCase extends PrivatemsgBaseTestCase {
     $blocked = array(
       'recipient'   => $admin->name,
       'subject'     => $this->randomName(20),
-      'body[value]'        => $this->randomName(100),
+      'body[value]' => $this->randomName(100),
     );
     $this->backdropPost('messages/new', $blocked, t('Send message'));
     $this->assertText(t("Your message mailbox is currently full. You are allowed a maximum of @limit conversations in your mailbox at one time. You won't be able to start or receive new conversations until you delete some existing ones.", array('@limit' => 3)), 'Limit exceeded message displayed.');
@@ -325,7 +339,7 @@ class PrivatemsgLimitsTestCase extends PrivatemsgBaseTestCase {
     $blocked = array(
       'recipient'   => $user->name,
       'subject'     => $this->randomName(20),
-      'body[value]'        => $this->randomName(100),
+      'body[value]' => $this->randomName(100),
     );
     $this->backdropPost('messages/new', $blocked, t('Send message'));
     $this->assertText(t("This message cannot be sent to @user because @user's mailbox is full.", array('@user' => $user->name)));
@@ -354,15 +368,16 @@ class PrivatemsgLimitsTestCase extends PrivatemsgBaseTestCase {
     $settings = array(
       'privatemsg_limits_recipients_enabled' => TRUE,
       'privatemsg_limits_recipients_amount' => 1,
-      'privatemsg_limits_recipients_amount_role_3' => 2,
     );
+    $name = $this->get_special_role($admin);
+    $settings['privatemsg_limits_recipients_amount_role_' . $name] = 2;
     $this->backdropPost('admin/config/messaging/privatemsg/limits', $settings, t('Save configuration'));
 
     // Send a message to a single user.
     $edit = array(
       'recipient'   => $user1->name,
       'subject'     => $this->randomName(20),
-      'body[value]'        => $this->randomName(100),
+      'body[value]' => $this->randomName(100),
     );
     $this->backdropPost('messages/new', $edit, t('Send message'));
     $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $user1->name)));
@@ -371,7 +386,7 @@ class PrivatemsgLimitsTestCase extends PrivatemsgBaseTestCase {
     $edit = array(
       'recipient'   => $user1->name . ', ' . $user2->name,
       'subject'     => $this->randomName(20),
-      'body[value]'        => $this->randomName(100),
+      'body[value]' => $this->randomName(100),
     );
     $this->backdropPost('messages/new', $edit, t('Send message'));
     $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $user1->name . ', ' . $user2->name)));
@@ -380,7 +395,7 @@ class PrivatemsgLimitsTestCase extends PrivatemsgBaseTestCase {
     $edit = array(
       'recipient'   => $user1->name . ', ' . $user2->name . ', ' . $user3->name,
       'subject'     => $this->randomName(20),
-      'body[value]'        => $this->randomName(100),
+      'body[value]' => $this->randomName(100),
     );
     $this->backdropPost('messages/new', $edit, t('Send message'));
     $this->assertText(t('You are not allowed to send a message to more than @number recipients.', array('@number' => 2)), 'Not allowed message displayed.');
@@ -391,7 +406,7 @@ class PrivatemsgLimitsTestCase extends PrivatemsgBaseTestCase {
     $edit = array(
       'recipient'   => $user2->name,
       'subject'     => $this->randomName(20),
-      'body[value]'        => $this->randomName(100),
+      'body[value]' => $this->randomName(100),
     );
     $this->backdropPost('messages/new', $edit, t('Send message'));
     $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $user2->name)));
@@ -400,7 +415,7 @@ class PrivatemsgLimitsTestCase extends PrivatemsgBaseTestCase {
     $edit = array(
       'recipient'   => $user2->name . ', ' . $user3->name,
       'subject'     => $this->randomName(20),
-      'body[value]'        => $this->randomName(100),
+      'body[value]' => $this->randomName(100),
     );
     $this->backdropPost('messages/new', $edit, t('Send message'));
     $this->assertText(t('You are not allowed to send a message to more than @number recipients.', array('@number' => 1)), 'Not allowed message displayed.');
@@ -425,7 +440,7 @@ class PrivatemsgLimitsTestCase extends PrivatemsgBaseTestCase {
     $edit = array(
       'recipient'   => $user->name,
       'subject'     => $this->randomName(20),
-      'body[value]'        => $this->randomName(100),
+      'body[value]' => $this->randomName(100),
     );
     $this->backdropPost('messages/new', $edit, t('Send message'));
     $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $user->name)));
@@ -467,7 +482,7 @@ class PrivatemsgLimitsTestCase extends PrivatemsgBaseTestCase {
     $edit = array(
       'recipient'   => $user->name,
       'subject'     => $this->randomName(20),
-      'body[value]'        => $this->randomName(100),
+      'body[value]' => $this->randomName(100),
     );
     $this->backdropPost('messages/new', $edit, t('Send message'));
     $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $user->name)));
@@ -485,5 +500,13 @@ class PrivatemsgLimitsTestCase extends PrivatemsgBaseTestCase {
     // displayed anymore.
     $this->assertNoText($edit['body[value]']);
     $this->assertText($reply['body[value]']);
+  }
+
+  function get_special_role($account) {
+    foreach ($account->roles as $id=>$name) {
+      if ($name != 'authenticated') {
+        return $name;
+      }
+    }
   }
 }

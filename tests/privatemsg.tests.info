@@ -1,23 +1,23 @@
 [PrivatemsgTestCase]
-name = Privatemsg functionality
+name = Privatemsg basic functionality
 description = Test sending, receiving, listing, deleting messages and other features.
 group = Privatemsg
 file = PrivatemsgTestCase.test
 
 [PrivatemsgFieldsTestCase]
-name = Privatemsg fields
+name = Privatemsg Fields
 description = Tests integration with fields.
 group = Privatemsg
 file = PrivatemsgFieldsTestCase.test
 
 [PrivatemsgLinksTestCase]
-name = Privatemsg links
+name = Privatemsg Links
 description = Tests links displayed in nodes, profiles and blocks.
 group = Privatemsg
 file = PrivatemsgLinksTestCase.test
 
 [PrivatemsgTokenTestCase]
-name = Privatemsg tokens
+name = Privatemsg Tokens
 description = Tests tokens in private messages.
 group = Privatemsg
 file = PrivatemsgTokenTestCase.test
@@ -29,25 +29,31 @@ group = Privatemsg
 file = PrivatemsgAPITestCase.test
 
 [PrivatemsgBlockUserCase]
-name = User blocking functionality
+name = Privatemsg User Blocking
 description = Test blocking and unblocking of users.
 group = Privatemsg
 file = PrivatemsgBlockUserCase.test
 
 [PrivatemsgFilterTestCase]
-name = Privatemsg Filter functionality
+name = Privatemsg Filter
 description = Test filters, tags and inbox/sent handling.
 group = Privatemsg
 file = PrivatemsgFilterTestCase.test
 
 [PrivatemsgTagsTestCase]
-name = Privatemsg Tags functionality
+name = Privatemsg Tags
 description = Test Privatemsg tags use and administration functionality.
 group = Privatemsg
 file = PrivatemsgTagsTestCase.test
 
 [PrivatemsgFilterWidgetTestCase]
-name = Privatemsg filter widget
+name = Privatemsg Filter Widget
 description = Tests the Privatemsg filter widget displayed on message listings.
 group = Privatemsg
 file = PrivatemsgFilterWidgetTestCase.test
+
+[PrivatemsgLimitsTestCase]
+name = Privatemsg Limits
+description = Tests limits on sending and receiving messages.
+group = Privatemsg
+file = PrivatemsgLimitsTestCase.test
