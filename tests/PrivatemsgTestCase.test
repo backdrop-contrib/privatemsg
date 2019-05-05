@@ -824,7 +824,7 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
 
     // Preview message.
     $this->backdropPost('messages/new', $message, t('Preview message'));
-    $this->assertTitle(t('Write new message to @user', array('@user' => $user->name)), t('Correct title is displayed.'));
+    $this->assertTitle(t('Write new message to @user | Backdrop CMS', array('@user' => $user->name)), t('Correct title is displayed.'));
     $this->assertFieldByXPath($this->buildXPathQuery('//div[@class=:class]/p', array(':class' => 'privatemsg-message-body')), $message['body[value]'], t('Message body is previewed'));
     $this->assertFieldByName('body[value]', $message['body[value]'], t('Message body field has the correct default value.'));
 
@@ -858,23 +858,19 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
     $user3->name = 'bbbb';
     user_save($user3);
 
-    $json = $this->backdropGet('messages/autocomplete/aa');
-    $autocomplete = (array)json_decode($json);
+    $autocomplete = (array)$this->backdropGetAJAX('messages/autocomplete/aa');
     $this->assertEqual(count($autocomplete), 2, t('Autocomplete object contains two suggestions.'));
     $this->assertEqual($autocomplete['aaaa, '], 'aaaa');
     $this->assertEqual($autocomplete['aaab, '], 'aaab');
 
-    $json = $this->backdropGet('messages/autocomplete/bb');
-    $autocomplete = (array)json_decode($json);
+    $autocomplete = (array)$this->backdropGetAJAX('messages/autocomplete/bb');
     $this->assertEqual(count($autocomplete), 1, t('Autocomplete object contains one suggestion.'));
     $this->assertEqual($autocomplete['bbbb, '], 'bbbb');
 
-    $json = $this->backdropGet('messages/autocomplete/cc');
-    $autocomplete = (array)json_decode($json);
+    $autocomplete = (array)$this->backdropGetAJAX('messages/autocomplete/cc');
     $this->assertEqual(count($autocomplete), 0, t('Autocomplete object contains no suggestions.'));
 
-    $json = $this->backdropGet('messages/autocomplete/aaaa, a');
-    $autocomplete = (array)json_decode($json);
+    $autocomplete = (array)$this->backdropGetAJAX('messages/autocomplete/aaaa, a');
     $this->assertEqual(count($autocomplete), 1, t('Autocomplete object contains one suggestion.'));
     $this->assertEqual($autocomplete['aaaa, aaab, '], 'aaab');
 
@@ -884,10 +880,10 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
     $user4->name = "<script>alert('XSS')</script>";
     $user4 = user_save($user4);
 
-    $json = $this->backdropGet('messages/autocomplete/<sc');
-    $autocomplete = (array)json_decode($json);
+    $autocomplete = (array)$this->backdropGetAJAX('messages/autocomplete/<sc');
     $this->assertEqual(count($autocomplete), 1, t('Autocomplete object contains one suggestion.'));
-    $this->assertEqual($autocomplete[strip_tags($user4->name) . ', '], strip_tags($user4->name));
+    $suggestion = reset($autocomplete);
+    $this->assertEqual($suggestion, strip_tags($suggestion), t('Autocomplete suggestion is safe.'));
   }
 
   /**

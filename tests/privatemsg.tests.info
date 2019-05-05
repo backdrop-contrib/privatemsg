@@ -1,5 +1,5 @@
 [PrivatemsgTestCase]
-name = Privatemsg basic functionality
+name = Privatemsg Basic Functionality
 description = Test sending, receiving, listing, deleting messages and other features.
 group = Privatemsg
 file = PrivatemsgTestCase.test
@@ -23,7 +23,7 @@ group = Privatemsg
 file = PrivatemsgTokenTestCase.test
 
 [PrivatemsgAPITestCase]
-name = Privatemsg API functionality
+name = Privatemsg API Functionality
 description = Test sending, receiving, listing, deleting messages and other features via API.
 group = Privatemsg
 file = PrivatemsgAPITestCase.test
