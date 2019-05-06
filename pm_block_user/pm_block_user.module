@@ -243,7 +243,7 @@ function _pm_block_user_rule_exists($author, $recipient, $action = PM_BLOCK_USER
       continue;
     }
     // The author has a role matching the rule and so does the recipient.
-    if (isset($author->roles[$details['author']]) && isset($recipient->roles[$details['recipient']])) {
+    if (in_array($details['author'], $author->roles) && in_array($details['recipient'], $recipient->roles)) {
       return TRUE;
     }
   }
@@ -389,7 +389,7 @@ function pm_block_user_query_privatemsg_autocomplete_alter($query) {
         continue;
       }
       // The author (current user) does have a matching role.
-      if (isset($user->roles[$details['author']])) {
+      if (in_array($details['author'], $user->roles)) {
         // authenticated user role is not stored in the database but all users
         // have it so there can be no valid recipients. Add a condition that is
         // always false and bail out because no other rules need to be checked.
@@ -405,8 +405,8 @@ function pm_block_user_query_privatemsg_autocomplete_alter($query) {
     if (!empty($rids)) {
       $join_alias = $query->leftJoin('users_roles', 'ur', 'u.uid = ur.uid');
       $query->condition(db_or()
-        ->condition($join_alias . '.rid', $rids, 'NOT IN')
-        ->isNull($join_alias . '.rid')
+        ->condition($join_alias . '.role  ', $rids, 'NOT IN')
+        ->isNull($join_alias . '.role')
       );
     }
   }

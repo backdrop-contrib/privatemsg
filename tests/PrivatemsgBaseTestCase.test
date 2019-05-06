@@ -14,4 +14,12 @@
     * Use testing profile.
     */
    protected $profile = 'testing';
+
+   public function getRole($account) {
+     foreach ($account->roles as $id=>$name) {
+       if ($name != 'authenticated') {
+         return $name;
+       }
+     }
+   }
  }

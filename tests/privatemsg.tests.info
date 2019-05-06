@@ -29,7 +29,7 @@ group = Privatemsg
 file = PrivatemsgAPITestCase.test
 
 [PrivatemsgBlockUserCase]
-name = Privatemsg User Blocking
+name = Privatemsg Block User
 description = Test blocking and unblocking of users.
 group = Privatemsg
 file = PrivatemsgBlockUserCase.test

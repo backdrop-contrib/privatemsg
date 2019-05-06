@@ -41,8 +41,8 @@ class PrivatemsgBlockUserCase extends PrivatemsgBaseTestCase {
 
     // If author role is 4 and recipient role is 5, disallow sending of messages.
     $edit = array(
-      'block_actions[0][author]' => 3,
-      'block_actions[0][recipient]' => 4,
+      'block_actions[0][author]' => $this->getRole($author_user),
+      'block_actions[0][recipient]' => $this->getRole($blocked_user),
       'block_actions[0][action]' => 1,
       'block_actions[0][enabled]' => 1,
     );
