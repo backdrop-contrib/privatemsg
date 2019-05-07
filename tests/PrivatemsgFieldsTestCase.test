@@ -26,7 +26,7 @@ class PrivatemsgFieldsTestCase extends PrivatemsgBaseTestCase {
   }
 
   function testSingleField() {
-    $admin = $this->backdropCreateUser(array('administer privatemsg settings', 'write privatemsg', 'read privatemsg'));
+    $admin = $this->backdropCreateUser(array('administer privatemsg settings', 'administer fields', 'write privatemsg', 'read privatemsg'));
     $user = $this->backdropCreateUser(array('write privatemsg', 'read privatemsg'));
 
     $this->backdropLogin($admin);
@@ -85,7 +85,7 @@ class PrivatemsgFieldsTestCase extends PrivatemsgBaseTestCase {
    * Verify that a message with an empty image can be sent.
    */
   function testEmptyImage() {
-    $admin = $this->backdropCreateUser(array('administer privatemsg settings', 'write privatemsg', 'read privatemsg'));
+    $admin = $this->backdropCreateUser(array('administer privatemsg settings', 'administer fields', 'write privatemsg', 'read privatemsg'));
     $user = $this->backdropCreateUser(array('write privatemsg', 'read privatemsg'));
 
     $this->backdropLogin($admin);
