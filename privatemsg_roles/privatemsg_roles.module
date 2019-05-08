@@ -52,11 +52,12 @@ function privatemsg_roles_privatemsg_recipient_type_info() {
  * Load a number of roles based on their rid.
  */
 function privatemsg_roles_load_multiple($rids) {
-  $result = db_query("SELECT name, rid AS recipient FROM {role} WHERE rid IN (:rids)", array(':rids' => $rids));
-
   $roles = array();
-  foreach ($result as $role) {
-    $role->type = 'role';
+  foreach (user_roles(TRUE) as $name) {
+    $role = (object) array(
+      'type' => 'role',
+      'recipient' => $name,
+    );
     $roles[privatemsg_recipient_key($role)] = $role;
   }
   return $roles;
@@ -82,12 +83,12 @@ function theme_privatemsg_roles_format($variables) {
  * Loads users with a specific role.
  */
 function privatemsg_roles_load_recipients($recipient, $limit, $offset) {
-  $rid = isset($recipient->recipient) ? $recipient->recipient : $recipient->rid;
-  if ($rid == BACKDROP_AUTHENTICATED_ROLE) {
+  $role = isset($recipient->recipient) ? $recipient->recipient : $recipient->rid;
+  if ($role == BACKDROP_AUTHENTICATED_ROLE) {
     $result = db_query_range('SELECT uid FROM {users} WHERE uid > 0 ORDER BY uid ASC', $offset, $limit);
   }
   else {
-    $result = db_query_range('SELECT uid FROM {users_roles} WHERE rid = :rid ORDER BY uid ASC', $offset, $limit, array(':rid' => $rid));
+    $result = db_query_range('SELECT uid FROM {users_roles} WHERE role = :role ORDER BY uid ASC', $offset, $limit, array(':role' => $role));
   }
 
   return $result->fetchCol();
@@ -97,12 +98,12 @@ function privatemsg_roles_load_recipients($recipient, $limit, $offset) {
  * Return the number of users which have a given role.
  */
 function privatemsg_roles_count_recipients($recipient) {
-  $rid = isset($recipient->recipient) ? $recipient->recipient : $recipient->rid;
-  if ($rid == BACKDROP_AUTHENTICATED_ROLE) {
+  $role = isset($recipient->recipient) ? $recipient->recipient : $recipient->rid;
+  if ($role == BACKDROP_AUTHENTICATED_ROLE) {
     return db_query('SELECT COUNT(uid) FROM {users}')->fetchField();
   }
   else {
-    return db_query('SELECT COUNT(uid) FROM {users_roles} WHERE rid = :rid', array(':rid' => $rid))->fetchField();
+    return db_query('SELECT COUNT(uid) FROM {users_roles} WHERE role = :role', array(':role' => $role))->fetchField();
   }
 }
 
@@ -128,9 +129,15 @@ function privatemsg_roles_autocomplete($fragment, $names, $limit) {
 function privatemsg_roles_privatemsg_name_lookup($string) {
   // Remove optional role specifier.
   $string = str_replace(t('[role]'), '', $string);
-  $role = db_query("SELECT *, rid AS recipient FROM {role} WHERE name = :name", array(':name' => trim($string)))->fetchObject();
-  if ($role) {
-    $role->type = 'role';
+  $name = trim($string);
+  $roles = user_roles(TRUE);
+  if (isset($roles[$name])) {
+    $role = (object) array(
+      'type' => 'role',
+      'name' => $name,
+      'recipient' => $name,
+    );
+    $role->recipient = $name;
     return array(privatemsg_recipient_key($role) => $role);
   }
 }
@@ -138,21 +145,23 @@ function privatemsg_roles_privatemsg_name_lookup($string) {
 /**
  * Query definition to search for username autocomplete suggestions.
  *
- * @param $fragments
- *   Query fragments array.
  * @param $search
  *   Which search string is currently searched for.
  * @param $names
  *   Array of names not to be used as suggestions.
+ *
+ * @return \SelectQuery
  */
 function privatemsg_roles_sql_autocomplete_roles($search, $names) {
-  $query = db_select('role', 'role')
-    ->fields('role')
-    ->condition('role.name', $search . '%', 'LIKE')
-    ->condition('role.rid', BACKDROP_ANONYMOUS_RID, '<>')
-    ->orderBy('role.name', 'ASC');
+  $query = db_select('users_roles', 'r');
+  $query->addField('r', 'role', 'name');
+  $query->addField('r', 'role', 'rid');
+  $query->condition('r.role', $search . '%', 'LIKE');
+  $query->orderBy('r.role', 'ASC');
   if (!empty($names)) {
-    $query->condition('role.name', $names, 'NOT IN');
+    $query->condition('r.role', $names, 'NOT IN');
   }
+  $query->distinct();
   return $query;
 }
+
