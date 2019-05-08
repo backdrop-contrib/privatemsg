@@ -12,7 +12,7 @@ class PrivatemsgFilterWidgetTestCase extends PrivatemsgBaseTestCase {
   public static function getInfo() {
     return array(
       'name' => t('Privatemsg filter widget'),
-      'description' => t('Tests the Privatemsg filter widget displayed on message listings'),
+      'description' => t('Tests the Privatemsg filter widget displayed on message listings.'),
       'group' => t('Privatemsg'),
     );
   }
