@@ -14,7 +14,7 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
   public static function getInfo() {
     return array(
       'name' => 'Privatemsg Roles functionality',
-      'description' => 'Tests sending messages to roles',
+      'description' => 'Tests sending messages to roles.',
       'group' => 'Privatemsg',
     );
   }
