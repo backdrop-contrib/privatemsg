@@ -23,7 +23,7 @@ class PrivatemsgTokenTestCase extends PrivatemsgBaseTestCase {
    * Implements setUp().
    */
   function setUp() {
-    parent::setUp('privatemsg', 'token');
+    parent::setUp('privatemsg');
   }
 
   /**
