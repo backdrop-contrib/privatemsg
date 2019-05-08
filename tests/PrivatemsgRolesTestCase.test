@@ -5,6 +5,8 @@
  * This file contains tests for the privatemsg roles module
  */
 
+require_once backdrop_get_path('module', 'privatemsg') . '/tests/PrivatemsgBaseTestCase.test';
+
 /**
  * Test cases for the privatemsg_roles module.
  */
