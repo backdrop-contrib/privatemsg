@@ -356,6 +356,8 @@ function privatemsg_user_access($permission = 'read privatemsg', $account = NULL
  *   privatemsg_thread_load().
  *
  * @ingroup api
+ *
+ * @return boolean
  */
 function privatemsg_view_access($thread) {
   // Do not allow access to threads without messages.
