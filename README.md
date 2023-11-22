@@ -81,6 +81,7 @@ directory for complete text.
 ## Current Maintainers
 
 + David Radcliffe (https://github.com/Radcliffe)
++ Herb v/d Dool (https://github.com/herbdool)
 + Seeking additional maintainers
 
 ## Credits
