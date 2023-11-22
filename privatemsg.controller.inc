@@ -1,12 +1,36 @@
 <?php
 
 /**
- * Private message controller, loads private messages.
+ * @file
+ * Private message controller.
+ *   Loads private messages.
  */
+
 class PrivatemsgMessageController extends DefaultEntityController {
 
+  /**
+   * @var User|null
+   */
   protected $account = NULL;
 
+  /**
+   * {@inheritdoc}
+   */
+  public function load($ids = array(), $conditions = array()) {
+    // Remove account from conditions.
+    if (isset($conditions['account'])) {
+      $this->account = $conditions['account'];
+      unset($conditions['account']);
+    }
+
+    $messages = parent::load($ids, $conditions);
+
+    return $messages;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   protected function attachLoad(&$messages, $revision_id = FALSE) {
     global $user;
     foreach ($messages as $message) {
@@ -20,6 +44,9 @@ class PrivatemsgMessageController extends DefaultEntityController {
     parent::attachLoad($messages, $revision_id);
   }
 
+  /**
+   * {@inheritdoc}
+   */
   protected function buildQuery($ids, $conditions = array(), $revision_id = FALSE) {
     // Remove account from conditions.
     if (isset($conditions['account'])) {
