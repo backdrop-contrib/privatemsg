@@ -60,7 +60,7 @@ function pm_block_user_menu() {
     'access arguments' => array('administer privatemsg settings'),
     'type'             => MENU_LOCAL_TASK,
   );
-  
+
   $items['messages/block/js'] = array(
     'title'            => 'Javascript block actions form',
     'page callback'    => 'pm_block_user_js',
