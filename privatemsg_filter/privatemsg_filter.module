@@ -334,7 +334,7 @@ function privatemsg_filter_get_tags_data($account) {
 
 function privatemsg_filter_dropdown(&$form_state, $account) {
 
-  backdrop_add_css(backdrop_get_path('module', 'privatemsg_filter') . '/privatemsg_filter.css');
+  $form['#attached']['css'][] = backdrop_get_path('module', 'privatemsg_filter') . '/css/privatemsg_filter.css';
 
   $form['filter'] = array(
     '#type' => 'fieldset',
@@ -760,11 +760,15 @@ function privatemsg_filter_privatemsg_view_alter(&$content) {
 function privatemsg_filter_show_tags($thread_id, $show_form) {
   global $user;
 
-  backdrop_add_css(backdrop_get_path('module', 'privatemsg_filter') . '/privatemsg_filter.css');
   $element = array(
     '#prefix' => '<div id="privatemsg-filter-tags">',
     '#suffix' => '</div>',
     '#weight' => -10,
+    '#attached' => array(
+      'css' => array(
+        backdrop_get_path('module', 'privatemsg_filter') . '/css/privatemsg_filter.css',
+      ),
+    ),
   );
 
   if (!$show_form) {

@@ -78,7 +78,10 @@ function _privatemsg_generate_user_array($string, $slice = NULL) {
   // last four users.
   // This is done to avoid loading user objects that are not displayed, for
   // obvious performance reasons.
-  $users = explode(',', $string);
+  $users = array();
+  if ($string) {
+    $users = explode(',', $string);
+  }
   if (!is_null($slice)) {
     $users = array_slice($users, $slice);
   }
