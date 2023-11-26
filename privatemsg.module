@@ -1285,15 +1285,22 @@ function privatemsg_sql_deleted($days, $max) {
  * Implements hook_user_view().
  */
 function privatemsg_user_view($account) {
+  global $user;
+  if ($user->uid == $account->uid) {
+    $message = t('Send yourself a test message');
+  } else {
+    $message = t('Send this user a private message');
+  }
+
   if (($url = privatemsg_get_link(array($account))) && config_get('privatemsg.settings', 'display_profile_links')) {
     $account->content['privatemsg_send_new_message'] = array(
       '#type' => 'link',
-      '#title' => t('Send this user a private message'),
+      '#title' => $message,
       '#href' => $url,
       '#weight' => 10,
       '#options' => array(
         'query' => backdrop_get_destination(),
-        'title' => t('Send this user a private message'),
+        'title' => $message,
         'attributes' => array('class' => 'privatemsg-send-link privatemsg-send-link-profile'),
       ),
     );
