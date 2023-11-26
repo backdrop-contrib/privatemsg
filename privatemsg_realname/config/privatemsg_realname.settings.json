@@ -1,5 +1,5 @@
 {
   "_config_name": "privatemsg_realname.settings",
-  "privatemsg_realname_search_username": true,
-  "privatemsg_realname_unique_identifier": "name"
+  "search_username": true,
+  "unique_identifier": "name"
 }

@@ -166,7 +166,7 @@ function privatemsg_list($form, &$form_state, $argument, $account) {
   }
 
   // Load the table columns.
-  $columns = array_merge(array('subject', 'last_updated'), array_filter(config_get('privatemsg.settings', 'privatemsg_display_fields')));
+  $columns = array_merge(array('subject', 'last_updated'), array_filter(config_get('privatemsg.settings', 'display_fields')));
 
   // Load the themed list headers based on the available data.
   $headers = _privatemsg_list_headers($columns);
@@ -443,7 +443,7 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
     );
   }
   $form['actions'] = array('#type' => 'actions');
-  if (config_get('privatemsg.settings', 'privatemsg_display_preview_button')) {
+  if (config_get('privatemsg.settings', 'display_preview_button')) {
     $form['actions']['preview'] = array(
       '#type'               => 'submit',
       '#value'              => t('Preview message'),
@@ -634,8 +634,8 @@ function privatemsg_new_submit($form, &$form_state) {
     backdrop_set_message(t('A message has been sent to !recipients.', array('!recipients' => implode(', ', $recipient_names))));
     // Only redirect on new threads.
     $config = config('privatemsg.settings');
-    if ($message->mid == $message->thread_id || $config->get('privatemsg_default_redirect_reply')) {
-      $redirect = $config->get('privatemsg_default_redirect');
+    if ($message->mid == $message->thread_id || $config->get('default_redirect_reply')) {
+      $redirect = $config->get('default_redirect');
       if ($redirect == '<new-message>' || (!empty($_REQUEST['destination']) && $_REQUEST['destination'] == '[new-message]')) {
         if (!empty($_REQUEST['destination']) && $_REQUEST['destination'] == '[new-message]') {
           // Remove GET param so that backdrop_goto() uses the redirect from

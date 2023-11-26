@@ -63,6 +63,27 @@ function privatemsg_permission() {
 }
 
 /**
+ * Implements hook_config_info().
+ */
+function privatemsg_config_info() {
+  $prefixes['privatemsg.settings'] = array(
+    'label' => t('Private message settings'),
+    'group' => t('Configuration'),
+  );
+  return $prefixes;
+}
+
+/**
+ * Implements hook_autoload_info().
+ */
+function privatemsg_autoload_info() {
+  return array(
+    'PrivatemsgMessageController' => 'privatemsg.controller.inc',
+    'views_handler_field_privatemsg_link' => 'views/views_handler_field_privatemsg_link.inc',
+  );
+}
+
+/**
  * Generate array of user objects based on a string.
  *
  *
@@ -335,7 +356,7 @@ function privatemsg_user_access($permission = 'read privatemsg', $account = NULL
     return FALSE;
   }
   if (privatemsg_is_disabled($account) && ($permission == 'write privatemsg')) {
-    if (arg(0) == 'messages' && config_get('privatemsg.settings', 'privatemsg_display_disabled_message') && !$disabled_displayed) {
+    if (arg(0) == 'messages' && config_get('privatemsg.settings', 'display_disabled_message') && !$disabled_displayed) {
       $disabled_displayed = TRUE;
       backdrop_set_message(t('You have disabled Privatemsg and are not allowed to write messages. Go to your <a href="@settings_url">Account settings</a> to enable it again.', array('@settings_url' => url('user/' . $account->uid . '/edit'))), 'warning');
     }
@@ -463,18 +484,18 @@ function privatemsg_thread_load($thread_id, $account = NULL, $start = NULL, $use
         ->fetchField();
       $thread['from'] = 1;
       // Check if we need to limit the messages.
-      $max_amount = $config->get('privatemsg_view_max_amount');
+      $max_amount = $config->get('view_max_amount');
 
       // If there is no start value, select based on get params.
       if (is_null($start)) {
         if (isset($_GET['start']) && $_GET['start'] < $thread['message_count']) {
           $start = $_GET['start'];
         }
-        elseif (!$config->get('privatemsg_view_use_max_as_default') && $max_amount == PRIVATEMSG_UNLIMITED) {
+        elseif (!$config->get('view_use_max_as_default') && $max_amount == PRIVATEMSG_UNLIMITED) {
           $start = PRIVATEMSG_UNLIMITED;
         }
         else {
-          $start = $thread['message_count'] - ($config->get('privatemsg_view_use_max_as_default') ? $config->get('privatemsg_view_default_amount') : $max_amount);
+          $start = $thread['message_count'] - ($config->get('view_use_max_as_default') ? $config->get('view_default_amount') : $max_amount);
         }
       }
 
@@ -487,7 +508,7 @@ function privatemsg_thread_load($thread_id, $account = NULL, $start = NULL, $use
           // Calculate the number of messages on the "last" page to avoid
           // message overlap.
           // Note - the last page lists the earliest messages, not the latest.
-          $paging_count = $config->get('privatemsg_view_use_max_as_default') ? $thread['message_count'] - $config->get('privatemsg_view_default_amount') : $thread['message_count'];
+          $paging_count = $config->get('view_use_max_as_default') ? $thread['message_count'] - $config->get('view_default_amount') : $thread['message_count'];
           $last_page = $paging_count % $max_amount;
         }
 
@@ -595,8 +616,8 @@ function privatemsg_privatemsg_view_template() {
  */
 function privatemsg_cron() {
   $config = config('privatemsg.settings');
-  if ($config->get('privatemsg_flush_enabled')) {
-    $query = _privatemsg_assemble_query('deleted', $config->get('privatemsg_flush_days'), $config->get('privatemsg_flush_max'));
+  if ($config->get('flush_enabled')) {
+    $query = _privatemsg_assemble_query('deleted', $config->get('flush_days'), $config->get('flush_max'));
 
     foreach ($query->execute()->fetchCol() as $mid) {
       $message = privatemsg_message_load($mid);
@@ -614,7 +635,7 @@ function privatemsg_cron() {
   }
 
   // Number of user ids to process for this cron run.
-  $total_remaining = $config->get('privatemsg_cron_recipient_per_run');
+  $total_remaining = $config->get('cron_recipient_per_run');
   $current_process = state_get('privatemsg_cron_recipient_process');
 
   // Instead of doing the order by in the database, which can be slow, we load
@@ -1079,7 +1100,7 @@ function privatemsg_sql_list($account, $argument = 'list') {
   $query->addExpression('SUM(pmi.is_new)', 'is_new');
 
   // Load enabled columns
-  $fields = array_filter($config->get('privatemsg_display_fields'));
+  $fields = array_filter($config->get('display_fields'));
 
   if (in_array('count', $fields)) {
     // We only want the distinct number of messages in this thread.
@@ -1110,7 +1131,7 @@ function privatemsg_sql_list($account, $argument = 'list') {
       'subject',
       'last_updated'
     ), $fields)))
-    ->limit($config->get('privatemsg_per_page'));
+    ->limit($config->get('per_page'));
 }
 
 /**
@@ -1264,7 +1285,7 @@ function privatemsg_sql_deleted($days, $max) {
  * Implements hook_user_view().
  */
 function privatemsg_user_view($account) {
-  if (($url = privatemsg_get_link(array($account))) && config_get('privatemsg.settings', 'privatemsg_display_profile_links')) {
+  if (($url = privatemsg_get_link(array($account))) && config_get('privatemsg.settings', 'display_profile_links')) {
     $account->content['privatemsg_send_new_message'] = array(
       '#type' => 'link',
       '#title' => t('Send this user a private message'),
@@ -1283,7 +1304,7 @@ function privatemsg_user_view($account) {
  * Implements hook_user_login().
  */
 function privatemsg_user_login(&$edit, $account) {
-  if (config_get('privatemsg.settings', 'privatemsg_display_loginmessage') && privatemsg_user_access()) {
+  if (config_get('privatemsg.settings', 'display_loginmessage') && privatemsg_user_access()) {
     $count = privatemsg_unread_count();
     if ($count) {
       backdrop_set_message(format_plural($count, 'You have <a href="@messages">1 unread message</a>.', 'You have <a href="@messages">@count unread messages</a>', array('@messages' => url('messages'))));
@@ -1507,7 +1528,7 @@ function privatemsg_block_configure($delta = '') {
     $form['notification'] = array(
       '#type' => 'checkbox',
       '#title' => t('Display block when there are no new messages'),
-      '#default_value' => config_get('privatemsg.settings', 'privatemsg_no_messages_notification'),
+      '#default_value' => config_get('privatemsg.settings', 'no_messages_notification'),
       '#description' => t('Enable this to have this block always displayed, even if there are no new messages'),
     );
     return $form;
@@ -1519,7 +1540,7 @@ function privatemsg_block_configure($delta = '') {
  */
 function privatemsg_block_save($delta = '', $edit = array()) {
   if ($delta == 'privatemsg-new') {
-    config_set('privatemsg.settings', 'privatemsg_no_messages_notification', $edit['notification']);
+    config_set('privatemsg.settings', 'no_messages_notification', $edit['notification']);
   }
 }
 
@@ -1541,7 +1562,7 @@ function _privatemsg_block_new() {
   }
 
   $count = privatemsg_unread_count();
-  if ($count || config_get('privatemsg.settings', 'privatemsg_no_messages_notification')) {
+  if ($count || config_get('privatemsg.settings', 'no_messages_notification')) {
     $block = array(
       'subject' => $count ? format_plural($count, 'New message', 'New messages') : t('No new messages'),
       'content' => theme('privatemsg_new_block', array('count' => $count)),
@@ -1982,7 +2003,7 @@ function privatemsg_get_link($recipients, $account = array(), $subject = NULL) {
     if (!privatemsg_user_access('read privatemsg', $recipient)) {
       continue;
     }
-    if (config_get('privatemsg.settings', 'privatemsg_display_link_self') == FALSE && $account->uid == $recipient->uid) {
+    if (config_get('privatemsg.settings', 'display_link_self') == FALSE && $account->uid == $recipient->uid) {
       continue;
     }
     if (count(module_invoke_all('privatemsg_block_message', $account, array(privatemsg_recipient_key($recipient) => $recipient))) > 0) {
@@ -2414,8 +2435,8 @@ function privatemsg_build_modes($obj_type) {
  */
 function privatemsg_node_view($node, $view_mode) {
   $config = config('privatemsg.settings');
-  $types = array_filter($config->get('privatemsg_link_node_types'));
-  if (in_array($node->type, $types) && ($view_mode == 'full' || ($config->get('privatemsg_display_on_teaser') && $view_mode == 'teaser'))) {
+  $types = array_filter($config->get('link_node_types'));
+  if (in_array($node->type, $types) && ($view_mode == 'full' || ($config->get('display_on_teaser') && $view_mode == 'teaser'))) {
     $url = privatemsg_get_link(user_load($node->uid));
     if (!empty($url)) {
       $node->content['links']['#links']['privatemsg_link'] = array(
@@ -2433,8 +2454,8 @@ function privatemsg_node_view($node, $view_mode) {
  */
 function privatemsg_comment_view($comment) {
   $config = config('privatemsg.settings');
-  $types = array_filter($config->get('privatemsg_link_node_types'));
-  if (in_array(node_load($comment->nid)->type, $types) && $config->get('privatemsg_display_on_comments')) {
+  $types = array_filter($config->get('link_node_types'));
+  if (in_array(node_load($comment->nid)->type, $types) && $config->get('display_on_comments')) {
     $url = privatemsg_get_link(user_load($comment->uid));
     if (!empty($url)) {
       $links['privatemsg_link'] = array(
@@ -2629,7 +2650,7 @@ function _privatemsg_handle_recipients($mid, $recipients, $use_batch = TRUE) {
     'file' => backdrop_get_path('module', 'privatemsg') . '/privatemsg.pages.inc',
     'progress_message' => t('Processing recipients'),
   );
-  $small_threshold = config_get('privatemsg.settings', 'privatemsg_recipient_small_threshold', 100);
+  $small_threshold = config_get('privatemsg.settings', 'recipient_small_threshold');
   foreach ($recipients as $recipient) {
     // Add a batch operation to press non-user recipient types.
     if ($recipient->type != 'user' && $recipient->type != 'hidden') {
@@ -3203,27 +3224,4 @@ function privatemsg_format_date($timestamp) {
     return format_date($timestamp, 'privatemsg_current_year');
   }
   return format_date($timestamp, 'privatemsg_years');
-}
-
-
-/**
- * Implements hook_config_info().
- */
-function privatemsg_config_info() {
-  $prefixes['privatemsg.settings'] = array(
-    'label' => t('Private message settings'),
-    'group' => t('Configuration'),
-  );
-  return $prefixes;
-}
-
-
-/**
- * Implements hook_autoload_info().
- */
-function privatemsg_autoload_info() {
-  return array(
-    'PrivatemsgMessageController' => 'privatemsg.controller.inc',
-    'views_handler_field_privatemsg_link' => 'views/views_handler_field_privatemsg_link.inc',
-  );
 }

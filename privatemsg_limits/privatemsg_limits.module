@@ -34,12 +34,24 @@ function privatemsg_limits_menu() {
 }
 
 /**
+ * Implements hook_config_info().
+ */
+function privatemsg_limits_config_info() {
+  $prefixes['privatemsg_limits.settings'] = array(
+    'label' => t('Private message limits settings'),
+    'group' => t('Configuration'),
+  );
+  return $prefixes;
+}
+
+/**
  * Implements hook_privatemsg_message_validate().
  */
 function privatemsg_limits_privatemsg_message_validate($message, $form = FALSE) {
   $errors = array();
+  $config = config('privatemsg_limits.settings');
 
-  if (config_get('privatemsg.settings', 'privatemsg_limits_recipients_enabled', FALSE)) {
+  if ($config->get('recipients_enabled')) {
     $amount = _privatemsg_limits_get_amount('recipients_amount', $message->author);
     if (!isset($message->thread_id) && $amount > 0 && count($message->recipients) > $amount) {
       $errors[] = t("You are not allowed to send a message to more than @number recipients.", array('@number' => $amount));
@@ -49,13 +61,13 @@ function privatemsg_limits_privatemsg_message_validate($message, $form = FALSE) 
   // Only check sending limit if enabled and if this is either not a reply or
   // messages should be checked and not threads. When the limit object are
   // threads, users can send an unlimited amount of replies.
-  if (config_get('privatemsg.settings', 'privatemsg_limits_send_enabled', FALSE) && (empty($message->thread_id) || config_get('privatemsg.settings', 'privatemsg_limits_send_object', 'message') == 'message')) {
+  if ($config->get('send_enabled') && (empty($message->thread_id) || $config->get('send_object') == 'message')) {
     $amount = _privatemsg_limits_get_amount('send_amount', $message->author);
-    $used = _privatemsg_limits_get_sent($message->author, config_get('privatemsg.settings', 'privatemsg_limits_send_timeframe', 3600));
+    $used = _privatemsg_limits_get_sent($message->author, $config->get('send_timeframe'));
     if ($amount > 0 && $used >= $amount) {
-      $wait_time = _privatemsg_limits_get_oldest($message->author, config_get('privatemsg.settings', 'privatemsg_limits_send_timeframe', 3600));
-      $period = format_interval(config_get('privatemsg.settings', 'privatemsg_limits_send_timeframe', 3600));
-      if (config_get('privatemsg.settings', 'privatemsg_limits_receive_object', 'message') == 'message') {
+      $wait_time = _privatemsg_limits_get_oldest($message->author, $config->get('send_timeframe'));
+      $period = format_interval($config->get('send_timeframe'));
+      if ($config->get('receive_object') == 'message') {
         $errors[] = t("Your message was not sent because you have exceeded your sending limit. You are allowed to send %limit messages every @period. You can send your next message in @wait_time.", array('@wait_time' => $wait_time, '%limit' => $amount, '@period' => $period));
       }
       else {
@@ -64,12 +76,12 @@ function privatemsg_limits_privatemsg_message_validate($message, $form = FALSE) 
     }
   }
 
-  if (config_get('privatemsg.settings', 'privatemsg_limits_receive_enabled', FALSE) && (empty($message->thread_id) || config_get('privatemsg.settings', 'privatemsg_limits_receive_object', 'message') == 'message')) {
+  if ($config->get('receive_enabled') && (empty($message->thread_id) || $config->get('receive_object') == 'message')) {
     $amount = _privatemsg_limits_get_amount('receive_amount', $message->author);
     $used = _privatemsg_limits_get_received($message->author);
 
     if ($amount > 0 && $used >= $amount) {
-      if (config_get('privatemsg.settings', 'privatemsg_limits_receive_object', 'message') == 'message') {
+      if ($config->get('receive_object') == 'message') {
         $errors[] = t("Your message mailbox is currently full. You are allowed a maximum of %limit messages in your mailbox at one time. You won't be able to send or receive new messages until you delete some existing ones.", array('%limit' => $amount));
       }
       else {
@@ -79,16 +91,16 @@ function privatemsg_limits_privatemsg_message_validate($message, $form = FALSE) 
   }
 
   // Blocks message sending if over number of messages per-thread.
-  if (isset($message->thread_id) && config_get('privatemsg.settings', 'privatemsg_limits_messages_per_thread', 0) > 0) {
+  if (isset($message->thread_id) && $config->get('messages_per_thread') > 0) {
     // If we're not blocking the message.
-    if (config_get('privatemsg.settings', 'privatemsg_limits_messages_per_thread_action', 'create-new') == 'block-message') {
+    if ($config->get('messages_per_thread_action') == 'block-message') {
       $query = "SELECT COUNT(*) FROM {pm_index} WHERE thread_id = :thread_id AND recipient = :recipient AND type IN ('hidden', 'user')";
       $messages = db_query($query, array(':thread_id' => $message->thread_id, ':recipient' =>  $message->author->uid))->fetchField();
 
-      if ($messages >= config_get('privatemsg.settings', 'privatemsg_limits_messages_per_thread', 0)) {
+      if ($messages >= $config->get('messages_per_thread')) {
         // If the number of messages per-thread has been exceeded, block message
         // from being sent.
-        $errors[] = t("This message cannot be sent because the thread already contains %limit messages (the maximum number of messages permitted per thread). To send this message, please create a new message thread.", array('%limit' => config_get('privatemsg.settings', 'privatemsg_limits_messages_per_thread', 0)));
+        $errors[] = t("This message cannot be sent because the thread already contains %limit messages (the maximum number of messages permitted per thread). To send this message, please create a new message thread.", array('%limit' => $config->get('messages_per_thread')));
       }
     }
   }
@@ -108,7 +120,8 @@ function privatemsg_limits_privatemsg_message_validate($message, $form = FALSE) 
  * Implements hook_privatemsg_block_message().
  */
 function privatemsg_limits_privatemsg_block_message($author, $recipients, $context = array()) {
-  if (config_get('privatemsg.settings', 'privatemsg_limits_receive_enabled', FALSE) && (empty($context['thread_id']) || config_get('privatemsg.settings', 'privatemsg_limits_receive_object', 'message') == 'message') ) {
+  $config = config('privatemsg_limits.settings');
+  if ($config->get('receive_enabled') && (empty($context['thread_id']) || $config->get('receive_object') == 'message') ) {
     $blocked = array();
 
     // Users that have the by-pass permission can send messages even if the
@@ -138,20 +151,21 @@ function privatemsg_limits_privatemsg_block_message($author, $recipients, $conte
  * Implements hook_privatemsg_message_presave_alter().
  */
 function privatemsg_limits_privatemsg_message_presave_alter($message) {
+  $config = config('privatemsg_limits.settings');
   // Put message into new thread if over number of messages per-thread.
-  if (isset($message->thread_id) && config_get('privatemsg.settings', 'privatemsg_limits_messages_per_thread', 0) > 0) {
+  if (isset($message->thread_id) && $config->get('messages_per_thread') > 0) {
     // If we're not creating a new thread.
-    if (config_get('privatemsg.settings', 'privatemsg_limits_messages_per_thread_action', 'create-new') != 'create-new') {
+    if ($config->get('messages_per_thread_action') != 'create-new') {
       return;
     }
 
     $query = "SELECT COUNT(*) FROM {pm_index} WHERE thread_id = :thread_id AND recipient = :recipient AND type IN ('hidden', 'user')";
     $result = db_query($query, array(':thread_id' => $message->thread_id, ':recipient' => $message->author->uid))->fetchField();
 
-    if ($result >= config_get('privatemsg.settings', 'privatemsg_limits_messages_per_thread', 0)) {
+    if ($result >= $config->get('messages_per_thread')) {
       // If the number of messages per-thread has been exceeded, force message into new thread.
       unset($message->thread_id);
-      backdrop_set_message(t("Your message would have exceeded our %limit messages per conversation limit. As a result, we've created a new conversation for your message.", array('%limit' => config_get('privatemsg.settings', 'privatemsg_limits_messages_per_thread', 0))));
+      backdrop_set_message(t("Your message would have exceeded our %limit messages per conversation limit. As a result, we've created a new conversation for your message.", array('%limit' => $config->get('messages_per_thread'))));
     }
   }
 }
@@ -163,6 +177,7 @@ function privatemsg_limits_privatemsg_message_presave_alter($message) {
  */
 function privatemsg_limits_form_privatemsg_list_alter(&$form, &$form_state) {
   global $user;
+  $config = config('privatemsg_limits.settings');
   $limit = _privatemsg_limits_get_amount('receive_amount', $form['account']['#value']);
   if ($limit > 0) {
     $used = _privatemsg_limits_get_received($form['account']['#value']);
@@ -172,7 +187,7 @@ function privatemsg_limits_form_privatemsg_list_alter(&$form, &$form_state) {
     else {
       $percent = 100;
       if ($user->uid == $form['account']['#value']->uid) {
-        if (config_get('privatemsg.settings', 'privatemsg_limits_receive_object', 'message') == 'message') {
+        if ($config->get('receive_object') == 'message') {
           $error = t("Your message mailbox is currently full. You are allowed a maximum of %limit messages in your mailbox at one time. You won't be able to send or receive new messages until you delete some existing ones.", array('%limit' => $limit));
         }
         else {
@@ -180,7 +195,7 @@ function privatemsg_limits_form_privatemsg_list_alter(&$form, &$form_state) {
         }
       }
       else {
-        if (config_get('privatemsg.settings', 'privatemsg_limits_receive_object', 'message') == 'message') {
+        if ($config->get('receive_object') == 'message') {
           $error = t("This message mailbox is currently full. !user is allowed a maximum of %limit messages in his mailbox at one time. !user won't be able to send or receive new messages until you delete some existing ones.", array('%limit' => $limit, '!user' => theme('username', array('account' => $form['account']['#value']))));
         }
         else {
@@ -189,7 +204,7 @@ function privatemsg_limits_form_privatemsg_list_alter(&$form, &$form_state) {
       }
       backdrop_set_message($error, 'error');
     }
-    if (config_get('privatemsg.settings', 'privatemsg_limits_receive_object', 'message') == 'message') {
+    if ($config->get('receive_object') == 'message') {
       $message = format_plural($used, 'You are currently using %percent% (@count message) of your %limit messages limit.', 'You are currently using %percent% (@count messages) of your %limit messages limit.', array('%percent' => $percent, '%used' => $used, '%limit' => $limit));
     }
     else {
@@ -238,6 +253,8 @@ function _privatemsg_limits_get_amount($name, $account) {
     return 0;
   }
 
+  $config = config('privatemsg_limits.settings');
+
   // $account might not be a fully loaded user account, fetch the roles in that
   // case.
   // @todo: Remove once privatemsg_user_load_multiple() is implemented.
@@ -248,7 +265,7 @@ function _privatemsg_limits_get_amount($name, $account) {
 
   $role_max = 0;
   foreach ($account->roles as $id => $role) {
-    $new_max = config_get('privatemsg.settings', "privatemsg_limits_{$name}_role_" . $role, NULL);
+    $new_max = config_get('privatemsg_limits.settings', "{$name}_role_" . $role);
     if ($new_max == 'unlimited') {
       return 0;
     }
@@ -257,7 +274,7 @@ function _privatemsg_limits_get_amount($name, $account) {
     }
   }
   if ($role_max == 0) {
-    return config_get('privatemsg.settings', 'privatemsg_limits_' . $name, 0);
+    return config_get('privatemsg_limits.settings', $name);
   }
   return $role_max;
 }
@@ -289,7 +306,7 @@ function _privatemsg_limits_get_sent($account, $timeframe) {
 function privatemsg_limits_sql_sent($account,  $timeframe) {
   $query = db_select('pm_message', 'pm');
 
-  if (config_get('privatemsg.settings', 'privatemsg_limits_send_object', 'message') == 'thread') {
+  if (config_get('privatemsg_limits.settings', 'send_object') == 'thread') {
     $query->addExpression('MAX(pm.timestamp)', 'timestamp');
     $query->join('pm_index', 'pmi', 'pmi.mid = pm.mid');
     $query->groupBy('pmi.thread_id');
@@ -339,7 +356,7 @@ function privatemsg_limits_sql_received($account) {
     ->condition('pmi.type', array('hidden', 'user'))
     ->orderBy('timestamp', 'ASC');
 
-  if (config_get('privatemsg.settings', 'privatemsg_limits_receive_object', 'message') == 'thread') {
+  if (config_get('privatemsg_limits.settings', 'receive_object') == 'thread') {
     $query->groupBy('pmi.thread_id');
   }
   else {

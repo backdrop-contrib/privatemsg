@@ -1,14 +1,14 @@
 {
   "_config_name": "privatemsg_limits.settings",
-  "privatemsg_limits_messages_per_thread": 0,
-  "privatemsg_limits_messages_per_thread_action": "create-new",
-  "privatemsg_limits_recipients_enabled": false,
-  "privatemsg_limits_recipients_amount": 0,
-  "privatemsg_limits_send_enabled": false,
-  "privatemsg_limits_send_object": "message",
-  "privatemsg_limits_send_amount": 0,
-  "privatemsg_limits_send_timeframe": 3600,
-  "privatemsg_limits_receive_enabled": false,
-  "privatemsg_limits_receive_object": "message",
-  "privatemsg_limits_receive_amount": 0
+  "messages_per_thread": 0,
+  "messages_per_thread_action": "create-new",
+  "recipients_enabled": false,
+  "recipients_amount": 0,
+  "send_enabled": false,
+  "send_object": "message",
+  "send_amount": 0,
+  "send_timeframe": 3600,
+  "receive_enabled": false,
+  "receive_object": "message",
+  "receive_amount": 0
 }

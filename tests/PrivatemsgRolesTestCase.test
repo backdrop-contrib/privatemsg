@@ -49,8 +49,8 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
     $admin = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg', 'write privatemsg to roles'));
     $user1 = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg'));
 
-    config_set('privatemsg.settings', 'privatemsg_recipient_small_threshold', 20);
-    config_set('privatemsg.settings', 'privatemsg_cron_recipient_per_run', 20);
+    config_set('privatemsg.settings', 'recipient_small_threshold', 20);
+    config_set('privatemsg.settings', 'cron_recipient_per_run', 20);
 
     // Create 26 users (more than are allowed to be process directly).
     $users = array();
@@ -102,7 +102,7 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
     $admin = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg', 'write privatemsg to roles'));
     $user1 = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg'));
 
-    config_set('privatemsg.settings', 'privatemsg_recipient_small_threshold', 20);
+    config_set('privatemsg.settings', 'recipient_small_threshold', 20);
     // Create 25 users (more than are allowed to be process directly).
     $users = array();
     for ($i = 0; $i < 25; $i++) {

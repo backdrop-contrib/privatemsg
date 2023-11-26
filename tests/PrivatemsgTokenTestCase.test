@@ -37,7 +37,7 @@ class PrivatemsgTokenTestCase extends PrivatemsgBaseTestCase {
     $this->backdropLogin($author);
 
     // Enable preview button.
-    config_set('privatemsg.settings', 'privatemsg_display_preview_button', TRUE);
+    config_set('privatemsg.settings', 'display_preview_button', TRUE);
 
     // Create message with tokens and preview it.
     $edit = array(

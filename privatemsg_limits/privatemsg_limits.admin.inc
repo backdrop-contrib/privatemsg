@@ -9,6 +9,7 @@
  * Menu callback for the admin configuration.
  */
 function privatemsg_limits_admin($form, &$form_state) {
+  $config = config('privatemsg_limits.settings');
   $default = array(
     '#type'  => 'textfield',
     '#size' => '10',
@@ -18,18 +19,18 @@ function privatemsg_limits_admin($form, &$form_state) {
     '#type' => 'fieldset',
     '#title' => t('Conversation settings'),
   );
-  $form['conversation']['privatemsg_limits_messages_per_thread'] = array(
+  $form['conversation']['messages_per_thread'] = array(
     '#type' => 'textfield',
     '#title' => t('Maximum number of messages in a conversation'),
     '#description' => t('The maximum number of messages that can be included in a conversation. If this maximum has already been reached and a user attempts to add an additional message, then the action specified below shall be taken. Leave this set to 0 if you want unlimited messages per conversation.'),
-    '#default_value' => config_get('privatemsg.settings', 'privatemsg_limits_messages_per_thread'),
+    '#default_value' => $config->get('messages_per_thread'),
     '#size' => '3',
   );
-  $form['conversation']['privatemsg_limits_messages_per_thread_action'] = array(
+  $form['conversation']['messages_per_thread_action'] = array(
     '#type' => 'radios',
     '#title' => t('Maximum messages action'),
     '#description' => t('This action shall be taken once a thread has already reached its maximum number of messages.'),
-    '#default_value' => config_get('privatemsg.settings', 'privatemsg_limits_messages_per_thread_action', 'create-new'),
+    '#default_value' => $config->get('messages_per_thread_action'),
     '#options' => array(
       'create-new' => t('Create new conversation'),
       'block-message' => t('Block message from being sent')
@@ -40,23 +41,23 @@ function privatemsg_limits_admin($form, &$form_state) {
     '#type' => 'fieldset',
     '#title' => t('Receive settings'),
   );
-  $form['receive']['privatemsg_limits_receive_enabled'] = array(
+  $form['receive']['receive_enabled'] = array(
     '#type'  => 'checkbox',
     '#title' => t('Limit the total number of messages/conversations that a user may have.'),
-    '#default_value' => config_get('privatemsg.settings', 'privatemsg_limits_receive_enabled', FALSE),
+    '#default_value' => $config->get('receive_enabled'),
   );
-  $form['receive']['privatemsg_limits_receive_object'] = array(
+  $form['receive']['receive_object'] = array(
     '#type'  => 'select',
     '#title' => t('What should be limited'),
     '#description' => t('Do you want to limit the number of individual messages a user can send, or limit the number of message conversations a user can initiate? An exceeded conversation limit will allow users to still write individual messages in existing conversations, but not start new ones.'),
-    '#default_value' => config_get('privatemsg.settings', 'privatemsg_limits_receive_object', 'message'),
+    '#default_value' => $config->get('receive_object'),
     '#options' => array('message' => t('Messages'), 'thread' => t('Conversations')),
   );
-  $form['receive']['privatemsg_limits_receive_amount'] = array(
+  $form['receive']['receive_amount'] = array(
     '#type'  => 'textfield',
     '#title' => t('Maximum number of messages/conversations per user'),
     '#description' => t('The total number of messages/conversations that a user may have before he has to delete old messages/conversations. When this limit is reached, users are not allowed to receive or send new messages.'),
-    '#default_value' => config_get('privatemsg.settings', 'privatemsg_limits_receive_amount', 0),
+    '#default_value' => $config->get('receive_amount'),
     '#size' => '10',
   );
   $form['receive'] += _privatemsg_limits_role_override_form('receive_amount', $default);
@@ -65,30 +66,30 @@ function privatemsg_limits_admin($form, &$form_state) {
     '#type' => 'fieldset',
     '#title' => t('Send settings'),
   );
-  $form['send']['privatemsg_limits_send_enabled'] = array(
+  $form['send']['send_enabled'] = array(
     '#type'  => 'checkbox',
     '#title' => t('Limit the total number of messages/conversations that a user can send in a given time period'),
-    '#default_value' => config_get('privatemsg.settings', 'privatemsg_limits_send_enabled', FALSE),
+    '#default_value' => $config->get('send_enabled'),
   );
-  $form['send']['privatemsg_limits_send_object'] = array(
+  $form['send']['send_object'] = array(
     '#type'  => 'select',
     '#title' => t('What should be limited'),
     '#description' => t('Do you want to limit the number of individual messages a user can send, or limit the number of message conversations a user can initiate? An exceeded conversation limit will allow users to still write individual messages in existing conversations, but not start new ones.'),
-    '#default_value' => config_get('privatemsg.settings', 'privatemsg_limits_send_object', 'message'),
+    '#default_value' => $config->get('send_object'),
     '#options' => array('message' => t('Messages'), 'thread' => t('Conversations')),
   );
-  $form['send']['privatemsg_limits_send_amount'] = array(
+  $form['send']['send_amount'] = array(
     '#type'  => 'textfield',
     '#title' => t('Maximum number of messages/conversations per time period'),
     '#description' => t('The total number of messages/conversations that a user may send in a given time period.'),
-    '#default_value' => config_get('privatemsg.settings', 'privatemsg_limits_send_amount', 0),
+    '#default_value' => $config->get('send_amount'),
     '#size' => '10',
   );
-  $form['send']['privatemsg_limits_send_timeframe'] = array(
+  $form['send']['send_timeframe'] = array(
     '#type'  => 'select',
     '#title' => t('Set the time period to be used'),
     '#description' => t("Specify the time period to be used when limiting a user's sent messages/threads."),
-    '#default_value' => config_get('privatemsg.settings', 'privatemsg_limits_send_timeframe', 3600),
+    '#default_value' => $config->get('send_timeframe'),
     '#options' => backdrop_map_assoc(array(60, 300, 1800, 3600, 86400, 604800, 604800 * 4), 'format_interval'),
   );
   $form['send'] += _privatemsg_limits_role_override_form('send_amount', $default);
@@ -97,16 +98,16 @@ function privatemsg_limits_admin($form, &$form_state) {
     '#type' => 'fieldset',
     '#title' => t('Recipient settings'),
   );
-  $form['recipients']['privatemsg_limits_recipients_enabled'] = array(
+  $form['recipients']['recipients_enabled'] = array(
     '#type'  => 'checkbox',
     '#title' => t('Limit the total number of recipients that a user can include in a single message'),
-    '#default_value' => config_get('privatemsg.settings', 'privatemsg_limits_recipients_enabled', FALSE),
+    '#default_value' => $config->get('recipients_enabled'),
   );
-  $form['recipients']['privatemsg_limits_recipients_amount'] = array(
+  $form['recipients']['recipients_amount'] = array(
     '#type'  => 'textfield',
     '#title' => t('Maximum number of recipients per message'),
     '#description' => t('Defines the total number of recipients a user may include in a single message. This setting only affects new messages (and not replies on existing message threads). A role (just like any other recipient type) is considered to be a single recipient regardless of the number of users with that role.'),
-    '#default_value' => config_get('privatemsg.settings', 'privatemsg_limits_recipients_amount', 0),
+    '#default_value' => $config->get('recipients_amount'),
     '#size' => '10',
   );
   $form['recipients'] += _privatemsg_limits_role_override_form('recipients_amount', $default);
@@ -124,30 +125,29 @@ function privatemsg_limits_admin($form, &$form_state) {
  * Submit handler for admin configuration.
  */
 function privatemsg_limits_admin_submit($form, &$form_state) {
-  $config = config('privatemsg.settings');
+  $config = config('privatemsg_limits.settings');
   $values = $form_state['values'];
-  $config->set('privatemsg_limits_messages_per_thread', $values['privatemsg_limits_messages_per_thread']);
-  $config->set('privatemsg_limits_messages_per_thread_action', $values['privatemsg_limits_messages_per_thread_action']);
-  $config->set('privatemsg_limits_receive_enabled', $values['privatemsg_limits_receive_enabled']);
-  $config->set('privatemsg_limits_receive_object', $values['privatemsg_limits_receive_object']);
-  $config->set('privatemsg_limits_receive_amount', $values['privatemsg_limits_receive_amount']);
-  $config->set('privatemsg_limits_send_enabled', $values['privatemsg_limits_send_enabled']);
-  $config->set('privatemsg_limits_send_object', $values['privatemsg_limits_send_object']);
-  $config->set('privatemsg_limits_send_amount', $values['privatemsg_limits_send_amount']);
-  $config->set('privatemsg_limits_send_timeframe', $values['privatemsg_limits_send_timeframe']);
-  $config->set('privatemsg_limits_messages_per_thread', $values['privatemsg_limits_messages_per_thread']);
-  $config->set('privatemsg_limits_recipients_enabled', $values['privatemsg_limits_recipients_enabled']);
-  $config->set('privatemsg_limits_recipients_amount', $values['privatemsg_limits_recipients_amount']);
+  $config->set('messages_per_thread', $values['messages_per_thread']);
+  $config->set('messages_per_thread_action', $values['messages_per_thread_action']);
+  $config->set('receive_enabled', $values['receive_enabled']);
+  $config->set('receive_object', $values['receive_object']);
+  $config->set('receive_amount', $values['receive_amount']);
+  $config->set('send_enabled', $values['send_enabled']);
+  $config->set('send_object', $values['send_object']);
+  $config->set('send_amount', $values['send_amount']);
+  $config->set('send_timeframe', $values['send_timeframe']);
+  $config->set('messages_per_thread', $values['messages_per_thread']);
+  $config->set('recipients_enabled', $values['recipients_enabled']);
+  $config->set('recipients_amount', $values['recipients_amount']);
   foreach (array_keys(user_roles(TRUE)) as $role) {
     foreach (array('send', 'receive', 'recipients') as $option) {
-      $setting = 'privatemsg_limits_' . $option . '_amount_role_' . $role;
+      $setting = $option . '_amount_role_' . $role;
       $config->set($setting, $values[$setting]);
     }
   }
   $config->save();
   backdrop_set_message(t('The configuration options have been saved.'));
 }
-
 
 /**
  * Provides a generic rules form to override the default values.
@@ -158,6 +158,7 @@ function privatemsg_limits_admin_submit($form, &$form_state) {
  * @return array Form fieldset
  */
 function _privatemsg_limits_role_override_form($name, $default) {
+  $config = config('privatemsg_limits.settings');
   $form['roles'] = array(
     '#type'   => 'fieldset',
     '#description' => t('You may override the maximum limit specified above on a per-role basis. If a user has multiple roles, then the highest maximum value shall be used. Enter "unlimited" if a role may have unlimited messages/conversations. Enter "0" if you do not want to override the maximum limit setting.'),
@@ -167,9 +168,9 @@ function _privatemsg_limits_role_override_form($name, $default) {
   );
 
   foreach (user_roles(TRUE) as $id => $role) {
-    $form['roles']["privatemsg_limits_{$name}_role_{$id}"] = $default + array(
+    $form['roles']["{$name}_role_{$id}"] = $default + array(
       '#title' => $role,
-      '#default_value' => config_get('privatemsg.settings', "privatemsg_limits_{$name}_role_" . $id, 0),
+      '#default_value' => $config->get("{$name}_role_" . $id),
     );
   }
   return $form;

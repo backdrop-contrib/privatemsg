@@ -36,12 +36,12 @@ class PrivatemsgLimitsTestCase extends PrivatemsgBaseTestCase {
     $this->backdropLogin($admin);
 
     $settings = array(
-      'privatemsg_limits_send_enabled' => TRUE,
-      'privatemsg_limits_send_amount' => 3,
-      'privatemsg_limits_send_timeframe' => 3600,
+      'send_enabled' => TRUE,
+      'send_amount' => 3,
+      'send_timeframe' => 3600,
     );
     $name = $this->getRole($admin);
-    $settings['privatemsg_limits_send_amount_role_' . $name] = 5;
+    $settings['send_amount_role_' . $name] = 5;
 
     $this->backdropPost('admin/config/messaging/privatemsg/limits', $settings, t('Save configuration'));
 
@@ -117,13 +117,13 @@ class PrivatemsgLimitsTestCase extends PrivatemsgBaseTestCase {
     $this->backdropLogin($admin);
 
     $settings = array(
-      'privatemsg_limits_send_enabled' => TRUE,
-      'privatemsg_limits_send_amount' => 3,
-      'privatemsg_limits_send_object' => 'thread',
-      'privatemsg_limits_send_timeframe' => 3600,
+      'send_enabled' => TRUE,
+      'send_amount' => 3,
+      'send_object' => 'thread',
+      'send_timeframe' => 3600,
     );
     $name = $this->getRole($admin);
-    $settings['privatemsg_limits_send_amount_role_' . $name] = 5;
+    $settings['send_amount_role_' . $name] = 5;
 
     $this->backdropPost('admin/config/messaging/privatemsg/limits', $settings, t('Save configuration'));
 
@@ -199,12 +199,12 @@ class PrivatemsgLimitsTestCase extends PrivatemsgBaseTestCase {
     $this->backdropLogin($admin);
 
     $settings = array(
-      'privatemsg_limits_receive_enabled' => TRUE,
-      'privatemsg_limits_receive_amount' => 3,
-      'privatemsg_limits_send_timeframe' => 3600,
+      'receive_enabled' => TRUE,
+      'receive_amount' => 3,
+      'send_timeframe' => 3600,
     );
     $name = $this->getRole($admin);
-    $settings['privatemsg_limits_receive_amount_role_' . $name] = 5;
+    $settings['receive_amount_role_' . $name] = 5;
 
     $this->backdropPost('admin/config/messaging/privatemsg/limits', $settings, t('Save configuration'));
 
@@ -279,13 +279,13 @@ class PrivatemsgLimitsTestCase extends PrivatemsgBaseTestCase {
     $this->backdropLogin($admin);
 
     $settings = array(
-      'privatemsg_limits_receive_enabled' => TRUE,
-      'privatemsg_limits_receive_amount' => 3,
-      'privatemsg_limits_receive_object' => 'thread',
-      'privatemsg_limits_send_timeframe' => 3600,
+      'receive_enabled' => TRUE,
+      'receive_amount' => 3,
+      'receive_object' => 'thread',
+      'send_timeframe' => 3600,
     );
     $name = $this->getRole($admin);
-    $settings['privatemsg_limits_receive_amount_role_' . $name] = 5;
+    $settings['receive_amount_role_' . $name] = 5;
 
     $this->backdropPost('admin/config/messaging/privatemsg/limits', $settings, t('Save configuration'));
 
@@ -366,11 +366,11 @@ class PrivatemsgLimitsTestCase extends PrivatemsgBaseTestCase {
     $this->backdropLogin($admin);
 
     $settings = array(
-      'privatemsg_limits_recipients_enabled' => TRUE,
-      'privatemsg_limits_recipients_amount' => 1,
+      'recipients_enabled' => TRUE,
+      'recipients_amount' => 1,
     );
     $name = $this->getRole($admin);
-    $settings['privatemsg_limits_recipients_amount_role_' . $name] = 2;
+    $settings['recipients_amount_role_' . $name] = 2;
     $this->backdropPost('admin/config/messaging/privatemsg/limits', $settings, t('Save configuration'));
 
     // Send a message to a single user.
@@ -431,8 +431,8 @@ class PrivatemsgLimitsTestCase extends PrivatemsgBaseTestCase {
     $this->backdropLogin($admin);
 
     $settings = array(
-      'privatemsg_limits_messages_per_thread' => 2,
-      'privatemsg_limits_messages_per_thread_action' => 'block-message',
+      'messages_per_thread' => 2,
+      'messages_per_thread_action' => 'block-message',
     );
     $this->backdropPost('admin/config/messaging/privatemsg/limits', $settings, t('Save configuration'));
 
@@ -473,8 +473,8 @@ class PrivatemsgLimitsTestCase extends PrivatemsgBaseTestCase {
     $this->backdropLogin($admin);
 
     $settings = array(
-      'privatemsg_limits_messages_per_thread' => 1,
-      'privatemsg_limits_messages_per_thread_action' => 'create-new',
+      'messages_per_thread' => 1,
+      'messages_per_thread_action' => 'create-new',
     );
     $this->backdropPost('admin/config/messaging/privatemsg/limits', $settings, t('Save configuration'));
 

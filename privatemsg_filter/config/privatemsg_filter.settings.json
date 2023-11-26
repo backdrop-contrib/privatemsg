@@ -1,6 +1,6 @@
 {
   "_config_name": "privatemsg_filter.settings",
-  "privatemsg_filter_inbox_tag": "",
-  "privatemsg_filter_searchbody": false,
-  "privatemsg_filter_default_list": 0
+  "inbox_tag": "",
+  "searchbody": false,
+  "default_list": 0
 }

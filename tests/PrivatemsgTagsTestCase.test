@@ -177,7 +177,7 @@ class PrivatemsgTagsTestCase extends PrivatemsgBaseTestCase {
 
     // Display tag column in thread list.
     $this->backdropLogin($admin);
-    $this->backdropPost('admin/config/messaging/privatemsg', array('privatemsg_display_fields[tags]' => 'tags'), t('Save configuration'));
+    $this->backdropPost('admin/config/messaging/privatemsg', array('display_fields[tags]' => 'tags'), t('Save configuration'));
 
     // Create two threads through the API.
     $response = privatemsg_new_thread(array($webuser), $subject1 = $this->randomName(10), $this->randomName(20), array('author' => $admin));
@@ -208,7 +208,7 @@ class PrivatemsgTagsTestCase extends PrivatemsgBaseTestCase {
     $this->assertNoText($subject2, t('Second thread not displayed.'));
 
     // Check paging, set threads per page to 1.
-    config_set('privatemsg.settings', 'privatemsg_per_page', 1);
+    config_set('privatemsg.settings', 'per_page', 1);
 
     // Go the second page, only the second thread should be visible there.
     $this->backdropGet('messages');
@@ -239,7 +239,7 @@ class PrivatemsgTagsTestCase extends PrivatemsgBaseTestCase {
 
     // Display tag column in thread list.
     $this->backdropLogin($admin);
-    $this->backdropPost('admin/config/messaging/privatemsg', array('privatemsg_display_fields[tags]' => 'tags'), t('Save configuration'));
+    $this->backdropPost('admin/config/messaging/privatemsg', array('display_fields[tags]' => 'tags'), t('Save configuration'));
 
     // Create a new thread through the api.
     $response = privatemsg_new_thread(array($webuser), $subject1 = $this->randomName(10), $this->randomName(20), array('author' => $webuser));
