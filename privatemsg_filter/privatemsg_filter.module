@@ -89,7 +89,7 @@ function privatemsg_filter_menu() {
     'file' => 'privatemsg.pages.inc',
     'file path' => backdrop_get_path('module', 'privatemsg'),
     'access callback' => 'privatemsg_user_access',
-    'type' => config_get('privatemsg.settings', 'privatemsg_filter_default_list') ? MENU_LOCAL_TASK : MENU_DEFAULT_LOCAL_TASK,
+    'type' => config_get('privatemsg_filter.settings', 'default_list') ? MENU_LOCAL_TASK : MENU_DEFAULT_LOCAL_TASK,
     'weight' => -15,
     'menu_name' => 'user-menu',
   );
@@ -125,13 +125,24 @@ function privatemsg_filter_menu() {
 }
 
 /**
+ * Implements hook_config_info().
+ */
+function privatemsg_filter_config_info() {
+  $prefixes['privatemsg_filter.settings'] = array(
+    'label' => t('Private message filter settings'),
+    'group' => t('Configuration'),
+  );
+  return $prefixes;
+}
+
+/**
  * Implement hook_menu_alter().
  */
 function privatemsg_filter_menu_alter(&$items) {
   // Rename messages to "All messages".
   $items['messages/list']['title'] = 'All messages';
 
-  if (config_get('privatemsg.settings', 'privatemsg_filter_default_list') == 0) {
+  if (config_get('privatemsg_filter.settings', 'default_list') == 0) {
     // Change default argument of /messages to inbox. and set the task to MENU_LOCAL_TASK.
     $items['messages']['page arguments'] = array('inbox');
     $items['messages/list']['type'] = MENU_LOCAL_TASK;
@@ -142,19 +153,20 @@ function privatemsg_filter_menu_alter(&$items) {
  * Implements hook_form_FORM_ID_alter() to add a filter widget to the message listing pages.
  */
 function privatemsg_filter_form_privatemsg_admin_settings_alter(&$form, $form_state) {
-  $form['privatemsg_listing']['privatemsg_filter_default_list'] = array(
+  $config = config('privatemsg_filter.settings');
+  $form['privatemsg_listing']['default_list'] = array(
     '#type' => 'radios',
-    '#default_value' => config_get('privatemsg.settings', 'privatemsg_filter_default_list'),
+    '#default_value' => $config->get('default_list'),
     '#options' => array(t('Inbox'), t('All messages')),
     '#title' => t('Choose the default list option'),
     '#description' => t('Choose which of the two lists are shown by default when following the messages link.'),
   );
 
-  $form['privatemsg_listing']['privatemsg_filter_searchbody'] = array(
+  $form['privatemsg_listing']['searchbody'] = array(
     '#type' => 'checkbox',
     '#title' => t('Search message body'),
     '#description' => t('WARNING: turning on this feature will slow down search performance by a large factor. Gets worse as your messages database increases.'),
-    '#default_value' => config_get('privatemsg.settings', 'privatemsg_filter_searchbody'),
+    '#default_value' => $config->get('searchbody'),
   );
 
   // Add tags to the list of possible columns.
@@ -167,7 +179,7 @@ function privatemsg_filter_form_privatemsg_admin_settings_alter(&$form, $form_st
  * Rebuilding the menu if necessary.
  */
 function privatemsg_filter_settings_submit($form, &$form_state) {
-  if ($form['privatemsg_listing']['privatemsg_filter_default_list']['#default_value'] != $form_state['values']['privatemsg_filter_default_list']) {
+  if ($form['privatemsg_listing']['default_list']['#default_value'] != $form_state['values']['default_list']) {
     menu_rebuild();
   }
 }
@@ -260,7 +272,7 @@ function privatemsg_filter_remove_tags($threads, $tag_ids = NULL, $account = NUL
     db_delete('pm_tags_index')
       ->condition('uid', $account->uid)
       ->condition('thread_id', $threads)
-      ->condition('tag_id', config_get('privatemsg.settings', 'privatemsg_filter_inbox_tag'), '<>')
+      ->condition('tag_id', config_get('privatemsg_filter.settings', 'inbox_tag'), '<>')
       ->execute();
   }
   else {
@@ -349,7 +361,7 @@ function privatemsg_filter_dropdown(&$form_state, $account) {
   );
   $form['filter']['search'] = array(
     '#type' => 'textfield',
-    '#title' => config_get('privatemsg.settings', 'privatemsg_filter_searchbody') ? t('By message text') : t('By subject'),
+    '#title' => config_get('privatemsg_filter.settings', 'searchbody') ? t('By message text') : t('By subject'),
     '#weight' => -20,
     '#size' => 25,
   );
@@ -513,7 +525,7 @@ function privatemsg_filter_form_privatemsg_list_alter(&$form, $form_state) {
     $form += privatemsg_filter_dropdown($form_state, $form['account']['#value']);
   }
 
-  $fields = array_filter(config_get('privatemsg.settings', 'privatemsg_display_fields'));
+  $fields = array_filter(config_get('privatemsg.settings', 'display_fields'));
   if (privatemsg_user_access('tag private messages') && in_array('tags', $fields) && !empty($form['updated']['list']['#options'])) {
     // Load thread id's of the current list.
     $threads = array_keys($form['updated']['list']['#options']);
@@ -590,14 +602,15 @@ function privatemsg_filter_form_privatemsg_list_alter(&$form, $form_state) {
  * Form callback for removing a tag to threads.
  */
 function privatemsg_filter_privatemsg_thread_operations($type) {
+  $config = config('privatemsg_filter.settings');
   if ($type == 'inbox') {
     $archive = array(
       'label' => t('Archive'),
       'callback' => 'privatemsg_filter_remove_tags',
-      'callback arguments' => array('tag_id' => config_get('privatemsg.settings', 'privatemsg_filter_inbox_tag')),
+      'callback arguments' => array('tag_id' => $config->get('inbox_tag')),
       'success message' => t('The messages have been archived.'),
       'undo callback' => 'privatemsg_filter_add_tags',
-      'undo callback arguments' => array('tag_id' => config_get('privatemsg.settings', 'privatemsg_filter_inbox_tag')),
+      'undo callback arguments' => array('tag_id' => $config->get('inbox_tag')),
     );
     return array('archive' => $archive);
   }
@@ -695,6 +708,7 @@ function privatemsg_filter_query_privatemsg_list_alter($query) {
 
   $account = $query->getMetaData('arg_1');
   $argument = $query->getMetaData('arg_2');
+  $config = config('privatemsg_filter.settings');
 
   // Add all conditions to the count query too.
   $count_query = $query->getCountQuery();
@@ -706,7 +720,7 @@ function privatemsg_filter_query_privatemsg_list_alter($query) {
   }
   $filter = privatemsg_filter_get_filter($account);
   if ($argument == 'inbox') {
-    $filter['tags'][] = config_get('privatemsg.settings', 'privatemsg_filter_inbox_tag');
+    $filter['tags'][] = $config->get('inbox_tag');
   }
 
   // Filter the message listing by any set tags.
@@ -732,7 +746,7 @@ function privatemsg_filter_query_privatemsg_list_alter($query) {
     }
 
     if (!empty($filter['search'])) {
-      if (config_get('privatemsg.settings', 'privatemsg_filter_searchbody')) {
+      if ($config->get('searchbody')) {
         $search = db_or()
           ->condition('pm.subject', '%' . $filter['search'] . '%', 'LIKE')
           ->condition('pm.body', '%' . $filter['search'] . '%', 'LIKE');
@@ -993,7 +1007,7 @@ function privatemsg_filter_user_cancel($edit, $account, $method) {
 function privatemsg_filter_privatemsg_message_insert($message) {
   foreach ($message->recipients as $recipient) {
     if ($recipient->type == 'user' || $recipient->type == 'hidden') {
-      privatemsg_filter_add_tags(array($message->thread_id), config_get('privatemsg.settings', 'privatemsg_filter_inbox_tag'));
+      privatemsg_filter_add_tags(array($message->thread_id), config_get('privatemsg_filter.settings', 'inbox_tag'));
     }
   }
 }
@@ -1003,6 +1017,6 @@ function privatemsg_filter_privatemsg_message_insert($message) {
  */
 function privatemsg_filter_privatemsg_message_recipient_changed($mid, $thread_id, $recipient, $type, $added) {
   if ($added && ($type == 'user' || $type == 'hidden')) {
-    privatemsg_filter_add_tags(array($thread_id), config_get('privatemsg.settings', 'privatemsg_filter_inbox_tag'), (object) array('uid' => $recipient));
+    privatemsg_filter_add_tags(array($thread_id), config_get('privatemsg_filter.settings', 'inbox_tag'), (object) array('uid' => $recipient));
   }
 }

@@ -115,8 +115,8 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
     $recipient  = $this->backdropCreateUser(array('read privatemsg'));
 
     // Set lower values so that we don't need to generate 100's of messages.
-    config_set('privatemsg.settings', 'privatemsg_view_default_amount', 5);
-    config_set('privatemsg.settings', 'privatemsg_view_max_amount', 10);
+    config_set('privatemsg.settings', 'view_default_amount', 5);
+    config_set('privatemsg.settings', 'view_max_amount', 10);
 
     $subject_single = $this->randomName(20);
     $subject = $this->randomName(20);
@@ -149,7 +149,7 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
     $this->assertText($bodies[22], t('Message is displayed.'));
     $this->assertNoText(t('&gt;&gt;'), t('Newer messages link not displayed.'));
 
-    config_set('privatemsg.settings', 'privatemsg_view_use_max_as_default', TRUE);
+    config_set('privatemsg.settings', 'view_use_max_as_default', TRUE);
     $this->backdropGet('messages');
     $this->clickLink($subject);
 
@@ -188,7 +188,7 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
     $this->assertText($bodies[17], t('Message is displayed.'));
     $this->assertNoText($bodies[22], t('Hidden message is not displayed.'));
 
-    config_set('privatemsg.settings', 'privatemsg_view_max_amount', PRIVATEMSG_UNLIMITED);
+    config_set('privatemsg.settings', 'view_max_amount', PRIVATEMSG_UNLIMITED);
     $this->backdropGet('messages');
     $this->clickLink($subject);
 
@@ -210,7 +210,7 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
     $this->assertNoText(t('&lt;&lt;'), t('Older messages link not displayed.'));
 
     // Check with max_amount = UNLIMITED and different default amount disabled.
-    config_set('privatemsg.settings', 'privatemsg_view_use_max_as_default', FALSE);
+    config_set('privatemsg.settings', 'view_use_max_as_default', FALSE);
 
     $this->backdropGet('messages');
     $this->clickLink($subject);
@@ -609,7 +609,7 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
     // Now, mid 1, 4 and 6 have been deleted by both.
 
     // Flush configuration, enable, delay is default, 30 days
-    config_set('privatemsg.settings', 'privatemsg_flush_enabled', TRUE);
+    config_set('privatemsg.settings', 'flush_enabled', TRUE);
 
     // Set back the deleted timestamp 35 days back of mid 4.
     db_update('pm_index')
@@ -813,7 +813,7 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
     $user = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg'));
 
     // Enable preview button.
-    config_set('privatemsg.settings', 'privatemsg_display_preview_button', TRUE);
+    config_set('privatemsg.settings', 'display_preview_button', TRUE);
 
     $message = array(
       'recipient' => $user->name,

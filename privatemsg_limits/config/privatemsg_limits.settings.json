@@ -1,0 +1,15 @@
+{
+  "_config_name": "privatemsg_limits.settings",
+  "messages_per_thread": 0,
+  "messages_per_thread_action": "create-new",
+  "recipients_enabled": false,
+  "recipients_amount": 0,
+  "send_enabled": false,
+  "send_object": "message",
+  "send_amount": 0,
+  "send_timeframe": 3600,
+  "receive_enabled": false,
+  "receive_object": "message",
+  "receive_amount": 0,
+  "amount_per_role": []
+}

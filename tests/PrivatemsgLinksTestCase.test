@@ -41,10 +41,10 @@ class PrivatemsgLinksTestCase extends PrivatemsgBaseTestCase {
     $this->backdropLogin($admin);
 
     $settings = array(
-      'privatemsg_display_link_self' => FALSE,
-      'privatemsg_link_node_types[post]' => TRUE,
-      'privatemsg_display_on_teaser' => FALSE,
-      'privatemsg_display_on_comments' => TRUE,
+      'display_link_self' => FALSE,
+      'link_node_types[post]' => TRUE,
+      'display_on_teaser' => FALSE,
+      'display_on_comments' => TRUE,
     );
     $this->backdropPost('admin/config/messaging/privatemsg', $settings, t('Save configuration'));
 

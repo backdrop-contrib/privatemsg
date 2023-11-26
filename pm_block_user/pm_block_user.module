@@ -82,6 +82,17 @@ function pm_block_user_menu() {
 }
 
 /**
+ * Implements hook_config_info().
+ */
+function pm_block_user_config_info() {
+  $prefixes['pm_block_user.settings'] = array(
+    'label' => t('Private message block user settings'),
+    'group' => t('Configuration'),
+  );
+  return $prefixes;
+}
+
+/**
  * Implements hook_theme().
  */
 function pm_block_user_theme() {
@@ -222,7 +233,7 @@ function pm_block_user_has_blocked($author, $recipient) {
  *   TRUE if a rule exists for the combination of author recipient and action.
  */
 function _pm_block_user_rule_exists($author, $recipient, $action = PM_BLOCK_USER_DISALLOW_BLOCKING) {
-  $block_actions = config_get('privatemsg.settings', 'pm_block_user_actions');
+  $block_actions = config_get('pm_block_user.settings', 'actions');
   if (empty($block_actions)) {
     return FALSE;
   }
@@ -382,7 +393,7 @@ function pm_block_user_query_privatemsg_autocomplete_alter($query) {
   // Block role configurations.
   if ($user->uid != 1) {
     $rids = array();
-    $block_actions = config_get('privatemsg.settings', 'pm_block_user_actions');
+    $block_actions = config_get('pm_block_user.settings', 'actions');
     foreach ($block_actions as $details) {
       // Only continue if the rule is enabled and is a disallow sending rule.
       if ($details['action'] != PM_BLOCK_USER_DISALLOW_SENDING || !$details['enabled']) {

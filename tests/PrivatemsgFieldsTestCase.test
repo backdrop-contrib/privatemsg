@@ -43,7 +43,7 @@ class PrivatemsgFieldsTestCase extends PrivatemsgBaseTestCase {
     $this->backdropPost(NULL, array(), t('Save settings'));
 
     // Enable preview button.
-    config_set('privatemsg.settings', 'privatemsg_display_preview_button', TRUE);
+    config_set('privatemsg.settings', 'display_preview_button', TRUE);
 
     // Preview message.
     $message = array(
@@ -102,7 +102,7 @@ class PrivatemsgFieldsTestCase extends PrivatemsgBaseTestCase {
     $this->backdropPost(NULL, array(), t('Save settings'));
 
     // Enable preview button.
-    config_set('privatemsg.settings', 'privatemsg_display_preview_button', TRUE);
+    config_set('privatemsg.settings', 'display_preview_button', TRUE);
 
     // Preview message.
     $message = array(

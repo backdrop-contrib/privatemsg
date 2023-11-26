@@ -83,14 +83,14 @@ function privatemsg_filter_schema() {
  * Implements hook_enable().
  */
 function privatemsg_filter_enable() {
-  if (!($tag_id = config_get('privatemsg.settings', 'privatemsg_filter_inbox_tag')) || db_query('SELECT 1 FROM {pm_tags} WHERE tag_id = :tag_id', array(':tag_id' => $tag_id))->fetchField()) {
+  if (!($tag_id = config_get('privatemsg_filter.settings', 'inbox_tag')) || db_query('SELECT 1 FROM {pm_tags} WHERE tag_id = :tag_id', array(':tag_id' => $tag_id))->fetchField()) {
     $tag_id = db_insert('pm_tags')
       ->fields(array(
         'tag' => 'Inbox',
         'hidden' => 1,
       ))
       ->execute();
-    config_set('privatemsg.settings', 'privatemsg_filter_inbox_tag', $tag_id);
+    config_set('privatemsg_filter.settings', 'inbox_tag', $tag_id);
   }
   backdrop_set_message(t('Visit <a href="!rebuild_url">Rebuild Inbox</a> to tag existing messages to show up in the inbox.', array('!rebuild_url' => url('admin/config/messaging/privatemsg/tags/rebuild'))));
 }

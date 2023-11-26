@@ -253,7 +253,7 @@ function privatemsg_filter_inbox_rebuild_process(&$context) {
       $row->uid = $row->recipient;
       // $row is an object with uid property, so we pass it to the function as a
       // pseudo user object.
-      privatemsg_filter_add_tags(array($row->thread_id), config_get('privatemsg.settings', 'privatemsg_filter_inbox_tag', ''), $row);
+      privatemsg_filter_add_tags(array($row->thread_id), config_get('privatemsg_filter.settings', 'inbox_tag'), $row);
       $context['results']['count']++;
     }
     $context['sandbox']['current_thread_id'] = max($threads);

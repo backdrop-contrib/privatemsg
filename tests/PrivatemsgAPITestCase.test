@@ -179,7 +179,7 @@ class PrivatemsgAPITestCase extends PrivatemsgBaseTestCase {
 
     // Disable links to self, verify that a link is only returned when the
     // author is not the only recipient.
-    config_set('privatemsg.settings', 'privatemsg_display_link_self', FALSE);
+    config_set('privatemsg.settings', 'display_link_self', FALSE);
 
     $this->assertFalse(privatemsg_get_link(array($author), $author));
 
