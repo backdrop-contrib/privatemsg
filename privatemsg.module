@@ -41,7 +41,7 @@ function privatemsg_permission() {
     ),
     'delete privatemsg' => array(
       'title' => t('Delete private messages'),
-      'description' => t('Delete private messages'),
+      'description' => t('Allows users to delete messages they can read.'),
     ),
     'allow disabling privatemsg' => array(
       'title' => t('Allow disabling private messages'),
@@ -773,7 +773,7 @@ function template_preprocess_privatemsg_view(&$vars) {
   $vars['message_classes'] = isset($message->classes) ? $message->classes : array();
   $vars['thread_id'] = isset($message->thread_id) ? $message->thread_id : NULL;
   $vars['author_picture'] = theme('user_picture', array('account' => $message->author));
-  // Directly address the current user if he is the author.
+  // Directly address the current user if they are the author.
   if ($user->uid == $message->author->uid) {
     $vars['author_name_link'] = t('You');
   }
@@ -931,7 +931,7 @@ function _privatemsg_load_thread_participants($thread_id, $account, $ignore_hidd
     }
   }
   if ($access == 'write' && $account) {
-    // Remove author if loading participants for writing and when he is not the
+    // Remove author if loading participants for writing and when they are not the
     // only recipient.
     if (isset($participants['user_' . $account->uid]) && count($participants) > 1) {
       unset($participants['user_' . $account->uid]);
@@ -2586,7 +2586,7 @@ function privatemsg_message_change_recipient($mid, $uid, $type = 'user', $add = 
   $message = privatemsg_message_load($mid);
   $thread_id = $message->thread_id;
   if ($add) {
-    // Only add the recipient if he does not block the author.
+    // Only add the recipient if they do not block the author.
     $recipient = user_load($uid);
     $context = ($thread_id == $mid) ? array() : array('thread_id' => $thread_id);
     $user_blocked = module_invoke_all('privatemsg_block_message', $message->author, array(privatemsg_recipient_key($recipient) => $recipient), $context);

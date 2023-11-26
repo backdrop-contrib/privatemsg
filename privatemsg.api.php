@@ -148,7 +148,7 @@ function hook_query_privatemsg_deleted_alter($query) {
  * All message-level hooks look like hook_privatemsg_message_op,
  * where op is one of the following:
  * - @link hook_privatemsg_message_load load @endlink: Called when a full
- *   message is loaded similiar to nodeapi_load, new values can be returned and
+ *   message is loaded similar to nodeapi_load, new values can be returned and
  *   will be added to $message, parameter: $message
  * - @link hook_privatemsg_message_validate validate @endlink: Validation,
  *   before the message is sent/saved. Return validation errors as array,
@@ -174,7 +174,7 @@ function hook_query_privatemsg_deleted_alter($query) {
  * array (
  *   'mid' => 3517, // message id, identifies a message
  *   'author' => 27, // author id
- *   'subject' => 'raclebugav', // Message subject
+ *   'subject' => 'bla bla', // Message subject
  *   'body' => 'bla bla', // Body of the message
  *   'timestamp' => 351287003, // unix timestamp, creation time
  *   'is_new' => 0, // If the message has been read by the user
@@ -222,7 +222,7 @@ function hook_privatemsg_message_validate($message, $form = FALSE) {
   foreach ($message->recipients as $recipient) {
     if ($recipient->name == 'blocked user') {
       $_privatemsg_invalid_recipients[] = $recipient->uid;
-      $errors[] = t('%name has chosen to not recieve any more messages from you.', array('%name' => privatemsg_recipient_format($recipient, array('plain' => TRUE))));
+      $errors[] = t('%name has chosen to not receive any more messages from you.', array('%name' => privatemsg_recipient_format($recipient, array('plain' => TRUE))));
     }
   }
 }
@@ -285,7 +285,7 @@ function hook_privatemsg_message_insert($message) {
  * @param $type
  *   Type of the recipient.
  * @param $added
- *   TRUE if the recipient is added, FALSE if he is removed.
+ *   TRUE if the recipient is added, FALSE if they are removed.
  */
 function hook_privatemsg_message_recipient_changed($mid, $thread_id, $recipient, $type, $added) {
   if ($added && ($type == 'user' || $type == 'hidden')) {
@@ -424,7 +424,7 @@ function hook_privatemsg_message_status_changed($pmid, $status, $account) {
  *   cron runs.
  *
  * Once all hidden recipients are added, the original recipient type is marked
- * as read so Privatemsg knows that he has been processed.
+ * as read so Privatemsg knows that they have been processed.
  *
  * Privatemsg defines the following types:
  *
@@ -477,7 +477,7 @@ function hook_privatemsg_message_status_changed($pmid, $status, $account) {
  *   access decision (allow = TRUE, deny = FALSE) for whether the current user
  *   can write to recipients of the given recipient type.
  * * view access: Optionally define a permission which controls if the user is
- *   able to see the recipient when he is looking at a thread.
+ *   able to see the recipient when they are looking at a thread.
  * * view callback: Optionally define a callback function that returns an
  *   access decision (allow = TRUE, deny = FALSE) for whether the current user
  *   can see recipients of the given recipient type.

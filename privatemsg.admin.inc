@@ -30,14 +30,14 @@ function privatemsg_admin_settings() {
   );
   $form['display_settings']['display_loginmessage'] = array(
     '#type' => 'checkbox',
-    '#title' => t('Inform the user about new messages on login'),
+    '#title' => t('Inform the user about unread messages on login'),
     '#default_value' => $config->get('display_loginmessage'),
-    '#description' => t('This option can safely be disabled if the "New message indication" block is used instead.'),
+    '#description' => t('This option can safely be disabled if the "Unread message indication" block is used instead.'),
     '#weight'      => -5,
   );
   $form['display_settings']['display_disabled_message'] = array(
     '#type' => 'checkbox',
-    '#title' => t('Inform the user on /messages pages that he can not write new messages when privatemsg is disabled.'),
+    '#title' => t('Inform the user on /messages pages that they can not write new messages when privatemsg is disabled.'),
     '#default_value' => $config->get('display_disabled_message'),
     '#description' => t('Users can (if given the permission) disable Privatemsg which disallows writing messages to them and they can not write messages themself. If enabled, those users are informed on the relevant pages why they are not allowed to write messages.'),
     '#weight'      => -8,
@@ -170,7 +170,7 @@ function privatemsg_admin_settings() {
   $form['links']['display_link_self'] = array(
     '#type' => 'checkbox',
     '#title' => t('Display "Send this user a message" links for themself'),
-    '#description' => t('If enabled, each users sees that link on their own profile, comments and similiar places.'),
+    '#description' => t('If enabled, each user sees that link on their own profile, comments and similar places.'),
     '#default_value' => $config->get('display_link_self'),
     '#weight'        => -10,
   );

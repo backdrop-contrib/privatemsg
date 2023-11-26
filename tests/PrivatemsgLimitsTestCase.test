@@ -75,7 +75,7 @@ class PrivatemsgLimitsTestCase extends PrivatemsgBaseTestCase {
     $this->backdropPost(NULL, $reply, t('Send message'));
     $this->assertText(t('Your message was not sent because you have exceeded your sending limit. You are allowed to send 3 messages every 1 hour.'));
 
-    // Now the same with admin, he should be able to send 5 messages.
+    // Now the same with admin, they should be able to send 5 messages.
     $this->backdropLogin($admin);
     for ($i = 0; $i < 5; $i++) {
       // Send five messages.
@@ -157,7 +157,7 @@ class PrivatemsgLimitsTestCase extends PrivatemsgBaseTestCase {
     $this->backdropPost(NULL, $reply, t('Send message'));
     $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $user->name)));
 
-    // Now the same with admin, he should be able to send 5 messages.
+    // Now the same with admin, they should be able to send 5 messages.
     $this->backdropLogin($admin);
     for ($i = 0; $i < 5; $i++) {
       // Send five messages.
