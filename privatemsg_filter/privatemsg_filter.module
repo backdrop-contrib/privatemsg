@@ -291,7 +291,7 @@ function privatemsg_filter_remove_tags($threads, $tag_ids = NULL, $account = NUL
 
 function privatemsg_filter_get_filter($account) {
   $filter = array();
-  // Filtering by tags is either allowed if the user can use tags or he can
+  // Filtering by tags is either allowed if the user can use tags or they can
   // filter.
   if (privatemsg_user_access('filter private messages') || privatemsg_user_access('tag private messages')) {
     if (isset($_GET['tags'])) {

@@ -52,7 +52,7 @@ function privatemsg_limits_admin($form, &$form_state) {
   $form['receive']['receive_amount'] = array(
     '#type'  => 'number',
     '#title' => t('Maximum number of messages/conversations per user'),
-    '#description' => t('The total number of messages/conversations that a user may have before he has to delete old messages/conversations. When this limit is reached, users are not allowed to receive or send new messages.'),
+    '#description' => t('The total number of messages/conversations that a user may have before they have to delete old messages/conversations. When this limit is reached, users are not allowed to receive or send new messages.'),
     '#default_value' => $config->get('receive_amount'),
     '#min' => 0,
     '#max' => 99999,

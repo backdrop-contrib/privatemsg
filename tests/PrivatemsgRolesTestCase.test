@@ -69,7 +69,7 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
     // Run cron.
     privatemsg_cron();
 
-    // Test a few recipients to see if they recieved the message.
+    // Test a few recipients to see if they received the message.
     foreach (array(0, 5, 18) as $uid) {
       $this->backdropLogin($users[$uid]);
       $this->backdropGet('messages');
@@ -79,7 +79,7 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
       $this->assertText($body, t('Thread starter body displayed.'));
     }
 
-    // Make sure that user 20 has not yet recieved the message.
+    // Make sure that user 20 has not yet received the message.
     $this->backdropLogin($users[20]);
     $this->backdropGet('messages');
     $this->assertNoText($subject, t('Message is not yet displayed for this user'));
@@ -122,7 +122,7 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
     $this->backdropPost('messages/new', $edit, t('Send message'));
     $this->assertText(t('A message has been sent to @role (role).', array('@role' => user_role_load($user1->roles[4])->name)));
 
-    // Test a few recipients to see if they all recieved the message.
+    // Test a few recipients to see if they all received the message.
     foreach ($users as $user) {
       $this->backdropLogin($user);
       $this->backdropGet('messages');
@@ -196,7 +196,7 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
     $this->backdropGet('messages');
     $this->assertNoRaw($edit['subject'] . '</a> <span class="marker">new</span>', t('Message is displayed as read'));
 
-    // Login as admin again and check if he sees the response.
+    // Login as admin again and check if they see the response.
     $this->backdropLogin($admin);
     $this->backdropGet('messages');
     $this->assertRaw($edit['subject'] . '</a> <span class="marker">new</span>', t('Message is displayed as new'));
@@ -210,7 +210,7 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
     );
     $this->backdropPost(NULL, $reply2, t('Send message'));
 
-    // Log in as user2 and check that he only sees the messages from admin.
+    // Log in as user2 and check that they only see the messages from admin.
     $this->backdropLogin($user2);
     $this->backdropGet('messages');
     $this->assertRaw($edit['subject'] . '</a> <span class="marker">new</span>', t('Message is displayed as new'));
@@ -258,8 +258,8 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
     // Make sure that the user doesn't see the role recipient.
     $this->assertNoText(t('@role (role)', array('@role' => user_role_load($user1->roles[4])->name)));
 
-    // Log in as user2 and make sure that he didn't received the messages
-    // as he blocks admin.
+    // Log in as user2 and make sure that they didn't received the messages
+    // as they block admin.
     $this->backdropLogin($user2);
     $this->backdropGet('messages');
     $this->assertNoText($edit['subject'], t('Message is not displayed'));

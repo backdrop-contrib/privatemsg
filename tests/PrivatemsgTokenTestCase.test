@@ -65,7 +65,7 @@ class PrivatemsgTokenTestCase extends PrivatemsgBaseTestCase {
     $this->assertText('Invalid token: &lt; INVALID TOKEN [privatemsg_message:invalid_token] &gt;', t('Invalid token is displayed.'));
     $this->assertText(t('Note: Valid tokens will be replaced when a recipient is reading this message.'), t('Token notice is displayed.'));
 
-    // Log in as the first recipient, verify that he sees the message with the
+    // Log in as the first recipient, verify that they see the message with the
     // replacements.
     $this->backdropLogin($recipient1);
     $this->backdropGet('messages');

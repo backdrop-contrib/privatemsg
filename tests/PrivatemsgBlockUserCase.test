@@ -193,7 +193,7 @@ class PrivatemsgBlockUserCase extends PrivatemsgBaseTestCase {
     $this->assertText(t('@user has chosen to block messages from you.', array('@user' => $user1->name)));
     $this->assertText(t('A message has been sent to @user.', array('@user' => $user3->name)), t('Message sent to user 3'));
 
-    // Login as user1 again and check that we didn't recieve the messages.
+    // Login as user1 again and check that we didn't receive the messages.
     $this->backdropLogin($user1);
     $this->backdropGet('messages');
 
