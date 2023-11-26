@@ -429,6 +429,8 @@ function privatemsg_is_disabled($account) {
 function privatemsg_thread_load($thread_id, $account = NULL, $start = NULL, $useAccessDenied = FALSE) {
   $threads = &backdrop_static(__FUNCTION__, array());
   $thread_id = (int) $thread_id;
+  $config = config('privatemsg.settings');
+
   if ($thread_id > 0) {
     $thread = array('thread_id' => $thread_id);
 
@@ -461,18 +463,18 @@ function privatemsg_thread_load($thread_id, $account = NULL, $start = NULL, $use
         ->fetchField();
       $thread['from'] = 1;
       // Check if we need to limit the messages.
-      $max_amount = config_get('privatemsg.settings', 'privatemsg_view_max_amount');
+      $max_amount = $config->get('privatemsg_view_max_amount');
 
       // If there is no start value, select based on get params.
       if (is_null($start)) {
         if (isset($_GET['start']) && $_GET['start'] < $thread['message_count']) {
           $start = $_GET['start'];
         }
-        elseif (!config_get('privatemsg.settings', 'privatemsg_view_use_max_as_default') && $max_amount == PRIVATEMSG_UNLIMITED) {
+        elseif (!$config->get('privatemsg_view_use_max_as_default') && $max_amount == PRIVATEMSG_UNLIMITED) {
           $start = PRIVATEMSG_UNLIMITED;
         }
         else {
-          $start = $thread['message_count'] - (config_get('privatemsg.settings', 'privatemsg_view_use_max_as_default') ? config_get('privatemsg.settings', 'privatemsg_view_default_amount') : $max_amount);
+          $start = $thread['message_count'] - ($config->get('privatemsg_view_use_max_as_default') ? $config->get('privatemsg_view_default_amount') : $max_amount);
         }
       }
 
@@ -485,7 +487,7 @@ function privatemsg_thread_load($thread_id, $account = NULL, $start = NULL, $use
           // Calculate the number of messages on the "last" page to avoid
           // message overlap.
           // Note - the last page lists the earliest messages, not the latest.
-          $paging_count = config_get('privatemsg.settings', 'privatemsg_view_use_max_as_default') ? $thread['message_count'] - config_get('privatemsg.settings', 'privatemsg_view_default_amount') : $thread['message_count'];
+          $paging_count = $config->get('privatemsg_view_use_max_as_default') ? $thread['message_count'] - $config->get('privatemsg_view_default_amount') : $thread['message_count'];
           $last_page = $paging_count % $max_amount;
         }
 
@@ -592,8 +594,9 @@ function privatemsg_privatemsg_view_template() {
  * old enough are flushed.
  */
 function privatemsg_cron() {
-  if (config_get('privatemsg.settings', 'privatemsg_flush_enabled')) {
-    $query = _privatemsg_assemble_query('deleted', config_get('privatemsg.settings', 'privatemsg_flush_days'), config_get('privatemsg.settings', 'privatemsg_flush_max'));
+  $config = config('privatemsg.settings');
+  if ($config->get('privatemsg_flush_enabled')) {
+    $query = _privatemsg_assemble_query('deleted', $config->get('privatemsg_flush_days'), $config->get('privatemsg_flush_max'));
 
     foreach ($query->execute()->fetchCol() as $mid) {
       $message = privatemsg_message_load($mid);
@@ -611,8 +614,8 @@ function privatemsg_cron() {
   }
 
   // Number of user ids to process for this cron run.
-  $total_remaining = config_get('privatemsg.settings', 'privatemsg_cron_recipient_per_run');
-  $current_process = config_get('privatemsg.settings', 'privatemsg_cron_recipient_process');
+  $total_remaining = $config->get('privatemsg_cron_recipient_per_run');
+  $current_process = state_get('privatemsg_cron_recipient_process');
 
   // Instead of doing the order by in the database, which can be slow, we load
   // all results and the do the handling there. Additionally, explicitly specify
@@ -677,7 +680,7 @@ function privatemsg_cron() {
         ->execute();
       // Reset current process if necessary.
       if ($offset > 0) {
-        config_set('privatemsg.settings', 'privatemsg_cron_recipient_process', array());
+        state_set('privatemsg_cron_recipient_process', array());
       }
     }
     else {
@@ -685,7 +688,7 @@ function privatemsg_cron() {
       $existing_offset = isset($current_process['offset']) ? $current_process['offset'] : 0;
       $current_process = (array) $row;
       $current_process['offset'] = $existing_offset + count($uids);
-      config_set('privatemsg.settings', 'privatemsg_cron_recipient_process', $current_process);
+      state_set('privatemsg_cron_recipient_process', $current_process);
       break;
     }
   }
@@ -1050,6 +1053,8 @@ function privatemsg_privatemsg_name_lookup($string) {
  * @see hook_query_privatemsg_list_alter()
  */
 function privatemsg_sql_list($account, $argument = 'list') {
+  $config = config('privatemsg.settings');
+
   $query = db_select('pm_message', 'pm')
     ->extend('TableSort')
     ->extend('PagerDefault');
@@ -1074,7 +1079,7 @@ function privatemsg_sql_list($account, $argument = 'list') {
   $query->addExpression('SUM(pmi.is_new)', 'is_new');
 
   // Load enabled columns
-  $fields = array_filter(config_get('privatemsg.settings', 'privatemsg_display_fields'));
+  $fields = array_filter($config->get('privatemsg_display_fields'));
 
   if (in_array('count', $fields)) {
     // We only want the distinct number of messages in this thread.
@@ -1105,7 +1110,7 @@ function privatemsg_sql_list($account, $argument = 'list') {
       'subject',
       'last_updated'
     ), $fields)))
-    ->limit(config_get('privatemsg.settings', 'privatemsg_per_page'));
+    ->limit($config->get('privatemsg_per_page'));
 }
 
 /**
@@ -2408,8 +2413,9 @@ function privatemsg_build_modes($obj_type) {
  * Implements hook_node_view().
  */
 function privatemsg_node_view($node, $view_mode) {
-  $types = array_filter(config_get('privatemsg.settings', 'privatemsg_link_node_types'));
-  if (in_array($node->type, $types) && ($view_mode == 'full' || (config_get('privatemsg.settings', 'privatemsg_display_on_teaser') && $view_mode == 'teaser'))) {
+  $config = config('privatemsg.settings');
+  $types = array_filter($config->get('privatemsg_link_node_types'));
+  if (in_array($node->type, $types) && ($view_mode == 'full' || ($config->get('privatemsg_display_on_teaser') && $view_mode == 'teaser'))) {
     $url = privatemsg_get_link(user_load($node->uid));
     if (!empty($url)) {
       $node->content['links']['#links']['privatemsg_link'] = array(
@@ -2426,8 +2432,9 @@ function privatemsg_node_view($node, $view_mode) {
  * Implements hook_comment_view().
  */
 function privatemsg_comment_view($comment) {
-  $types = array_filter(config_get('privatemsg.settings', 'privatemsg_link_node_types'));
-  if (in_array(node_load($comment->nid)->type, $types) && config_get('privatemsg.settings', 'privatemsg_display_on_comments')) {
+  $config = config('privatemsg.settings');
+  $types = array_filter($config->get('privatemsg_link_node_types'));
+  if (in_array(node_load($comment->nid)->type, $types) && $config->get('privatemsg_display_on_comments')) {
     $url = privatemsg_get_link(user_load($comment->uid));
     if (!empty($url)) {
       $links['privatemsg_link'] = array(

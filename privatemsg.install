@@ -133,51 +133,111 @@ function privatemsg_schema() {
  */
 function privatemsg_install() {
   // Define default formats for date format types.
-  config_set('system.date', 'formats.date_format_privatemsg_current_day.pattern', 'g:i a');
-  config_set('system.date', 'formats.date_format_privatemsg_current_day.label', 'Pmsg current day');
-  config_set('system.date', 'formats.date_format_privatemsg_current_year.pattern', 'M j');
-  config_set('system.date', 'formats.date_format_privatemsg_current_year.label', 'Pmsg current year');
-  config_set('system.date', 'formats.date_format_privatemsg_years.pattern', 'n/j/y');
-  config_set('system.date', 'formats.date_format_privatemsg_years.label', 'Pmsg years');
+  $config = config('system.date');
+  $config->set("formats.privatemsg_current_day", array(
+    'label' => 'Private messages: Current day',
+    'pattern' => 'g:i a',
+    'module' => 'privatemsg',
+  ));
+  $config->set("formats.privatemsg_current_year", array(
+    'label' => 'Private messages: Current year',
+    'pattern' => 'M j',
+    'module' => 'privatemsg',
+  ));
+  $config->set("formats.privatemsg_years", array(
+    'label' => 'Private messages: years',
+    'pattern' => 'n/j/y',
+    'module' => 'privatemsg',
+  ));
+  $config->save();
 }
 
+/**
+ * Implements hook_update_last_removed().
+ */
+function privatemsg_update_last_removed() {
+  return 7006;
+}
 
+/**
+ * Convert privatemsg variables to config.
+ */
 function privatemsg_update_1000() {
+  // Base module
   $config = config('privatemsg.settings');
-  $config->set('private_message_view_template', update_variable_get('private_message_view_template'));
-  $config->set('privatemsg_display_loginmessage', update_variable_get('privatemsg_display_loginmessage'));
-  $config->set('privatemsg_display_disabled_message', update_variable_get('privatemsg_display_disabled_message'));
-  $config->set('privatemsg_default_redirect', update_variable_get('privatemsg_default_redirect'));
-  $config->set('privatemsg_default_redirect_reply', update_variable_get('privatemsg_default_redirect_reply'));
+  $config->set('private_message_view_template', update_variable_get('private_message_view_template', 'privatemsg-view'));
+  $config->set('privatemsg_display_loginmessage', update_variable_get('privatemsg_display_loginmessage', TRUE));
+  $config->set('privatemsg_display_disabled_message', update_variable_get('privatemsg_display_disabled_message', TRUE));
+  $config->set('privatemsg_default_redirect', update_variable_get('privatemsg_default_redirect', '<new-message>'));
+  $config->set('privatemsg_default_redirect_reply', update_variable_get('privatemsg_default_redirect_reply', FALSE));
 
-  $config->set('privatemsg_display_preview_button', update_variable_get('privatemsg_display_preview_button'));
-  $config->set('privatemsg_flush_enabled', update_variable_get('privatemsg_flush_enabled'));
-  $config->set('privatemsg_flush_days', update_variable_get('privatemsg_flush_days'));
-  $config->set('privatemsg_flush_max', update_variable_get('privatemsg_flush_max'));
-  $config->set('privatemsg_per_page', update_variable_get('privatemsg_per_page'));
+  $config->set('privatemsg_display_preview_button', update_variable_get('privatemsg_display_preview_button', FALSE));
+  $config->set('privatemsg_flush_enabled', update_variable_get('privatemsg_flush_enabled', FALSE));
+  $config->set('privatemsg_flush_days', update_variable_get('privatemsg_flush_days', 30));
+  $config->set('privatemsg_flush_max', update_variable_get('privatemsg_flush_max', 200));
+  $config->set('privatemsg_per_page', update_variable_get('privatemsg_per_page', 25));
 
-  $config->set('privatemsg_display_fields', update_variable_get('privatemsg_display_fields'));
-  $config->set('privatemsg_view_max_amount', update_variable_get('privatemsg_view_max_amount'));
-  $config->set('privatemsg_view_use_max_as_default', update_variable_get('privatemsg_view_use_max_as_default'));
-  $config->set('privatemsg_view_default_amount', update_variable_get('privatemsg_view_default_amount'));
-  $config->set('privatemsg_display_link_self', update_variable_get('privatemsg_display_link_self'));
+  $config->set('privatemsg_display_fields', update_variable_get('privatemsg_display_fields', array('participants')));
+  $config->set('privatemsg_view_max_amount', update_variable_get('privatemsg_view_max_amount', 20));
+  $config->set('privatemsg_view_use_max_as_default', update_variable_get('privatemsg_view_use_max_as_default', FALSE));
+  $config->set('privatemsg_view_default_amount', update_variable_get('privatemsg_view_default_amount', 10));
+  $config->set('privatemsg_display_link_self', update_variable_get('privatemsg_display_link_self', TRUE));
 
-  $config->set('privatemsg_display_profile_links', update_variable_get('privatemsg_display_profile_links'));
-  $config->set('privatemsg_link_node_types', update_variable_get('privatemsg_link_node_types'));
-  $config->set('privatemsg_display_on_teaser', update_variable_get('privatemsg_display_on_teaser'));
-  $config->set('privatemsg_display_on_comments', update_variable_get('privatemsg_display_on_comments'));
-  $config->set('privatemsg_filter_inbox_tag', update_variable_get('privatemsg_filter_inbox_tag'));
+  $config->set('privatemsg_display_profile_links', update_variable_get('privatemsg_display_profile_links', 1));
+  $config->set('privatemsg_link_node_types', update_variable_get('privatemsg_link_node_types', array()));
+  $config->set('privatemsg_display_on_teaser', update_variable_get('privatemsg_display_on_teaser', 1));
+  $config->set('privatemsg_display_on_comments', update_variable_get('privatemsg_display_on_comments', 0));
 
-  $config->set('privatemsg_cron_recipient_per_run', update_variable_get('privatemsg_cron_recipient_per_run'));
-  $config->set('privatemsg_cron_recipient_process', update_variable_get('privatemsg_cron_recipient_process'));
-  $config->set('privatemsg_no_messages_notification', update_variable_get('privatemsg_no_messages_notification'));
-  $config->set('privatemsg_recipient_small_threshold', update_variable_get('privatemsg_recipient_small_threshold'));
-  $config->set('pm_block_user_actions', update_variable_get('pm_block_user_actions'));
+  $config->set('privatemsg_cron_recipient_per_run', update_variable_get('privatemsg_cron_recipient_per_run', 1000));
+  $config->set('privatemsg_no_messages_notification', update_variable_get('privatemsg_no_messages_notification', 0));
+  $config->set('privatemsg_recipient_small_threshold', update_variable_get('privatemsg_recipient_small_threshold', 100));
+  $config->save();
 
-  $config->set('pm_email_notify_subject', update_variable_get('pm_email_notify_subject'));
-  $config->set('pm_email_notify_body', update_variable_get('pm_email_notify_body'));
-  $config->set('pm_email_notify_default', update_variable_get('pm_email_notify_default'));
-  $config->set('pm_email_notify_from', update_variable_get('pm_email_notify_from'));
+  // privatemsg_realname
+  $config = config('privatemsg_realname.settings');
+  $config->set('privatemsg_realname_search_username', update_variable_get('privatemsg_realname_search_username', TRUE));
+  $config->set('privatemsg_realname_unique_identifier', update_variable_get('privatemsg_realname_unique_identifier', 'name'));
+  $config->save();
+
+  // pm_email_notify
+  $config = config('pm_email_notify.settings');
+  $config->set('pm_email_notify_subject', update_variable_get('pm_email_notify_subject', 'New private message at [site:name].'));
+  $config->set('pm_email_notify_body', update_variable_get('pm_email_notify_body', "Hi [privatemsg_message:recipient],\n\nThis is an automatic reminder from the site [site:name]. You have received a new private message from [privatemsg_message:author].\n\nTo read your message, follow this link:\n[privatemsg_message:url]\n\nIf you don't want to receive these emails again, change your preferences here:\n[privatemsg_message:recipient:edit-url]"));
+  $config->set('pm_email_notify_default', update_variable_get('pm_email_notify_default', TRUE));
+  $config->set('pm_email_notify_from', update_variable_get('pm_email_notify_from', ''));
+  $config->save();
+
+  // pm_block_user
+  $config = config('pm_block_user.settings');
+  $config->set('pm_block_user_actions', update_variable_get('pm_block_user_actions', array()));
+  $config->save();
+
+  // privatemsg_filter
+  $config = config('privatemsg_filter.settings');
+  $config->set('privatemsg_filter_inbox_tag', update_variable_get('privatemsg_filter_inbox_tag', ''));
+  $config->set('privatemsg_filter_searchbody', update_variable_get('privatemsg_filter_searchbody', FALSE));
+  $config->set('privatemsg_filter_default_list', update_variable_get('privatemsg_filter_default_list', 0));
+  $config->save();
+
+  // privatemsg_limits
+  $config = config('privatemsg_limits.settings');
+  $config->set('privatemsg_limits_messages_per_thread', update_variable_get('privatemsg_limits_messages_per_thread', 0));
+  $config->set('privatemsg_limits_messages_per_thread_action', update_variable_get('privatemsg_limits_messages_per_thread_action', 'create-new'));
+  $config->set('privatemsg_limits_recipients_enabled', update_variable_get('privatemsg_limits_recipients_enabled', FALSE));
+  $config->set('privatemsg_limits_recipients_amount', update_variable_get('privatemsg_limits_recipients_amount', 0));
+  $config->set('privatemsg_limits_send_enabled', update_variable_get('privatemsg_limits_send_enabled', FALSE));
+  $config->set('privatemsg_limits_send_object', update_variable_get('privatemsg_limits_send_object', 'message'));
+  $config->set('privatemsg_limits_send_amount', update_variable_get('privatemsg_limits_send_amount', 0));
+  $config->set('privatemsg_limits_send_timeframe', update_variable_get('privatemsg_limits_send_timeframe', 3600));
+  $config->set('privatemsg_limits_receive_enabled', update_variable_get('privatemsg_limits_receive_enabled', FALSE));
+  $config->set('privatemsg_limits_receive_object', update_variable_get('privatemsg_limits_receive_object', 'message'));
+  $config->set('privatemsg_limits_receive_amount', update_variable_get('privatemsg_limits_receive_amount', 0));
+  foreach (array_keys(user_roles(TRUE)) as $role) {
+    foreach (array('send', 'receive', 'recipients') as $option) {
+      $setting = 'privatemsg_limits_' . $option . '_amount_role_' . $role;
+      $config->set($setting, update_variable_get($setting));
+    }
+  }
   $config->save();
 
   // Delete variables.
@@ -209,18 +269,23 @@ function privatemsg_update_1000() {
   update_variable_del('privatemsg_cron_recipient_process');
   update_variable_del('privatemsg_no_messages_notification');
   update_variable_del('privatemsg_recipient_small_threshold');
+
   update_variable_del('pm_block_user_actions');
 
   update_variable_del('pm_email_notify_subject');
   update_variable_del('pm_email_notify_body');
   update_variable_del('pm_email_notify_default');
   update_variable_del('pm_email_notify_from');
-}
 
-
-/**
- * Implements hook_update_last_removed().
- */
-function privatemsg_update_last_removed() {
-  return 7006;
+  update_variable_del('privatemsg_limits_messages_per_thread');
+  update_variable_del('privatemsg_limits_messages_per_thread_action');
+  update_variable_del('privatemsg_limits_recipients_enabled');
+  update_variable_del('privatemsg_limits_recipients_amount');
+  update_variable_del('privatemsg_limits_send_enabled');
+  update_variable_del('privatemsg_limits_send_object');
+  update_variable_del('privatemsg_limits_send_amount');
+  update_variable_del('privatemsg_limits_send_timeframe');
+  update_variable_del('privatemsg_limits_receive_enabled');
+  update_variable_del('privatemsg_limits_receive_object');
+  update_variable_del('privatemsg_limits_receive_amount');
 }

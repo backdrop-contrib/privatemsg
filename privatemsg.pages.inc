@@ -633,8 +633,9 @@ function privatemsg_new_submit($form, &$form_state) {
     _privatemsg_handle_recipients($message->mid, $message->recipients);
     backdrop_set_message(t('A message has been sent to !recipients.', array('!recipients' => implode(', ', $recipient_names))));
     // Only redirect on new threads.
-    if ($message->mid == $message->thread_id || config_get('privatemsg.settings', 'privatemsg_default_redirect_reply')) {
-      $redirect = config_get('privatemsg.settings', 'privatemsg_default_redirect');
+    $config = config('privatemsg.settings');
+    if ($message->mid == $message->thread_id || $config->get('privatemsg_default_redirect_reply')) {
+      $redirect = $config->get('privatemsg_default_redirect');
       if ($redirect == '<new-message>' || (!empty($_REQUEST['destination']) && $_REQUEST['destination'] == '[new-message]')) {
         if (!empty($_REQUEST['destination']) && $_REQUEST['destination'] == '[new-message]') {
           // Remove GET param so that backdrop_goto() uses the redirect from

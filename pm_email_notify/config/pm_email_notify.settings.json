@@ -1,0 +1,7 @@
+{
+  "_config_name": "pm_email_notify.settings",
+  "pm_email_notify_subject": "New private message at [site:name].",
+  "pm_email_notify_body": "Hi [privatemsg_message:recipient],\n\nThis is an automatic reminder from the site [site:name]. You have received a new private message from [privatemsg_message:author].\n\nTo read your message, follow this link:\n[privatemsg_message:url]\n\nIf you don't want to receive these emails again, change your preferences here:\n[privatemsg_message:recipient:edit-url]",
+  "pm_email_notify_default": true,
+  "pm_email_notify_from": ""
+}

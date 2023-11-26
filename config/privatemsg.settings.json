@@ -18,23 +18,11 @@
   "privatemsg_view_default_amount": 10,
   "privatemsg_display_link_self": 1,
   "privatemsg_display_profile_links": 1,
-  "privatemsg_link_node_types": {
-    "page": 0,
-    "post": 0
-  },
+  "privatemsg_link_node_types": [],
   "privatemsg_display_on_teaser": 1,
   "privatemsg_display_on_comments": 0,
-  "privatemsg_filter_default_list": 0,
-  "privatemsg_filter_inbox_tag": "",
-  "privatemsg_filter_searchbody": 0,
   "privatemsg_cron_recipient_per_run": 1000,
-  "privatemsg_cron_recipient_process": "",
   "privatemsg_no_messages_notification": 0,
   "privatemsg_recipient_small_threshold": 100,
-  "pm_block_user_actions": "",
-  "pm_email_notify_subject": 0,
-  "pm_email_notify_body": 0,
-  "pm_email_notify_default": 0,
-  "pm_email_notify_from": 0,
   "privatemsg_limits_messages_per_thread": 0
 }

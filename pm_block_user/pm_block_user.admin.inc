@@ -179,7 +179,7 @@ function pm_block_user_settings($form, &$form_state) {
 
   // Should we populate the form with data from $form_state or the database?
   if (!isset($form_state['pm_block_user']['block_actions'])) {
-    $block_actions = config_get('privatemsg.settings', 'pm_block_user_actions');
+    $block_actions = config_get('pm_block_user.settings', 'pm_block_user_actions');
   }
   else {
     $block_actions = $form_state['pm_block_user']['block_actions'];
@@ -228,10 +228,10 @@ function pm_block_user_settings_submit($form, &$form_state) {
     // rows in the table, so we save an empty array to stop errors in the form
     // builder.
     if (isset($form_state['values']['block_actions'])) {
-      config_set('privatemsg.settings', 'pm_block_user_actions', _pm_block_user_settings_filter($form_state['values']['block_actions']));
+      config_set('pm_block_user.settings', 'pm_block_user_actions', _pm_block_user_settings_filter($form_state['values']['block_actions']));
     }
     else {
-      config_set('privatemsg.settings', 'pm_block_user_actions', array());
+      config_set('pm_block_user.settings', 'pm_block_user_actions', array());
     }
     backdrop_set_message(t('The configuration options have been saved.'));
   }

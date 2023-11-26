@@ -20,7 +20,7 @@ function _pm_email_notify_is_enabled($uid) {
   if (!isset($notifications[$uid])) {
     $mail_notification = db_query('SELECT email_notify_is_enabled FROM {pm_email_notify} WHERE user_id = :uid', array(':uid' => $uid))->fetchField();
     if ($mail_notification === FALSE) { //db_result returns FALSE if result was not found.
-      $mail_notification = config_get('privatemsg.settings', 'pm_email_notify_default');
+      $mail_notification = config_get('pm_email_notify.settings', 'pm_email_notify_default');
     }
     $notifications[$uid] = $mail_notification;
   }
@@ -49,7 +49,7 @@ function pm_email_notify_privatemsg_message_insert($message) {
         // Custom token to avoid custom token handling.
         'privatemsg-display-invalid' => FALSE,
       );
-      $from = trim(token_replace(config_get('privatemsg.settings', 'pm_email_notify_from', ''), $data, $options));
+      $from = trim(token_replace(config_get('pm_email_notify.settings', 'pm_email_notify_from', ''), $data, $options));
       backdrop_mail('pm_email_notify', 'notice', $recipient->mail, user_preferred_language($recipient), $params, !empty($from) ? $from : NULL);
     }
   }
@@ -73,8 +73,9 @@ function pm_email_notify_mail($key, &$message, $params) {
         'privatemsg-display-invalid' => FALSE,
       );
 
-      $message['subject'] = trim(token_replace(config_get('privatemsg.settings', 'pm_email_notify_subject'), $data, $options));
-      $message['body'][] = trim(token_replace(config_get('privatemsg.settings', 'pm_email_notify_body'), $data, $options));
+      $config = config('pm_email_notify.settings');
+      $message['subject'] = trim(token_replace($config->get('pm_email_notify_subject'), $data, $options));
+      $message['body'][] = trim(token_replace($config->get('pm_email_notify_body'), $data, $options));
       break;
   }
 }
@@ -120,6 +121,7 @@ function pm_email_notify_user_update($account) {
  * Implements hook_form_FORM_ID_alter().
  */
 function pm_email_notify_form_privatemsg_admin_settings_alter(&$form, &$form_state) {
+  $config = config('pm_email_notify.settings');
   $form['pm_email_notify'] = array(
     '#type' => 'fieldset',
     '#title' => t('E-mail notify'),
@@ -130,7 +132,7 @@ function pm_email_notify_form_privatemsg_admin_settings_alter(&$form, &$form_sta
   $form['pm_email_notify']['pm_email_notify_default'] = array(
     '#type' => 'checkbox',
     '#title' => t('Notify users of new private messages by default'),
-    '#default_value' => config_get('privatemsg.settings', 'pm_email_notify_default'),
+    '#default_value' => $config->get('pm_email_notify_default'),
     '#weight' => 0,
   );
 
@@ -143,7 +145,7 @@ function pm_email_notify_form_privatemsg_admin_settings_alter(&$form, &$form_sta
   $form['pm_email_notify']['pm_email_notify_from'] = array(
     '#type' => 'textfield',
     '#title' => t('From e-mail address for notifications'),
-    '#default_value' => config_get('privatemsg.settings', 'pm_email_notify_from'),
+    '#default_value' => $config->get('pm_email_notify_from'),
     '#weight' => 2,
     '#description' => t('This is the e-mail address that notifications will come from. Leave blank to use the site default.'),
   );
@@ -151,45 +153,29 @@ function pm_email_notify_form_privatemsg_admin_settings_alter(&$form, &$form_sta
   $form['pm_email_notify']['pm_email_notify_subject'] = array(
     '#type' => 'textfield',
     '#title' => t('Subject of notification messages'),
-    '#default_value' => config_get('privatemsg.settings', 'pm_email_notify_subject'),
+    '#default_value' => $config->get('pm_email_notify_subject'),
     '#weight' => 2,
   );
 
   $form['pm_email_notify']['pm_email_notify_body'] = array(
     '#type' => 'textarea',
     '#title' => t('Body of notification messages'),
-    '#default_value' => config_get('privatemsg.settings', 'pm_email_notify_body'),
+    '#default_value' => $config->get('pm_email_notify_body'),
     '#weight' => 3,
   );
 
-  if (module_exists('token')) {
-    $form['pm_email_notify']['token'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Token browser'),
-      '#weight' => -1,
-      '#collapsible' => TRUE,
-      '#collapsed' => TRUE,
-      '#weight' => 4,
-    );
-    $form['pm_email_notify']['token']['browser'] = array(
-      '#theme' => 'token_tree',
-      '#token_types' => array('privatemsg_message'),
-    );
-  }
-  else {
-    $form['pm_email_notify']['token'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Token Suggestions'),
-      '#weight' => -1,
-      '#collapsible' => TRUE,
-      '#collapsed' => TRUE,
-      '#weight' => 4,
-    );
-    $form['pm_email_notify']['token']['suggestions'] = array(
-      '#type' => 'item',
-      '#markup' => t('Many tokens may be used, including: [privatemsg_message:url], [privatemsg_message:thread-id], [privatemsg_message:author:name], [privatemsg_message:author:uid], [privatemsg_message:recipient:name], [privatemsg_message:subject], [privatemsg_message:body]. Enable the <a href="https://drupal.org/project/token">Token module</a> to see all available.'),
-    );
-  }
+  $form['pm_email_notify']['token'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Token browser'),
+    '#weight' => -1,
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    '#weight' => 4,
+  );
+  $form['pm_email_notify']['token']['browser'] = array(
+    '#theme' => 'token_tree',
+    '#token_types' => array('privatemsg_message'),
+  );
 
   // Add a submit button
   $form['#submit'][] = 'pm_email_notify_form_privatemsg_admin_settings_alter_submit';
@@ -205,7 +191,7 @@ function pm_email_notify_form_privatemsg_admin_settings_alter(&$form, &$form_sta
  * Submit handler for pm_email_notify settings form.
  */
 function pm_email_notify_form_privatemsg_admin_settings_alter_submit($form, &$form_state) {
-  $config = config('privatemsg.settings');
+  $config = config('pm_email_notify.settings');
   $config->set('pm_email_notify_default', $form_state['values']['pm_email_notify_default']);
   $config->set('pm_email_notify_desc', $form_state['values']['pm_email_notify_desc']);
   $config->set('pm_email_notify_from', $form_state['values']['pm_email_notify_from']);

@@ -7,7 +7,7 @@ function privatemsg_realname_privatemsg_name_lookup($string) {
 
   // First, check the unique version.
   if (preg_match('/\[user:(.+)\]/', $string, $match)) {
-    $account = user_load_multiple(array(), array(config_get('privatemsg.settings', 'privatemsg_realname_unique_identifier', 'name') => trim($match[1])));
+    $account = user_load_multiple(array(), array(config_get('privatemsg.settings', 'privatemsg_realname_unique_identifier') => trim($match[1])));
     $account = reset($account);
     if ($account && $account->uid) {
       $account->type = 'user';
@@ -59,7 +59,7 @@ function privatemsg_realname_query_privatemsg_autocomplete_alter(SelectQueryInte
     // Figure out which is the condition that checks the username.
     if (isset($condition['field']) && is_string($condition['field']) && $condition['field'] == 'u.name') {
       // Update existing condition.
-      if (config_get('privatemsg.settings', 'privatemsg_realname_search_username', TRUE)) {
+      if (config_get('privatemsg_realname.settings', 'privatemsg_realname_search_username')) {
         $condition['field'] = db_or()
           ->condition('r.realname', $search . '%', 'LIKE')
           ->condition('u.name', $search . '%', 'LIKE');
@@ -103,9 +103,9 @@ function theme_privatemsg_realname_username($variables) {
     $recipient->uid = $recipient->recipient;
   }
   if (!empty($options['plain'])) {
-    $name = strip_tags(format_username($recipient));
+    $name = strip_tags(user_format_name($recipient));
     if (!empty($options['unique'])) {
-      $identifier = config_get('privatemsg.settings', 'privatemsg_realname_unique_identifier', 'name');
+      $identifier = config_get('privatemsg_realname.settings', 'privatemsg_realname_unique_identifier');
       $name .= ' [user: ' . $recipient->$identifier . ']';
     }
     return $name;
@@ -132,7 +132,7 @@ function privatemsg_realname_form_privatemsg_admin_settings_alter(&$form, &$form
     '#type' => 'radios',
     '#title' => t('Field to use as a unique identifier'),
     '#description' => t('Real names are often not unique. Choose which field should be used as a unique identifier when sending private messages.'),
-    '#default_value' => config_get('privatemsg.settings', 'privatemsg_realname_unique_identifier', 'name'),
+    '#default_value' => config_get('privatemsg_realname.settings', 'privatemsg_realname_unique_identifier'),
     '#options' => array(
       'name' => t('Username'),
       'uid' => t('UID'),
@@ -143,6 +143,6 @@ function privatemsg_realname_form_privatemsg_admin_settings_alter(&$form, &$form
   $form['realname']['privatemsg_realname_search_username'] = array(
     '#type' => 'checkbox',
     '#title' => t('Search usernames for autocomplete suggestions'),
-    '#default_value' => config_get('privatemsg.settings', 'privatemsg_realname_search_username', TRUE),
+    '#default_value' => config_get('privatemsg.settings', 'privatemsg_realname_search_username'),
   );
 }
