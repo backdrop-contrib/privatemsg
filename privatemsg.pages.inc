@@ -440,6 +440,8 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
     $form['token']['browser'] = array(
       '#theme' => 'token_tree',
       '#token_types' => array('privatemsg_message'),
+      '#click_insert' => TRUE,
+      '#dialog' => TRUE,
     );
   }
   $form['actions'] = array('#type' => 'actions');

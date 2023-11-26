@@ -52,7 +52,7 @@ function privatemsg_limits_privatemsg_message_validate($message, $form = FALSE) 
   $config = config('privatemsg_limits.settings');
 
   if ($config->get('recipients_enabled')) {
-    $amount = _privatemsg_limits_get_amount('recipients_amount', $message->author);
+    $amount = _privatemsg_limits_get_amount('recipients', $message->author);
     if (!isset($message->thread_id) && $amount > 0 && count($message->recipients) > $amount) {
       $errors[] = t("You are not allowed to send a message to more than @number recipients.", array('@number' => $amount));
     }
@@ -62,7 +62,7 @@ function privatemsg_limits_privatemsg_message_validate($message, $form = FALSE) 
   // messages should be checked and not threads. When the limit object are
   // threads, users can send an unlimited amount of replies.
   if ($config->get('send_enabled') && (empty($message->thread_id) || $config->get('send_object') == 'message')) {
-    $amount = _privatemsg_limits_get_amount('send_amount', $message->author);
+    $amount = _privatemsg_limits_get_amount('send', $message->author);
     $used = _privatemsg_limits_get_sent($message->author, $config->get('send_timeframe'));
     if ($amount > 0 && $used >= $amount) {
       $wait_time = _privatemsg_limits_get_oldest($message->author, $config->get('send_timeframe'));
@@ -77,7 +77,7 @@ function privatemsg_limits_privatemsg_message_validate($message, $form = FALSE) 
   }
 
   if ($config->get('receive_enabled') && (empty($message->thread_id) || $config->get('receive_object') == 'message')) {
-    $amount = _privatemsg_limits_get_amount('receive_amount', $message->author);
+    $amount = _privatemsg_limits_get_amount('receive', $message->author);
     $used = _privatemsg_limits_get_received($message->author);
 
     if ($amount > 0 && $used >= $amount) {
@@ -133,7 +133,7 @@ function privatemsg_limits_privatemsg_block_message($author, $recipients, $conte
     foreach ($recipients as $recipient) {
       // Only user recipients are supported.
       if (!isset($recipient->type) || $recipient->type == 'user' || $recipient->type == 'hidden') {
-        $amount = _privatemsg_limits_get_amount('receive_amount', $recipient);
+        $amount = _privatemsg_limits_get_amount('receive', $recipient);
         $used = _privatemsg_limits_get_received($recipient);
         if ($amount > 0 && $used >= $amount) {
           $blocked[] = array(
@@ -178,7 +178,7 @@ function privatemsg_limits_privatemsg_message_presave_alter($message) {
 function privatemsg_limits_form_privatemsg_list_alter(&$form, &$form_state) {
   global $user;
   $config = config('privatemsg_limits.settings');
-  $limit = _privatemsg_limits_get_amount('receive_amount', $form['account']['#value']);
+  $limit = _privatemsg_limits_get_amount('receive', $form['account']['#value']);
   if ($limit > 0) {
     $used = _privatemsg_limits_get_received($form['account']['#value']);
     if ($used < $limit) {
@@ -265,7 +265,7 @@ function _privatemsg_limits_get_amount($name, $account) {
 
   $role_max = 0;
   foreach ($account->roles as $id => $role) {
-    $new_max = config_get('privatemsg_limits.settings', "{$name}_role_" . $role);
+    $new_max = $config->get("amount_per_role.{$name}.{$role}");
     if ($new_max == 'unlimited') {
       return 0;
     }
@@ -274,7 +274,7 @@ function _privatemsg_limits_get_amount($name, $account) {
     }
   }
   if ($role_max == 0) {
-    return config_get('privatemsg_limits.settings', $name);
+    return $config->get($name);
   }
   return $role_max;
 }

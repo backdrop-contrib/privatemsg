@@ -10,5 +10,6 @@
   "send_timeframe": 3600,
   "receive_enabled": false,
   "receive_object": "message",
-  "receive_amount": 0
+  "receive_amount": 0,
+  "amount_per_role": []
 }

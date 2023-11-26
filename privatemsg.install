@@ -234,8 +234,8 @@ function privatemsg_update_1000() {
   $config->set('receive_amount', update_variable_get('privatemsg_limits_receive_amount', 0));
   foreach (array_keys(user_roles(TRUE)) as $role) {
     foreach (array('send', 'receive', 'recipients') as $option) {
-      $setting = 'privatemsg_limits_' . $option . '_amount_role_' . $role;
-      $config->set($setting, update_variable_get($setting));
+      $setting = "privatemsg_limits_{$option}_amount_role_{$role}";
+      $config->set("amount_per_role.{$option}.{$role}", update_variable_get($setting));
     }
   }
   $config->save();

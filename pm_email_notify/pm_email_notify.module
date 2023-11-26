@@ -186,6 +186,8 @@ function pm_email_notify_form_privatemsg_admin_settings_alter(&$form, &$form_sta
   $form['pm_email_notify']['token']['browser'] = array(
     '#theme' => 'token_tree',
     '#token_types' => array('privatemsg_message'),
+    '#click_insert' => TRUE,
+    '#dialog' => TRUE,
   );
 
   // Add a submit button
