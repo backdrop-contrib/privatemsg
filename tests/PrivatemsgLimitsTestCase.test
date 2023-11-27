@@ -11,13 +11,6 @@ require_once backdrop_get_path('module', 'privatemsg') . '/tests/PrivatemsgBaseT
  * Test cases for the privatemsg_limits module.
  */
 class PrivatemsgLimitsTestCase extends PrivatemsgBaseTestCase {
-  public static function getInfo() {
-    return array(
-      'name' => 'Privatemsg Limits',
-      'description' => 'Tests limits on sending and receiving messages.',
-      'group' => 'Privatemsg',
-    );
-  }
 
   /**
    * Install necessary modules.

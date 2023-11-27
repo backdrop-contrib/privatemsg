@@ -6,16 +6,6 @@
 require_once backdrop_get_path('module', 'privatemsg') . '/tests/PrivatemsgBaseTestCase.test';
 
 class PrivatemsgBlockUserCase extends PrivatemsgBaseTestCase {
-  /**
-   * Implements getInfo().
-   */
-  public static function getInfo() {
-    return array(
-      'name' => t('User blocking functionality.'),
-      'description' => t('Test blocking and unblocking of users'),
-      'group' => t('Privatemsg'),
-    );
-  }
 
   function setUp() {
     parent::setUp('privatemsg', 'pm_block_user');

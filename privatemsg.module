@@ -1968,7 +1968,7 @@ function _privatemsg_send($message) {
     }
 
     // We only want to add the author to the pm_index table, if the message has
-    // not been sent directly to him.
+    // not been sent directly to them.
     if (!isset($message->recipients['user_' . $message->author->uid])) {
       $query->values(array(
         'mid' => $mid,
@@ -2783,6 +2783,13 @@ function privatemsg_recipient_access($type_name, $permission, $recipient = NULL)
  * @ingroup types.
  */
 function privatemsg_recipient_format($recipient, $options = array()) {
+  // Avoid __PHP_Incomplete_Class due to User class not loaded before
+  // unserialize() gets called.
+  // @see https://github.com/backdrop-contrib/privatemsg/issues/50
+  if ((is_object($recipient) && !is_a($recipient, 'User'))) {
+    $recipient = (array) $recipient;
+    $recipient = user_load($recipient['uid']);
+  }
   if (!isset($recipient->type)) {
     $recipient->type = 'user';
     $recipient->recipient = $recipient->uid;

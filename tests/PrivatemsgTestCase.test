@@ -3,23 +3,6 @@
 require_once backdrop_get_path('module', 'privatemsg') . '/tests/PrivatemsgBaseTestCase.test';
 
 class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
-  /**
-   * Implements getInfo().
-   */
-  public static function getInfo() {
-    return array
-    (
-      // 'name' should start with what is being tested (menu item) followed by what about it
-      // is being tested (creation/deletion).
-      'name' => t('Privatemsg functionality.'),
-      // 'description' should be one or more complete sentences that provide more details on what
-      // exactly is being tested.
-      'description' => t('Test sending, receiving, listing, deleting messages and other features.'),
-      // 'group' should be a logical grouping of test cases, like a category.  In most cases, that
-      // is the module the test case is for.
-      'group' => t('Privatemsg'),
-    );
-  }
 
   /**
    * Implements setUp().
@@ -326,7 +309,7 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
 
     $this->backdropPost('messages/new', $editinvalid, t('Send message'));
     $this->assertText(t('You must include at least one valid recipient.'), 'Message was not sent.');
-    $this->assertText(t('The following users will not receive this private message: @recipients', array('@recipients' => $editinvalid['recipient'])), 'Message about non-existing user displayed.');
+    $this->assertText(t('The following recipients will not receive this private message: @recipients', array('@recipients' => $editinvalid['recipient'])), 'Message about non-existing user displayed.');
 
     $this->backdropPost('messages/new', $editrecipientblocked, t('Send message'));
     $this->assertText(t('@recipients has disabled his or her account.', array('@recipients' => $blocked_recipient->name)), 'Message about blocked user displayed.');
@@ -350,7 +333,7 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
 
     $this->backdropPost('messages/new', $editmixed, t('Send message'));
     $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $recipient->name)), 'Message sent confirmation displayed.');
-    $this->assertText(t('The following users will not receive this private message: @recipients', array('@recipients' => $invalidmixed)), 'Message about non-existing user displayed.');
+    $this->assertText(t('The following recipients will not receive this private message: @recipients', array('@recipients' => $invalidmixed)), 'Message about non-existing user displayed.');
 
     $this->backdropPost('messages/new', $editformatted, t('Send message'));
     $this->assertText(t('A message has been sent to @recipients.', array('@recipients' => $recipient2->name)), 'Message sent confirmation displayed.');

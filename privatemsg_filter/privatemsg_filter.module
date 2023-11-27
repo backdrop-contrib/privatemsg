@@ -736,6 +736,13 @@ function privatemsg_filter_query_privatemsg_list_alter($query) {
 
     if (isset($filter['author']) && !empty($filter['author'])) {
       foreach ($filter['author'] as $author) {
+        // Avoid __PHP_Incomplete_Class due to User class not loaded before
+        // unserialize() gets called.
+        // @see https://github.com/backdrop-contrib/privatemsg/issues/50
+        if ((is_object($author) && !is_a($author, 'User'))) {
+          $author = (array) $author;
+          $author = user_load($author['uid']);
+        }
         $alias = $query->join('pm_index', 'pmi', '%alias.mid = pm.mid');
         $query->condition($alias . '.recipient', $author->uid);
         $query->condition($alias . '.type', 'user');
@@ -1007,7 +1014,7 @@ function privatemsg_filter_user_cancel($edit, $account, $method) {
 function privatemsg_filter_privatemsg_message_insert($message) {
   foreach ($message->recipients as $recipient) {
     if ($recipient->type == 'user' || $recipient->type == 'hidden') {
-      privatemsg_filter_add_tags(array($message->thread_id), config_get('privatemsg_filter.settings', 'inbox_tag'));
+      privatemsg_filter_add_tags(array($message->thread_id), config_get('privatemsg_filter.settings', 'inbox_tag'), $recipient);
     }
   }
 }

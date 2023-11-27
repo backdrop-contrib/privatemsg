@@ -11,13 +11,6 @@ require_once backdrop_get_path('module', 'privatemsg') . '/tests/PrivatemsgBaseT
  * Test cases for the privatemsg_roles module.
  */
 class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
-  public static function getInfo() {
-    return array(
-      'name' => 'Privatemsg Roles functionality',
-      'description' => 'Tests sending messages to roles.',
-      'group' => 'Privatemsg',
-    );
-  }
 
   function setUp() {
     parent::setUp('privatemsg', 'privatemsg_roles', 'privatemsg_filter', 'pm_block_user');

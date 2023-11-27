@@ -560,7 +560,7 @@ function privatemsg_new_validate($form, &$form_state) {
 
   if (!empty($invalid)) {
     // Display information about invalid recipients.
-    backdrop_set_message(t('The following users will not receive this private message: @invalid.', array('@invalid' => implode(", ", $invalid))), 'error');
+    backdrop_set_message(t('The following recipients will not receive this private message: @invalid.', array('@invalid' => implode(", ", $invalid))), 'error');
   }
   if (!empty($denieds)) {
     // Display information about denied recipients.
