@@ -1,43 +1,35 @@
 
 .privatemsg-message {
-  width: 100%;
-  max-width: 1000px;
+  border-bottom: 1px solid #C5C5C5;
+}
+.private-message:last-child {
+  border: 0;
 }
 
 .privatemsg-author-avatar {
-  float: left;
-  width: 20%;
-  padding-top: 2px;
+  margin-top: 20px;
   text-align: center;
 }
 
 .privatemsg-message-column {
-  float: right;
   overflow: visible;
-  width: 78%;
   margin-bottom: 10px;
 }
 
 div.privatemsg-message-information {
-  border-bottom: 1px solid #C5C5C5;
-  width: 100%;
-  margin-bottom: 5px;
+  margin-top: 20px;
 }
 
 .privatemsg-author-name {
   font-weight: bold;
-  padding-right: 1em;
-  font-size: 80%;
 }
 .privatemsg-message-date {
   color: #777777;
-  padding-right: 1em;
   font-size: 80%;
-} 
+}
 .privatemsg-message-body {
   padding : 0;
   overflow : visible;
-  margin-left: 10px;
 }
 
 .privatemsg-view-pager {
@@ -64,7 +56,5 @@ span.privatemsg-token-valid {
 }
 
 span.privatemsg-message-new {
-  float: right;
-  font-size: 80%;
   font-weight:bold;
 }
