@@ -22,7 +22,7 @@ define('PRIVATEMSG_UNLIMITED', 'unlimited');
  * Implements hook_permission().
  */
 function privatemsg_permission() {
-  return array(
+  $items = array(
     'administer privatemsg settings' => array(
       'title' => t('Administer privatemsg'),
       'description' => t('Perform maintenance tasks for privatemsg'),
@@ -60,6 +60,15 @@ function privatemsg_permission() {
       'description' => t('Allows to choose the text format when sending private messages. Otherwise, the default is used.'),
     ),
   );
+
+  if (module_exists('akismet')) {
+    $items['report private messages to akismet'] = array(
+      'title' => t('Report private messages to Akismet'),
+      'description' => t('Allows users to report messages as spam or unwanted content while deleting messages, if Akismet is set up to check private messages.'),
+    );
+  }
+
+  return $items;
 }
 
 /**
@@ -3241,4 +3250,37 @@ function privatemsg_format_date($timestamp) {
     return format_date($timestamp, 'privatemsg_current_year');
   }
   return format_date($timestamp, 'privatemsg_years');
+}
+
+/**
+ * Implements hook_akismet_form_list().
+ */
+function privatemsg_akismet_form_list() {
+  $forms['privatemsg_new'] = array(
+    'title' => t('Send new message form'),
+    'entity' => 'privatemsg_message',
+    'delete form' => 'privatemsg_delete',
+  );
+  return $forms;
+}
+
+/**
+ * Implements hook_akismet_form_info().
+ */
+function privatemsg_akismet_form_info() {
+  $form_info = array(
+    'mode' => AKISMET_MODE_ANALYSIS,
+    'bypass access' => array('administer privatemsg settings'),
+    'report access' => array('report private messages to akismet'),
+    'elements' => array(
+      'subject' => t('Subject'),
+      'body' => t('Body'),
+    ),
+    'mapping' => array(
+      'post_id' => 'mid',
+      'post_title' => 'subject',
+    ),
+  );
+
+  return $form_info;
 }
