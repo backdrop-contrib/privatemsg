@@ -120,7 +120,6 @@ function pm_email_notify_form_alter(&$form, &$form_state, $form_id) {
  * Implements hook_user_update().
  */
 function pm_email_notify_user_update($account) {
-  debug($account);
   if (privatemsg_user_access('read privatemsg', $account)) {
     db_merge('pm_email_notify')
       ->fields(array('email_notify_is_enabled' => $account->pm_send_notifications))
