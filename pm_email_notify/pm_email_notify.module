@@ -122,10 +122,12 @@ function pm_email_notify_form_alter(&$form, &$form_state, $form_id) {
 function pm_email_notify_user_update($account) {
   debug($account);
   if (privatemsg_user_access('read privatemsg', $account)) {
-    db_merge('pm_email_notify')
-      ->fields(array('email_notify_is_enabled' => $account->pm_send_notifications))
-      ->key(array('user_id' => $account->uid))
-      ->execute();
+    if (!is_null($account->pm_send_notifications)) {
+      db_merge('pm_email_notify')
+        ->fields(array('email_notify_is_enabled' => $account->pm_send_notifications))
+        ->key(array('user_id' => $account->uid))
+       ->execute();
+    }
   }
 }
 
