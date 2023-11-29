@@ -509,7 +509,7 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
     '#value' => $read_all === TRUE,
   );
   // Attach field widgets.
-  $message = (object) array();
+  $message = entity_create('privatemsg_message', array());
   if (isset($form_state['validate_built_message'])) {
     $message = $form_state['validate_built_message'];
   }
@@ -535,13 +535,23 @@ function privatemsg_check_format_access($element) {
 }
 
 function privatemsg_new_validate($form, &$form_state) {
+  global $user;
   // The actual message that is being sent, we create this during validation and
   // pass to submit to send out.
-  $message = (object)$form_state['values'];
-  $message->mid       = 0;
-  $message->format    = $message->body['format'];
-  $message->body      = $message->body['value'];
-  $message->timestamp = REQUEST_TIME;
+  $values = $form_state['values'];
+  $message_info = array(
+    'mid' => 0,
+    'author' => $user,
+    'recipient' => isset($values['recipient']) ? $values['recipient'] : NULL,
+    'subject' => $values['subject'],
+    'body' => $values['body']['value'],
+    'format' => $values['body']['format'],
+    'thread_id' => isset($values['thread_id']) ? $values['thread_id'] : NULL,
+    'read_all' => $values['read_all'],
+    'timestamp' => REQUEST_TIME,
+  );
+  $message = entity_create('privatemsg_message', $message_info);
+
   // Avoid subjects which only consist of a space as these can not be clicked.
   $message->subject = trim($message->subject);
 

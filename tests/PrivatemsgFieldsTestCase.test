@@ -22,7 +22,7 @@ class PrivatemsgFieldsTestCase extends PrivatemsgBaseTestCase {
 
     // Create a new field.
     $edit = array(
-      'fields[_add_new_field][label]' => $label = $this->randomName(),
+      'fields[_add_new_field][label]' => $this->randomName(),
       'fields[_add_new_field][field_name]' => $name = strtolower($this->randomName()),
       'fields[_add_new_field][type]' => 'text',
       'fields[_add_new_field][widget_type]' => 'text_textfield',

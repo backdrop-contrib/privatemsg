@@ -87,6 +87,7 @@ function privatemsg_config_info() {
  */
 function privatemsg_autoload_info() {
   return array(
+    'PrivatemsgMessage' => 'privatemsg.entity.inc',
     'PrivatemsgMessageController' => 'privatemsg.controller.inc',
     'views_handler_field_privatemsg_link' => 'views/views_handler_field_privatemsg_link.inc',
   );
@@ -2404,6 +2405,7 @@ function privatemsg_entity_info() {
       'base table' => 'pm_message',
       'fieldable' => TRUE,
       'controller class' => 'PrivatemsgMessageController',
+      'entity class' => 'PrivatemsgMessage',
       'uri callback' => 'privatemsg_message_uri_callback',
       'entity keys' => array(
         'id' => 'mid',
