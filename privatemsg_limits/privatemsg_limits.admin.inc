@@ -140,7 +140,7 @@ function privatemsg_limits_admin_submit($form, &$form_state) {
   foreach (array_keys(user_roles(TRUE)) as $role) {
     foreach (array('send', 'receive', 'recipients') as $option) {
       $setting = 'amount_per_role.' . $option . '.' . $role;
-      $config->set($setting, (int) $values["{$option}_amount_role_{$role}"]);
+      $config->set($setting, $values["{$option}_amount_role_{$role}"]);
     }
   }
   $config->save();
@@ -157,12 +157,11 @@ function privatemsg_limits_admin_submit($form, &$form_state) {
 function _privatemsg_limits_role_override_form($name) {
   $config = config('privatemsg_limits.settings');
   $default = array(
-    '#type'  => 'number',
-    '#min' => 0,
-    '#max' => 99999,
+    '#type'  => 'textfield',
+    '#size' => 10,
   );
   $form['roles'] = array(
-    '#type'   => 'fieldset',
+    '#type' => 'fieldset',
     '#description' => t('You may override the maximum limit specified above on a per-role basis. If a user has multiple roles, then the highest maximum value shall be used. Enter "unlimited" if a role may have unlimited messages/conversations. Enter "0" if you do not want to override the maximum limit setting.'),
     '#title'  => t('Override maximum limit by role'),
     '#collapsible' => TRUE,
@@ -172,7 +171,7 @@ function _privatemsg_limits_role_override_form($name) {
   foreach (user_roles(TRUE) as $id => $role) {
     $form['roles']["{$name}_amount_role_{$id}"] = $default + array(
       '#title' => $role,
-      '#default_value' => (int) $config->get("amount_per_role.{$name}.{$id}"),
+      '#default_value' => $config->get("amount_per_role.{$name}.{$id}"),
     );
   }
   return $form;

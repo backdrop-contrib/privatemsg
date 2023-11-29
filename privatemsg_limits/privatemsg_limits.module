@@ -259,12 +259,12 @@ function _privatemsg_limits_get_amount($name, $account) {
   // case.
   // @todo: Remove once privatemsg_user_load_multiple() is implemented.
   if (!isset($account->roles)) {
-    $account->roles = array('authenticated');
+    $account->roles = array(BACKDROP_AUTHENTICATED_ROLE);
     $account->roles += db_query('SELECT role FROM {users_roles} WHERE uid = :uid', array(':uid' => $account->uid))->fetchCol();
   }
 
   $role_max = 0;
-  foreach ($account->roles as $id => $role) {
+  foreach ($account->roles as $role) {
     $new_max = $config->get("amount_per_role.{$name}.{$role}");
     if ($new_max == 'unlimited') {
       return 0;
@@ -273,9 +273,11 @@ function _privatemsg_limits_get_amount($name, $account) {
       $role_max = $new_max;
     }
   }
+
   if ($role_max == 0) {
-    return $config->get($name);
+    return $config->get("{$name}_amount");
   }
+
   return $role_max;
 }
 
