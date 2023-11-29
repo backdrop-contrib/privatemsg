@@ -19,11 +19,11 @@ function privatemsg_devel_generate_form() {
       array(
         '%perm' => $perm,
         '@url' => url(
-          'admin/people/permissions',
+          'admin/config/people/permissions',
           array(
             'fragment' => 'module-privatemsg',
             'query' => array(
-              'destination' => 'admin/generate/privatemsg'
+              'destination' => 'admin/devel/generate/privatemsg'
               )
             )
           )
