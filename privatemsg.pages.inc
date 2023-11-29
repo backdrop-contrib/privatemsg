@@ -609,9 +609,10 @@ function privatemsg_new_preview($form, &$form_state) {
   $form_state['privatemsg_preview'] = array(
     '#markup' => theme('privatemsg_view', array('message' => $message)),
     '#attached' => array(
-      backdrop_get_path('module', 'privatemsg') . '/css/privatemsg-view.base.css',
-      backdrop_get_path('module', 'privatemsg') . '/css/privatemsg-view.theme.css',
-    ),
+      'css' => array(
+        backdrop_get_path('module', 'privatemsg') . '/css/privatemsg-view.base.css',
+        backdrop_get_path('module', 'privatemsg') . '/css/privatemsg-view.theme.css',
+    )),
   );
   // This forces the form to be rebuilt instead of being submitted.
   $form_state['rebuild'] = TRUE;
