@@ -21,12 +21,16 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
     $user1 = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg'));
     $user2 = $this->backdropCreateUser();
 
+    // Find the new role names.
+    $user1_roles = array_diff($user1->roles, array(BACKDROP_AUTHENTICATED_ROLE));
+    $user1_role_name = reset($user1_roles);
+
     // Add role of user 1 to user 2;
-    $user2->roles = $user2->roles + $user1->roles;
+    $user2->roles[] = $user1_role_name;
     user_save($user2);
 
-    $recipient = user_role_load($user1->roles[4]);
-    $recipient->recipient = $recipient->rid;
+    $recipient = user_role_load($user1_role_name);
+    $recipient->recipient = _privatemsg_roles_get_role_id($recipient->name);
     $recipient->type = 'role';
     privatemsg_new_thread(array($recipient), $subject = $this->randomName(10), $body = $this->randomName(50), array('author' => $admin));
 
@@ -41,6 +45,8 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
   function testSendMessagetoRoleCron() {
     $admin = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg', 'write privatemsg to roles'));
     $user1 = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg'));
+    $user1_roles = array_diff($user1->roles, array(BACKDROP_AUTHENTICATED_ROLE));
+    $user1_role_name = reset($user1_roles);
 
     config_set('privatemsg.settings', 'recipient_small_threshold', 20);
     config_set('privatemsg.settings', 'cron_recipient_per_run', 20);
@@ -50,12 +56,12 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
     for ($i = 0; $i < 25; $i++) {
       $users[$i] = $this->backdropCreateUser();
       // Add role of user 1 to user 2;
-      $users[$i]->roles = $users[$i]->roles + $user1->roles;
+      $users[$i]->roles[] = $user1_role_name;
       user_save($users[$i]);
     }
 
-    $recipient = user_role_load($user1->roles[4]);
-    $recipient->recipient = $recipient->rid;
+    $recipient = user_role_load($user1_role_name);
+    $recipient->recipient = _privatemsg_roles_get_role_id($recipient->name);
     $recipient->type = 'role';
     privatemsg_new_thread(array($recipient), $subject = $this->randomName(10), $body = $this->randomName(50), array('author' => $admin));
 
@@ -94,26 +100,28 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
   function testSendMessagetoRoleBatch() {
     $admin = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg', 'write privatemsg to roles'));
     $user1 = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg'));
+    $user1_roles = array_diff($user1->roles, array(BACKDROP_AUTHENTICATED_ROLE));
+    $user1_role_name = reset($user1_roles);
 
     config_set('privatemsg.settings', 'recipient_small_threshold', 20);
     // Create 25 users (more than are allowed to be process directly).
     $users = array();
     for ($i = 0; $i < 25; $i++) {
       $users[$i] = $this->backdropCreateUser();
-      // Add role of user 1 to user 2;
-      $users[$i]->roles = $users[$i]->roles + $user1->roles;
+      // Add role of user 1 to other users;
+      $users[$i]->roles[] = $user1_role_name;
       user_save($users[$i]);
     }
     $this->backdropLogin($admin);
 
     // Send a message to the role shared by all users.
     $edit = array(
-      'recipient' => user_role_load($user1->roles[4])->name . '[role]',
+      'recipient' => $user1_role_name . '[role]',
       'subject' => $this->randomName(10),
       'body[value]' => $this->randomName(50),
     );
     $this->backdropPost('messages/new', $edit, t('Send message'));
-    $this->assertText(t('A message has been sent to @role (role).', array('@role' => user_role_load($user1->roles[4])->name)));
+    $this->assertText(t('A message has been sent to @role (role).', array('@role' => $user1_role_name)));
 
     // Test a few recipients to see if they all received the message.
     foreach ($users as $user) {
@@ -129,11 +137,14 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
   function testPermission() {
     $user1 = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg'));
     $user2 = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg'));
+    $user2_roles = array_diff($user2->roles, array(BACKDROP_AUTHENTICATED_ROLE));
+    $user2_role_name = reset($user2_roles);
+
     $this->backdropLogin($user1);
 
     // Send a message to the role of user 1 and 2.
     $edit = array(
-      'recipient' => $user2->roles[4] . '[role]',
+      'recipient' => $user2_role_name . '[role]',
       'subject' => $this->randomName(10),
       'body[value]' => $this->randomName(50),
     );
@@ -146,19 +157,21 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
     $user1 = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg'));
     $user2 = $this->backdropCreateUser(array('view roles recipients'));
 
+    $user1_roles = array_diff($user1->roles, array(BACKDROP_AUTHENTICATED_ROLE));
+    $user1_role_name = reset($user1_roles);
+
     // Add role of user 1 to user 2;
-    $user2->roles = $user2->roles + $user1->roles;
+    $user2->roles[] = $user1_role_name;
     user_save($user2);
     $this->backdropLogin($admin);
 
     // Verify autocomplete feature.
-    $role_name = user_role_load($user1->roles[4])->name;
-    $json = $this->backdropGet('messages/autocomplete/' . backdrop_substr($role_name, 0, 2));
-    $autocomplete = (array)json_decode($json);
-    $this->assertEqual($autocomplete[$role_name . ', '], $role_name);
+    $autocomplete = (array) $this->backdropGetAJAX('messages/autocomplete/' . $user1_role_name);
+    $this->assertEqual($autocomplete[$user1_role_name . ', '], $user1_role_name);
 
+    $user1_role_id = _privatemsg_roles_get_role_id($user1_role_name);
     // Access the form through a url that pre-fills the recipient field.
-    $this->backdropGet('messages/new/role_4');
+    $this->backdropGet('messages/new/role_' . $user1_role_id);
 
     // Send a message to the role of user 1 and 2.
     $edit = array(
@@ -166,7 +179,7 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
       'body[value]' => $this->randomName(50),
     );
     $this->backdropPost(NULL, $edit, t('Send message'));
-    $this->assertText(t('A message has been sent to @role (role).', array('@role' => user_role_load($user1->roles[4])->name)));
+    $this->assertText(t('A message has been sent to @role (role).', array('@role' => $user1_role_name)));
 
     // Log in as user1 and check that the message is listed, is marked as new
     // and can be marked as read.
@@ -178,7 +191,7 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
     $this->assertText($edit['body[value]'], t('Thread starter body displayed.'));
 
     // Make sure that the user does not see the role.
-    $this->assertNoText(t('@role (role)', array('@role' => $role_name)));
+    $this->assertNoText(t('@role (role)', array('@role' => $user1_role_name)));
 
     // Reply to the message, only admin should see this.
     $reply1 = array(
@@ -208,7 +221,7 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
     $this->backdropGet('messages');
     $this->assertRaw($edit['subject'] . '</a> <span class="marker">new</span>', t('Message is displayed as new'));
     $this->clickLink($edit['subject']);
-    $this->assertText(t('@role (role)', array('@role' => $role_name)));
+    $this->assertText(t('@role (role)', array('@role' => $user1_role_name)));
 
     $this->assertText($edit['body[value]'], t('Thread starter body is displayed'));
     $this->assertNoText($reply1['body[value]'], t('Reply1 is not displayed'));
@@ -220,8 +233,11 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
     $user1 = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg'));
     $user2 = $this->backdropCreateUser();
 
+    $user1_roles = array_diff($user1->roles, array(BACKDROP_AUTHENTICATED_ROLE));
+    $user1_role_name = reset($user1_roles);
+
     // Add role of user 1 to user 2;
-    $user2->roles = $user2->roles + $user1->roles;
+    $user2->roles[] = $user1_role_name;
     user_save($user2);
 
     // Block admin as user 2.
@@ -232,12 +248,12 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
 
     // Send a message to the role of user 1 and 2.
     $edit = array(
-      'recipient' => user_role_load($user1->roles[4])->name . '[role]',
+      'recipient' => $user1_role_name . '[role]',
       'subject' => $this->randomName(10),
       'body[value]' => $this->randomName(50),
     );
     $this->backdropPost('messages/new', $edit, t('Send message'));
-    $this->assertText(t('A message has been sent to @role (role).', array('@role' => user_role_load($user1->roles[4])->name)));
+    $this->assertText(t('A message has been sent to @role (role).', array('@role' => $user1_role_name)));
 
     // Log in as user1 and check that the message is listed, is marked as new
     // and can be marked as read.
@@ -249,7 +265,7 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
     $this->assertText($edit['body[value]'], t('Thread starter body displayed.'));
 
     // Make sure that the user doesn't see the role recipient.
-    $this->assertNoText(t('@role (role)', array('@role' => user_role_load($user1->roles[4])->name)));
+    $this->assertNoText(t('@role (role)', array('@role' => $user1_role_name)));
 
     // Log in as user2 and make sure that they didn't received the messages
     // as they block admin.
@@ -262,21 +278,24 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
     $admin = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg', 'write privatemsg to roles'));
     $user1 = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg'));
 
+    $user1_roles = array_diff($user1->roles, array(BACKDROP_AUTHENTICATED_ROLE));
+    $user1_role_name = reset($user1_roles);
+
     // Send a message to the role of user 1.
     $this->backdropLogin($admin);
     $edit = array(
-      'recipient' => user_role_load($user1->roles[4])->name . '[role]',
+      'recipient' => $user1_role_name . '[role]',
       'subject' => $this->randomName(10),
       'body[value]' => $this->randomName(50),
     );
     $this->backdropPost('messages/new', $edit, t('Send message'));
-    $this->assertText(t('A message has been sent to @role (role).', array('@role' => user_role_load($user1->roles[4])->name)));
+    $this->assertText(t('A message has been sent to @role (role).', array('@role' => $user1_role_name)));
 
     // Add user 2 with the same role now. The user should not see the message.
     $user2 = $this->backdropCreateUser();
 
     // Add role of user 1 to user 2;
-    $user2->roles = $user2->roles + $user1->roles;
+    $user2->roles[] = $user1_role_name;
     user_save($user2);
     $this->backdropLogin($user2);
 

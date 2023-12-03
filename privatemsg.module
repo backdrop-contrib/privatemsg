@@ -1691,7 +1691,7 @@ function privatemsg_new_thread($recipients, $subject, $body = NULL, $options = a
   global $user;
   $author = clone $user;
 
-  $message = (object) $options;
+  $message = entity_create('privatemsg_message', $options);
   $message->subject = $subject;
   $message->body = $body;
   // Make sure that recipients are keyed correctly and are not added
@@ -1763,7 +1763,7 @@ function privatemsg_reply($thread_id, $body, $options = array()) {
   global $user;
   $author = clone $user;
 
-  $message = (object) $options;
+  $message = entity_create('privatemsg_message', $options);
   $message->body = $body;
 
   // Apply defaults - this will not overwrite existing keys.
@@ -2788,7 +2788,7 @@ function privatemsg_recipient_format($recipient, $options = array()) {
   // Avoid __PHP_Incomplete_Class due to User class not loaded before
   // unserialize() gets called.
   // @see https://github.com/backdrop-contrib/privatemsg/issues/50
-  if ((is_object($recipient) && !is_a($recipient, 'User'))) {
+  if ((is_object($recipient) && is_a($recipient, '__PHP_Incomplete_Class'))) {
     $recipient = (array) $recipient;
     $recipient = user_load($recipient['uid']);
   }
