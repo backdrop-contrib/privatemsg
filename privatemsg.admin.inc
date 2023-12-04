@@ -114,7 +114,7 @@ function privatemsg_admin_settings() {
 
   $form['privatemsg_listing']['display_fields'] = array(
     '#type' => 'checkboxes',
-    '#title' => t('Configure fields'),
+    '#title' => t('Choose fields to display'),
     '#description' => t('Select which columns/fields should be displayed in the message listings. Subject and Last updated cannot be disabled.'),
     '#options' => array(
       'participants'    => t('Participants'),
