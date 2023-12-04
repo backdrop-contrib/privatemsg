@@ -7,16 +7,6 @@ require_once backdrop_get_path('module', 'privatemsg') . '/tests/PrivatemsgBaseT
  * Test filters, tags and inbox/sent handling.
  */
 class PrivatemsgTagsTestCase extends PrivatemsgBaseTestCase {
-  /**
-   * Implements getInfo().
-   */
-  public static function getInfo() {
-    return array(
-      'name' => t('Privatemsg Tags functionality.'),
-      'description' => t('Test Privatemsg tags use and administration functionality.'),
-      'group' => t('Privatemsg'),
-    );
-  }
 
   /**
    * Implements setUp().

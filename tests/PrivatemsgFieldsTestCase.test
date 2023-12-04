@@ -6,17 +6,6 @@ require_once backdrop_get_path('module', 'privatemsg') . '/tests/PrivatemsgBaseT
  * Tests for fields integration.
  */
 class PrivatemsgFieldsTestCase extends PrivatemsgBaseTestCase {
-  /**
-   * Implements getInfo().
-   */
-  public static function getInfo() {
-    return array
-    (
-      'name' => t('Privatemsg fields.'),
-      'description' => t('Tests integration with fields.'),
-      'group' => t('Privatemsg'),
-    );
-  }
 
   /**
    * Implements setUp().
@@ -33,7 +22,7 @@ class PrivatemsgFieldsTestCase extends PrivatemsgBaseTestCase {
 
     // Create a new field.
     $edit = array(
-      'fields[_add_new_field][label]' => $label = $this->randomName(),
+      'fields[_add_new_field][label]' => $this->randomName(),
       'fields[_add_new_field][field_name]' => $name = strtolower($this->randomName()),
       'fields[_add_new_field][type]' => 'text',
       'fields[_add_new_field][widget_type]' => 'text_textfield',

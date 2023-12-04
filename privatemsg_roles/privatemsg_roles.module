@@ -21,6 +21,17 @@ function privatemsg_roles_permission() {
   );
 }
 
+/**
+ * Implements hook_config_info().
+ */
+function privatemsg_roles_config_info() {
+  $prefixes['privatemsg_roles.settings'] = array(
+    'label' => t('Private message roles settings'),
+    'group' => t('Configuration'),
+  );
+  return $prefixes;
+}
+
 function privatemsg_roles_theme() {
   return array(
     'privatemsg_roles_format' => array(
@@ -49,17 +60,21 @@ function privatemsg_roles_privatemsg_recipient_type_info() {
 }
 
 /**
- * Load a number of roles based on their rid.
+ * Load a number of roles based on their role_id.
  */
 function privatemsg_roles_load_multiple($rids) {
+  $config = config('privatemsg_roles.settings');
+  $role_ids = $config->get('role_id');
   $roles = array();
-  foreach (user_roles(TRUE) as $name) {
-    $role = (object) array(
-      'type' => 'role',
-      'recipient' => $name,
-    );
+  foreach ($rids as $rid) {
+    if ($role_name = array_search($rid, $role_ids)) {
+      $role = user_role_load($role_name);
+      $role->type = 'role';
+      $role->recipient = $rid;
+    }
     $roles[privatemsg_recipient_key($role)] = $role;
   }
+
   return $roles;
 }
 
@@ -83,7 +98,7 @@ function theme_privatemsg_roles_format($variables) {
  * Loads users with a specific role.
  */
 function privatemsg_roles_load_recipients($recipient, $limit, $offset) {
-  $role = isset($recipient->recipient) ? $recipient->recipient : $recipient->rid;
+  $role = $recipient->name;
   if ($role == BACKDROP_AUTHENTICATED_ROLE) {
     $result = db_query_range('SELECT uid FROM {users} WHERE uid > 0 ORDER BY uid ASC', $offset, $limit);
   }
@@ -98,7 +113,7 @@ function privatemsg_roles_load_recipients($recipient, $limit, $offset) {
  * Return the number of users which have a given role.
  */
 function privatemsg_roles_count_recipients($recipient) {
-  $role = isset($recipient->recipient) ? $recipient->recipient : $recipient->rid;
+  $role = $recipient->name;
   if ($role == BACKDROP_AUTHENTICATED_ROLE) {
     return db_query('SELECT COUNT(uid) FROM {users}')->fetchField();
   }
@@ -117,7 +132,8 @@ function privatemsg_roles_autocomplete($fragment, $names, $limit) {
   $roles = array();
   foreach ($result as $role) {
     $role->type = 'role';
-    $role->recipient = $role->rid;
+    $role->recipient = _privatemsg_roles_get_role_id($role->name);
+    $role->role = $role->name;
     $roles[privatemsg_recipient_key($role)] = $role;
   }
   return $roles;
@@ -132,12 +148,10 @@ function privatemsg_roles_privatemsg_name_lookup($string) {
   $name = trim($string);
   $roles = user_roles(TRUE);
   if (isset($roles[$name])) {
-    $role = (object) array(
-      'type' => 'role',
-      'name' => $name,
-      'recipient' => $name,
-    );
-    $role->recipient = $name;
+    $role = user_role_load($name);
+    $role->type = 'role';
+    $role->recipient = _privatemsg_roles_get_role_id($name);
+
     return array(privatemsg_recipient_key($role) => $role);
   }
 }
@@ -165,3 +179,54 @@ function privatemsg_roles_sql_autocomplete_roles($search, $names) {
   return $query;
 }
 
+/**
+ * Get an role_id for a given role.
+ *   Checks the role to role_id mapping, with an option to generate a mapping
+ *   for a role.
+ *
+ * @param string $role
+ *   The role that we need a role_id value for, defaults to anonymous.
+ * @param bool $create
+ *   Whether or not to create a role_id if one does not exist. Default false.
+ *
+ * @return int|null
+ *   An integer pulled from config (and/or saved to config if needed), or NULL
+ *   if no role_id found or created.
+ *
+ */
+function _privatemsg_roles_get_role_id($role = BACKDROP_AUTHENTICATED_ROLE, $create = FALSE) {
+  if ($role == BACKDROP_AUTHENTICATED_ROLE) {
+    return 1;
+  }
+  $config = config('privatemsg_roles.settings');
+  $role_id = $config->get('role_id.' . $role);
+  if (is_numeric($role_id)) {
+    return $role_id;
+  }
+  if (empty($role_id) && $create) {
+    $rids = $config->get('role_id');
+    $max = 2;
+    if (is_array($rids)) {
+      $max = max($rids) + 1;
+    }
+    $config->set('role_id.' . $role, $max);
+    $config->save();
+    return $max;
+  }
+  return NULL;
+}
+
+/**
+ * Implements hook_user_role_insert().
+ */
+function privatemsg_roles_user_role_insert($role) {
+  // Generate a role_id for the new role and save it to the mapping.
+  _privatemsg_roles_get_role_id($role->name, TRUE);
+}
+
+/**
+ * Implements hook_user_role_delete().
+ */
+function privatemsg_roles_user_role_delete($role) {
+  config_clear('privatemsg_roles.settings', 'role_id.' . $role->name);
+}

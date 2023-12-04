@@ -6,7 +6,7 @@
  *   Loads private messages.
  */
 
-class PrivatemsgMessageController extends DefaultEntityController {
+class PrivatemsgMessageController extends EntityDatabaseStorageController {
 
   /**
    * @var User|null

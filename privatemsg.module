@@ -87,6 +87,7 @@ function privatemsg_config_info() {
  */
 function privatemsg_autoload_info() {
   return array(
+    'PrivatemsgMessage' => 'privatemsg.entity.inc',
     'PrivatemsgMessageController' => 'privatemsg.controller.inc',
     'views_handler_field_privatemsg_link' => 'views/views_handler_field_privatemsg_link.inc',
   );
@@ -1690,7 +1691,7 @@ function privatemsg_new_thread($recipients, $subject, $body = NULL, $options = a
   global $user;
   $author = clone $user;
 
-  $message = (object) $options;
+  $message = entity_create('privatemsg_message', $options);
   $message->subject = $subject;
   $message->body = $body;
   // Make sure that recipients are keyed correctly and are not added
@@ -1762,7 +1763,7 @@ function privatemsg_reply($thread_id, $body, $options = array()) {
   global $user;
   $author = clone $user;
 
-  $message = (object) $options;
+  $message = entity_create('privatemsg_message', $options);
   $message->body = $body;
 
   // Apply defaults - this will not overwrite existing keys.
@@ -1968,7 +1969,7 @@ function _privatemsg_send($message) {
     }
 
     // We only want to add the author to the pm_index table, if the message has
-    // not been sent directly to him.
+    // not been sent directly to them.
     if (!isset($message->recipients['user_' . $message->author->uid])) {
       $query->values(array(
         'mid' => $mid,
@@ -2277,7 +2278,7 @@ function privatemsg_operation_execute($operation, $threads, $account = NULL) {
   }
   // Add in callback arguments if present.
   if (isset($operation['callback arguments'])) {
-    $args = array_merge(array($threads), $operation['callback arguments']);
+    $args = array_merge(array('threads' => $threads), $operation['callback arguments']);
   }
   else {
     $args = array($threads);
@@ -2285,7 +2286,7 @@ function privatemsg_operation_execute($operation, $threads, $account = NULL) {
 
   // Add the user object to the arguments.
   if ($account) {
-    $args[] = $account;
+    $args['account'] = $account;
   }
 
   // Execute the chosen action and pass the defined arguments.
@@ -2299,10 +2300,10 @@ function privatemsg_operation_execute($operation, $threads, $account = NULL) {
   if (isset($operation['undo callback']) && $undo_function = $operation['undo callback']) {
     // Add in callback arguments if present.
     if (isset($operation['undo callback arguments'])) {
-      $undo_args = array_merge(array($threads), $operation['undo callback arguments']);
+      $undo_args = array_merge(array('threads' => $threads), $operation['undo callback arguments']);
     }
     else {
-      $undo_args = array($threads);
+      $undo_args = array('threads' => $threads);
     }
 
     // Avoid saving the complete user object in the session.
@@ -2404,6 +2405,7 @@ function privatemsg_entity_info() {
       'base table' => 'pm_message',
       'fieldable' => TRUE,
       'controller class' => 'PrivatemsgMessageController',
+      'entity class' => 'PrivatemsgMessage',
       'uri callback' => 'privatemsg_message_uri_callback',
       'entity keys' => array(
         'id' => 'mid',

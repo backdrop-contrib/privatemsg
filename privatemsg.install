@@ -289,3 +289,19 @@ function privatemsg_update_1000() {
   update_variable_del('privatemsg_limits_receive_object');
   update_variable_del('privatemsg_limits_receive_amount');
 }
+
+/**
+ * Create a role to role_id mapping for privatemsg_roles so roles can be
+ * used for pm_index.
+ */
+function privatemsg_update_1001() {
+  $config = config('privatemsg_roles.settings');
+  $roles = user_roles(TRUE);
+
+  $role_id = 1;
+  foreach ($roles as $role_name => $role) {
+    $config->set('role_id.' . $role_name, $role_id);
+    $role_id++;
+  }
+  $config->save();
+}

@@ -6,18 +6,6 @@ require_once backdrop_get_path('module', 'privatemsg') . '/tests/PrivatemsgBaseT
  * Tests for fields integration.
  */
 class PrivatemsgTokenTestCase extends PrivatemsgBaseTestCase {
-  /**
-   * Implements of getInfo().
-   */
-  public static function getInfo() {
-    return array
-    (
-      'name' => t('Privatemsg tokens'),
-      'description' => t('Tests tokens in private messages.'),
-      'group' => t('Privatemsg'),
-      'dependencies' => array('token'),
-    );
-  }
 
   /**
    * Implements setUp().
