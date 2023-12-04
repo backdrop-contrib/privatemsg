@@ -607,10 +607,10 @@ function privatemsg_filter_privatemsg_thread_operations($type) {
     $archive = array(
       'label' => t('Archive'),
       'callback' => 'privatemsg_filter_remove_tags',
-      'callback arguments' => array('tag_id' => $config->get('inbox_tag')),
+      'callback arguments' => array('tag_ids' => $config->get('inbox_tag')),
       'success message' => t('The messages have been archived.'),
       'undo callback' => 'privatemsg_filter_add_tags',
-      'undo callback arguments' => array('tag_id' => $config->get('inbox_tag')),
+      'undo callback arguments' => array('tag_ids' => $config->get('inbox_tag')),
     );
     return array('archive' => $archive);
   }
