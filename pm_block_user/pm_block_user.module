@@ -16,16 +16,6 @@ define('PM_BLOCK_USER_DISALLOW_BLOCKING', 0);
 define('PM_BLOCK_USER_DISALLOW_SENDING', 1);
 
 /**
- * Implements hook_help().
- */
-function pm_block_user_help($path) {
-  switch ($path) {
-    case 'admin/settings/messages/block':
-      return '<p>' . t('This area is used to define user blocking rules for the Privatemsg module. Rules allow control of who may block messages from whom. By default all users are allowed to block messages from anyone else. However, a site may have groups of users that need to contact or get information to others, for example: the site may have administrative staff or be a forum with moderators. Groups of users are defined by roles, which can be managed on the <a href="@roles">roles configuration page</a>.', array('@roles' => url('admin/user/roles'))) . '</p>';
-  }
-}
-
-/**
  * Implements hook_menu().
  */
 function pm_block_user_menu() {
@@ -108,6 +98,9 @@ function pm_block_user_theme() {
   );
 }
 
+/**
+ * Implements hook_privatemsg_autocomplete_alter().
+ */
 function pm_block_user_privatemsg_autocomplete_alter(&$matches, $names, $fragment) {
   // Remove all types other than user if accessed through
   // messages/user/autocomplete.
@@ -180,11 +173,11 @@ function theme_pm_block_user_actions($form) {
 /**
  * Provides access argument for blocking user menu item.
  *
- * @param $account
+ * @param User $account
  *   User object representing the account the menu item will block private
  *   messages from.
  *
- * @return
+ * @return bool
  *   TRUE if the user is allowed to block $account, or FALSE if not.
  */
 function _pm_block_user_access($account) {
@@ -203,11 +196,11 @@ function _pm_block_user_access($account) {
 /**
  * Checks if author is blocked by the recipient.
  *
- * @param $author
+ * @param User $author
  *   The user that would send a message.
- * @param $recipient
+ * @param User $recipient
  *   The user that would receive the message.
- * @return
+ * @return bool
  *   TRUE if the recipient has blocked the author.
  */
 function pm_block_user_has_blocked($author, $recipient) {
@@ -222,14 +215,14 @@ function pm_block_user_has_blocked($author, $recipient) {
  * parameters, and a rule is configured that disallows authenticated users
  * blocking admins then this function will return TRUE.
  *
- * @param $author
+ * @param User $author
  *   Author user object to check.
- * @param $recipient
+ * @param User $recipient
  *   Receiver user object to check.
- * @param $action
+ * @param int $action
  *   The action to be taken, defaults to PM_BLOCK_USER_DISALLOW_BLOCKING.
  *
- * @return
+ * @return bool
  *   TRUE if a rule exists for the combination of author recipient and action.
  */
 function _pm_block_user_rule_exists($author, $recipient, $action = PM_BLOCK_USER_DISALLOW_BLOCKING) {
@@ -325,6 +318,9 @@ function pm_block_user_privatemsg_block_message($author, $recipients, $context =
   return $blocked;
 }
 
+/**
+ * Implements hook_query_TAG_alter().
+ */
 function pm_block_user_query_privatemsg_message_load_multiple_alter($query) {
   $query->addField('pmbu', 'recipient', 'is_blocked');
   $query->leftJoin('pm_block_user', 'pmbu', "base.author = pmbu.author AND pmi.recipient = pmbu.recipient AND pmi.type IN ('user', 'hidden')");

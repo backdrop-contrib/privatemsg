@@ -150,7 +150,9 @@ function privatemsg_filter_menu_alter(&$items) {
 }
 
 /**
- * Implements hook_form_FORM_ID_alter() to add a filter widget to the message listing pages.
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * To add a filter widget to the message listing pages.
  */
 function privatemsg_filter_form_privatemsg_admin_settings_alter(&$form, $form_state) {
   $config = config('privatemsg_filter.settings');
@@ -176,6 +178,8 @@ function privatemsg_filter_form_privatemsg_admin_settings_alter(&$form, $form_st
 }
 
 /**
+ * Settings submit handler.
+ *
  * Rebuilding the menu if necessary.
  */
 function privatemsg_filter_settings_submit($form, &$form_state) {
@@ -187,7 +191,10 @@ function privatemsg_filter_settings_submit($form, &$form_state) {
 /**
  * Function to create a tag
  *
- * @param $tags A single tag or an array of tags.
+ * @param int|array $tags
+ *   A single tag or an array of tags.
+ * @return array
+ *   Array of tag_ids.
  */
 function privatemsg_filter_create_tags($tags) {
   if (!is_array($tags)) {
@@ -223,8 +230,11 @@ function privatemsg_filter_create_tags($tags) {
 /**
  * Tag one or multiple threads with a tag.
  *
- * @param $threads A single thread id or an array of thread ids.
- * @param $tag_id Id of the tag.
+ * @param int|array $threads
+ *   A single thread id or an array of thread ids.
+ * @param int|array $tag_ids
+ *   Id of the tag.
+ * @param User|null $account
  */
 function privatemsg_filter_add_tags($threads, $tag_ids, $account = NULL) {
   if (!is_array($threads)) {
@@ -255,8 +265,11 @@ function privatemsg_filter_add_tags($threads, $tag_ids, $account = NULL) {
 /**
  * Remove tag from one or multiple threads.
  *
- * @param $threads A single thread id or an array of thread ids.
- * @param $tag_id Id of the tag - set to NULL to remove all tags.
+ * @param int|array $threads
+ *   A single thread id or an array of thread ids.
+ * @param int|null $tag_ids
+ *   Id of the tag - set to NULL to remove all tags.
+ * @param User|null $account
  */
 function privatemsg_filter_remove_tags($threads, $tag_ids = NULL, $account = NULL) {
   if (!is_array($threads)) {
@@ -289,6 +302,13 @@ function privatemsg_filter_remove_tags($threads, $tag_ids = NULL, $account = NUL
   }
 }
 
+/**
+ * Get filter
+ *
+ * @param User $account
+ *
+ * @return array
+ */
 function privatemsg_filter_get_filter($account) {
   $filter = array();
   // Filtering by tags is either allowed if the user can use tags or they can
@@ -344,6 +364,13 @@ function privatemsg_filter_get_filter($account) {
 
 }
 
+/**
+ * Gets tags data
+ *
+ * @param User $account
+ *
+ * @return array
+ */
 function privatemsg_filter_get_tags_data($account) {
   static $tag_data;
 
@@ -456,6 +483,9 @@ function privatemsg_filter_dropdown_set_active(&$form, $filter) {
   );
 }
 
+/**
+ * Submit handler for dropdown.
+ */
 function privatemsg_filter_dropdown_submit($form, &$form_state) {
 
   if (!empty($form_state['values']['author'])) {
@@ -489,6 +519,10 @@ function privatemsg_filter_dropdown_submit($form, &$form_state) {
 
 /**
  * Creates a GET query based on the selected filters.
+ *
+ * @param array $filter
+ *
+ * @return array
  */
 function privatemsg_filter_create_get_query($filter) {
   $query = array();
@@ -531,7 +565,9 @@ function privatemsg_filter_create_get_query($filter) {
 }
 
 /**
- * Implements hook_form_FORM_ID_alter() to add a filter widget to the message listing pages.
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * To add a filter widget to the message listing pages.
  */
 function privatemsg_filter_form_privatemsg_list_alter(&$form, $form_state) {
   global $user;
@@ -716,7 +752,7 @@ function privatemsg_filter_remove_tag_submit($form, &$form_state) {
 }
 
 /**
- * Hook into the query builder to add the tagging info to the correct query
+ * Implements hook_query_TAG_alter().
  */
 function privatemsg_filter_query_privatemsg_list_alter($query) {
 
@@ -795,6 +831,15 @@ function privatemsg_filter_privatemsg_view_alter(&$content) {
   }
 }
 
+/**
+ * Show tags
+ *
+ * @param int $thread_id
+ * @param bool $show_form
+ *
+ * @return array
+ *   Renderable array for form
+ */
 function privatemsg_filter_show_tags($thread_id, $show_form) {
   global $user;
 
@@ -909,7 +954,9 @@ function privatemsg_filter_form($form, &$form_state, $thread_id) {
 }
 
 /**
- * Form builder function, display a form to modify tags on a thread.
+ * Submit handler
+ *
+ * Display a form to modify tags on a thread.
  */
 function privatemsg_filter_form_submit($form, &$form_state) {
   $tags = explode(',', $form_state['values']['tags']);
@@ -929,6 +976,8 @@ function privatemsg_filter_form_submit($form, &$form_state) {
 }
 
 /**
+ * Implements hook_query_TAG_alter().
+ *
  * Limit the user autocomplete for the filter widget.
  */
 function privatemsg_filter_query_privatemsg_autocomplete_alter($query) {
@@ -942,12 +991,15 @@ function privatemsg_filter_query_privatemsg_autocomplete_alter($query) {
 /**
  * Query definition to get the tags in use by the specified user.
  *
- * @param $user
+ * @param User|null $user
  *   User object for whom we want the tags.
- * @param $threads
+ * @param array $threads
  *   Array of thread ids, defaults to all threads of a user.
- * @param $limit
+ * @param int $limit
  *   Limit the number of tags *per thread*.
+ * @param bool $showHidden
+ *
+ * @return \SelectQuery
  */
 function privatemsg_filter_sql_tags($user = NULL, $threads = NULL, $limit = NULL, $showHidden = FALSE) {
   $query = db_select('pm_tags', 't')
@@ -997,10 +1049,12 @@ function privatemsg_filter_sql_tags($user = NULL, $threads = NULL, $limit = NULL
 /**
  * Query definition to get autocomplete suggestions for tags
  *
- * @param $search
+ * @param string $search
  *  String fragment to use for tag suggestions.
- * @param $tags
+ * @param array $tags
  *  Array of tags not to be used as suggestions.
+ *
+ * @return \SelectQuery
  */
 function privatemsg_filter_sql_tags_autocomplete($search, $tags) {
   $query = db_select('pm_tags', 'pmt')

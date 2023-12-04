@@ -61,6 +61,11 @@ function privatemsg_roles_privatemsg_recipient_type_info() {
 
 /**
  * Load a number of roles based on their role_id.
+ *
+ * @param array $rids
+ *   Array of role ids.
+ * @return array
+ *   Array of role objects.
  */
 function privatemsg_roles_load_multiple($rids) {
   $config = config('privatemsg_roles.settings');
@@ -96,6 +101,13 @@ function theme_privatemsg_roles_format($variables) {
 
 /**
  * Loads users with a specific role.
+ *
+ * @param object $recipient
+ * @param int $limit
+ * @param int $offset
+ *
+ * @return array
+ *   Array of recipient users.
  */
 function privatemsg_roles_load_recipients($recipient, $limit, $offset) {
   $role = $recipient->name;
@@ -111,6 +123,10 @@ function privatemsg_roles_load_recipients($recipient, $limit, $offset) {
 
 /**
  * Return the number of users which have a given role.
+ *
+ * @param object $recipient
+ *
+ * @return int
  */
 function privatemsg_roles_count_recipients($recipient) {
   $role = $recipient->name;
@@ -159,9 +175,9 @@ function privatemsg_roles_privatemsg_name_lookup($string) {
 /**
  * Query definition to search for username autocomplete suggestions.
  *
- * @param $search
+ * @param string $search
  *   Which search string is currently searched for.
- * @param $names
+ * @param array $names
  *   Array of names not to be used as suggestions.
  *
  * @return \SelectQuery

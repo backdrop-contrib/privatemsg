@@ -97,10 +97,11 @@ function privatemsg_autoload_info() {
  * Generate array of user objects based on a string.
  *
  *
- * @param $userstring
+ * @param string $string
  *   A string with user id, for example 1,2,4. Returned by the list query.
+ * @param int|null $slice
  *
- * @return
+ * @return array
  *   Array with user objects.
  */
 function _privatemsg_generate_user_array($string, $slice = NULL) {
@@ -142,15 +143,14 @@ function _privatemsg_generate_user_array($string, $slice = NULL) {
 /**
  * Format an array of user objects.
  *
- * @param $part_array
+ * @param array $part_array
  *   Array with user objects, for example the one returned by
  *   _privatemsg_generate_user_array.
- *
- * @param $limit
+ * @param int|null $limit
  *   Limit the number of user objects which should be displayed.
- * @param $no_text
+ * @param bool $no_text
  *   When TRUE, don't display the Participants/From text.
- * @return
+ * @return string
  *   String with formatted user objects, like user1, user2.
  */
 function _privatemsg_format_participants($part_array, $limit = NULL, $no_text = FALSE) {
@@ -356,9 +356,9 @@ function privatemsg_menu_local_tasks_alter(&$data, $router_item, $root_path) {
 }
 
 /**
- * Privatemsg  wrapper for user_access.
+ * Privatemsg wrapper for user_access.
  *
- * Never allows anonymous user access as that doesn't makes sense.
+ * Never allow anonymous user access as that doesn't makes sense.
  *
  * @param string $permission
  *   Permission string, defaults to read privatemsg
@@ -739,6 +739,9 @@ function privatemsg_cron() {
   }
 }
 
+/**
+ * Implements hook_theme().
+ */
 function privatemsg_theme() {
   $templates = array(
     'privatemsg_view' => array(
@@ -789,6 +792,9 @@ function privatemsg_theme() {
   return $templates;
 }
 
+/**
+ * Process variables for privatemsg-view.tpl.php.
+ */
 function template_preprocess_privatemsg_view(&$vars) {
   global $user;
 
@@ -861,6 +867,9 @@ function template_preprocess_privatemsg_view(&$vars) {
   }
 }
 
+/**
+ * Process variables for privatemsg-recipients.tpl.php.
+ */
 function template_preprocess_privatemsg_recipients(&$vars) {
   $vars['participants'] = ''; // assign a default empty value
   if (isset($vars['thread']['participants'])) {
@@ -871,11 +880,11 @@ function template_preprocess_privatemsg_recipients(&$vars) {
 /**
  * Changes the read/new status of a single message.
  *
- * @param $pmid
+ * @param int $pmid
  *   Message id
- * @param $status
+ * @param int $status
  *   Either PRIVATEMSG_READ or PRIVATEMSG_UNREAD
- * @param $account
+ * @param User|null $account
  *   User object, defaults to the current user
  */
 function privatemsg_message_change_status($pmid, $status, $account = NULL) {
@@ -897,9 +906,11 @@ function privatemsg_message_change_status($pmid, $status, $account = NULL) {
 /**
  * Return number of unread messages for an account.
  *
- * @param $account
+ * @param User|null $account
  *   Specify the user for which the unread count should be loaded.
  *
+ * @return int
+ *   The number of unread messages.
  * @ingroup api
  */
 function privatemsg_unread_count($account = NULL) {
@@ -919,16 +930,16 @@ function privatemsg_unread_count($account = NULL) {
 /**
  * Load all participants of a thread.
  *
- * @param $thread_id
+ * @param int $thread_id
  *   Thread ID for which the participants should be loaded.
- * @param $account
+ * @param User $account
  *   For which account should the messages be loaded. *
- * @param $ignore_hidden
+ * @param bool $ignore_hidden
  *   Ignores hidden participants.
- * @param $access
+ * @param string $access
  *   Which access permission should be checked (write or view).
  *
- * @return
+ * @return array
  *   Array with all visible/writable participants for that thread.
  */
 function _privatemsg_load_thread_participants($thread_id, $account, $ignore_hidden = TRUE, $access = 'write') {
@@ -970,12 +981,12 @@ function _privatemsg_load_thread_participants($thread_id, $account, $ignore_hidd
  * This function is used to parse a string supplied by a username autocomplete
  * field and load all user objects.
  *
- * @param $string
+ * @param string $string
  *   A string in the form "usernameA, usernameB, ...".
- * @return $type
+ * @return array $type
  *   Array of recipient types this should be limited to.
  *
- * @return
+ * @return array
  *   Array, first element is an array of loaded user objects, second an array
  *   with invalid names.
  *
@@ -1090,10 +1101,12 @@ function privatemsg_privatemsg_name_lookup($string) {
 /**
  * Query definition to load a list of threads.
  *
- * @param $account
+ * @param User $account
  *  User object for which the messages are being loaded.
- * @param $argument
+ * @param string $argument
  *  string argument which can be used in the query builder to modify the thread listing.
+ *
+ * @return \SelectQuery
  *
  * @see hook_query_privatemsg_list_alter()
  */
@@ -1161,12 +1174,14 @@ function privatemsg_sql_list($account, $argument = 'list') {
 /**
  * Query definition to load messages of one or multiple threads.
  *
- * @param $threads
+ * @param array $threads
  *   Array with one or multiple thread id's.
- * @param $account
+ * @param User|null $account
  *   User object for which the messages are being loaded.
- * @param $load_all
+ * @param bool $load_all
  *   Deleted messages are only loaded if this is set to TRUE.
+ *
+ * @return \SelectQuery
  *
  * @see hook_query_privatemsg_messages_alter()
  */
@@ -1199,10 +1214,12 @@ function privatemsg_sql_messages($threads, $account = NULL, $load_all = FALSE) {
 /**
  * Load all participants of a thread.
  *
- * @param $thread_id
+ * @param int $thread_id
  *   Thread id from which the participants should be loaded.
- * @param $account
+ * @param User|null $account
  *   User account that should be considered when loading participants.
+ *
+ * @return \SelectQuery
  *
  * @see hook_query_privatemsg_participants_alter()
  */
@@ -1240,8 +1257,10 @@ function privatemsg_sql_participants($thread_id, $account = NULL) {
 /**
  * Count threads with unread messages.
  *
- * @param $account
+ * @param User $account
  *   User account for which should be checked.
+ *
+ * @return \SelectQuery
  *
  * @see hook_query_privatemsg_unread_count_alter()
  */
@@ -1258,10 +1277,12 @@ function privatemsg_sql_unread_count($account) {
 /**
  * Looks up autocomplete suggestions for users.
  *
- * @param $search
+ * @param string $search
  *   The string that is being searched for.
- * @param $names
+ * @param array $names
  *   Array of names which are already selected and should be excluded.
+ *
+ * @return \SelectQuery
  *
  * @see hook_query_privatemsg_autocomplete_alter()
  */
@@ -1283,10 +1304,12 @@ function privatemsg_sql_autocomplete($search, $names) {
 /**
  * Query Builder function to load all messages that should be flushed.
  *
- * @param $days
+ * @param int $days
  *   Select messages older than x days.
- * @param $max
+ * @param int $max
  *   Select no more than $max messages.
+ *
+ * @return \SelectQuery
  *
  * @see hook_query_privatemsg_deleted_alter()
  */
@@ -1375,6 +1398,8 @@ function privatemsg_user_delete($account) {
 
 /**
  * Delete all message data from a user.
+ *
+ * @param User $account
  */
 function _privatemsg_delete_data($account) {
   $mids = db_select('pm_message', 'pm')
@@ -1448,6 +1473,11 @@ function privatemsg_form_alter(&$form, &$form_state, $form_id) {
 
 /**
  * Hides the settings fieldset if there are no options to be displayed.
+ *
+ * @param array $element
+ *   Form element
+ * @return array
+ *   Form element
  */
 function privatemsg_account_fieldset_remove_if_empty($element) {
   if (count(element_children($element)) == 0) {
@@ -1577,6 +1607,11 @@ function privatemsg_block_save($delta = '', $edit = array()) {
   }
 }
 
+/**
+ * Callback for page title.
+ *
+ * @see hook_menu.
+ */
 function privatemsg_title_callback($title = NULL) {
   $count = privatemsg_unread_count();
 
@@ -1586,7 +1621,12 @@ function privatemsg_title_callback($title = NULL) {
   return t('Messages');
 }
 
-
+/**
+ * New messages for block
+ *
+ * @return array
+ *   If there are unread messages return block content.
+ */
 function _privatemsg_block_new() {
   $block = array();
 
@@ -1605,6 +1645,12 @@ function _privatemsg_block_new() {
   return array();
 }
 
+/**
+ * Menu for block
+ *
+ * @return array
+ *   If user has access return block with links.
+ */
 function _privatemsg_block_menu() {
   $block = array();
 
@@ -1627,11 +1673,11 @@ function _privatemsg_block_menu() {
 /**
  * Delete or restore a message.
  *
- * @param $pmid
+ * @param int $pmid
  *   Message id, pm.mid field.
- * @param $delete
+ * @param int $delete
  *   Either deletes or restores the thread (1 => delete, 0 => restore)
- * @param $account
+ * @param User|null $account
  *   User account for which the delete action should be carried out.
  *   Set to NULL to delete for all users.
  *
@@ -1663,18 +1709,18 @@ function privatemsg_message_change_delete($pmid, $delete, $account = NULL) {
  * privatemsg_new_thread(array(user_load(5)), 'The subject', 'The body text');
  * @endcode
  *
- * @param $recipients
+ * @param array $recipients
  *   Array of recipients (user objects)
- * @param $subject
+ * @param string $subject
  *   The subject of the new message
- * @param $body
+ * @param string $body
  *   The body text of the new message
- * @param $options
+ * @param array $options
  *   Additional options, possible keys:
  *     author => User object of the author
  *     timestamp => Time when the message was sent
  *
- * @return
+ * @return array
  *   An array with a key success. If TRUE, it also contains a key 'message' with
  *   the created $message array, the same that is passed to the insert hook.
  *   If FALSE, it contains a key 'messages'. This key contains an array where
@@ -1737,16 +1783,16 @@ function privatemsg_new_thread($recipients, $subject, $body = NULL, $options = a
  *
  * This functions replies on an existing thread.
  *
- * @param $thread_id
+ * @param int $thread_id
  *   Thread id
- * @param $body
+ * @param string $body
  *   The body text of the new message
- * @param $options
+ * @param array $options
  *   Additional options, possible keys:
  *     author => User object of the author
  *     timestamp => Time when the message was sent
  *
- * @return
+ * @return array
  *   An array with a key success and messages. This key contains an array where
  *   the key is the error type (error, warning, notice) and an array with
  *   messages of that type.. If success is TRUE, it also contains a key $message
@@ -1807,6 +1853,15 @@ function privatemsg_reply($thread_id, $body, $options = array()) {
   return $validated;
 }
 
+/**
+ * Validate message
+ *
+ * @param Privatemsg_message &$message
+ * @param bool $form
+ *
+ * @return array
+ *   Array of success (TRUE/FALSE) and a list of messages.
+ */
 function _privatemsg_validate_message(&$message, $form = FALSE) {
   $messages = array('error' => array(), 'warning' => array());
   if (!(privatemsg_user_access('write privatemsg', $message->author) || (privatemsg_user_access('reply only privatemsg', $message->author) && isset($message->thread_id)))) {
@@ -1903,15 +1958,15 @@ function _privatemsg_validate_message(&$message, $form = FALSE) {
 }
 
 /**
- * Internal function to save a message.
+ * Save a message.
  *
- * @param $message
+ * @param Privatemsg_message $message
  *   A $message array with the data that should be saved. If a thread_id exists
  *   it will be created as a reply to an existing thread. If not, a new thread
  *   will be created.
  *
- * @return
- *   The updated $message array.
+ * @return Privatemsg_message
+ *   The updated message.
  */
 function _privatemsg_send($message) {
   $transaction = db_transaction();
@@ -2008,17 +2063,17 @@ function _privatemsg_send($message) {
  * Contains permission checks of author/recipient, blocking and
  * if a anonymous user is involved.
  *
- * @param $recipient
- *   Recipient of the message
- * @param $account
+ * @param array $recipients
+ *   Recipients of the message
+ * @param User|null $account
  *   Sender of the message, defaults to the current user
  *
- * @return
+ * @return string|false
  *   Either FALSE or a URL string
  *
  * @ingroup api
  */
-function privatemsg_get_link($recipients, $account = array(), $subject = NULL) {
+function privatemsg_get_link($recipients, $account = NULL, $subject = NULL) {
   if ($account == NULL) {
     global $user;
     $account = $user;
@@ -2060,9 +2115,9 @@ function privatemsg_get_link($recipients, $account = array(), $subject = NULL) {
 /**
  * Load a single message.
  *
- * @param $pmid
+ * @param int $pmid
  *   Message id, pm.mid field
- * @param $account
+ * @param User|null account
  *   For which account the message should be loaded.
  *   Defaults to the current user.
  *
@@ -2085,11 +2140,12 @@ function privatemsg_message_load($pmid, $account = NULL) {
 /**
  * Load multiple messages.
  *
- * @param $pmids
+ * @param array $pmids
  *   Array of Message ids, pm.mid field
- * @param $account
- *   For which account the message should be loaded.
- *   Defaults to the current user.
+ * @param array $conditions
+ * @param bool $reset
+ *
+ * @return \Privatemsg_message
  *
  * @ingroup api
  */
@@ -2101,7 +2157,7 @@ function privatemsg_message_load_multiple(array $pmids, array $conditions = arra
 /**
  * Generates a query based on a query id.
  *
- * @param $query
+ * @param string|array $query
  *   Either be a string ('some_id') or an array('group_name', 'query_id'),
  *   if a string is supplied, group_name defaults to 'privatemsg'.
  *
@@ -2153,11 +2209,11 @@ function _privatemsg_assemble_query($query) {
 /**
  * Marks one or multiple threads as (un)read.
  *
- * @param $threads
+ * @param array $threads
  *   Array with thread id's or a single thread id.
- * @param $status
+ * @param int $status
  *   Either PRIVATEMSG_READ or PRIVATEMSG_UNREAD, sets the new status.
- * @param $account
+ * @param User|null $account
  *   User object for which the threads should be deleted, defaults to the current user.
  */
 function privatemsg_thread_change_status($threads, $status, $account = NULL) {
@@ -2205,11 +2261,9 @@ function privatemsg_thread_change_status($threads, $status, $account = NULL) {
  *
  * Uses @link theming theme patterns @endlink to theme single headers.
  *
- * @param $has_posts
- *   TRUE when there is at least one row. Decides if the select all checkbox should be displayed.
- * @param $keys
+ * @param array $keys
  *   Array with the keys which are present in the query/should be displayed.
- * @return
+ * @return array
  *   Array with header definitions for tablesort_sql and theme('table').
  */
 function _privatemsg_list_headers($keys) {
@@ -2240,9 +2294,9 @@ function _privatemsg_list_headers($keys) {
  *
  * Uses @link theming theme patterns @endlink to theme single fields.
  *
- * @param $thread
+ * @param array $thread
  *   Array with the row data returned by the database.
- * @return
+ * @return array
  *   Row definition for use with theme('table')
  */
 function _privatemsg_list_thread($tableselect) {
@@ -2267,12 +2321,17 @@ function _privatemsg_list_thread($tableselect) {
 /**
  * Execute an operation on a number of threads.
  *
- * @param $operation
+ * @param array $operation
  *   The operation that should be executed.
- * @see hook_privatemsg_thread_operations()
- * @param $threads
+ * @param array $threads
  *   An array of thread ids. The array is filtered before used, a checkboxes
  *   array can be directly passed to it.
+ * @param User|null $account
+ *
+ * @return bool
+ *  TRUE if operation executed successfully, FALSE otherwise.
+ *
+ * @see hook_privatemsg_thread_operations()
  */
 function privatemsg_operation_execute($operation, $threads, $account = NULL) {
   // Filter out unchecked threads, this gives us an array of "checked" threads.
@@ -2337,11 +2396,11 @@ function privatemsg_operation_execute($operation, $threads, $account = NULL) {
 /**
  * Delete or restore one or multiple threads.
  *
- * @param $threads
+ * @param array $threads
  *   Array with thread id's or a single thread id.
- * @param $delete
+ * @param int $delete
  *   Indicates if the threads should be deleted or restored. 1 => delete, 0 => restore.
- * @param $account
+ * @param User|null $account
  *   User account for which the delete action should be carried out - Set to NULL to delete for all users.
  */
 function privatemsg_thread_change_delete($threads, $delete, $account = NULL) {
@@ -2433,10 +2492,10 @@ function privatemsg_entity_info() {
 /**
  * Returns the URI for a private message.
  *
- * @param $message
+ * @param Privatemsg_message $message
  *   Private message object.
  *
- * @return
+ * @return array
  *   URI array as defined by hook_entity_info().
  */
 function privatemsg_message_uri_callback($message) {
@@ -2458,6 +2517,7 @@ function privatemsg_message_uri_callback($message) {
  * Implements hook_build_modes().
  */
 function privatemsg_build_modes($obj_type) {
+  // @todo determine if this is still required. No hook found for this.
   $modes = array();
   if ($obj_type == 'privatemsg_message') {
     $modes['message'] = t('Message');
@@ -2530,11 +2590,11 @@ function privatemsg_views_api() {
  * The function adds the privatemsg specific recipient id (uid)
  * and recipient type to the user object.
  *
- * @param $uid
+ * @param int|array $uid
  *   Which uid to load. Can either be a single id or an array of uids.
- * @return
- *   If existing for the passed in uid, the user object with the recipient
- *   and type properties.
+ * @return array
+ *   If existing for the passed in uid, an array of the user object with the
+ *   recipient and type properties.
  */
 function privatemsg_user_load_multiple($uids) {
   $accounts = array();
@@ -2548,9 +2608,9 @@ function privatemsg_user_load_multiple($uids) {
 
 /**
  * Return key for a recipient object used for arrays.
- * @param $recipient
+ * @param object $recipient
  *   Recipient object, must have type and recipient properties.
- * @return
+ * @return string
  *   A string that looks like type_id.
  *
  * @ingroup types
@@ -2565,8 +2625,9 @@ function privatemsg_recipient_key($recipient) {
 /**
  * Returns an array of defined recipient types.
  *
- * @return
+ * @return array
  *   Array of recipient types
+ *
  * @see hook_privatemsg_recipient_type_info()
  *
  * @ingroup types
@@ -2587,9 +2648,9 @@ function privatemsg_recipient_get_types() {
 
 /**
  * Return a single recipient type information.
- * @param $type
+ * @param string $type
  *   Name of the recipient type.
- * @return
+ * @return array|null
  *   Array with the recipient type definition. NULL if the type doesn't exist.
  *
  * @ingroup types
@@ -2607,13 +2668,13 @@ function privatemsg_recipient_get_type($type) {
 /**
  * Add or remove a recipient to an existing message.
  *
- * @param $mid
+ * @param int $mid
  *   Message id for which the recipient should be added.
- * @param $recipient
+ * @param int $uid
  *   Recipient id that should be added, for example uid.
- * @param $type
+ * @param string $type
  *   Type of the recipient, defaults to hidden.
- * @param $add
+ * @param bool $add
  *   If TRUE, adds the recipient, if FALSE, removes it.
  */
 function privatemsg_message_change_recipient($mid, $uid, $type = 'user', $add = TRUE) {
@@ -2671,11 +2732,11 @@ function privatemsg_message_change_recipient($mid, $uid, $type = 'user', $add = 
  * Either process them directly if they have less than a certain amount of users
  * or, if enabled, add them to a batch.
  *
- * @param $mid
+ * @param int $mid
  *   Message id for which the recipients are processed.
- * @param $recipients
+ * @param array $recipients
  *   Array of recipients.
- * @param $use_batch
+ * @param bool $use_batch
  *   Use batch API to process recipients.
  */
 function _privatemsg_handle_recipients($mid, $recipients, $use_batch = TRUE) {
@@ -2749,16 +2810,16 @@ function _privatemsg_handle_recipients($mid, $recipients, $use_batch = TRUE) {
  * This function is used to test if the current user has write/view access
  * for a specific recipient type.
  *
- * @param $type_name
+ * @param string $type_name
  *   The name of the recipient type.
- * @param $permission
+ * @param string $permission
  *   Which permission should be checked: 'write' or 'view'.
- * @param $recipient
+ * @param object|null $recipient
  *   Optionally pass in a recipient for which the permission should be checked.
  *   This only has effect if a the recipient type defines a callback function
  *   and is simply passed through in that case.
  *
- * @return
+ * @return bool
  *   TRUE if the user has that permission (or not permission is defined) and
  *   FALSE if not.
  *
@@ -2786,8 +2847,12 @@ function privatemsg_recipient_access($type_name, $permission, $recipient = NULL)
 /**
  * Format a single participant.
  *
- * @param $participant
+ * @param object $participant
  *   The participant object to format.
+ * @param array $options
+ *
+ * @return array|null
+ *   Array of formatted content, or null if not found.
  *
  * @ingroup types.
  */
@@ -3242,10 +3307,10 @@ function privatemsg_date_format_types() {
  * Current year (but not on the same day): Nov 25
  * Prior years (not the current year): 11/25/08
  *
- * @param $timestamp
+ * @param int $timestamp
  *   UNIX Timestamp.
  *
- * @return
+ * @return string
  *   The formatted date.
  */
 function privatemsg_format_date($timestamp) {

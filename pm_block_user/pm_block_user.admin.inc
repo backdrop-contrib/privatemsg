@@ -8,9 +8,9 @@
 /**
  * Builds row of sending, receiving roles and actions that go with them.
  *
- * @param $details
+ * @param array $details
  *   Details of the row: default values and the unique row number (delta).
- * @param $blacklist
+ * @param bool $blacklist
  *   When the functionality has been added, this will allow building actions
  *   based on a whitelist or blacklist. The current code only covers the use
  *   case of a blacklist, where blocking everyone is allowed by default and
@@ -18,7 +18,7 @@
  *   blocking by default and rules will configure roles that are allowed to
  *   block.
  *
- * @return
+ * @return array
  *   Part of a form with controls for sending, receiving and actions.
  */
 function _pm_block_user_actions_form($details, $blacklist = TRUE) {
@@ -85,10 +85,10 @@ function _pm_block_user_actions_form($details, $blacklist = TRUE) {
  * Takes an array of settings and filters out anything that's un-needed.
  * Leaving only settings to be saved.
  *
- * @param $settings
+ * @param array $settings
  *   The array of settings to filter.
  *
- * @return
+ * @return array
  *   Array of settings, ready to be stored in the database.
  *
  * @see pm_block_user_settings_submit()
@@ -167,6 +167,11 @@ function pm_block_user_settings($form, &$form_state) {
         backdrop_get_path('module', 'pm_block_user') . '/css/pm_block_user.css',
       ),
     ),
+  );
+
+  $form['help'] = array(
+    '#type' => 'help',
+    '#markup' => '<p>' . t('This area is used to define user blocking rules for the Privatemsg module. Rules allow control of who may block messages from whom. By default all users are allowed to block messages from anyone else. However, a site may have groups of users that need to contact or get information to others, for example: the site may have administrative staff or be a forum with moderators. Groups of users are defined by roles, which can be managed on the <a href="@roles">roles configuration page</a>.', array('@roles' => url('admin/config/user/roles'))) . '</p>',
   );
 
   // Container for just the actions, used for AHAH.

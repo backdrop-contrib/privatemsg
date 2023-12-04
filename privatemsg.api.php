@@ -40,7 +40,7 @@
 /**
  * Query to search for autocomplete usernames.
  *
- * @param $query
+ * @param SelectQuery $query
  *   Query object
  *
  * @see privatemsg_sql_autocomplete()
@@ -61,7 +61,7 @@ function hook_query_privatemsg_autocomplete_alter($query) {
 /**
  * Display a list of threads.
  *
- * @param $query
+ * @param SelectQuery $query
  *   Query object
  *
  * @see privatemsg_sql_list()
@@ -74,7 +74,7 @@ function hook_query_privatemsg_sql_list_alter($query) {
 /**
  * Query definition to load messages of one or multiple threads.
  *
- * @param $query
+ * @param SelectQuery $query
  *   Query object
  *
  * @see privatemsg_sql_messages()
@@ -89,7 +89,7 @@ function hook_query_privatemsg_messages_alter($query) {
 /**
  * Alter the query that loads the participants of a thread.
  *
- * @param $query
+ * @param SelectQuery $query
  *   Query object
  *
  * @see privatemsg_sql_participants()
@@ -103,7 +103,7 @@ function hook_query_privatemsg_participants_alter($query) {
 /**
  * Loads all unread messages of a user (only the count query is used).
  *
- * @param $query
+ * @param SelectQuery $query
  *   Query object
  *
  * @see privatemsg_sql_unread_count()
@@ -116,7 +116,7 @@ function hook_query_privatemsg_unread_count_alter($query) {
 /**
  * Alter the query that loads deleted messages to flush them.
  *
- * @param $query
+ * @param SelectQuery $query
  *   Query object
  *
  * @see privatemsg_sql_deleted()
@@ -194,8 +194,8 @@ function hook_query_privatemsg_deleted_alter($query) {
  *
  * The message will be deleted from the database, remove any related data here.
  *
- * @param $message
- *   Message array
+ * @param Privatemsg_message $message
+ *   Message
  */
 function hook_privatemsg_message_flush($message) {
 
@@ -210,8 +210,9 @@ function hook_privatemsg_message_flush($message) {
  *
  * @todo adapt api return value changes
  *
- * @param $message
- *   Message array
+ * @param Privatemsg_message $message
+ *   Message
+ * @param bool $form
  */
 function hook_privatemsg_message_validate($message, $form = FALSE) {
   global $_privatemsg_invalid_recipients;
@@ -233,8 +234,8 @@ function hook_privatemsg_message_validate($message, $form = FALSE) {
  * Alter the message, for example remove recipients that have been detected as
  * invalid or forbidden in the validate hook.
  *
- * @param $message
- *   Message array
+ * @param Privatemsg_message $message
+ *   Message
  */
 function hook_privatemsg_message_presave_alter(&$message) {
   // delete recipients which have been marked as invalid
@@ -249,7 +250,7 @@ function hook_privatemsg_message_presave_alter(&$message) {
  * This is called in the preprocess hook of the privatemsg-view template.
  * The $message data is available in $vars['message'].
  *
- * @param $var
+ * @param array $vars
  *   Template variables
  */
 function hook_privatemsg_message_view_alter(&$vars) {
@@ -263,8 +264,8 @@ function hook_privatemsg_message_view_alter(&$vars) {
  * $message is updated with mid and thread id. Use this hook to store data,
  * that needs to point to the saved message for example attachments.
  *
- * @param $message
- *   Message array
+ * @param Privatemsg_message $message
+ *   Message
  */
 function hook_privatemsg_message_insert($message) {
   _mymodule_save_data($message->mid);
@@ -276,15 +277,15 @@ function hook_privatemsg_message_insert($message) {
  * Since the hook might be invoked hundreds of times during batch or cron, only
  * ids are passed and not complete user/message objects.
  *
- * @param $mid
+ * @param int $mid
  *   Id of the message.
- * @param $thread_id
+ * @param int $thread_id
  *   Id of the thread the message belongs to.
- * @param $recipient
+ * @param int|string $recipient
  *   Recipient id, a user id if type is user or hidden.
- * @param $type
+ * @param string $type
  *   Type of the recipient.
- * @param $added
+ * @param bool $added
  *   TRUE if the recipient is added, FALSE if they are removed.
  */
 function hook_privatemsg_message_recipient_changed($mid, $thread_id, $recipient, $type, $added) {
@@ -310,14 +311,14 @@ function hook_privatemsg_message_recipient_changed($mid, $thread_id, $recipient,
  * This can be used to limit who can write whom based on other modules and/or
  * settings.
  *
- * @param $author
+ * @param User $author
  *   Author of the message to be sent
- * @param $recipients
+ * @param array $recipients
  *   Recipient of the message
- * @param $context
+ * @param array $context
  *   Additional information. Can contain the thread_id to indicate that this is
  *   a reply on an existing thread.
- * @return
+ * @return array
  *   An indexed array of arrays with the keys recipient ({type}_{key}) and
  *   message (The reason why the recipient has been blocked).
  */
@@ -338,8 +339,8 @@ function hook_privatemsg_block_message($author, $recipients, $context = array())
 /**
  * Add content to the view thread page.
  *
- * @param $content
- *   Render-able array, contains the thread object in #thread.
+ * @param array $content
+ *   Renderable array, contains the thread object in #thread.
  */
 function hook_privatemsg_view_alter($content) {
   if (privatemsg_user_access('tag private messages')) {
@@ -379,11 +380,11 @@ function hook_privatemsg_thread_operations() {
 /**
  * Allows response to a status change.
  *
- * @param $pmid
+ * @param int $pmid
  *   Message id.
- * @param $status
+ * @param int $status
  *   Either PRIVATEMSG_READ or PRIVATEMSG_UNREAD.
- * @param $account
+ * @param User $account
  *   User object, defaults to the current user.
  *
  * @see privatemsg_message_change_status()
@@ -506,9 +507,13 @@ function hook_privatemsg_recipient_type_info() {
  *
  * Therefore, it is important to only return something if you can actually look
  * up the string.
+ *
+ * @param string $string
+ *
+ * @return object
  */
 function hook_privatemsg_name_lookup($string) {
-  $result = db_query("SELECT *, rid AS recipient FROM {role} WHERE name = '%s'", trim($string));
+  $result = db_query("SELECT *, rid AS recipient FROM {role} WHERE name = '%s'", array(trim($string)));
   if ($role = db_fetch_object($result)) {
     $role->type = 'role';
     return $role;
@@ -518,7 +523,7 @@ function hook_privatemsg_name_lookup($string) {
 /**
  * Allows to alter the defined recipient types.
  *
- * @param $types
+ * @param array $types
  *   Array with the recipient types.
  *
  * @see hook_privatemsg_recipient_type_info()
@@ -530,11 +535,11 @@ function hook_privatemsg_recipient_type_info_alter(&$types) {
 /**
  * Allows to alter the found autocomplete suggestions.
  *
- * @param $matches
+ * @param array $matches
  *   Array of matching recipient objects.
- * @param $names
+ * @param array $names
  *   Array of names that are already in the list.
- * @param $fragment
+ * @param string $fragment
  *   Fragment that is currently searched for.
  */
 function hook_privatemsg_autocomplete_alter(&$matches, $names, $fragment) {
@@ -552,9 +557,9 @@ function hook_privatemsg_autocomplete_alter(&$matches, $names, $fragment) {
 /**
  * Allows to alter found recipient types for a given string.
  *
- * @param $matches
+ * @param array $matches
  *   Array of matching recipient objects.
- * @param $string
+ * @param string $string
  *   String representation of the recipient.
  */
 function hook_privatemsg_name_lookup_matches(&$matches, $string) {
@@ -564,12 +569,12 @@ function hook_privatemsg_name_lookup_matches(&$matches, $string) {
 /**
  * Allows response to a successful operation.
  *
- * @param $operation
+ * @param string $operation
  *   The operation that was executed.
- * @param $threads
+ * @param array $threads
  *   An array which contains the thread ids on which the operation
  *   has been executed.
- * @param $account
+ * @param User|null $account
  *   An user account object if an other user than the currently logged in is
  *   affected.
  *

@@ -6,7 +6,7 @@
  */
 
 /**
- * Implements hook_permission()-
+ * Implements hook_permission().
  */
 function privatemsg_limits_permission() {
   return array(
@@ -220,9 +220,9 @@ function privatemsg_limits_form_privatemsg_list_alter(&$form, &$form_state) {
 /**
  * Loads the oldest message a user has written in the specified timeframe.
  *
- * @param $account
+ * @param User $account
  *   User object
- * @param $timeframe
+ * @param int $timeframe
  *   Defines how many seconds back should be considered.
  */
 function _privatemsg_limits_get_oldest($account, $timeframe) {
@@ -239,12 +239,12 @@ function _privatemsg_limits_get_oldest($account, $timeframe) {
 /**
  * Loads the maximum value of a threshold value, takes roles into account.
  *
- * @param $name
+ * @param string $name
  *   Unique part of the name.
- * @param $account
+ * @param User $account
  *   User object to get the limit for.
  *
- * @return
+ * @return int
  *   A specific number or 0 for unlimited.
  */
 function _privatemsg_limits_get_amount($name, $account) {
@@ -284,10 +284,13 @@ function _privatemsg_limits_get_amount($name, $account) {
 /**
  * Returns the number of messages/threads a user has written.
  *
- * @param user $account   User object
- * @param int  $timeframe How many seconds back should be considered
+ * @param User $account
+ *   User object
+ * @param int $timeframe
+ *   How many seconds back should be considered
  *
- * @return int Number of messages/threads
+ * @return int
+ *   Number of messages/threads
  */
 function _privatemsg_limits_get_sent($account, $timeframe) {
   $query = _privatemsg_assemble_query(array('sent', 'privatemsg_limits'),
@@ -301,11 +304,13 @@ function _privatemsg_limits_get_sent($account, $timeframe) {
 /**
  * SQL Function for amount of messages/threads a user has written in a timeframe.
  *
- * @param array $fragments Query array
- * @param user  $account   User object
- * @param int   $timeframe how many seconds to consider.
+ * @param User $account
+ * @param int $timeframe
+ *   How many seconds to consider.
+ *
+ * @return \SelectQuery
  */
-function privatemsg_limits_sql_sent($account,  $timeframe) {
+function privatemsg_limits_sql_sent($account, $timeframe) {
   $query = db_select('pm_message', 'pm');
 
   if (config_get('privatemsg_limits.settings', 'send_object') == 'thread') {
@@ -326,8 +331,7 @@ function privatemsg_limits_sql_sent($account,  $timeframe) {
 /**
  * Returns the number of messages/threads a user has received.
  *
- * @param user $account   User object
- * @param int  $timeframe How many seconds back should be considered
+ * @param User $account
  *
  * @return int Number of messages/threads
  */
@@ -343,9 +347,9 @@ function _privatemsg_limits_get_received($account) {
 /**
  * SQL Function for amount of messages/threads a users has.
  *
- * @param array $fragments Query array
- * @param user  $account   User object
- * @param int   $timeframe how many seconds to consider.
+ * @param User $account
+ *
+ * @return \SelectQuery
  */
 function privatemsg_limits_sql_received($account) {
   $query = db_select('pm_index', 'pmi');

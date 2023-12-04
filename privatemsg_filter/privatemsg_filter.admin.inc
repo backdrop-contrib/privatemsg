@@ -71,8 +71,10 @@ function privatemsg_tags_admin() {
 /**
  * A form to edit existing or create new tags.
  *
- * @param $form_state Form state array
- * @param $tag_id Tag Id if an edit form should be displayed, NULL for a create
+ * @param $form_state
+ *   Form state array
+ * @param int $tag_id
+ *   Tag Id if an edit form should be displayed, NULL for a create
  *   new tag form.
  */
 function privatemsg_tags_form($form, &$form_state, $tag_id = NULL) {
@@ -163,7 +165,8 @@ function privatemsg_tags_form_submit($form, &$form_state) {
 /**
  * Confirmation form for deleting tags.
  *
- * @param $tag_id Id of the tag that should be deleted.
+ * @param int $tag_id
+ *   Id of the tag that should be deleted.
  */
 function privatemsg_filter_tags_delete($form, &$form_state, $tag_id) {
   $form['tag_id'] = array(
