@@ -1,6 +1,6 @@
 {
   "_config_name": "privatemsg_roles.settings",
-  "rid": {
+  "role_id": {
     "authenticated": 1
   }
 }

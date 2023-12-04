@@ -180,8 +180,9 @@ function privatemsg_roles_sql_autocomplete_roles($search, $names) {
 }
 
 /**
- * Returns an int value for role_id based on role, from config.
- * Authenticated is always 1.
+ * Get an role_id for a given role.
+ *   Checks the role to role_id mapping, with an option to generate a mapping
+ *   for a role.
  *
  * @param string $role
  *   The role that we need a role_id value for, defaults to anonymous.
@@ -193,7 +194,7 @@ function privatemsg_roles_sql_autocomplete_roles($search, $names) {
  *   if no role_id found or created.
  *
  */
-function _privatemsg_roles_get_role_id($role = BACKDROP_AUTHENTICATED_ROLE, $create = TRUE) {
+function _privatemsg_roles_get_role_id($role = BACKDROP_AUTHENTICATED_ROLE, $create = FALSE) {
   if ($role == BACKDROP_AUTHENTICATED_ROLE) {
     return 1;
   }
@@ -219,6 +220,7 @@ function _privatemsg_roles_get_role_id($role = BACKDROP_AUTHENTICATED_ROLE, $cre
  * Implements hook_user_role_insert().
  */
 function privatemsg_roles_user_role_insert($role) {
+  // Generate a role_id for the new role and save it to the mapping.
   _privatemsg_roles_get_role_id($role->name, TRUE);
 }
 
