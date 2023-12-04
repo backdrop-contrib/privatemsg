@@ -2785,13 +2785,6 @@ function privatemsg_recipient_access($type_name, $permission, $recipient = NULL)
  * @ingroup types.
  */
 function privatemsg_recipient_format($recipient, $options = array()) {
-  // Avoid __PHP_Incomplete_Class due to User class not loaded before
-  // unserialize() gets called.
-  // @see https://github.com/backdrop-contrib/privatemsg/issues/50
-  if ((is_object($recipient) && is_a($recipient, '__PHP_Incomplete_Class'))) {
-    $recipient = (array) $recipient;
-    $recipient = user_load($recipient['uid']);
-  }
   if (!isset($recipient->type)) {
     $recipient->type = 'user';
     $recipient->recipient = $recipient->uid;

@@ -325,7 +325,21 @@ function privatemsg_filter_get_filter($account) {
   }
 
   if (!empty($_SESSION['privatemsg_filter'])) {
-    return $_SESSION['privatemsg_filter'];
+    $saved_filter = $_SESSION['privatemsg_filter'];
+    // Hydrate the authors' user accounts.
+    // Avoid __PHP_Incomplete_Class due to User class not loaded before
+    // unserialize() gets called.
+    foreach ($saved_filter['author'] as $key => $author) {
+      $author = (array) $author;
+      if (isset($author['uid'])) {
+        $user = user_load($author['uid']);
+        $user->recipient = $user->uid;
+        $user->type = 'user';
+        $saved_filter['author'][$key] = $user;
+      }
+    }
+
+    return $saved_filter;
   }
 
 }
@@ -736,19 +750,22 @@ function privatemsg_filter_query_privatemsg_list_alter($query) {
 
     if (isset($filter['author']) && !empty($filter['author'])) {
       foreach ($filter['author'] as $author) {
-        // Avoid __PHP_Incomplete_Class due to User class not loaded before
-        // unserialize() gets called.
-        // @see https://github.com/backdrop-contrib/privatemsg/issues/50
-        if ((is_object($author) && !is_a($author, 'User'))) {
-          $author = (array) $author;
-          $author = user_load($author['uid']);
+        if ($author->type == 'user') {
+          $alias = $query->join('pm_index', 'pmi', '%alias.mid = pm.mid');
+          $query->condition($alias . '.recipient', $author->uid);
+          $query->condition($alias . '.type', 'user');
+          $alias = $count_query->join('pm_index', 'pmi', '%alias.mid = pm.mid');
+          $count_query->condition($alias . '.recipient', $author->uid);
+          $count_query->condition($alias . '.type', 'user');
         }
-        $alias = $query->join('pm_index', 'pmi', '%alias.mid = pm.mid');
-        $query->condition($alias . '.recipient', $author->uid);
-        $query->condition($alias . '.type', 'user');
-        $alias = $count_query->join('pm_index', 'pmi', '%alias.mid = pm.mid');
-        $count_query->condition($alias . '.recipient', $author->uid);
-        $count_query->condition($alias . '.type', 'user');
+        if (module_exists('privatemsg_roles') && $author->type == 'role') {
+          $alias = $query->join('pm_index', 'pmi', '%alias.mid = pm.mid');
+          $query->condition($alias . '.recipient', $author->recipient);
+          $query->condition($alias . '.type', 'role');
+          $alias = $count_query->join('pm_index', 'pmi', '%alias.mid = pm.mid');
+          $count_query->condition($alias . '.recipient', $author->recipient);
+          $count_query->condition($alias . '.type', 'role');
+        }
       }
     }
 
