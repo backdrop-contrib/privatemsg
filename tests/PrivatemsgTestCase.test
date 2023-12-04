@@ -55,6 +55,11 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
     $subject = $this->randomName(20);
     $body = $this->randomName(50);
 
+    // Make sure that $no_recipient is involved in another thread to assert that
+    // no unrelated messages are displayed.
+    // @see https://drupal.org/node/2033161
+    $unrelated = privatemsg_new_thread(array($no_recipient), $subject, $body, array('author' => $author));
+
     $response = privatemsg_new_thread(array($recipient), $subject, $body, array('author' => $author));
 
     $this->backdropLogin($user_no_read_msg);

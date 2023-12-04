@@ -1990,6 +1990,7 @@ function _privatemsg_send($message) {
 
     module_invoke_all('privatemsg_message_insert', $message);
     field_attach_insert('privatemsg_message', $message);
+    cache_clear_all("field:privatemsg_message:{$message->mid}", 'cache_field');
 
   } catch (Exception $exception) {
     $transaction->rollback();
