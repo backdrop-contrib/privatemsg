@@ -22,8 +22,10 @@ function pm_email_notify_config_info() {
  * This function retrieves user's pm notification preference from database,
  * if user preference doesn't exist - it uses default value instead
  *
- * @param $uid
+ * @param int $uid
  *   User uid
+ * @return bool
+ *   Notification setting
  */
 function _pm_email_notify_is_enabled($uid) {
   $notifications = &backdrop_static(__FUNCTION__, array());
@@ -93,6 +95,8 @@ function pm_email_notify_mail($key, &$message, $params) {
 
 /**
  * Returns default email notification body.
+ *
+ * @return string
  */
 function _pm_email_notify_default_body() {
   return "Hi [privatemsg_message:recipient],\n\nThis is an automatic reminder from the site [site:name]. You have received a new private message from [privatemsg_message:author].\n\nTo read your message, follow this link:\n[privatemsg_message:url]\n\nIf you don't want to receive these emails again, change your preferences here:\n[privatemsg_message:recipient:edit-url]";
