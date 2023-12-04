@@ -752,7 +752,7 @@ function privatemsg_filter_remove_tag_submit($form, &$form_state) {
 }
 
 /**
- * Hook into the query builder to add the tagging info to the correct query
+ * Implements hook_query_TAG_alter().
  */
 function privatemsg_filter_query_privatemsg_list_alter($query) {
 
@@ -976,6 +976,8 @@ function privatemsg_filter_form_submit($form, &$form_state) {
 }
 
 /**
+ * Implements hook_query_TAG_alter().
+ *
  * Limit the user autocomplete for the filter widget.
  */
 function privatemsg_filter_query_privatemsg_autocomplete_alter($query) {

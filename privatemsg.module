@@ -97,8 +97,9 @@ function privatemsg_autoload_info() {
  * Generate array of user objects based on a string.
  *
  *
- * @param string $userstring
+ * @param string $string
  *   A string with user id, for example 1,2,4. Returned by the list query.
+ * @param int|null $slice
  *
  * @return array
  *   Array with user objects.
@@ -866,6 +867,9 @@ function template_preprocess_privatemsg_view(&$vars) {
   }
 }
 
+/**
+ * Process variables for privatemsg-recipients.tpl.php.
+ */
 function template_preprocess_privatemsg_recipients(&$vars) {
   $vars['participants'] = ''; // assign a default empty value
   if (isset($vars['thread']['participants'])) {
@@ -1853,7 +1857,7 @@ function privatemsg_reply($thread_id, $body, $options = array()) {
  * Validate message
  *
  * @param Privatemsg_message &$message
- * @param array|false
+ * @param bool $form
  *
  * @return array
  *   Array of success (TRUE/FALSE) and a list of messages.
@@ -1962,7 +1966,7 @@ function _privatemsg_validate_message(&$message, $form = FALSE) {
  *   will be created.
  *
  * @return Privatemsg_message
- *   The updated $message.
+ *   The updated message.
  */
 function _privatemsg_send($message) {
   $transaction = db_transaction();
