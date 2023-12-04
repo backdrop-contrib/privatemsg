@@ -727,7 +727,7 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
     // Explicitly use time(), REQUEST_TIME is not exact enough.
     $timestamp = time();
     $this->backdropPost(NULL, NULL, t('Cancel account'));
-    $this->assertText(t('A confirmation request to cancel your account has been sent to your e-mail address.'), 'Account cancellation request mailed message displayed.');
+    $this->assertText(t('A confirmation request to cancel your account has been sent to your email address.'), 'Account cancellation request mailed message displayed.');
 
     // Confirm account cancellation request.
     $this->backdropGet("user/$recipient2->uid/cancel/confirm/$timestamp/" . user_pass_rehash($recipient2->pass, $timestamp, $recipient2->login, $recipient2->uid));

@@ -2278,7 +2278,7 @@ function privatemsg_operation_execute($operation, $threads, $account = NULL) {
   }
   // Add in callback arguments if present.
   if (isset($operation['callback arguments'])) {
-    $args = array_merge(array($threads), $operation['callback arguments']);
+    $args = array_merge(array('threads' => $threads), $operation['callback arguments']);
   }
   else {
     $args = array($threads);
@@ -2286,7 +2286,7 @@ function privatemsg_operation_execute($operation, $threads, $account = NULL) {
 
   // Add the user object to the arguments.
   if ($account) {
-    $args[] = $account;
+    $args['account'] = $account;
   }
 
   // Execute the chosen action and pass the defined arguments.
@@ -2300,10 +2300,10 @@ function privatemsg_operation_execute($operation, $threads, $account = NULL) {
   if (isset($operation['undo callback']) && $undo_function = $operation['undo callback']) {
     // Add in callback arguments if present.
     if (isset($operation['undo callback arguments'])) {
-      $undo_args = array_merge(array($threads), $operation['undo callback arguments']);
+      $undo_args = array_merge(array('threads' => $threads), $operation['undo callback arguments']);
     }
     else {
-      $undo_args = array($threads);
+      $undo_args = array('threads' => $threads);
     }
 
     // Avoid saving the complete user object in the session.
