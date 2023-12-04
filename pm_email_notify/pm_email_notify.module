@@ -117,6 +117,13 @@ function pm_email_notify_form_alter(&$form, &$form_state, $form_id) {
 }
 
 /**
+ * Implements hook_user_insert().
+ */
+function pm_email_notify_user_insert($account) {
+  pm_email_notify_user_update($account);
+}
+
+/**
  * Implements hook_user_update().
  */
 function pm_email_notify_user_update($account) {
