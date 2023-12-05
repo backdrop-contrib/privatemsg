@@ -43,7 +43,6 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
   }
 
   function testSendMessagetoRoleCron() {
-    $admin = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg', 'write privatemsg to roles'));
     $user1 = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg'));
     $user1_roles = array_diff($user1->roles, array(BACKDROP_AUTHENTICATED_ROLE));
     $user1_role_name = reset($user1_roles);
@@ -60,9 +59,16 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
       user_save($users[$i]);
     }
 
+    // Update permissions.
+    $this->checkPermissions(array(), TRUE);
+
     $recipient = user_role_load($user1_role_name);
     $recipient->recipient = _privatemsg_roles_get_role_id($recipient->name);
     $recipient->type = 'role';
+
+    // Create user with specific role permission.
+    $admin = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg', 'write privatemsg to role ' . $recipient->name));
+
     privatemsg_new_thread(array($recipient), $subject = $this->randomName(10), $body = $this->randomName(50), array('author' => $admin));
 
     // Run cron.
@@ -136,11 +142,17 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
 
   function testPermission() {
     $user1 = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg'));
-    $user2 = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg'));
+    $user1_roles = array_diff($user1->roles, array(BACKDROP_AUTHENTICATED_ROLE));
+    $user1_role_name = reset($user1_roles);
+
+    // Update permissions.
+    $this->checkPermissions(array(), TRUE);
+    // Give permission to write only a specific role.
+    $user2 = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg', 'write privatemsg to role ' . $user1_role_name));
     $user2_roles = array_diff($user2->roles, array(BACKDROP_AUTHENTICATED_ROLE));
     $user2_role_name = reset($user2_roles);
 
-    $this->backdropLogin($user1);
+    $this->backdropLogin($user2);
 
     // Send a message to the role of user 1 and 2.
     $edit = array(
@@ -153,7 +165,6 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
   }
 
   function testSendMessageToRole() {
-    $admin = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg', 'write privatemsg to roles'));
     $user1 = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg'));
     $user2 = $this->backdropCreateUser(array('view roles recipients'));
 
@@ -163,6 +174,11 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
     // Add role of user 1 to user 2;
     $user2->roles[] = $user1_role_name;
     user_save($user2);
+
+    // Update permissions.
+    $this->checkPermissions(array(), TRUE);
+
+    $admin = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg', 'view roles recipients', 'write privatemsg to role ' . $user1_role_name));
     $this->backdropLogin($admin);
 
     // Verify autocomplete feature.
@@ -301,5 +317,35 @@ class PrivatemsgRolesTestCase extends PrivatemsgBaseTestCase {
 
     $this->backdropGet('messages');
     $this->assertNoText($edit['subject'], t('Newly added user does not see the old message sent to his role'));
+  }
+
+  /**
+   * Verify that deleting a user does not leave stale data behind.
+   */
+  function testDeleteUser() {
+    $admin = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg', 'write privatemsg to roles'));
+    $user = $this->backdropCreateUser(array('read privatemsg', 'write privatemsg'));
+
+    // Send a message to the role of user 1.
+    $user_roles = array_diff($user->roles, array(BACKDROP_AUTHENTICATED_ROLE));
+    $user_role_name = reset($user_roles);
+    $this->backdropLogin($admin);
+    $edit = array(
+      'recipient' => $user_role_name . '[role]',
+      'subject' => $this->randomName(10),
+      'body[value]' => $this->randomName(50),
+    );
+    $this->backdropPost('messages/new', $edit, t('Send message'));
+    $this->assertText(t('A message has been sent to @role (role).', array('@role' => $user_role_name)));
+
+    $this->backdropLogin($user);
+
+    $this->backdropGet('messages');
+    $this->assertText($edit['subject'], t('Message sent to role is visible.'));
+
+    // Delete user and make sure that no recipient entries of him are left in
+    // table.
+    user_delete($user->uid);
+    $this->assertFalse(db_query_range("SELECT 1 FROM {pm_index} WHERE recipient = :recipient AND type IN ('user', 'hidden')", 0, 1, array(':recipient' => $user->uid))->fetchField());
   }
 }
