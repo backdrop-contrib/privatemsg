@@ -63,3 +63,9 @@ name = Privatemsg Roles
 description = Tests sending messages to roles.
 group = Privatemsg
 file = PrivatemsgRolesTestCase.test
+
+[PrivatemsgGroupsTestCase]
+name = Privatemsg Groups functionality
+description = Tests sending messages to organic groups.
+group = Privatemsg
+file = PrivatemsgGroupsTestCase.test
