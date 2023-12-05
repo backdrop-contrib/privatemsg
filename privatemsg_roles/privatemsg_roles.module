@@ -141,7 +141,7 @@ function privatemsg_roles_count_recipients($recipient) {
 /**
  * Provides autocomplete suggestions for roles.
  */
-function privatemsg_roles_autocomplete($fragment, $names, $limit) {
+function privatemsg_roles_autocomplete($fragment, $names, $limit, $type) {
   $result = _privatemsg_assemble_query(array('autocomplete_roles', 'privatemsg_roles'), $fragment, $names)
     ->range(0, $limit)
     ->execute();

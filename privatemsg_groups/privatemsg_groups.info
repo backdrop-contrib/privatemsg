@@ -1,0 +1,7 @@
+name = Privatemsg Groups
+description = Allows to send message to all members of a group.
+package = Mail
+backdrop = 1.x
+type = module
+dependencies[] = privatemsg
+dependencies[] = og (2.x)

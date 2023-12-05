@@ -802,6 +802,14 @@ function privatemsg_filter_query_privatemsg_list_alter($query) {
           $count_query->condition($alias . '.recipient', $author->recipient);
           $count_query->condition($alias . '.type', 'role');
         }
+        if (module_exists('privatemsg_groups') && $author->type == 'og:node') {
+          $alias = $query->join('pm_index', 'pmi', '%alias.mid = pm.mid');
+          $query->condition($alias . '.recipient', $author->recipient);
+          $query->condition($alias . '.type', 'og:node');
+          $alias = $count_query->join('pm_index', 'pmi', '%alias.mid = pm.mid');
+          $count_query->condition($alias . '.recipient', $author->recipient);
+          $count_query->condition($alias . '.type', 'og:node');
+        }
       }
     }
 
