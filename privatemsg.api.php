@@ -272,6 +272,30 @@ function hook_privatemsg_message_insert($message) {
 }
 
 /**
+ * Allows response to a deleted change.
+ *
+ * Modules implementing this hook should be aware that messages are only
+ * marked as deleted and not removed from the database. They will only
+ * eventually be deleted by the flushing.
+ *
+ * Therefore, modules should not delete data in this hook but in
+ * hook_privatemsg_message_flush().
+ *
+ * @param $mid
+ *   Message id.
+ * @param $deleted
+ *   TRUE when the message was marked as deleted, FALSE when marked as not
+ *   deleted.
+ * @param $account
+ *   User object, if NULL then the message was marked as deleted for all users.
+ *
+ * @see privatemsg_message_change_delete()
+ * @see privatemsg_thread_change_delete()
+ *
+ */
+function hook_privatemsg_message_status_deleted($mid, $deleted, $account) {}
+
+/**
  * This hook is invoked when a recipient is added to a message.
  *
  * Since the hook might be invoked hundreds of times during batch or cron, only

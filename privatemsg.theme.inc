@@ -243,8 +243,8 @@ function theme_privatemsg_new_block($count) {
     $text = t('Click here to go to your messages.');
   }
   else {
-    $text = format_plural($count, 'You have a new message! Click here to read it.',
-                        'You have @count new messages! Click here to read them.');
+    $text = format_plural($count, 'You have an unread message! Click here to read it.',
+                        'You have @count unread messages! Click here to read them.');
   }
 
   return l($text, 'messages', array('attributes' => array('id' => 'privatemsg-new-link')));
