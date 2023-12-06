@@ -157,8 +157,8 @@ class PrivatemsgLinksTestCase extends PrivatemsgBaseTestCase {
     $this->backdropPost('messages/new', $message, t('Send message'));
 
     $this->backdropLogin($user);
-    $this->assertText(t('New message'), t('Privatemsg new block title displayed.'));
+    $this->assertText(t('Unread message'), t('Privatemsg new block title displayed.'));
 
-    $this->assertText(t('You have a new message! Click here to read it.'), t('New message indication displayed.'));
+    $this->assertText(t('You have an unread message! Click here to read it.'), t('New message indication displayed.'));
   }
 }

@@ -1458,14 +1458,13 @@ function privatemsg_form_alter(&$form, &$form_state, $form_id) {
 
     // We have to use user_access() because privatemsg_user_access() would
     // return FALSE when privatemsg is disabled.
-    if ((user_access('write privatemsg') || user_access('read privatemsg')) && user_access('allow disabling privatemsg')) {
+    if ((user_access('write privatemsg') || user_access('read privatemsg')) && user_access('allow disabling privatemsg') && privatemsg_allow_disable($form['#user'])) {
       $form['privatemsg']['pm_enable'] = array(
         '#type' => 'checkbox',
         '#title' => t('Enable private messages'),
         '#default_value' => !privatemsg_is_disabled($form['#user']),
         '#description' => t('Disabling private messages prevents you from sending or receiving messages from other users. This option is disabled if this account is not allowed to disable private messages.'),
         '#weight' => -10,
-        '#disabled' => !user_access('allow disabling privatemsg', $form['#user']),
       );
     }
   }
@@ -1477,10 +1476,22 @@ function privatemsg_form_alter(&$form, &$form_state, $form_id) {
  * @param array $element
  *   Form element
  * @return array
- *   Form element
+ *   Form element with '#access' key value TRUE if the fieldset has a child,
+ *   FALSE if the fieldset has no child.
  */
 function privatemsg_account_fieldset_remove_if_empty($element) {
+  // If there are no children elements, deny access.
   if (count(element_children($element)) == 0) {
+    $element['#access'] = FALSE;
+  }
+  else {
+    // If there are elements, check if at least one of them is visible. Deny
+    // access.
+    foreach (element_children($element) as $key) {
+      if ($element[$key]['#type'] != 'value' && (!isset($element[$key]['#access']) || $element[$key]['#access'])) {
+        return $element;
+      }
+    }
     $element['#access'] = FALSE;
   }
   return $element;
@@ -1499,7 +1510,7 @@ function privatemsg_user_insert($account) {
  */
 function privatemsg_user_update($account) {
   // {pm_disable} holds the list of users that have disabled private messaging
-  if (isset($account->pm_enable) && (user_access('write privatemsg', $account) || user_access('read privatemsg', $account)) && user_access('allow disabling privatemsg', $account)) {
+  if (isset($account->pm_enable) && (user_access('write privatemsg', $account) || user_access('read privatemsg', $account)) && privatemsg_allow_disable($account)) {
     // Check whether user is listed in pm_disable table.
     $current = privatemsg_is_disabled($account);
     $disabled = (!$account->pm_enable);
@@ -1518,6 +1529,28 @@ function privatemsg_user_update($account) {
       }
     }
   }
+}
+
+/**
+ * Checks if the user is allowed to disable/enable private message.
+ *
+ * @param User $account
+ *   User object to check.
+ * @return bool
+ *   TRUE if the user is allowed to disable the private message, FALSE otherwise.
+ */
+function privatemsg_allow_disable($account) {
+  global $user;
+
+  $allow_disable_privatemsg = TRUE;
+  // Compare it to current user id.
+  if ($user->uid != $account->uid) {
+    // User must have administer permission to disable other users' private message
+    // and the edited user must be able to change the setting.
+    $allow_disable_privatemsg = (user_access('administer privatemsg settings') && user_access('allow disabling privatemsg', $account));
+  }
+
+  return $allow_disable_privatemsg;
 }
 
 /**
@@ -1590,9 +1623,9 @@ function privatemsg_block_configure($delta = '') {
   if ($delta == 'privatemsg-new') {
     $form['notification'] = array(
       '#type' => 'checkbox',
-      '#title' => t('Display block when there are no new messages'),
+      '#title' => t('Display block when there are no unread messages'),
       '#default_value' => config_get('privatemsg.settings', 'no_messages_notification'),
-      '#description' => t('Enable this to have this block always displayed, even if there are no new messages'),
+      '#description' => t('Enable this to have this block always displayed, even if there are no unread messages'),
     );
     return $form;
   }
@@ -1637,7 +1670,7 @@ function _privatemsg_block_new() {
   $count = privatemsg_unread_count();
   if ($count || config_get('privatemsg.settings', 'no_messages_notification')) {
     $block = array(
-      'subject' => $count ? format_plural($count, 'New message', 'New messages') : t('No new messages'),
+      'subject' => $count ? format_plural($count, 'Unread message', 'Unread messages') : t('No unread messages'),
       'content' => theme('privatemsg_new_block', array('count' => $count)),
     );
     return $block;
@@ -1698,6 +1731,9 @@ function privatemsg_message_change_delete($pmid, $delete, $account = NULL) {
       ->condition('type', array('user', 'hidden'));
   }
   $update->execute();
+
+  // Allow modules to respond to the deleted changes.
+  module_invoke_all('privatemsg_message_status_deleted', $pmid, $delete, $account);
 }
 
 /**
@@ -2412,12 +2448,34 @@ function privatemsg_thread_change_delete($threads, $delete, $account = NULL) {
     $account = clone $user;
   }
 
-  // Load all messages of those threads including the deleted.
-  $query = _privatemsg_assemble_query('messages', $threads, $account, TRUE);
+  // Record which messages will be deleted.
+  $changed = db_select('pm_index', 'pmi')
+    ->fields('pmi', array('mid'))
+    ->condition('deleted', 0, $delete ? '=' : '>')
+    ->condition('recipient', $account->uid)
+    ->condition('type', array('user', 'hidden'))
+    ->condition('thread_id', $threads)
+    ->execute()
+    ->fetchCol();
 
-  // Delete each message. We need to do that to trigger the delete hook.
-  foreach ($query->execute() as $row) {
-    privatemsg_message_change_delete($row->mid, $delete, $account);
+  // Merge status and uid with the threads list. array_merge() will not overwrite/ignore thread_id 1.
+  $delete_value = 0;
+  if ($delete == TRUE) {
+    $delete_value = REQUEST_TIME;
+  }
+  // Update the status of the threads.
+  db_update('pm_index')
+    ->fields(array(
+      'deleted' => $delete_value
+    ))
+    ->condition('recipient', $account->uid)
+    ->condition('type', array('user', 'hidden'))
+    ->condition('thread_id', $threads)
+    ->execute();
+
+  // Allow modules to respond to the deleted changes.
+  foreach ($changed as $mid) {
+    module_invoke_all('privatemsg_message_status_deleted', $mid, $delete, $account);
   }
 
   if ($delete) {
