@@ -108,6 +108,13 @@ function privatemsg_schema() {
         'unsigned' => TRUE,
         'default' => 0,
       ),
+      'reply_to_mid' => array(
+        'description'   => 'mid of the message this is a reply to (if any)',
+        'type'          => 'int',
+        'default'       => 0,
+        'not null'      => TRUE,
+        'unsigned'      => TRUE,
+      )
     ),
     'primary key' => array('mid'),
   );
@@ -304,4 +311,19 @@ function privatemsg_update_1001() {
     $role_id++;
   }
   $config->save();
+}
+
+/**
+ * Add field to track what message this is a reply to (if any).
+ */
+function privatemsg_update_1002() {
+  db_add_field('pm_message', 'reply_to_mid',
+    array(
+      'description'   => 'mid of the message this is a reply to (if any)',
+      'type'          => 'int',
+      'default'       => 0,
+      'not null'      => TRUE,
+      'unsigned'      => TRUE,
+    )
+  );
 }

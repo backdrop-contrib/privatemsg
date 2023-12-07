@@ -213,6 +213,15 @@ function privatemsg_list($form, &$form_state, $argument, $account) {
   }
 
   if (!empty($form['updated']['list']['#options'])) {
+    // Load the last reply that is not from the current user.
+    $result = db_query('SELECT pmi.thread_id, MAX(pm.mid) AS last_message FROM {pm_message} pm INNER JOIN {pm_index} pmi ON pm.mid = pmi.mid WHERE pmi.thread_id IN (:thread_ids) AND pm.author <> :current_uid GROUP BY pmi.thread_id', array(':current_uid' => $account->uid, ':thread_ids' => array_keys($form['updated']['list']['#options'])));
+    foreach ($result as $row) {
+      // Set replied flag if there is no newer message from another user than
+      // the last replied.
+      if ($row->last_message <= $form['updated']['list']['#options'][$row->thread_id]['last_reply_to_mid']) {
+        $form['updated']['list']['#options'][$row->thread_id]['is_replied'] = TRUE;
+      }
+    }
     $form['updated']['actions'] = _privatemsg_action_form($argument);
   }
 
@@ -293,6 +302,9 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
   elseif (empty($recipients) && is_string($recipients)) {
     $recipients = array();
   }
+
+  $query = privatemsg_sql_messages(array($thread_id));
+  $messages = privatemsg_message_load_multiple($query->execute()->fetchCol(), array());
 
   $usercount = 0;
   $to = array();
@@ -484,6 +496,11 @@ function privatemsg_new($form, &$form_state, $recipients = array(), $subject = '
   );
 
   if (!is_null($thread_id)) {
+    $reply_to_mid = end($messages)->mid;
+    $form['reply_to_mid'] = array(
+      '#type' => 'value',
+      '#value' => $reply_to_mid,
+    );
     $form['thread_id'] = array(
       '#type' => 'value',
       '#value' => $thread_id,
@@ -562,6 +579,7 @@ function privatemsg_new_validate($form, &$form_state) {
     'thread_id' => isset($values['thread_id']) ? $values['thread_id'] : NULL,
     'read_all' => $values['read_all'],
     'timestamp' => REQUEST_TIME,
+    'reply_to_mid' => isset($values['reply_to_mid']) ? $values['reply_to_mid'] : 0,
   );
   $message = entity_create('privatemsg_message', $message_info);
 
