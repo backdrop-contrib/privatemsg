@@ -1136,6 +1136,9 @@ function privatemsg_sql_list($account, $argument = 'list') {
   $query->addExpression('MAX(pm.has_tokens)', 'has_tokens');
   $query->addExpression('SUM(pmi.is_new)', 'is_new');
 
+  // Needed to for tracking replies.
+  $query->addExpression('MAX(pm.reply_to_mid)', 'last_reply_to_mid');
+
   // Load enabled columns
   $fields = array_filter($config->get('display_fields'));
 
@@ -1875,6 +1878,10 @@ function privatemsg_reply($thread_id, $body, $options = array()) {
     );
   }
 
+  // Add the reply_to_mid, so we can mark that message as replied
+  $thread = privatemsg_thread_load($thread_id);
+  $message->reply_to_mid = end($thread['messages'])->mid;
+
   $message->thread_id = $thread_id;
   // Load participants
   $message->recipients = _privatemsg_load_thread_participants($thread_id, $message->author);
@@ -2042,6 +2049,10 @@ function _privatemsg_send($message) {
     $args['format'] = $message->format;
     $args['timestamp'] = $message->timestamp;
     $args['has_tokens'] = (int) $message->has_tokens;
+    if (isset($message->reply_to_mid)) {
+      $args['reply_to_mid'] = $message->reply_to_mid;
+    }
+
     $mid = db_insert('pm_message')
       ->fields($args)
       ->execute();
@@ -2342,6 +2353,12 @@ function _privatemsg_list_thread($tableselect) {
       // Set the css class in the tr tag.
       $row['#attributes']['class'][] = 'privatemsg-unread';
     }
+
+    if (!empty($thread['is_replied'])) {
+      // Set the css class in the tr tag.
+      $row['#attributes']['class'][] = 'privatemsg-replied';
+    }
+
     foreach ($thread as $key => $data) {
       // First, try to load a specific theme for that field, if not present, use the default.
       if ($return = theme('privatemsg_list_field__' . $key, array('thread' => $thread))) {

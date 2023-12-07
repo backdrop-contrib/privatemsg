@@ -2,7 +2,8 @@
   font-weight: bold;
 }
 
-.privatemsg-unread .privatemsg-list-subject .marker {
+.privatemsg-unread .privatemsg-list-subject .marker,
+.privatemsg-replied .privatemsg-list-subject .marker {
   font-weight: lighter;
 }
 
