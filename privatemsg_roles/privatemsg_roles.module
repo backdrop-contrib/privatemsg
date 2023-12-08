@@ -100,10 +100,12 @@ function privatemsg_roles_write_access($recipient) {
  *
  * @param array $rids
  *   Array of role ids.
+ * @param string $type
+ *   Recipient type
  * @return array
  *   Array of role objects.
  */
-function privatemsg_roles_load_multiple($rids) {
+function privatemsg_roles_load_multiple($rids, $type) {
   $config = config('privatemsg_roles.settings');
   $role_ids = $config->get('role_id');
   $roles = array();
