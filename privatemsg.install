@@ -317,13 +317,15 @@ function privatemsg_update_1001() {
  * Add field to track what message this is a reply to (if any).
  */
 function privatemsg_update_1002() {
-  db_add_field('pm_message', 'reply_to_mid',
-    array(
-      'description'   => 'mid of the message this is a reply to (if any)',
-      'type'          => 'int',
-      'default'       => 0,
-      'not null'      => TRUE,
-      'unsigned'      => TRUE,
-    )
-  );
+  if (!db_field_exists('pm_message', 'reply_to_mid')) {
+    db_add_field('pm_message', 'reply_to_mid',
+      array(
+        'description'   => 'mid of the message this is a reply to (if any)',
+        'type'          => 'int',
+        'default'       => 0,
+        'not null'      => TRUE,
+        'unsigned'      => TRUE,
+      )
+    );
+  }
 }
