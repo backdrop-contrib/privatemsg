@@ -445,8 +445,9 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
     $this->backdropLogin($disableduser);
     // Now disable $disabledUser.
     $this->backdropGet('user/' . $disableduser->uid . '/edit');
-    $edit['pm_enable'] = FALSE;
-    $this->backdropPost('user/' . $disableduser->uid . '/edit', $edit, t('Save'));
+    // $edit['pm_enable'] = FALSE;
+    // $this->backdropPost('user/' . $disableduser->uid . '/edit', $edit, t('Save'));
+    privatemsg_set_setting('user', $disableduser->uid, 'disabled', 1);
 
     // Verify that disableduser can list messages.
     $this->backdropGet('messages');
@@ -465,6 +466,10 @@ class PrivatemsgTestCase extends PrivatemsgBaseTestCase {
     $disableduser_loaded = user_load($disableduser->uid, TRUE);
 
     // Check that $disableduser cannot submit a reply
+    $ids = privatemsg_get_default_setting_ids($disableduser_loaded);
+    $is_disabled = (bool) privatemsg_get_setting('disabled', $ids);
+    $this->assertTrue($is_disabled, t('Disabled user has disabled private messages on their account.'));
+
     $result = privatemsg_reply($return['message']->thread_id, $this->randomName(100), array('author' => $disableduser_loaded));
 
     $this->assertFalse($result['success'], 'Message reply was not sent.');
