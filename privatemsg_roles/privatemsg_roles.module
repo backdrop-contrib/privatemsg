@@ -101,7 +101,7 @@ function privatemsg_roles_write_access($recipient) {
  * @param array $rids
  *   Array of role ids.
  * @param string $type
- *   Recipient type
+ *   Recipient type.
  * @return array
  *   Array of role objects.
  */

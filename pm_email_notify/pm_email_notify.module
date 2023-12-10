@@ -31,10 +31,14 @@ function _pm_email_notify_is_enabled($uid) {
   $notifications = &backdrop_static(__FUNCTION__, array());
   // Cache the result set in case this method is executed in batched operation which will perform many unnecessary repeated selects for the same user
   if (!isset($notifications[$uid])) {
-    $mail_notification = db_query('SELECT email_notify_is_enabled FROM {pm_email_notify} WHERE user_id = :uid', array(':uid' => $uid))->fetchField();
-    if ($mail_notification === FALSE) { //db_result returns FALSE if result was not found.
-      $mail_notification = config_get('pm_email_notify.settings', 'default');
-    }
+    $default = $mail_notification = config_get('pm_email_notify.settings', 'default');
+    $mail_notification = privatemsg_get_setting('email_notify_is_enabled', array(
+      'user' => array($uid),
+      'global' => array(0),
+    ), 'email_notify_is_enabled', $default);
+    $account = user_load($uid);
+    $ids = privatemsg_get_default_setting_ids($account);
+    $mail_notification =  (bool) privatemsg_get_setting('disabled', $ids, $default);
     $notifications[$uid] = $mail_notification;
   }
   return $notifications[$uid];
@@ -133,10 +137,7 @@ function pm_email_notify_user_insert($account) {
  */
 function pm_email_notify_user_update($account) {
   if (privatemsg_user_access('read privatemsg', $account) && isset($account->pm_send_notifications)) {
-    db_merge('pm_email_notify')
-      ->fields(array('email_notify_is_enabled' => $account->pm_send_notifications))
-      ->key(array('user_id' => $account->uid))
-      ->execute();
+    privatemsg_set_setting('user', $account->uid, 'email_notify_is_enabled', $account->pm_send_notifications);
   }
 }
 
