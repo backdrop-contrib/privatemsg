@@ -69,3 +69,9 @@ name = Privatemsg Groups functionality
 description = Tests sending messages to organic groups.
 group = Privatemsg
 file = PrivatemsgGroupsTestCase.test
+
+[PrivatemsgEmailNotifyTestCase]
+name = Privatemsg E-Mail notifications.
+description = Test sending e-mail notifications according to the set configuration.
+group = Privatemsg
+file = PrivatemsgEmailNotifyTestCase.test

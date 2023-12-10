@@ -182,7 +182,13 @@ function privatemsg_roles_count_recipients($recipient) {
 function privatemsg_roles_autocomplete($fragment, $names, $limit, $type) {
   $result = _privatemsg_assemble_query(array('autocomplete_roles', 'privatemsg_roles'), $fragment, $names)
     ->range(0, $limit)
-    ->execute();
+    ->execute()
+    ->fetchAllAssoc('name', PDO::FETCH_OBJ);
+
+  // {user_roles} table doesn't include authenticated roles so include it here,
+  // so users with the right permission can notify everyone.
+  $result['authenticated'] = (object) array('name' => 'authenticated', 'rid' => 'authenticated');
+
   $roles = array();
   foreach ($result as $role) {
     if (user_access('write privatemsg to roles') || user_access('write privatemsg to role ' . $role->name)) {
@@ -213,7 +219,7 @@ function privatemsg_roles_privatemsg_name_lookup($string) {
 }
 
 /**
- * Query definition to search for username autocomplete suggestions.
+ * Query definition to search for recipient autocomplete suggestions.
  *
  * @param string $search
  *   Which search string is currently searched for.

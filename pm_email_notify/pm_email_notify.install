@@ -33,3 +33,37 @@ function pm_email_notify_update_1000() {
 
   db_drop_table('pm_email_notify');
 }
+
+/**
+ * Remove unused variables
+ */
+function pm_email_notify_update_1001() {
+  // Update the site-wide default setting.
+  $config = config('pm_email_notify.settings');
+  if ($notify_level = update_variable_get('privatemsg_setting_email_notify_level', 0)) {
+    $config->set('notify_level', $notify_level);
+  }
+  elseif ($config->get('default')) {
+    $config->set('notify_level', 12);
+  }
+  else {
+    $config->set('notify_level', 0);
+  }
+
+  $config->set('notify_only_user', update_variable_get('privatemsg_setting_email_notify_only_user', FALSE));
+
+  $config->save();
+
+  update_variable_del('privatemsg_setting_email_notify_level');
+  update_variable_del('privatemsg_setting_email_notify_only_user');
+
+  // Convert user saved settings.
+  $result = db_select('pm_setting')
+    ->fields('pm_setting', array('id', 'value'))
+    ->condition('type', 'user')
+    ->condition('setting', 'email_notify_is_enabled')
+    ->execute();
+  foreach ($result as $row) {
+    privatemsg_set_setting('user', $row->id, 'email_notify_level', $row->value ? -1 : 0);
+  }
+}
