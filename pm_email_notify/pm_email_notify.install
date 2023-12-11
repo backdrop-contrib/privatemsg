@@ -67,3 +67,15 @@ function pm_email_notify_update_1001() {
     privatemsg_set_setting('user', $row->id, 'email_notify_level', $row->value ? -1 : 0);
   }
 }
+
+/**
+ * Allow subject and body to be translated.
+ */
+function pm_email_notify_update_1002() {
+  $config = config('pm_email_notify.settings');
+  $translatables = $config->get('_config_translatables');
+  $translatables[] = 'body';
+  $translatables[] = 'subject';
+  $config->set('_config_translatables', $translatables);
+  $config->save();
+}

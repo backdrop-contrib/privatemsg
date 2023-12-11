@@ -230,16 +230,26 @@ function pm_email_notify_send_mail($recipient, $message) {
 }
 
 /**
- * Retrieves the default text for body and subject texts.
+ * Returns body or subject strings.
  *
- * @param $key
- *   Defines with string to return, either subject or body.
- *
- * @return
- *   The default text for the given key.
+ * @param string $key
+ *   Defines which string to return, either subject or body.
+ * @param object $language
+ *   Optionally define the language to translate into. Defaults to the
+ *   active language.
+ * @param array $data
+ *   Array of keyed objects
+ * @param array $options
+ *   Options for replacing tokens.
+ * @return string
+ *   The translated text.
  */
-function _pm_email_notify_source_text($key) {
-  $text = config_get('pm_email_notify.settings', $key);
+function pm_email_notify_text($key, $language = NULL, $data, $options) {
+  $langcode = isset($language) ? $language->langcode : NULL;
+  $config = config('pm_email_notify.settings');
+
+  $text = $config->getTranslated($key, array(), array('langcode' => $langcode));
+
   if (empty($text)) {
     switch ($key) {
       case 'subject':
@@ -250,26 +260,8 @@ function _pm_email_notify_source_text($key) {
         break;
     }
   }
-  return $text;
-}
 
-/**
- * Returns body or subject strings.
- *
- * @param $key
- *   Defines which string to return, either subject or body.
- * @param $language
- *   Optionally define the language to translate into. Defaults to the
- *   active language.
- * @return
- *   The translated text.
- */
-function pm_email_notify_text($key, $language = NULL) {
-  $text = _pm_email_notify_source_text($key);
-
-  // @todo have it return the translated text if it exists.
-
-  return $text;
+  return trim(token_replace($text, $data, $options));
 }
 
 /**
@@ -290,8 +282,8 @@ function pm_email_notify_mail($key, &$message, $params) {
         'privatemsg-display-invalid' => FALSE,
       );
 
-      $message['subject'] = trim(token_replace(pm_email_notify_text('subject', $options['language']), $data, $options));
-      $message['body'][] = trim(token_replace(pm_email_notify_text('body', $options['language']), $data, $options));
+      $message['subject'] = pm_email_notify_text('subject', $options['language'], $data, $options);
+      $message['body'][] = pm_email_notify_text('body', $options['language'], $data, $options);
       break;
   }
 }
