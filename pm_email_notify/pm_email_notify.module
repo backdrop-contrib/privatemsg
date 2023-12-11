@@ -107,24 +107,6 @@ function _pm_email_notify_only_user($uid) {
 }
 
 /**
- * Checks if a message author wants his email address as a sender.
- *
- * @param int $uid
- *   The author's user ID.
- *
- * @return bool
- *   Whether or not to use the author's email address.
- */
-function _pm_email_notify_show_sender($uid) {
-  // Either check the setting for this user or the global default.
-  $keys = array(
-    'user' => array($uid),
-    'global' => array(0),
-  );
-  return privatemsg_get_setting('show_sender_mail', $keys);
-}
-
-/**
  * Retrieve notification setting of a user and check if they should receive
  * an e-mail notification for a message.
  *
@@ -229,25 +211,19 @@ function pm_email_notify_send_mail($recipient, $message) {
     $params['recipient'] = $recipient;
     $params['message'] = $message;
 
-    if (_pm_email_notify_show_sender($message->author->uid)) {
-      // User author's email as a sender.
-      $from = $message->author->mail;
-    }
-    else {
-      // Token replacements for email from address.
-      $data = array(
-        'privatemsg_message' => $params['message'],
-        'privatemsg_recipient' => $params['recipient'],
-      );
-      $options = array(
-        'language' => user_preferred_language($params['recipient']),
-        // Don't sanitize output since this is used in an email, not a browser.
-        'sanitize' => FALSE,
-        // Custom token to avoid custom token handling.
-        'privatemsg-display-invalid' => FALSE,
-      );
-      $from = trim(token_replace(config_get('pm_email_notify.settings', 'from'), $data, $options));
-    }
+    // Token replacements for email from address.
+    $data = array(
+      'privatemsg_message' => $params['message'],
+      'privatemsg_recipient' => $params['recipient'],
+    );
+    $options = array(
+      'language' => user_preferred_language($params['recipient']),
+      // Don't sanitize output since this is used in an email, not a browser.
+      'sanitize' => FALSE,
+      // Custom token to avoid custom token handling.
+      'privatemsg-display-invalid' => FALSE,
+    );
+    $from = trim(token_replace(config_get('pm_email_notify.settings', 'from'), $data, $options));
 
     backdrop_mail('pm_email_notify', 'notice', $recipient->mail, user_preferred_language($recipient), $params, !empty($from) ? $from : NULL);
   }
@@ -324,15 +300,6 @@ function pm_email_notify_mail($key, &$message, $params) {
  * Implements hook_form_FORM_ID_alter().
  */
 function pm_email_notify_form_user_profile_form_alter(&$form, &$form_state) {
-  if (privatemsg_user_access('write privatemsg')) {
-    $form['privatemsg']['show_sender_mail'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Show my email address'),
-      '#description' => t('Use my private email address as a sender for notification mails to users I have sent private messages to. If unchecked, the notification will be sent by a generic account.'),
-      '#default_value' => _pm_email_notify_show_sender($form['#user']->uid),
-      '#access' => privatemsg_user_access('write privatemsg'),
-    );
-  }
   if (privatemsg_user_access('read privatemsg', $form['#user'])) {
     if (privatemsg_user_access('set privatemsg e-mail notification level')) {
       $form['privatemsg']['email_notify_level'] = array(
