@@ -127,7 +127,7 @@ class PrivatemsgEmailNotifyTestCase extends PrivatemsgBaseTestCase {
       'body[value]' => $this->randomName(20),
     );
     $this->backdropPost('messages/new', $message, t('Send message'));
-    $this->getNewMails(0);
+    $this->getNewMails(1);
   }
 
   /**

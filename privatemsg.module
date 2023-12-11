@@ -595,9 +595,9 @@ function privatemsg_thread_load($thread_id, $account = NULL, $start = NULL, $use
         // General data, assume subject is the same for all messages of that thread.
         $thread['user'] = $account;
         $message = current($thread['messages']);
-        $thread['subject'] = $thread['subject-original'] = $message->subject;
+        $thread['subject'] = $thread['subject-tokenized'] = $message->subject;
         if ($message->has_tokens) {
-          $thread['subject'] = privatemsg_token_replace($thread['subject'], array('privatemsg_message' => $message), array(
+          $thread['subject-tokenized'] = privatemsg_token_replace($thread['subject'], array('privatemsg_message' => $message), array(
             'sanitize' => TRUE,
             'privatemsg-show-span' => FALSE
           ));
@@ -3169,7 +3169,7 @@ function privatemsg_tokens($type, $tokens, array $data = array(), array $options
           break;
 
         case 'url':
-          $uri = privatemsg_message_uri_callback($message);
+          $uri = entity_uri('privatemsg_message', $message);
           $replacements[$original] = url($uri['path'], $url_options + $uri['options']);
           break;
 

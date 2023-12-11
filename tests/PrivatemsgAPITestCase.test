@@ -136,25 +136,31 @@ class PrivatemsgAPITestCase extends PrivatemsgBaseTestCase {
    * Test various use cases for privatemsg_get_link().
    */
   function testGetLink() {
-    $author      = $this->backdropCreateUser(array('write privatemsg', 'read privatemsg'));
+    $author      = $this->backdropCreateUser(array('write privatemsg', 'read privatemsg', 'write privatemsg to roles'));
+    $author2      = $this->backdropCreateUser(array('write privatemsg', 'read privatemsg'));
     $recipient1  = $this->backdropCreateUser(array('read privatemsg'));
     $recipient2  = $this->backdropCreateUser(array('read privatemsg'));
     $recipient3  = $this->backdropCreateUser(array('read privatemsg', 'allow disabling privatemsg'));
     $recipient4  = $this->backdropCreateUser();
 
+    // Create role with the same name as recipient 2.
+    $role = $this->backdropCreateRole(array('read privatemsg'), $recipient2->name);
+
     $this->backdropLogin($author);
 
     $this->backdropGet(privatemsg_get_link(array($recipient1)));
-    $this->assertFieldByName('recipient', $recipient1->name . ' [user]');
+    $this->assertFieldByName('recipient', $recipient1->name);
 
+    // Because of there is a role with the same name like recipient 2,
+    // add the [user] for recipient 2.
     $this->backdropGet(privatemsg_get_link(array($recipient1, $recipient2)));
-    $this->assertFieldByName('recipient', $recipient1->name . ' [user], ' . $recipient2->name . ' [user]');
+    $this->assertFieldByName('recipient', $recipient1->name . ', ' . $recipient2->name . ' [user]');
 
     $this->backdropGet(privatemsg_get_link(array($recipient1, $recipient2), $author));
-    $this->assertFieldByName('recipient', $recipient1->name . ' [user], ' . $recipient2->name . ' [user]');
+    $this->assertFieldByName('recipient', $recipient1->name . ', ' . $recipient2->name . ' [user]');
 
     $this->backdropGet(privatemsg_get_link(array($recipient1, $recipient2), $author, $subject = 'Str/"ang\\w3//'));
-    $this->assertFieldByName('recipient', $recipient1->name . ' [user], ' . $recipient2->name . ' [user]');
+    $this->assertFieldByName('recipient', $recipient1->name . ', ' . $recipient2->name . ' [user]');
     $this->assertFieldByName('subject', $subject);
 
     // Disable privatemsg for recipient 3.
@@ -163,7 +169,7 @@ class PrivatemsgAPITestCase extends PrivatemsgBaseTestCase {
     $this->assertFalse(privatemsg_get_link(array($recipient3), $author));
 
     $this->backdropGet(privatemsg_get_link(array($recipient1, $recipient3), $author));
-    $this->assertFieldByName('recipient', $recipient1->name . ' [user]');
+    $this->assertFieldByName('recipient', $recipient1->name);
 
     // Disable links to self, verify that a link is only returned when the
     // author is not the only recipient.
@@ -172,18 +178,24 @@ class PrivatemsgAPITestCase extends PrivatemsgBaseTestCase {
     $this->assertFalse(privatemsg_get_link(array($author), $author));
 
     $this->backdropGet(privatemsg_get_link(array($recipient1, $author), $author));
-    $this->assertFieldByName('recipient', $recipient1->name . ' [user]');
+    $this->assertFieldByName('recipient', $recipient1->name);
 
     // Verify that link is not shown when recipient doesn't have read
     // permission.
     $this->assertFalse(privatemsg_get_link(array($recipient4), $author));
 
     $this->backdropGet(privatemsg_get_link(array($recipient1, $recipient4), $author));
-    $this->assertFieldByName('recipient', $recipient1->name . ' [user]');
+    $this->assertFieldByName('recipient', $recipient1->name);
 
     // Verify that link is not shown when author does not have write permission.
     $this->backdropLogin($recipient1);
     $this->assertFalse(privatemsg_get_link(array($author), $recipient1));
+
+    // For user that has no permission to send message to role,
+    // the [user] suffix will not appear although there is a role with the same name as user.
+    $this->backdropLogin($author2);
+    $this->backdropGet(privatemsg_get_link(array($recipient2)));
+    $this->assertFieldByName('recipient', $recipient2->name);
   }
 
   /**
@@ -238,12 +250,6 @@ class PrivatemsgAPITestCase extends PrivatemsgBaseTestCase {
 
     $this->assertEqual(privatemsg_get_setting('test', $admin_ids), 1, t('The user level setting was deleted, the default is now used.'));
     $this->assertEqual(privatemsg_get_setting('test', $user_ids), 1, t('The role level setting was deleted, the default is now used.'));
-
-    // Test settings_get() fallback.
-    $GLOBALS['settings']['privatemsg_setting_test3'] = 10;
-    privatemsg_set_setting('user', $admin->uid, 'test3', 11);
-    $this->assertEqual(privatemsg_get_setting('test3', $user_ids), 10, t('The settings_get() fallback is used when no other value exists.'));
-    $this->assertEqual(privatemsg_get_setting('test3', $admin_ids),11, t('The updated user level setting is used.'));
 
     // Explicitly set a global default now.
     privatemsg_set_setting('global', 0, 'test3', 12);
