@@ -432,12 +432,8 @@ function privatemsg_is_disabled($account) {
   }
 
   // Make sure we have a fully loaded user object and try to load it if not.
-  $has_roles = !empty($account->roles);
-  $has_account = user_load($account->uid);
-  $can_disable = user_access('allow disabling privatemsg', $account);
   if ((!empty($account->roles) || $account = user_load($account->uid)) && user_access('allow disabling privatemsg', $account)) {
     $ids = privatemsg_get_default_setting_ids($account);
-    $is_disabled = privatemsg_get_setting('disabled', $ids);
     return (bool) privatemsg_get_setting('disabled', $ids);
   }
 
@@ -3490,12 +3486,6 @@ function privatemsg_get_setting($setting, $ids = NULL, $default = NULL) {
     $query = _privatemsg_assemble_query('settings', $setting, $query_ids);
     foreach ($query->execute() as $row) {
       $cache[$setting][$row->type][$row->id] = $row->value;
-    }
-
-    // If there is no global default in the database, try to get one with
-    // settings_get().
-    if ($cache[$setting]['global'][0] === FALSE) {
-      $cache[$setting]['global'][0] = settings_get('privatemsg_setting_' . $setting, FALSE);
     }
   }
 

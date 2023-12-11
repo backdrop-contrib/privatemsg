@@ -85,7 +85,7 @@ function _pm_email_notify_user_level($uid = NULL) {
     );
   }
 
-  return privatemsg_get_setting('email_notify_level', $keys, PM_EMAIL_NOTIFY_LEVEL_ALL);
+  return privatemsg_get_setting('email_notify_level', $keys, config_get('pm_email_notify.settings', 'notify_level'));
 }
 
 /**
@@ -103,7 +103,7 @@ function _pm_email_notify_only_user($uid) {
     'user' => array($uid),
     'global' => array(0),
   );
-  return privatemsg_get_setting('email_notify_only_user', $keys);
+  return privatemsg_get_setting('email_notify_only_user', $keys, config_get('pm_email_notify.settings', 'notify_only_user'));
 }
 
 /**
@@ -485,9 +485,10 @@ function pm_email_notify_form_privatemsg_admin_settings_alter(&$form, &$form_sta
  */
 function pm_email_notify_form_privatemsg_admin_settings_alter_submit($form, &$form_state) {
   $config = config('pm_email_notify.settings');
-  $config->set('default', $form_state['values']['default']);
   $config->set('from', $form_state['values']['from']);
   $config->set('subject', $form_state['values']['subject']);
   $config->set('body', $form_state['values']['body']);
+  $config->set('notify_level', $form_state['values']['notify_level']);
+  $config->set('notify_only_user', $form_state['values']['notify_only_user']);
   $config->save();
 }
