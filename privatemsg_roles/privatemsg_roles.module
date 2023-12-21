@@ -86,8 +86,8 @@ function privatemsg_roles_write_access($recipient) {
     return user_access('write privatemsg to role ' . $recipient->name);
   }
   // Check if user has permission to write at least one role.
-  foreach (user_roles(TRUE) as $role) {
-    if (user_access('write privatemsg to role ' . $role)) {
+  foreach (user_roles(TRUE) as $role_name => $role_label) {
+    if (user_access('write privatemsg to role ' . $role_name)) {
       return TRUE;
     }
   }
@@ -128,13 +128,13 @@ function theme_privatemsg_roles_format($variables) {
   $role = $variables['recipient'];
   $options = $variables['options'];
   if (!empty($options['plain'])) {
-    $name = $role->name;
+    $name = $role->label;
     if (!empty($options['unique'])) {
       $name .= ' [role]';
     }
     return $name;
   }
-  return t('%role (role)', array('%role' => $role->name));
+  return t('%role (role)', array('%role' => $role->label));
 }
 
 /**
@@ -148,12 +148,12 @@ function theme_privatemsg_roles_format($variables) {
  *   Array of recipient users.
  */
 function privatemsg_roles_load_recipients($recipient, $limit, $offset) {
-  $role = $recipient->name;
-  if ($role == BACKDROP_AUTHENTICATED_ROLE) {
+  $role_name = $recipient->name;
+  if ($role_name == BACKDROP_AUTHENTICATED_ROLE) {
     $result = db_query_range('SELECT uid FROM {users} WHERE uid > 0 ORDER BY uid ASC', $offset, $limit);
   }
   else {
-    $result = db_query_range('SELECT uid FROM {users_roles} WHERE role = :role ORDER BY uid ASC', $offset, $limit, array(':role' => $role));
+    $result = db_query_range('SELECT uid FROM {users_roles} WHERE role = :role ORDER BY uid ASC', $offset, $limit, array(':role' => $role_name));
   }
 
   return $result->fetchCol();
@@ -167,12 +167,28 @@ function privatemsg_roles_load_recipients($recipient, $limit, $offset) {
  * @return int
  */
 function privatemsg_roles_count_recipients($recipient) {
-  $role = $recipient->name;
-  if ($role == BACKDROP_AUTHENTICATED_ROLE) {
+  $role_name = $recipient->name;
+  if ($role_name == BACKDROP_AUTHENTICATED_ROLE) {
     return db_query('SELECT COUNT(uid) FROM {users}')->fetchField();
   }
   else {
-    return db_query('SELECT COUNT(uid) FROM {users_roles} WHERE role = :role', array(':role' => $role))->fetchField();
+    return db_query('SELECT COUNT(uid) FROM {users_roles} WHERE role = :role', array(':role' => $role_name))->fetchField();
+  }
+}
+
+/**
+ * Determine if users exist with a role.
+ *
+ * @param string $role_name
+ *
+ * @return bool
+ */
+function privatemsg_roles_exist_users_with_role($role_name) {
+  if ($role_name == BACKDROP_AUTHENTICATED_ROLE) {
+    return TRUE;
+  }
+  else {
+    return (bool) db_query('SELECT COUNT(uid) FROM {users_roles} WHERE role = :role', array(':role' => $role_name))->fetchField();
   }
 }
 
@@ -180,25 +196,28 @@ function privatemsg_roles_count_recipients($recipient) {
  * Provides autocomplete suggestions for roles.
  */
 function privatemsg_roles_autocomplete($fragment, $names, $limit, $type) {
-  $result = _privatemsg_assemble_query(array('autocomplete_roles', 'privatemsg_roles'), $fragment, $names)
-    ->range(0, $limit)
-    ->execute()
-    ->fetchAllAssoc('name', PDO::FETCH_OBJ);
+  $user_roles = user_roles(TRUE);
 
-  // {user_roles} table doesn't include authenticated roles so include it here,
-  // so users with the right permission can notify everyone.
-  $result['authenticated'] = (object) array('name' => 'authenticated', 'rid' => 'authenticated');
-
-  $roles = array();
-  foreach ($result as $role) {
-    if (user_access('write privatemsg to roles') || user_access('write privatemsg to role ' . $role->name)) {
-      $role->type = 'role';
-      $role->recipient = _privatemsg_roles_get_role_id($role->name);
-      $role->role = $role->name;
-      $roles[privatemsg_recipient_key($role)] = $role;
+  $suggestions = array();
+  foreach ($user_roles as $role_name => $role_label) {
+    if (user_access('write privatemsg to roles') || user_access('write privatemsg to role ' . $role_name)) {
+      if (stripos($role_label, $fragment) !== FALSE && !in_array($role_label, $names)) {
+        if (privatemsg_roles_exist_users_with_role($role_name)) {
+          $recipient = (object) array();
+          $recipient->type = 'role';
+          $recipient->recipient = _privatemsg_roles_get_role_id($role_name, TRUE);
+          $recipient->name = $role_name;
+          $recipient->label = $role_label;
+          // Add to suggested list if so.
+          $suggestions[privatemsg_recipient_key($recipient)] = $recipient;
+          if (count($suggestions) >= $limit) {
+            return $suggestions;
+          }
+        }
+      }
     }
   }
-  return $roles;
+  return $suggestions;
 }
 
 /**
@@ -208,37 +227,18 @@ function privatemsg_roles_privatemsg_name_lookup($string) {
   // Remove optional role specifier.
   $string = str_replace(t('[role]'), '', $string);
   $name = trim($string);
-  $roles = user_roles(TRUE);
-  if (isset($roles[$name])) {
-    $role = user_role_load($name);
-    $role->type = 'role';
-    $role->recipient = _privatemsg_roles_get_role_id($name);
+  $user_roles = user_roles(TRUE);
 
-    return array(privatemsg_recipient_key($role) => $role);
+  foreach ($user_roles as $role_name => $role_label) {
+    if ($role_label == $name) {
+      $recipient = (object) array();
+      $recipient->type = 'role';
+      $recipient->recipient = _privatemsg_roles_get_role_id($role_name, TRUE);
+      $recipient->name = $role_name;
+      $recipient->label = $role_label;
+      return array(privatemsg_recipient_key($recipient) => $recipient);
+    }
   }
-}
-
-/**
- * Query definition to search for recipient autocomplete suggestions.
- *
- * @param string $search
- *   Which search string is currently searched for.
- * @param array $names
- *   Array of names not to be used as suggestions.
- *
- * @return \SelectQuery
- */
-function privatemsg_roles_sql_autocomplete_roles($search, $names) {
-  $query = db_select('users_roles', 'r');
-  $query->addField('r', 'role', 'name');
-  $query->addField('r', 'role', 'rid');
-  $query->condition('r.role', $search . '%', 'LIKE');
-  $query->orderBy('r.role', 'ASC');
-  if (!empty($names)) {
-    $query->condition('r.role', $names, 'NOT IN');
-  }
-  $query->distinct();
-  return $query;
 }
 
 /**
@@ -246,7 +246,7 @@ function privatemsg_roles_sql_autocomplete_roles($search, $names) {
  *   Checks the role to role_id mapping, with an option to generate a mapping
  *   for a role.
  *
- * @param string $role
+ * @param string $role_name
  *   The role that we need a role_id value for, defaults to anonymous.
  * @param bool $create
  *   Whether or not to create a role_id if one does not exist. Default false.
@@ -256,12 +256,12 @@ function privatemsg_roles_sql_autocomplete_roles($search, $names) {
  *   if no role_id found or created.
  *
  */
-function _privatemsg_roles_get_role_id($role = BACKDROP_AUTHENTICATED_ROLE, $create = FALSE) {
-  if ($role == BACKDROP_AUTHENTICATED_ROLE) {
+function _privatemsg_roles_get_role_id($role_name = BACKDROP_AUTHENTICATED_ROLE, $create = FALSE) {
+  if ($role_name == BACKDROP_AUTHENTICATED_ROLE) {
     return 1;
   }
   $config = config('privatemsg_roles.settings');
-  $role_id = $config->get('role_id.' . $role);
+  $role_id = $config->get('role_id.' . $role_name);
   if (is_numeric($role_id)) {
     return $role_id;
   }
@@ -271,7 +271,7 @@ function _privatemsg_roles_get_role_id($role = BACKDROP_AUTHENTICATED_ROLE, $cre
     if (is_array($rids)) {
       $max = max($rids) + 1;
     }
-    $config->set('role_id.' . $role, $max);
+    $config->set('role_id.' . $role_name, $max);
     $config->save();
     return $max;
   }
