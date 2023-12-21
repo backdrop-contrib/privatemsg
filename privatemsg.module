@@ -2569,18 +2569,7 @@ function privatemsg_entity_info() {
  *   URI array as defined by hook_entity_info().
  */
 function privatemsg_message_uri_callback($message) {
-  $uri = array();
-  if (isset($message->mid) && isset($message->thread_id)) {
-    $uri = array(
-      'path' => 'messages/view/' . $message->thread_id,
-      'options' => array(),
-    );
-    // Add message fragment, if necessary.
-    if ($message->mid != $message->thread_id) {
-      $uri['options']['fragment'] = 'privatemsg-mid-' . $message->mid;
-    }
-  }
-  return $uri;
+  return $message->uri();
 }
 
 /**
@@ -3169,7 +3158,7 @@ function privatemsg_tokens($type, $tokens, array $data = array(), array $options
           break;
 
         case 'url':
-          $uri = entity_uri('privatemsg_message', $message);
+          $uri = $message->uri();
           $replacements[$original] = url($uri['path'], $url_options + $uri['options']);
           break;
 

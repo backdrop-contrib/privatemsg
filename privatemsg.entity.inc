@@ -23,6 +23,12 @@ class PrivatemsgMessage extends Entity {
    */
   public $type;
 
+  /**
+   * A message ID that is the parent of this message.
+   *
+   * @var integer
+   */
+  public $thread_id;
 
   /**
    * The uid of the user who is associated with the private message.
@@ -77,9 +83,17 @@ class PrivatemsgMessage extends Entity {
    * Implements EntityInterface::uri().
    */
   public function uri() {
-    return array(
-      'path' => 'messages/view/' . $this->mid,
-      'options' => array(),
-    );
+    $uri = array();
+    if (isset($this->mid) && isset($this->thread_id)) {
+      $uri = array(
+        'path' => 'messages/view/' . $this->thread_id,
+        'options' => array(),
+      );
+      // Add message fragment, if necessary.
+      if ($this->mid != $this->thread_id) {
+        $uri['options']['fragment'] = 'privatemsg-mid-' . $this->mid;
+      }
+    }
+    return $uri;
   }
 }
