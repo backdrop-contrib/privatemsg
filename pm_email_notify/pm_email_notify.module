@@ -244,7 +244,7 @@ function pm_email_notify_send_mail($recipient, $message) {
  * @return string
  *   The translated text.
  */
-function pm_email_notify_text($key, $language = NULL, $data, $options) {
+function pm_email_notify_text($key, $language = NULL, $data = array(), $options = array()) {
   $langcode = isset($language) ? $language->langcode : NULL;
   $config = config('pm_email_notify.settings');
 
