@@ -530,9 +530,11 @@ function _privatemsg_form_base_fields($form, &$form_state) {
   );
 
   // Attach field widgets.
-  $message = (object) array();
   if (isset($form_state['validate_built_message'])) {
     $message = $form_state['validate_built_message'];
+  }
+  else {
+    $message = entity_create('privatemsg_message', array('bundle' => 'privatemsg_message'));
   }
 
   // If a module (e.g. OG) adds a validate or submit callback to the form in
