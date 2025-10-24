@@ -340,14 +340,15 @@ function pm_email_notify_user_insert($account) {
  */
 function pm_email_notify_user_update($account) {
   if (privatemsg_user_access('read privatemsg', $account) && isset($account->pm_send_notifications)) {
-    privatemsg_set_setting('user', $account->uid, 'email_notify_is_enabled', $account->pm_send_notifications);
+    // Backwards-compatible for old setting.
+    privatemsg_set_setting('user', $account->uid, 'email_notify_is_enabled', (int) $account->pm_send_notifications);
   }
   if (isset($account->email_notify_level)) {
-    privatemsg_set_setting('user', $account->uid, 'email_notify_level', $account->email_notify_level);
+    privatemsg_set_setting('user', $account->uid, 'email_notify_level', (int) $account->email_notify_level);
   }
 
   if (isset($account->email_notify_only_user)) {
-    privatemsg_set_setting('user', $account->uid, 'email_notify_only_user', $account->email_notify_only_user);
+    privatemsg_set_setting('user', $account->uid, 'email_notify_only_user', (int) $account->email_notify_only_user);
   }
 }
 
