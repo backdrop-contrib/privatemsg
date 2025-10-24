@@ -269,13 +269,14 @@ function _privatemsg_limits_get_amount($name, $account) {
     if ($new_max == 'unlimited') {
       return 0;
     }
+    $new_max = (int) $new_max;
     if ($new_max > $role_max) {
       $role_max = $new_max;
     }
   }
 
   if ($role_max == 0) {
-    return $config->get("{$name}_amount");
+    return (int) $config->get("{$name}_amount");
   }
 
   return $role_max;
@@ -338,7 +339,7 @@ function privatemsg_limits_sql_sent($account, $timeframe) {
 function _privatemsg_limits_get_received($account) {
   $query = _privatemsg_assemble_query(array('received', 'privatemsg_limits'),
                                       $account);
-  return (int)$query
+  return (int) $query
     ->countQuery()
     ->execute()
     ->fetchField();
