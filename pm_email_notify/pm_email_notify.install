@@ -64,7 +64,7 @@ function pm_email_notify_update_1001() {
     ->condition('setting', 'email_notify_is_enabled')
     ->execute();
   foreach ($result as $row) {
-    privatemsg_set_setting('user', $row->id, 'email_notify_level', $row->value ? -1 : 0);
+    privatemsg_set_setting('user', $row->id, 'email_notify_level', $row->value ? 12 : 0);
   }
 }
 
